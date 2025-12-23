@@ -130,6 +130,7 @@ export default function VisualScriptEditor() {
           onUpdateNode={handleUpdateNode}
           onDeleteNode={handleDeleteNode}
           onConnect={handleConnect}
+          onAddNode={handleAddNode}
         />
       </div>
       

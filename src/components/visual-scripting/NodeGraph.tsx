@@ -1,7 +1,8 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { Trash2 } from 'lucide-react';
-import type { ScriptNode, NodeConnection } from '../../types/visual-scripting';
+import type { ScriptNode, NodeConnection, NodeDataType } from '../../types/visual-scripting';
 import { getNodeDefinition } from '../../data/node-definitions';
+import QuickNodeMenu from './QuickNodeMenu';
 
 interface NodeGraphProps {
   nodes: ScriptNode[];
@@ -11,6 +12,18 @@ interface NodeGraphProps {
   onUpdateNode: (nodeId: string, updates: Partial<ScriptNode>) => void;
   onDeleteNode: (nodeId: string) => void;
   onConnect: (connection: NodeConnection) => void;
+  onAddNode: (node: ScriptNode) => void;
+}
+
+interface QuickMenuState {
+  position: { x: number; y: number };
+  sourcePort: {
+    nodeId: string;
+    portId: string;
+    isInput: boolean;
+    portType: 'exec' | 'data';
+    dataType?: NodeDataType;
+  };
 }
 
 interface TempConnectionState {
@@ -19,6 +32,8 @@ interface TempConnectionState {
   fromNodeId: string;
   fromPortId: string;
   fromIsInput: boolean;
+  portType: 'exec' | 'data';
+  dataType?: NodeDataType;
 }
 
 interface DraggingNodeState {
@@ -37,6 +52,7 @@ export default function NodeGraph({
   onUpdateNode,
   onDeleteNode,
   onConnect,
+  onAddNode,
 }: NodeGraphProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -48,16 +64,25 @@ export default function NodeGraph({
   // Store callbacks in refs so they don't cause re-registration
   const onConnectRef = useRef(onConnect);
   const onUpdateNodeRef = useRef(onUpdateNode);
+  const onAddNodeRef = useRef(onAddNode);
 
   useEffect(() => {
     onConnectRef.current = onConnect;
     onUpdateNodeRef.current = onUpdateNode;
-  }, [onConnect, onUpdateNode]);
+    onAddNodeRef.current = onAddNode;
+  }, [onConnect, onUpdateNode, onAddNode]);
+
+  // Quick node menu state
+  const [quickMenu, setQuickMenu] = useState<QuickMenuState | null>(null);
+  const setQuickMenuRef = useRef(setQuickMenu);
+  useEffect(() => {
+    setQuickMenuRef.current = setQuickMenu;
+  }, [setQuickMenu]);
 
   // State for visual updates only
   const [tempConnectionLine, setTempConnectionLine] = useState<{ from: { x: number; y: number }; to: { x: number; y: number } } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [, forceRender] = useState(0);
+  const [renderKey, forceRender] = useState(0);
 
   const getNodeDefinitionColor = (type: string) => {
     const definition = getNodeDefinition(type);
@@ -158,6 +183,18 @@ export default function NodeGraph({
               onConnectRef.current(connection);
             }
           }
+        } else {
+          // Dropped on empty space - show QuickNodeMenu
+          setQuickMenuRef.current({
+            position: { x: e.clientX, y: e.clientY },
+            sourcePort: {
+              nodeId: tempConn.fromNodeId,
+              portId: tempConn.fromPortId,
+              isInput: tempConn.fromIsInput,
+              portType: tempConn.portType,
+              dataType: tempConn.dataType,
+            },
+          });
         }
 
         tempConnectionRef.current = null;
@@ -185,7 +222,9 @@ export default function NodeGraph({
     e: React.MouseEvent,
     nodeId: string,
     portId: string,
-    isInput: boolean
+    isInput: boolean,
+    portType: 'exec' | 'data',
+    dataType?: NodeDataType
   ) => {
     e.stopPropagation();
     e.preventDefault();
@@ -206,6 +245,8 @@ export default function NodeGraph({
       fromNodeId: nodeId,
       fromPortId: portId,
       fromIsInput: isInput,
+      portType,
+      dataType,
     };
 
     setTempConnectionLine({
@@ -242,6 +283,42 @@ export default function NodeGraph({
       onSelectNode(null);
     }
   };
+
+  // Handle node selection from QuickNodeMenu
+  const handleQuickNodeSelect = useCallback((newNode: ScriptNode, connectToPortIndex: number) => {
+    if (!quickMenu) return;
+
+    // Add the new node
+    onAddNode(newNode);
+
+    // Create the connection
+    const sourcePort = quickMenu.sourcePort;
+
+    // Determine which port on the new node to connect to
+    const newNodePorts = sourcePort.isInput ? newNode.outputs : newNode.inputs;
+    const targetPort = newNodePorts[connectToPortIndex];
+
+    if (targetPort) {
+      const connection: NodeConnection = {
+        id: `conn_${Date.now()}`,
+        from: sourcePort.isInput
+          ? { nodeId: newNode.id, portId: targetPort.id }
+          : { nodeId: sourcePort.nodeId, portId: sourcePort.portId },
+        to: sourcePort.isInput
+          ? { nodeId: sourcePort.nodeId, portId: sourcePort.portId }
+          : { nodeId: newNode.id, portId: targetPort.id },
+      };
+      onConnect(connection);
+    }
+
+    // Close the menu
+    setQuickMenu(null);
+
+    // Force re-render after DOM updates so connection lines appear
+    requestAnimationFrame(() => {
+      forceRender(k => k + 1);
+    });
+  }, [quickMenu, onAddNode, onConnect]);
 
   // Render connection paths
   const renderConnections = () => {
@@ -337,7 +414,7 @@ export default function NodeGraph({
                         ? 'bg-white border-white hover:shadow-[0_0_8px_white]'
                         : 'bg-orange-500 border-orange-500 hover:shadow-[0_0_8px_orange]'
                     }`}
-                    onMouseDown={(e) => handlePortMouseDown(e, node.id, input.id, true)}
+                    onMouseDown={(e) => handlePortMouseDown(e, node.id, input.id, true, input.type, input.dataType)}
                     title={`${input.label} (${input.type}${input.dataType ? ': ' + input.dataType : ''})`}
                   />
                   <span className="ml-2 text-xs text-gray-300">{input.label}</span>
@@ -368,7 +445,7 @@ export default function NodeGraph({
                         ? 'bg-white border-white hover:shadow-[0_0_8px_white]'
                         : 'bg-orange-500 border-orange-500 hover:shadow-[0_0_8px_orange]'
                     }`}
-                    onMouseDown={(e) => handlePortMouseDown(e, node.id, output.id, false)}
+                    onMouseDown={(e) => handlePortMouseDown(e, node.id, output.id, false, output.type, output.dataType)}
                     title={`${output.label} (${output.type}${output.dataType ? ': ' + output.dataType : ''})`}
                   />
                 </div>
@@ -410,6 +487,16 @@ export default function NodeGraph({
             <p className="text-xs text-gray-700">Drag nodes to reposition • Click and drag between ports to connect</p>
           </div>
         </div>
+      )}
+
+      {/* Quick Node Menu - appears when dragging connection to empty space */}
+      {quickMenu && (
+        <QuickNodeMenu
+          position={quickMenu.position}
+          sourcePort={quickMenu.sourcePort}
+          onSelectNode={handleQuickNodeSelect}
+          onClose={() => setQuickMenu(null)}
+        />
       )}
     </div>
   );
