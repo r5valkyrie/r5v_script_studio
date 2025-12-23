@@ -14,9 +14,7 @@
     "build": "npm run build:web && node scripts/bundleElectron.cjs && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false ELECTRON_BUILDER_DISABLE_CODE_SIGNING=true electron-builder"
   },
   "dependencies": {
-    "@monaco-editor/react": "^4.7.0",
-    "lucide-react": "^0.542.0",
-    "monaco-editor": "^0.55.1"
+    "lucide-react": "^0.542.0"
   },
   "devDependencies": {
     "@astrojs/react": "^4.3.0",
