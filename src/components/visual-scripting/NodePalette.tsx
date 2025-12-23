@@ -104,13 +104,54 @@ export default function NodePalette({ onAddNode, onClose }: NodePaletteProps) {
           defaultOpen={true}
         />
         <CategorySection
-          title="Game"
-          category="game"
+          title="Events"
+          category="events"
           onAddNode={onAddNode}
         />
         <CategorySection
-          title="Mods"
-          category="mods"
+          title="Entity"
+          category="entity"
+          onAddNode={onAddNode}
+        />
+        <CategorySection
+          title="Weapons"
+          category="weapons"
+          onAddNode={onAddNode}
+        />
+        <CategorySection
+          title="Status Effects"
+          category="status-effects"
+          onAddNode={onAddNode}
+        />
+
+        <CategorySection
+          title="Particles"
+          category="particles"
+          onAddNode={onAddNode}
+        />
+        <CategorySection
+          title="Audio"
+          category="audio"
+          onAddNode={onAddNode}
+        />
+        <CategorySection
+          title="Damage"
+          category="damage"
+          onAddNode={onAddNode}
+        />
+        <CategorySection
+          title="UI"
+          category="ui"
+          onAddNode={onAddNode}
+        />
+        <CategorySection
+          title="Math"
+          category="math"
+          onAddNode={onAddNode}
+        />
+        <CategorySection
+          title="Callbacks"
+          category="callbacks"
           onAddNode={onAddNode}
         />
         <CategorySection
@@ -119,10 +160,10 @@ export default function NodePalette({ onAddNode, onClose }: NodePaletteProps) {
           onAddNode={onAddNode}
         />
         <CategorySection
-          title="Actions"
-          category="actions"
+          title="Utilities"
+          category="utilities"
           onAddNode={onAddNode}
-        />
+        />  
       </div>
 
       {/* Hints */}
