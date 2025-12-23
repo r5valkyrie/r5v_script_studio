@@ -1,0 +1,70 @@
+{
+  "name": "r5v-mod-studio",
+  "type": "module",
+  "version": "0.1.0",
+  "author": {
+    "name": "R5Valkyrie",
+    "email": "dev@r5valkyrie.org"
+  },
+  "description": "Visual scripting and modding tool for Apex Legends R5 Reloaded",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "node scripts/bundleElectron.cjs && concurrently \"astro dev\" \"wait-on http://localhost:4321 && cross-env VITE_DEV_SERVER_URL=http://localhost:4321 electron .\"",
+    "build:web": "astro build",
+    "build": "npm run build:web && node scripts/bundleElectron.cjs && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false ELECTRON_BUILDER_DISABLE_CODE_SIGNING=true electron-builder"
+  },
+  "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
+    "lucide-react": "^0.542.0",
+    "monaco-editor": "^0.55.1"
+  },
+  "devDependencies": {
+    "@astrojs/react": "^4.3.0",
+    "@tailwindcss/vite": "^4.1.13",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "astro": "^5.13.5",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.0.0",
+    "daisyui": "^5.1.7",
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.12",
+    "esbuild": "^0.23.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "tailwindcss": "^4.1.13",
+    "typescript": "^5.7.2",
+    "wait-on": "^8.0.4"
+  },
+  "build": {
+    "appId": "org.playvalkyrie.r5vstudio",
+    "productName": "R5V Mod Studio",
+    "artifactName": "${productName}-${version}.${ext}",
+    "icon": "public/icon.png",
+    "directories": {
+      "output": "release",
+      "buildResources": "public"
+    },
+    "files": [
+      "dist/**",
+      "electron/**",
+      "package.json",
+      "node_modules/**"
+    ],
+    "npmRebuild": false,
+    "extraMetadata": {
+      "main": "electron/main.js"
+    },
+    "asar": true,
+    "compression": "maximum",
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Development",
+      "icon": "public/icon.png",
+      "executableName": "r5v-mod-studio"
+    }
+  }
+}

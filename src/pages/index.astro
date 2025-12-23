@@ -1,0 +1,50 @@
+---
+import '../styles/global.css';
+import ModStudio from "../components/ModStudio";
+---
+
+<html lang="en" data-theme="dark">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="/icon.png" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>R5V Mod Studio</title>
+	</head>
+	<body class="min-h-screen bg-base-200 text-base-content overflow-hidden">
+		<!-- Animated background -->
+		<div class="fixed inset-0 -z-10 bg-animated"></div>
+
+		<!-- Window controls header -->
+		<header class="drag-region h-[42px] flex items-center justify-between px-4 gap-2 bg-[#0f1419]/98 backdrop-blur-xl border-b border-white/10 shadow-lg">
+			<div class="text-sm font-semibold text-gray-400 tracking-wide">R5V Mod Studio</div>
+			<div class="flex gap-2 no-drag">
+				<button class="px-3 py-1 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white" onclick="console.log('minimize')">_</button>
+				<button class="px-3 py-1 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white" onclick="console.log('maximize')">▢</button>
+				<button class="px-3 py-1 hover:bg-red-500 rounded-lg transition-colors text-gray-400 hover:text-white" onclick="console.log('close')">✕</button>
+			</div>
+		</header>
+
+		<!-- Main content -->
+		<main class="h-[calc(100vh-42px)]">
+			<ModStudio client:load />
+		</main>
+	</body>
+</html>
+
+<style>
+	@keyframes fadeIn {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+	@keyframes slideIn {
+		from { transform: translateY(-20px); opacity: 0; }
+		to { transform: translateY(0); opacity: 1; }
+	}
+	.animate-fadeIn {
+		animation: fadeIn 0.2s ease-out;
+	}
+	.animate-slideIn {
+		animation: slideIn 0.25s ease-out;
+	}
+</style>
