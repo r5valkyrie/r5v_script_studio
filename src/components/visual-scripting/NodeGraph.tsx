@@ -130,6 +130,7 @@ export default function NodeGraph({
   } | null>(null);
   const [codeEditorModal, setCodeEditorModal] = useState<{ nodeId: string; code: string } | null>(null);
   const [clipboard, setClipboard] = useState<{ nodes: ScriptNode[]; connections: NodeConnection[] }>({ nodes: [], connections: [] });
+  const [hoveredConnection, setHoveredConnection] = useState<string | null>(null);
 
   // Notify parent when view changes
   useEffect(() => {
@@ -1804,27 +1805,46 @@ export default function NodeGraph({
         fromNode?.inputs.find(port => port.id === conn.from.portId);
       const stroke = getLineColor(fromPort?.type || 'data', fromPort?.dataType);
       const pathD = `M ${fromPos.x} ${fromPos.y} C ${fromControlX} ${fromControlY}, ${toControlX} ${toControlY}, ${toPos.x} ${toPos.y}`;
+      const isHovered = hoveredConnection === conn.id;
 
       return (
         <g key={conn.id}>
+          {/* Glow effect on hover */}
+          {isHovered && (
+            <path
+              d={pathD}
+              stroke={stroke}
+              strokeWidth="8"
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ pointerEvents: 'none', opacity: 0.3, filter: 'blur(4px)' }}
+            />
+          )}
           {/* Invisible wider path for easier clicking */}
           <path
             d={pathD}
             stroke="transparent"
             strokeWidth="12"
             fill="none"
-            style={{ cursor: 'pointer' }}
+            style={{ cursor: 'pointer', pointerEvents: 'auto' }}
+            onMouseEnter={() => setHoveredConnection(conn.id)}
+            onMouseLeave={() => setHoveredConnection(null)}
             onContextMenu={(e) => handleConnectionContextMenu(e, conn.id)}
           />
           {/* Visible connection line */}
           <path
             d={pathD}
             stroke={stroke}
-            strokeWidth="2.5"
+            strokeWidth={isHovered ? "3.5" : "2.5"}
             fill="none"
             strokeLinecap="round"
             strokeLinejoin="round"
-            style={{ pointerEvents: 'none' }}
+            style={{ 
+              pointerEvents: 'none',
+              transition: 'stroke-width 0.15s ease-out',
+              filter: isHovered ? 'brightness(1.3)' : undefined
+            }}
           />
         </g>
       );
@@ -2257,7 +2277,7 @@ export default function NodeGraph({
                   className="px-3 py-2 hover:bg-white/10 w-full text-left flex items-center gap-2"
                   onClick={() => handlePasteNodes(contextMenu.canvasPos)}
                 >
-                  <span className="text-green-400">📋</span> Paste ({clipboard.nodes.length} node{clipboard.nodes.length > 1 ? 's' : ''})
+                  Paste ({clipboard.nodes.length} node{clipboard.nodes.length > 1 ? 's' : ''})
                 </button>
               )}
             </>
@@ -2270,7 +2290,7 @@ export default function NodeGraph({
                 className="px-3 py-2 hover:bg-white/10 w-full text-left flex items-center gap-2"
                 onClick={() => handleCopyNodes([contextMenu.nodeId!])}
               >
-                <span className="text-blue-400">📄</span> Copy
+                Copy
               </button>
               <button
                 className="px-3 py-2 hover:bg-white/10 w-full text-left flex items-center gap-2"
@@ -2279,14 +2299,14 @@ export default function NodeGraph({
                   handleDeleteNodes([contextMenu.nodeId!]);
                 }}
               >
-                <span className="text-yellow-400">✂️</span> Cut
+                Cut
               </button>
               <div className="border-t border-white/10 my-1" />
               <button
                 className="px-3 py-2 hover:bg-red-500/20 w-full text-left flex items-center gap-2 text-red-400"
                 onClick={() => handleDeleteNodes([contextMenu.nodeId!])}
               >
-                <span>🗑️</span> Delete
+                Delete
               </button>
             </>
           )}
@@ -2298,7 +2318,7 @@ export default function NodeGraph({
                 className="px-3 py-2 hover:bg-white/10 w-full text-left flex items-center gap-2"
                 onClick={() => handleCopyNodes(contextMenu.nodeIds!)}
               >
-                <span className="text-blue-400">📄</span> Copy {contextMenu.nodeIds.length} Nodes
+                Copy {contextMenu.nodeIds.length} Nodes
               </button>
               <button
                 className="px-3 py-2 hover:bg-white/10 w-full text-left flex items-center gap-2"
@@ -2307,14 +2327,14 @@ export default function NodeGraph({
                   handleDeleteNodes(contextMenu.nodeIds!);
                 }}
               >
-                <span className="text-yellow-400">✂️</span> Cut {contextMenu.nodeIds.length} Nodes
+                Cut {contextMenu.nodeIds.length} Nodes
               </button>
               <div className="border-t border-white/10 my-1" />
               <button
                 className="px-3 py-2 hover:bg-red-500/20 w-full text-left flex items-center gap-2 text-red-400"
                 onClick={() => handleDeleteNodes(contextMenu.nodeIds!)}
               >
-                <span>🗑️</span> Delete {contextMenu.nodeIds.length} Nodes
+                Delete {contextMenu.nodeIds.length} Nodes
               </button>
             </>
           )}
@@ -2325,7 +2345,7 @@ export default function NodeGraph({
               className="px-3 py-2 hover:bg-red-500/20 w-full text-left flex items-center gap-2 text-red-400"
               onClick={() => handleBreakConnection(contextMenu.connectionId!)}
             >
-              <span>✂️</span> Break Connection
+              Break Connection
             </button>
           )}
 
@@ -2338,7 +2358,7 @@ export default function NodeGraph({
                 setContextMenu(null);
               }}
             >
-              <span>✂️</span> Break Input
+              Break Input
             </button>
           )}
         </div>
