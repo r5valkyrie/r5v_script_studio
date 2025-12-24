@@ -14,6 +14,24 @@ export interface ModData {
   path: string;
 }
 
+export interface SaveDialogOptions {
+  title?: string;
+  defaultPath?: string;
+  filters?: Array<{ name: string; extensions: string[] }>;
+}
+
+export interface OpenDialogOptions {
+  title?: string;
+  filters?: Array<{ name: string; extensions: string[] }>;
+  properties?: Array<'openFile' | 'openDirectory' | 'multiSelections'>;
+}
+
+export interface DialogResult {
+  canceled: boolean;
+  filePath?: string;
+  filePaths?: string[];
+}
+
 export interface ElectronAPI {
   // File operations
   selectDirectory: () => Promise<string | null>;
@@ -40,8 +58,20 @@ export interface ElectronAPI {
   close: () => void;
 }
 
+export interface Electron {
+  ipcRenderer: {
+    on: (channel: string, listener: (...args: any[]) => void) => void;
+    removeListener: (channel: string, listener: (...args: any[]) => void) => void;
+  };
+  showSaveDialog: (options: SaveDialogOptions) => Promise<DialogResult>;
+  showOpenDialog: (options: OpenDialogOptions) => Promise<DialogResult>;
+  readFile: (filePath: string) => Promise<string>;
+  writeFile: (filePath: string, content: string) => Promise<any>;
+}
+
 declare global {
   interface Window {
     electronAPI: ElectronAPI;
+    electron: Electron;
   }
 }

@@ -112,6 +112,22 @@ ipcMain.handle('select-directory', async () => {
   return result.filePaths[0];
 });
 
+ipcMain.handle('show-save-dialog', async (event, options) => {
+  const result = await dialog.showSaveDialog(mainWindow, options);
+  return {
+    canceled: result.canceled,
+    filePath: result.filePath
+  };
+});
+
+ipcMain.handle('show-open-dialog', async (event, options) => {
+  const result = await dialog.showOpenDialog(mainWindow, options);
+  return {
+    canceled: result.canceled,
+    filePaths: result.filePaths
+  };
+});
+
 ipcMain.handle('read-file', async (event, { filePath }) => {
   try {
     const content = await fs.readFile(filePath, 'utf-8');
