@@ -18,7 +18,8 @@ interface NodeGraphProps {
 }
 
 interface QuickMenuState {
-  position: { x: number; y: number };
+  screenPosition: { x: number; y: number };
+  canvasPosition: { x: number; y: number };
   sourcePort: {
     nodeId: string;
     portId: string;
@@ -117,8 +118,18 @@ export default function NodeGraph({
   const [isDragging, setIsDragging] = useState(false);
   const [renderKey, forceRender] = useState(0);
   const [view, setView] = useState({ x: 0, y: 0, scale: 1 });
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string; portId: string } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    type: 'canvas' | 'node' | 'nodes' | 'connection' | 'port';
+    nodeId?: string;
+    nodeIds?: string[];
+    portId?: string;
+    connectionId?: string;
+    canvasPos?: { x: number; y: number };
+  } | null>(null);
   const [codeEditorModal, setCodeEditorModal] = useState<{ nodeId: string; code: string } | null>(null);
+  const [clipboard, setClipboard] = useState<{ nodes: ScriptNode[]; connections: NodeConnection[] }>({ nodes: [], connections: [] });
 
   // Notify parent when view changes
   useEffect(() => {
@@ -1045,8 +1056,12 @@ export default function NodeGraph({
           }
         } else {
           // Dropped on empty space - show QuickNodeMenu
+          const rect = canvasRef.current?.getBoundingClientRect();
+          const screenPos = { x: e.clientX, y: e.clientY };
+          const canvasPos = rect ? screenToWorld({ x: e.clientX - rect.left, y: e.clientY - rect.top }) : screenPos;
           setQuickMenuRef.current({
-            position: { x: e.clientX, y: e.clientY },
+            screenPosition: screenPos,
+            canvasPosition: canvasPos,
             sourcePort: {
               nodeId: tempConn.fromNodeId,
               portId: tempConn.fromPortId,
@@ -1153,7 +1168,7 @@ export default function NodeGraph({
     const handleClick = (e: MouseEvent) => {
       if (contextMenu) {
         const target = e.target as HTMLElement;
-        if (!target.closest('[data-context-menu="break-input"]')) {
+        if (!target.closest('[data-context-menu="true"]')) {
           setContextMenu(null);
         }
       }
@@ -1308,9 +1323,169 @@ export default function NodeGraph({
     setContextMenu({
       x: e.clientX,
       y: e.clientY,
+      type: 'port',
       nodeId,
       portId,
     });
+  };
+
+  // Context menu for canvas (empty area)
+  const handleCanvasContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const canvasRect = canvasRef.current?.getBoundingClientRect();
+    if (!canvasRect) return;
+    
+    // Calculate canvas position for node placement
+    const canvasPos = {
+      x: (e.clientX - canvasRect.left - view.x) / view.scale,
+      y: (e.clientY - canvasRect.top - view.y) / view.scale,
+    };
+    
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      type: 'canvas',
+      canvasPos,
+    });
+  };
+
+  // Context menu for a single node
+  const handleNodeContextMenu = (e: React.MouseEvent, nodeId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // If multiple nodes are selected and this node is one of them, show multi-node menu
+    if (selectedNodeIds.length > 1 && selectedNodeIds.includes(nodeId)) {
+      setContextMenu({
+        x: e.clientX,
+        y: e.clientY,
+        type: 'nodes',
+        nodeIds: selectedNodeIds,
+      });
+    } else {
+      // Single node - select it if not already selected
+      if (!selectedNodeIds.includes(nodeId)) {
+        onSelectNodes([nodeId]);
+      }
+      setContextMenu({
+        x: e.clientX,
+        y: e.clientY,
+        type: 'node',
+        nodeId,
+      });
+    }
+  };
+
+  // Context menu for a connection
+  const handleConnectionContextMenu = (e: React.MouseEvent, connectionId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      type: 'connection',
+      connectionId,
+    });
+  };
+
+  // Copy selected nodes to clipboard
+  const handleCopyNodes = (nodeIds: string[]) => {
+    const nodesToCopy = nodes.filter(n => nodeIds.includes(n.id));
+    // Also copy connections that are between the copied nodes
+    const connectionsToCopy = connections.filter(c => 
+      nodeIds.includes(c.from.nodeId) && nodeIds.includes(c.to.nodeId)
+    );
+    setClipboard({
+      nodes: nodesToCopy.map(n => ({ ...n })),
+      connections: connectionsToCopy.map(c => ({ ...c })),
+    });
+    setContextMenu(null);
+  };
+
+  // Paste nodes from clipboard
+  const handlePasteNodes = (position?: { x: number; y: number }) => {
+    if (clipboard.nodes.length === 0) return;
+    
+    // Calculate offset from original positions
+    const minX = Math.min(...clipboard.nodes.map(n => n.position.x));
+    const minY = Math.min(...clipboard.nodes.map(n => n.position.y));
+    
+    const pasteX = position?.x ?? minX + 50;
+    const pasteY = position?.y ?? minY + 50;
+    
+    const offsetX = pasteX - minX;
+    const offsetY = pasteY - minY;
+    
+    // Create new nodes with new IDs
+    const idMap = new Map<string, string>();
+    const newNodes: ScriptNode[] = clipboard.nodes.map(n => {
+      const newId = `${n.type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      idMap.set(n.id, newId);
+      return {
+        ...n,
+        id: newId,
+        position: {
+          x: n.position.x + offsetX,
+          y: n.position.y + offsetY,
+        },
+      };
+    });
+    
+    // Add all new nodes
+    newNodes.forEach(n => onAddNodeRef.current(n));
+    
+    // Recreate connections between pasted nodes
+    clipboard.connections.forEach(conn => {
+      const newFromId = idMap.get(conn.from.nodeId);
+      const newToId = idMap.get(conn.to.nodeId);
+      if (newFromId && newToId) {
+        const newConnection: NodeConnection = {
+          id: `conn-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          from: { nodeId: newFromId, portId: conn.from.portId },
+          to: { nodeId: newToId, portId: conn.to.portId },
+        };
+        onConnectRef.current(newConnection);
+      }
+    });
+    
+    // Select the newly pasted nodes
+    onSelectNodes(newNodes.map(n => n.id));
+    setContextMenu(null);
+  };
+
+  // Delete selected nodes
+  const handleDeleteNodes = (nodeIds: string[]) => {
+    nodeIds.forEach(id => onDeleteNode(id));
+    onSelectNodes([]);
+    setContextMenu(null);
+  };
+
+  // Break a connection
+  const handleBreakConnection = (connectionId: string) => {
+    const conn = connections.find(c => c.id === connectionId);
+    if (conn) {
+      onBreakInput(conn.to.nodeId, conn.to.portId);
+    }
+    setContextMenu(null);
+  };
+
+  // Open quick node menu from context menu
+  const handleOpenQuickMenu = (canvasPosition: { x: number; y: number }, screenPosition: { x: number; y: number }) => {
+    const canvasRect = canvasRef.current?.getBoundingClientRect();
+    if (!canvasRect) return;
+    
+    // Store the canvas position for node placement, screen position for menu display
+    setQuickMenu({
+      screenPosition: screenPosition,
+      canvasPosition: canvasPosition,
+      sourcePort: {
+        nodeId: '',
+        portId: '',
+        isInput: false,
+        portType: 'exec',
+      },
+    });
+    setContextMenu(null);
   };
 
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
@@ -1469,18 +1644,11 @@ export default function NodeGraph({
   const handleQuickNodeSelect = useCallback((newNode: ScriptNode, connectToPortIndex: number) => {
     if (!quickMenu) return;
 
-    if (canvasRef.current) {
-      const rect = canvasRef.current.getBoundingClientRect();
-      const screenPos = {
-        x: quickMenu.position.x - rect.left,
-        y: quickMenu.position.y - rect.top,
-      };
-      const worldPos = screenToWorld(screenPos);
-      newNode.position = {
-        x: worldPos.x - 90,
-        y: worldPos.y - 30,
-      };
-    }
+    // Use the pre-computed canvas position directly
+    newNode.position = {
+      x: quickMenu.canvasPosition.x - 90,
+      y: quickMenu.canvasPosition.y - 30,
+    };
 
     // Add the new node
     onAddNode(newNode);
@@ -1635,17 +1803,30 @@ export default function NodeGraph({
         fromNode?.outputs.find(port => port.id === conn.from.portId) ||
         fromNode?.inputs.find(port => port.id === conn.from.portId);
       const stroke = getLineColor(fromPort?.type || 'data', fromPort?.dataType);
+      const pathD = `M ${fromPos.x} ${fromPos.y} C ${fromControlX} ${fromControlY}, ${toControlX} ${toControlY}, ${toPos.x} ${toPos.y}`;
 
       return (
-        <path
-          key={conn.id}
-          d={`M ${fromPos.x} ${fromPos.y} C ${fromControlX} ${fromControlY}, ${toControlX} ${toControlY}, ${toPos.x} ${toPos.y}`}
-          stroke={stroke}
-          strokeWidth="2.5"
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+        <g key={conn.id}>
+          {/* Invisible wider path for easier clicking */}
+          <path
+            d={pathD}
+            stroke="transparent"
+            strokeWidth="12"
+            fill="none"
+            style={{ cursor: 'pointer' }}
+            onContextMenu={(e) => handleConnectionContextMenu(e, conn.id)}
+          />
+          {/* Visible connection line */}
+          <path
+            d={pathD}
+            stroke={stroke}
+            strokeWidth="2.5"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ pointerEvents: 'none' }}
+          />
+        </g>
       );
     });
   };
@@ -1660,9 +1841,12 @@ export default function NodeGraph({
       onDragOver={handleCanvasDragOver}
       onDrop={handleCanvasDrop}
       onContextMenu={(e) => {
-        if (e.target === canvasRef.current || e.target === svgRef.current) {
-          e.preventDefault();
-          setContextMenu(null);
+        // Only show canvas context menu if clicking on empty area (not on nodes)
+        const target = e.target as HTMLElement;
+        const isNode = target.closest('.node-root');
+        const isPort = target.closest('.node-port');
+        if (!isNode && !isPort) {
+          handleCanvasContextMenu(e);
         }
       }}
       style={{
@@ -1708,6 +1892,7 @@ export default function NodeGraph({
                   userSelect: 'none',
                 }}
                 onMouseDown={(e) => handleNodeMouseDown(e, node)}
+                onContextMenu={(e) => handleNodeContextMenu(e, node.id)}
               >
                 {/* Comment background */}
                 <div
@@ -1814,6 +1999,7 @@ export default function NodeGraph({
                 zIndex: isSelected ? 100 : 1,
               }}
               onMouseDown={(e) => handleNodeMouseDown(e, node)}
+              onContextMenu={(e) => handleNodeContextMenu(e, node.id)}
             >
               {/* Central diamond/circle shape */}
               <div 
@@ -1893,6 +2079,7 @@ export default function NodeGraph({
                 zIndex: isSelected ? 100 : 1,
               }}
               onMouseDown={(e) => handleNodeMouseDown(e, node)}
+              onContextMenu={(e) => handleNodeContextMenu(e, node.id)}
             >
               {/* Node Header */}
               <div
@@ -2031,7 +2218,7 @@ export default function NodeGraph({
       {/* Quick Node Menu - appears when dragging connection to empty space */}
       {quickMenu && (
         <QuickNodeMenu
-          position={quickMenu.position}
+          position={quickMenu.screenPosition}
           sourcePort={quickMenu.sourcePort}
           onSelectNode={handleQuickNodeSelect}
           onClose={() => setQuickMenu(null)}
@@ -2052,19 +2239,108 @@ export default function NodeGraph({
 
       {contextMenu && (
         <div
-          data-context-menu="break-input"
-          className="fixed z-[1100] bg-[#1a1f28] border border-white/20 rounded-md shadow-xl text-sm text-white"
+          data-context-menu="true"
+          className="fixed z-[1100] bg-[#1a1f28] border border-white/20 rounded-md shadow-xl text-sm text-white min-w-[160px] py-1"
           style={{ left: contextMenu.x, top: contextMenu.y }}
         >
-          <button
-            className="px-3 py-2 hover:bg-white/10 w-full text-left"
-            onClick={() => {
-              onBreakInput(contextMenu.nodeId, contextMenu.portId);
-              setContextMenu(null);
-            }}
-          >
-            Break Input
-          </button>
+          {/* Canvas context menu */}
+          {contextMenu.type === 'canvas' && (
+            <>
+              <button
+                className="px-3 py-2 hover:bg-white/10 w-full text-left flex items-center gap-2"
+                onClick={() => contextMenu.canvasPos && handleOpenQuickMenu(contextMenu.canvasPos, { x: contextMenu.x, y: contextMenu.y })}
+              >
+                <span className="text-purple-400">+</span> Add Node
+              </button>
+              {clipboard.nodes.length > 0 && (
+                <button
+                  className="px-3 py-2 hover:bg-white/10 w-full text-left flex items-center gap-2"
+                  onClick={() => handlePasteNodes(contextMenu.canvasPos)}
+                >
+                  <span className="text-green-400">📋</span> Paste ({clipboard.nodes.length} node{clipboard.nodes.length > 1 ? 's' : ''})
+                </button>
+              )}
+            </>
+          )}
+
+          {/* Single node context menu */}
+          {contextMenu.type === 'node' && contextMenu.nodeId && (
+            <>
+              <button
+                className="px-3 py-2 hover:bg-white/10 w-full text-left flex items-center gap-2"
+                onClick={() => handleCopyNodes([contextMenu.nodeId!])}
+              >
+                <span className="text-blue-400">📄</span> Copy
+              </button>
+              <button
+                className="px-3 py-2 hover:bg-white/10 w-full text-left flex items-center gap-2"
+                onClick={() => {
+                  handleCopyNodes([contextMenu.nodeId!]);
+                  handleDeleteNodes([contextMenu.nodeId!]);
+                }}
+              >
+                <span className="text-yellow-400">✂️</span> Cut
+              </button>
+              <div className="border-t border-white/10 my-1" />
+              <button
+                className="px-3 py-2 hover:bg-red-500/20 w-full text-left flex items-center gap-2 text-red-400"
+                onClick={() => handleDeleteNodes([contextMenu.nodeId!])}
+              >
+                <span>🗑️</span> Delete
+              </button>
+            </>
+          )}
+
+          {/* Multiple nodes context menu */}
+          {contextMenu.type === 'nodes' && contextMenu.nodeIds && (
+            <>
+              <button
+                className="px-3 py-2 hover:bg-white/10 w-full text-left flex items-center gap-2"
+                onClick={() => handleCopyNodes(contextMenu.nodeIds!)}
+              >
+                <span className="text-blue-400">📄</span> Copy {contextMenu.nodeIds.length} Nodes
+              </button>
+              <button
+                className="px-3 py-2 hover:bg-white/10 w-full text-left flex items-center gap-2"
+                onClick={() => {
+                  handleCopyNodes(contextMenu.nodeIds!);
+                  handleDeleteNodes(contextMenu.nodeIds!);
+                }}
+              >
+                <span className="text-yellow-400">✂️</span> Cut {contextMenu.nodeIds.length} Nodes
+              </button>
+              <div className="border-t border-white/10 my-1" />
+              <button
+                className="px-3 py-2 hover:bg-red-500/20 w-full text-left flex items-center gap-2 text-red-400"
+                onClick={() => handleDeleteNodes(contextMenu.nodeIds!)}
+              >
+                <span>🗑️</span> Delete {contextMenu.nodeIds.length} Nodes
+              </button>
+            </>
+          )}
+
+          {/* Connection context menu */}
+          {contextMenu.type === 'connection' && contextMenu.connectionId && (
+            <button
+              className="px-3 py-2 hover:bg-red-500/20 w-full text-left flex items-center gap-2 text-red-400"
+              onClick={() => handleBreakConnection(contextMenu.connectionId!)}
+            >
+              <span>✂️</span> Break Connection
+            </button>
+          )}
+
+          {/* Port context menu (break input) */}
+          {contextMenu.type === 'port' && contextMenu.nodeId && contextMenu.portId && (
+            <button
+              className="px-3 py-2 hover:bg-red-500/20 w-full text-left flex items-center gap-2 text-red-400"
+              onClick={() => {
+                onBreakInput(contextMenu.nodeId!, contextMenu.portId!);
+                setContextMenu(null);
+              }}
+            >
+              <span>✂️</span> Break Input
+            </button>
+          )}
         </div>
       )}
 
