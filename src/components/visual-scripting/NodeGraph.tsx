@@ -118,6 +118,7 @@ export default function NodeGraph({
   const [renderKey, forceRender] = useState(0);
   const [view, setView] = useState({ x: 0, y: 0, scale: 1 });
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string; portId: string } | null>(null);
+  const [codeEditorModal, setCodeEditorModal] = useState<{ nodeId: string; code: string } | null>(null);
 
   // Notify parent when view changes
   useEffect(() => {
@@ -645,6 +646,33 @@ export default function NodeGraph({
             className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
             placeholder="ThreadFunc"
           />
+        </div>
+      );
+    }
+
+    if (node.type === 'custom-code') {
+      const code = typeof node.data.code === 'string' ? node.data.code : '// Your code here';
+      const lineCount = code.split('\n').length;
+      const preview = lineCount > 3 ? code.split('\n').slice(0, 3).join('\n') + '...' : code;
+      
+      return (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] text-gray-500">Custom Code ({lineCount} lines):</span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setCodeEditorModal({ nodeId: node.id, code });
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="px-2 py-0.5 bg-purple-500/20 hover:bg-purple-500/40 rounded text-[9px] text-purple-300 transition-colors"
+            >
+              Edit Code
+            </button>
+          </div>
+          <div className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[9px] text-gray-400 font-mono max-h-[60px] overflow-hidden whitespace-pre-wrap">
+            {preview || '// Click Edit Code to write your code'}
+          </div>
         </div>
       );
     }
@@ -2028,6 +2056,68 @@ export default function NodeGraph({
           >
             Break Input
           </button>
+        </div>
+      )}
+
+      {/* Code Editor Modal */}
+      {codeEditorModal && (
+        <div 
+          className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/70"
+          onClick={() => setCodeEditorModal(null)}
+        >
+          <div 
+            className="bg-[#1a1f28] rounded-lg shadow-2xl w-[800px] h-[40vh] max-w-[90vw] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+              <h3 className="text-white font-semibold">Custom Code Editor</h3>
+              <button
+                onClick={() => setCodeEditorModal(null)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Code Editor */}
+            <div className="flex-1 p-4 overflow-hidden">
+              <textarea
+                value={codeEditorModal.code}
+                onChange={(e) => setCodeEditorModal({ ...codeEditorModal, code: e.target.value })}
+                className="w-full h-full bg-[#0f1419] text-gray-200 font-mono text-sm p-4 rounded border border-white/10 focus:outline-none focus:border-purple-500 resize-none"
+                placeholder="// Write your Squirrel code here&#10;// This will be inserted directly into the generated script"
+                spellCheck={false}
+                autoFocus
+              />
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between px-4 py-3 border-t border-white/10">
+              <span className="text-xs text-gray-500">
+                {codeEditorModal.code.split('\n').length} lines • {codeEditorModal.code.length} characters
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCodeEditorModal(null)}
+                  className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 text-white text-sm transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    onUpdateNodeRef.current(codeEditorModal.nodeId, { 
+                      data: { code: codeEditorModal.code } 
+                    });
+                    setCodeEditorModal(null);
+                  }}
+                  className="px-4 py-2 rounded bg-purple-600 hover:bg-purple-500 text-white text-sm transition-colors"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

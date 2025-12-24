@@ -547,6 +547,20 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     defaultData: { comment: 'Comment', commentColor: '#6C7A89' },
   },
   {
+    type: 'custom-code',
+    category: 'core-flow',
+    label: 'Custom Code',
+    description: 'Write custom Squirrel code directly',
+    color: '#2ECC71',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { code: '// Your code here' },
+  },
+  {
     type: 'set-portal',
     category: 'core-flow',
     label: 'Set Portal',

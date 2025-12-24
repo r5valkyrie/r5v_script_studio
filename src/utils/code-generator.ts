@@ -250,6 +250,17 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
+    case 'custom-code': {
+      const code = typeof node.data?.code === 'string' ? node.data.code : '// Your code here';
+      // Split code into lines and add proper indentation
+      const codeLines = code.split('\n');
+      for (const codeLine of codeLines) {
+        lines.push(`${ind}${codeLine}`);
+      }
+      followExec('output_0');
+      break;
+    }
+
     case 'call-function': {
       const funcName = getInputValue(ctx, node, 'input_1');
       const returnType = typeof node.data?.returnType === 'string' ? node.data.returnType : 'none';
