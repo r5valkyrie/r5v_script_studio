@@ -1,14 +1,30 @@
 import type { ScriptNode, NodeConnection } from '../types/visual-scripting';
-import type { ProjectData, ProjectMetadata, SerializedProject } from '../types/project';
+import type { ProjectData, ProjectMetadata, SerializedProject, ScriptFile } from '../types/project';
 
 const CURRENT_PROJECT_VERSION = '1.0.0';
 const EDITOR_VERSION = '0.1.0'; // From package.json
 
 /**
- * Creates a new project with default metadata
+ * Creates a new script file
+ */
+export function createScriptFile(name: string): ScriptFile {
+  const now = new Date().toISOString();
+  return {
+    id: `script_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    name: name.endsWith('.nut') ? name : `${name}.nut`,
+    nodes: [],
+    connections: [],
+    createdAt: now,
+    modifiedAt: now,
+  };
+}
+
+/**
+ * Creates a new project with default metadata and one initial script file
  */
 export function createNewProject(name: string = 'Untitled Project'): ProjectData {
   const now = new Date().toISOString();
+  const initialScript = createScriptFile('main');
   
   return {
     metadata: {
@@ -23,9 +39,10 @@ export function createNewProject(name: string = 'Untitled Project'): ProjectData
     settings: {
       canvasPosition: { x: 0, y: 0 },
       canvasZoom: 1,
+      activeScriptFile: initialScript.id,
+      folders: [],
     },
-    nodes: [],
-    connections: [],
+    scriptFiles: [initialScript],
   };
 }
 
@@ -33,8 +50,7 @@ export function createNewProject(name: string = 'Untitled Project'): ProjectData
  * Serializes project data to JSON string
  */
 export function serializeProject(
-  nodes: ScriptNode[],
-  connections: NodeConnection[],
+  scriptFiles: ScriptFile[],
   metadata: Partial<ProjectMetadata> = {},
   settings: ProjectData['settings'] = {}
 ): string {
@@ -54,9 +70,10 @@ export function serializeProject(
       canvasPosition: settings.canvasPosition || { x: 0, y: 0 },
       canvasZoom: settings.canvasZoom || 1,
       lastOpenedNode: settings.lastOpenedNode,
+      activeScriptFile: settings.activeScriptFile,
+      folders: settings.folders || [],
     },
-    nodes,
-    connections,
+    scriptFiles,
   };
 
   const serialized: SerializedProject = {
@@ -83,10 +100,26 @@ export function deserializeProject(jsonString: string): ProjectData {
       throw new Error('Invalid project file: missing data');
     }
     
-    // Future: Add migration logic here for older versions
-    // if (parsed.version === '0.9.0') {
-    //   parsed.data = migrateFrom_0_9_0(parsed.data);
-    // }
+    // Legacy migration: convert old single-file format to multi-file
+    if (parsed.data.nodes && parsed.data.connections && !parsed.data.scriptFiles) {
+      const legacyScript: ScriptFile = {
+        id: `script_legacy_${Date.now()}`,
+        name: 'main.nut',
+        nodes: parsed.data.nodes,
+        connections: parsed.data.connections,
+        createdAt: parsed.data.metadata.createdAt,
+        modifiedAt: parsed.data.metadata.modifiedAt,
+      };
+      parsed.data.scriptFiles = [legacyScript];
+      parsed.data.settings.activeScriptFile = legacyScript.id;
+      delete parsed.data.nodes;
+      delete parsed.data.connections;
+    }
+    
+    // Ensure scriptFiles exists
+    if (!parsed.data.scriptFiles) {
+      parsed.data.scriptFiles = [createScriptFile('main')];
+    }
     
     return parsed.data;
   } catch (error) {
@@ -203,8 +236,15 @@ export function extractProjectFromCode(code: string): ProjectData | null {
 export function validateProject(data: any): data is ProjectData {
   if (!data || typeof data !== 'object') return false;
   if (!data.metadata || typeof data.metadata !== 'object') return false;
-  if (!Array.isArray(data.nodes)) return false;
-  if (!Array.isArray(data.connections)) return false;
+  
+  // Support both old and new format
+  if (data.scriptFiles) {
+    if (!Array.isArray(data.scriptFiles)) return false;
+  } else {
+    // Legacy format
+    if (!Array.isArray(data.nodes)) return false;
+    if (!Array.isArray(data.connections)) return false;
+  }
   
   return true;
 }

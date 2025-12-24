@@ -18,7 +18,7 @@ export default function NodeInspector({ node, onUpdate, onClose }: NodeInspector
   };
 
   return (
-    <div className="w-[300px] bg-[#151a21] border-l border-white/10 flex flex-col">
+    <div className="w-full h-full bg-[#151a21] flex flex-col">
       {/* Header */}
       <div className="px-4 py-3 border-b border-white/10 bg-[#0f1419] flex items-center justify-between">
         <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
@@ -26,7 +26,7 @@ export default function NodeInspector({ node, onUpdate, onClose }: NodeInspector
         </span>
         <button
           onClick={onClose}
-          className="p-1 hover:bg-white/10 rounded transition-colors"
+          className="p-1 hover:bg-white/10 rounded transition-colors flex-shrink-0"
           title="Close inspector"
         >
           <X size={14} className="text-gray-500" />

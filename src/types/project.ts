@@ -12,13 +12,25 @@ export interface ProjectSettings {
   canvasPosition?: { x: number; y: number };
   canvasZoom?: number;
   lastOpenedNode?: string;
+  activeScriptFile?: string; // ID of currently open script file
+  folders?: string[]; // Explicit folder paths (including empty folders)
+}
+
+export interface ScriptFile {
+  id: string;
+  name: string;
+  nodes: any[]; // ScriptNode[]
+  connections: any[]; // NodeConnection[]
+  createdAt: string;
+  modifiedAt: string;
 }
 
 export interface ProjectData {
   metadata: ProjectMetadata;
   settings: ProjectSettings;
-  nodes: any[]; // ScriptNode[]
-  connections: any[]; // NodeConnection[]
+  scriptFiles: ScriptFile[]; // Multiple script files
+  nodes?: any[]; // Legacy support - will migrate to scriptFiles
+  connections?: any[]; // Legacy support
 }
 
 export interface SerializedProject {

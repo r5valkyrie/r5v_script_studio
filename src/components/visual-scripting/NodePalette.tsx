@@ -85,7 +85,7 @@ function CategorySection({ title, category, onAddNode, defaultOpen = false }: Ca
 
 export default function NodePalette({ onAddNode, onClose }: NodePaletteProps) {
   return (
-    <div className="w-[220px] bg-[#151a21] border-r border-white/10 flex flex-col">
+    <div className="w-full h-full bg-[#151a21] flex flex-col">
       {/* Header */}
       <div className="px-3 py-3 border-b border-white/10 bg-[#0f1419] flex items-center justify-between">
         <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
@@ -93,7 +93,7 @@ export default function NodePalette({ onAddNode, onClose }: NodePaletteProps) {
         </span>
         <button
           onClick={onClose}
-          className="p-1 hover:bg-white/10 rounded transition-colors"
+          className="p-1 hover:bg-white/10 rounded transition-colors flex-shrink-0"
           title="Hide palette"
         >
           <X size={14} className="text-gray-500" />

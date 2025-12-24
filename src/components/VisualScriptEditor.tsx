@@ -1,13 +1,15 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { PanelLeft, PanelRight, GitBranch, Code, Save, FolderOpen, FileDown, FileText, FilePlus, ChevronDown } from 'lucide-react';
+import { PanelLeft, PanelRight, GitBranch, Code, Save, FolderOpen, FileDown, FileText, FilePlus, ChevronDown, Folder } from 'lucide-react';
 import type { ScriptNode, NodeConnection } from '../types/visual-scripting';
 import NodeGraph from './visual-scripting/NodeGraph';
 import NodePalette from './visual-scripting/NodePalette';
 import NodeInspector from './visual-scripting/NodeInspector';
 import CodeView from './visual-scripting/CodeView';
+import ProjectPanel from './visual-scripting/ProjectPanel';
+import WelcomeScreen from './visual-scripting/WelcomeScreen';
 import { generateCode } from '../utils/code-generator';
 import { getNodeDefinition } from '../data/node-definitions';
-import { useProject } from '../hooks/useProject';
+import { useProjectFiles } from '../hooks/useProjectFiles';
 import { saveSquirrelCode } from '../utils/file-system';
 import { generateCodeMetadata, embedProjectInCode } from '../utils/project-manager';
 
@@ -21,21 +23,79 @@ export default function VisualScriptEditor() {
   const [splitRatio, setSplitRatio] = useState(0.55);
   const splitDraggingRef = useRef(false);
 
+  // Panel widths
+  const [projectPanelWidth, setProjectPanelWidth] = useState(256); // 64 * 4 = 16rem
+  const [paletteWidth, setPaletteWidth] = useState(256);
+  const [inspectorWidth, setInspectorWidth] = useState(320);
+  const projectDraggingRef = useRef(false);
+  const paletteDraggingRef = useRef(false);
+  const inspectorDraggingRef = useRef(false);
+
   const [isPaletteOpen, setPaletteOpen] = useState(true);
   const [isInspectorOpen, setInspectorOpen] = useState(true);
+  const [isProjectPanelOpen, setProjectPanelOpen] = useState(true);
   const [isFileMenuOpen, setFileMenuOpen] = useState(false);
   const fileMenuRef = useRef<HTMLDivElement>(null);
 
-  // Project management
+  // Project management with multiple script files
   const {
     projectData,
     currentFilePath,
     hasUnsavedChanges,
+    scriptFiles,
+    activeScriptFile,
+    recentProjects,
+    folders,
     saveProject,
     saveProjectAs,
     loadProject,
-    markModified,
-  } = useProject();
+    loadProjectFromPath,
+    newProject,
+    createNewScriptFile,
+    deleteScriptFile,
+    renameScriptFile,
+    setActiveScriptFile,
+    updateActiveScriptContent,
+    createFolder,
+    deleteFolder,
+    renameFolder,
+  } = useProjectFiles();
+
+  // Track if we're loading to prevent marking as modified on initial load
+  const isLoadingRef = useRef(false);
+  const prevNodesRef = useRef<ScriptNode[]>([]);
+  const prevConnectionsRef = useRef<NodeConnection[]>([]);
+
+  // Sync nodes/connections with active script file
+  useEffect(() => {
+    if (activeScriptFile) {
+      isLoadingRef.current = true;
+      setNodes(activeScriptFile.nodes as ScriptNode[]);
+      setConnections(activeScriptFile.connections as NodeConnection[]);
+      setSelectedNodeIds([]);
+      prevNodesRef.current = activeScriptFile.nodes as ScriptNode[];
+      prevConnectionsRef.current = activeScriptFile.connections as NodeConnection[];
+      // Allow the next render cycle to complete before clearing the flag
+      setTimeout(() => {
+        isLoadingRef.current = false;
+      }, 0);
+    }
+  }, [activeScriptFile?.id]);
+
+  // Update active script when nodes/connections change (but not during initial load)
+  useEffect(() => {
+    if (activeScriptFile && !isLoadingRef.current) {
+      // Only update if something actually changed
+      const nodesChanged = JSON.stringify(nodes) !== JSON.stringify(prevNodesRef.current);
+      const connectionsChanged = JSON.stringify(connections) !== JSON.stringify(prevConnectionsRef.current);
+      
+      if (nodesChanged || connectionsChanged) {
+        updateActiveScriptContent(nodes, connections);
+        prevNodesRef.current = nodes;
+        prevConnectionsRef.current = connections;
+      }
+    }
+  }, [nodes, connections, activeScriptFile, updateActiveScriptContent]);
 
   const selectedNode = selectedNodeIds.length > 0
     ? nodes.find(n => n.id === selectedNodeIds[0]) ?? null
@@ -72,8 +132,7 @@ export default function VisualScriptEditor() {
 
       return [...currentNodes, newNode, callNode];
     });
-    markModified();
-  }, [markModified]);
+  }, []);
 
   const handleSelectNodes = useCallback((nodeIds: string[]) => {
     setSelectedNodeIds(nodeIds);
@@ -86,8 +145,7 @@ export default function VisualScriptEditor() {
     setNodes(currentNodes =>
       currentNodes.map(n => (n.id === nodeId ? { ...n, ...updates } : n))
     );
-    markModified();
-  }, [markModified]);
+  }, []);
 
   const handleDeleteNode = useCallback((nodeId: string) => {
     setNodes(currentNodes => currentNodes.filter(n => n.id !== nodeId));
@@ -95,8 +153,7 @@ export default function VisualScriptEditor() {
       currentConnections.filter(c => c.from.nodeId !== nodeId && c.to.nodeId !== nodeId)
     );
     setSelectedNodeIds(current => current.filter(id => id !== nodeId));
-    markModified();
-  }, [markModified]);
+  }, []);
 
   const handleDeleteSelectedNodes = useCallback((nodeIds: string[]) => {
     if (nodeIds.length === 0) return;
@@ -105,42 +162,33 @@ export default function VisualScriptEditor() {
       currentConnections.filter(c => !nodeIds.includes(c.from.nodeId) && !nodeIds.includes(c.to.nodeId))
     );
     setSelectedNodeIds([]);
-    markModified();
-  }, [markModified]);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // New project
       if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
         e.preventDefault();
-        setNodes([]);
-        setConnections([]);
-        setSelectedNodeIds([]);
+        newProject();
         return;
       }
       
       // Save shortcuts
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
-        saveProject(nodes, connections);
+        saveProject();
         return;
       }
       
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'S') {
         e.preventDefault();
-        saveProjectAs(nodes, connections);
+        saveProjectAs();
         return;
       }
       
       if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
         e.preventDefault();
-        loadProject().then(result => {
-          if (result) {
-            setNodes(result.nodes);
-            setConnections(result.connections);
-            setSelectedNodeIds([]);
-          }
-        });
+        loadProject();
         return;
       }
       
@@ -157,7 +205,7 @@ export default function VisualScriptEditor() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedNodeIds, handleDeleteSelectedNodes, nodes, connections, saveProject, saveProjectAs, loadProject]);
+  }, [selectedNodeIds, handleDeleteSelectedNodes, saveProject, saveProjectAs, loadProject, newProject]);
 
   const handleConnect = useCallback((newConnection: NodeConnection) => {
     // Prevent duplicate connections
@@ -171,17 +219,15 @@ export default function VisualScriptEditor() {
       if (exists) {
         return currentConnections;
       }
-      markModified();
       return [...currentConnections, newConnection];
     });
-  }, [markModified]);
+  }, []);
 
   const handleBreakInput = useCallback((nodeId: string, portId: string) => {
     setConnections(currentConnections =>
       currentConnections.filter(conn => !(conn.to.nodeId === nodeId && conn.to.portId === portId))
     );
-    markModified();
-  }, [markModified]);
+  }, []);
 
   // Generate code from nodes
   const generatedCode = useMemo(() => {
@@ -201,20 +247,44 @@ export default function VisualScriptEditor() {
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!splitDraggingRef.current) return;
-      const divider = document.getElementById('split-divider');
-      if (!divider) return;
-      const container = divider.parentElement;
-      if (!container) return;
+      // Split view divider
+      if (splitDraggingRef.current) {
+        const divider = document.getElementById('split-divider');
+        if (!divider) return;
+        const container = divider.parentElement;
+        if (!container) return;
 
-      const rect = container.getBoundingClientRect();
-      const ratio = (e.clientX - rect.left) / rect.width;
-      const clamped = Math.min(0.8, Math.max(0.2, ratio));
-      setSplitRatio(clamped);
+        const rect = container.getBoundingClientRect();
+        const ratio = (e.clientX - rect.left) / rect.width;
+        const clamped = Math.min(0.8, Math.max(0.2, ratio));
+        setSplitRatio(clamped);
+      }
+
+      // Project panel resize
+      if (projectDraggingRef.current) {
+        const newWidth = Math.min(500, Math.max(240, e.clientX));
+        setProjectPanelWidth(newWidth);
+      }
+
+      // Palette resize
+      if (paletteDraggingRef.current) {
+        const leftOffset = isProjectPanelOpen ? projectPanelWidth : 0;
+        const newWidth = Math.min(400, Math.max(200, e.clientX - leftOffset));
+        setPaletteWidth(newWidth);
+      }
+
+      // Inspector resize
+      if (inspectorDraggingRef.current) {
+        const newWidth = Math.min(500, Math.max(250, window.innerWidth - e.clientX));
+        setInspectorWidth(newWidth);
+      }
     };
 
     const handleMouseUp = () => {
       splitDraggingRef.current = false;
+      projectDraggingRef.current = false;
+      paletteDraggingRef.current = false;
+      inspectorDraggingRef.current = false;
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -242,8 +312,18 @@ export default function VisualScriptEditor() {
 
   return (
     <div className="w-screen h-screen bg-[#0f1419] text-white flex flex-col">
-      {/* Tab Bar */}
-      <div className="flex items-center justify-between bg-[#0a0d10] border-b border-white/10 px-2">
+      {/* Show welcome screen if no project is open */}
+      {!projectData ? (
+        <WelcomeScreen
+          onNewProject={newProject}
+          onOpenProject={loadProject}
+          onOpenRecent={loadProjectFromPath}
+          recentProjects={recentProjects}
+        />
+      ) : (
+        <>
+          {/* Tab Bar */}
+          <div className="flex items-center justify-between bg-[#0a0d10] border-b border-white/10 px-2">
         <div className="flex items-center gap-2">
           {/* File Menu */}
           <div className="relative" ref={fileMenuRef}>
@@ -262,9 +342,7 @@ export default function VisualScriptEditor() {
               <div className="absolute top-full left-0 mt-1 w-80 bg-[#1a1f26] border border-white/10 rounded-lg shadow-xl z-50 py-1">
                 <button
                   onClick={() => {
-                    setNodes([]);
-                    setConnections([]);
-                    setSelectedNodeIds([]);
+                    newProject();
                     setFileMenuOpen(false);
                   }}
                   className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
@@ -275,24 +353,19 @@ export default function VisualScriptEditor() {
                 </button>
                 <button
                   onClick={async () => {
-                    const result = await loadProject();
-                    if (result) {
-                      setNodes(result.nodes);
-                      setConnections(result.connections);
-                      setSelectedNodeIds([]);
-                    }
+                    await loadProject();
                     setFileMenuOpen(false);
                   }}
                   className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
                 >
                   <FolderOpen size={16} />
-                  <span>Open Project</span>
+                  <span>Open Project...</span>
                   <span className="ml-auto text-xs text-gray-500">Ctrl+O</span>
                 </button>
                 <div className="h-px bg-white/10 my-1" />
                 <button
                   onClick={() => {
-                    saveProject(nodes, connections);
+                    saveProject();
                     setFileMenuOpen(false);
                   }}
                   className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
@@ -303,13 +376,13 @@ export default function VisualScriptEditor() {
                 </button>
                 <button
                   onClick={() => {
-                    saveProjectAs(nodes, connections);
+                    saveProjectAs();
                     setFileMenuOpen(false);
                   }}
                   className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
                 >
                   <Save size={16} />
-                  <span>Save As</span>
+                  <span>Save As...</span>
                   <span className="ml-auto text-xs text-gray-500">Ctrl+Shift+S</span>
                 </button>
                 <div className="h-px bg-white/10 my-1" />
@@ -377,23 +450,82 @@ export default function VisualScriptEditor() {
       <div className="flex-1 flex overflow-hidden">
         {activeTab === 'visual' ? (
           <>
+            {/* Project Panel */}
+            {isProjectPanelOpen && (
+              <div className="flex h-full" style={{ width: projectPanelWidth }}>
+                <ProjectPanel
+                  scriptFiles={scriptFiles}
+                  activeFileId={activeScriptFile?.id || null}
+                  projectName={projectData?.metadata.name || 'Untitled Project'}
+                  folders={folders}
+                  onSelectFile={setActiveScriptFile}
+                  onCreateFile={createNewScriptFile}
+                  onDeleteFile={deleteScriptFile}
+                  onRenameFile={renameScriptFile}
+                  onCreateFolder={createFolder}
+                  onDeleteFolder={deleteFolder}
+                  onRenameFolder={renameFolder}
+                  onClose={() => setProjectPanelOpen(false)}
+                />
+                {/* Resize Handle */}
+                <div
+                  className="w-1 h-full bg-white/5 hover:bg-purple-500/40 cursor-col-resize transition-colors"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    projectDraggingRef.current = true;
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Project Panel Toggle Button */}
+            {!isProjectPanelOpen && (
+              <button
+                onClick={() => setProjectPanelOpen(true)}
+                className="absolute z-50 px-2 py-4 bg-[#2a3341] hover:bg-[#363f4f] border-r-2 border-purple-500/50 hover:border-purple-500 transition-all flex flex-col items-center gap-2 group shadow-xl"
+                style={{ 
+                  top: '85px',
+                  left: isPaletteOpen ? `${paletteWidth}px` : '0px'
+                }}
+                title="Show Project Panel (Ctrl+B)"
+              >
+                <Folder size={18} className="text-purple-400 group-hover:text-purple-300" />
+                <div className="text-[9px] text-gray-400 group-hover:text-purple-300 font-semibold tracking-wider" style={{ writingMode: 'vertical-rl' }}>PROJECT</div>
+              </button>
+            )}
+
             {/* Palette Toggle Button */}
             {!isPaletteOpen && (
               <button
                 onClick={() => setPaletteOpen(true)}
-                className="absolute top-16 left-4 z-50 p-2 bg-[#151a21]/80 hover:bg-[#151a21] border border-white/10 rounded-lg transition-colors"
+                className="absolute z-50 px-2 py-4 bg-[#2a3341] hover:bg-[#363f4f] border-r-2 border-purple-500/50 hover:border-purple-500 transition-all flex flex-col items-center gap-2 group shadow-xl"
+                style={{ 
+                  top: isProjectPanelOpen ? '85px' : '184px',
+                  left: isProjectPanelOpen ? `${projectPanelWidth}px` : '0px'
+                }}
                 title="Show Node Palette"
               >
-                <PanelRight size={16} />
+                <PanelRight size={18} className="text-purple-400 group-hover:text-purple-300" />
+                <div className="text-[9px] text-gray-400 group-hover:text-purple-300 font-semibold tracking-wider" style={{ writingMode: 'vertical-rl' }}>PALETTE</div>
               </button>
             )}
 
             {/* Node Palette */}
             {isPaletteOpen && (
-              <NodePalette
-                onAddNode={handleAddNode}
-                onClose={() => setPaletteOpen(false)}
-              />
+              <div className="flex h-full" style={{ width: paletteWidth, marginLeft: !isProjectPanelOpen ? '0px' : '0px' }}>
+                <NodePalette
+                  onAddNode={handleAddNode}
+                  onClose={() => setPaletteOpen(false)}
+                />
+                {/* Resize Handle */}
+                <div
+                  className="w-1 h-full bg-white/5 hover:bg-purple-500/40 cursor-col-resize transition-colors"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    paletteDraggingRef.current = true;
+                  }}
+                />
+              </div>
             )}
 
             {/* Main Canvas */}
@@ -415,21 +547,33 @@ export default function VisualScriptEditor() {
             {selectedNode && !isInspectorOpen && (
               <button
                   onClick={() => setInspectorOpen(true)}
-                  className="absolute top-16 right-4 z-50 p-2 bg-[#151a21]/80 hover:bg-[#151a21] border border-white/10 rounded-lg transition-colors"
+                  className="absolute right-0 z-50 px-2 py-4 bg-[#2a3341] hover:bg-[#363f4f] border-l-2 border-purple-500/50 hover:border-purple-500 transition-all flex flex-col items-center gap-2 group shadow-xl"
+                  style={{ top: '60px' }}
                   title="Show Inspector"
               >
-                  <PanelLeft size={16} />
+                  <PanelLeft size={18} className="text-purple-400 group-hover:text-purple-300" />
+                  <div className="text-[9px] text-gray-400 group-hover:text-purple-300 font-semibold tracking-wider" style={{ writingMode: 'vertical-rl' }}>INSPECTOR</div>
               </button>
             )}
 
             {/* Node Inspector */}
             {isInspectorOpen && selectedNode && (
-              <NodeInspector
-                key={selectedNode.id}
-                node={selectedNode}
-                onUpdate={(updates) => handleUpdateNode(selectedNode.id, updates)}
-                onClose={() => setInspectorOpen(false)}
-              />
+              <div className="flex h-full" style={{ width: inspectorWidth }}>
+                {/* Resize Handle */}
+                <div
+                  className="w-1 h-full bg-white/5 hover:bg-purple-500/40 cursor-col-resize transition-colors"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    inspectorDraggingRef.current = true;
+                  }}
+                />
+                <NodeInspector
+                  key={selectedNode.id}
+                  node={selectedNode}
+                  onUpdate={(updates) => handleUpdateNode(selectedNode.id, updates)}
+                  onClose={() => setInspectorOpen(false)}
+                />
+              </div>
             )}
           </>
         ) : activeTab === 'code' ? (
@@ -443,21 +587,73 @@ export default function VisualScriptEditor() {
               className="h-full flex overflow-hidden border-r border-white/10"
               style={{ width: `${splitRatio * 100}%` }}
             >
+              {/* Project Panel */}
+              {isProjectPanelOpen && (
+                <div className="flex h-full" style={{ width: projectPanelWidth }}>
+                  <ProjectPanel
+                    scriptFiles={scriptFiles}
+                    activeFileId={activeScriptFile?.id || null}
+                    projectName={projectData?.metadata.name || 'Untitled Project'}
+                    onSelectFile={setActiveScriptFile}
+                    onCreateFile={createNewScriptFile}
+                    onDeleteFile={deleteScriptFile}
+                    onRenameFile={renameScriptFile}
+                    onClose={() => setProjectPanelOpen(false)}
+                  />
+                  <div
+                    className="w-1 h-full bg-white/5 hover:bg-purple-500/40 cursor-col-resize transition-colors"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      projectDraggingRef.current = true;
+                    }}
+                  />
+                </div>
+              )}
+
+              {!isProjectPanelOpen && (
+                <button
+                  onClick={() => setProjectPanelOpen(true)}
+                  className="absolute z-50 px-2 py-4 bg-[#2a3341] hover:bg-[#363f4f] border-r-2 border-purple-500/50 hover:border-purple-500 transition-all flex flex-col items-center gap-2 group shadow-xl"
+                  style={{ 
+                    top: '60px',
+                    left: isPaletteOpen ? `${paletteWidth}px` : '0px'
+                  }}
+                  title="Show Project Panel (Ctrl+B)"
+                >
+                  <Folder size={18} className="text-purple-400 group-hover:text-purple-300" />
+                  <div className="text-[9px] text-gray-400 group-hover:text-purple-300 font-semibold tracking-wider" style={{ writingMode: 'vertical-rl' }}>PROJECT</div>
+                </button>
+              )}
+
               {!isPaletteOpen && (
                 <button
                   onClick={() => setPaletteOpen(true)}
-                  className="absolute top-16 left-4 z-50 p-2 bg-[#151a21]/80 hover:bg-[#151a21] border border-white/10 rounded-lg transition-colors"
+                  className="absolute z-50 px-2 py-4 bg-[#2a3341] hover:bg-[#363f4f] border-r-2 border-purple-500/50 hover:border-purple-500 transition-all flex flex-col items-center gap-2 group shadow-xl"
+                  style={{ 
+                    top: isProjectPanelOpen ? '60px' : '145px',
+                    left: isProjectPanelOpen ? `${projectPanelWidth}px` : '0px'
+                  }}
                   title="Show Node Palette"
                 >
-                  <PanelRight size={16} />
+                  <PanelRight size={18} className="text-purple-400 group-hover:text-purple-300" />
+                  <div className="text-[9px] text-gray-400 group-hover:text-purple-300 font-semibold tracking-wider" style={{ writingMode: 'vertical-rl' }}>PALETTE</div>
                 </button>
               )}
 
               {isPaletteOpen && (
-                <NodePalette
-                  onAddNode={handleAddNode}
-                  onClose={() => setPaletteOpen(false)}
-                />
+                <div className="flex h-full" style={{ width: paletteWidth }}>
+                  <NodePalette
+                    onAddNode={handleAddNode}
+                    onClose={() => setPaletteOpen(false)}
+                  />
+                  <div
+                    className="w-1 h-full bg-white/5 hover:bg-purple-500/40 cursor-col-resize transition-colors"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      paletteDraggingRef.current = true;
+                    }}
+                  />
+                </div>
               )}
 
               <div className="flex-1 h-full">
@@ -485,12 +681,21 @@ export default function VisualScriptEditor() {
               )}
 
               {isInspectorOpen && selectedNode && (
-                <NodeInspector
-                  key={selectedNode.id}
-                  node={selectedNode}
-                  onUpdate={(updates) => handleUpdateNode(selectedNode.id, updates)}
-                  onClose={() => setInspectorOpen(false)}
-                />
+                <div className="flex h-full" style={{ width: inspectorWidth }}>
+                  <div
+                    className="w-1 h-full bg-white/5 hover:bg-purple-500/40 cursor-col-resize transition-colors"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      inspectorDraggingRef.current = true;
+                    }}
+                  />
+                  <NodeInspector
+                    key={selectedNode.id}
+                    node={selectedNode}
+                    onUpdate={(updates) => handleUpdateNode(selectedNode.id, updates)}
+                    onClose={() => setInspectorOpen(false)}
+                  />
+                </div>
               )}
             </div>
             <div
@@ -507,6 +712,8 @@ export default function VisualScriptEditor() {
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }
