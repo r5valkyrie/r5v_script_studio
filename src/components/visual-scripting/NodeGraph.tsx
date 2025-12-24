@@ -80,6 +80,7 @@ export default function NodeGraph({
   const panningRef = useRef<PanState | null>(null);
   const selectionRef = useRef<{ start: { x: number; y: number }; shift: boolean } | null>(null);
   const selectionRectRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
+  const selectionMadeRef = useRef(false);
 
   // Store callbacks in refs so they don't cause re-registration
   const onConnectRef = useRef(onConnect);
@@ -380,22 +381,29 @@ export default function NodeGraph({
         panningRef.current = null;
       }
 
-      if (selectionRef.current) {
+      if (selectionRef.current && canvasRef.current) {
         const shift = selectionRef.current.shift;
+        const start = selectionRef.current.start;
         selectionRef.current = null;
-        const rect = selectionRectRef.current;
         setSelectionRect(null);
         selectionRectRef.current = null;
 
-        if (rect) {
+        const canvasRect = canvasRef.current.getBoundingClientRect();
+        const current = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
+        const rect = {
+          x: Math.min(start.x, current.x),
+          y: Math.min(start.y, current.y),
+          width: Math.abs(start.x - current.x),
+          height: Math.abs(start.y - current.y),
+        };
+
+        if (rect.width > 0 || rect.height > 0) {
           const selected: string[] = [];
           const elements = document.querySelectorAll('.node-root');
           elements.forEach((el) => {
             const nodeId = (el as HTMLElement).dataset.nodeId;
             if (!nodeId) return;
             const nodeRect = (el as HTMLElement).getBoundingClientRect();
-            const canvasRect = canvasRef.current?.getBoundingClientRect();
-            if (!canvasRect) return;
             const localRect = {
               left: nodeRect.left - canvasRect.left,
               right: nodeRect.right - canvasRect.left,
@@ -420,6 +428,7 @@ export default function NodeGraph({
           } else if (!shift) {
             onSelectNodes([]);
           }
+          selectionMadeRef.current = true;
         }
       }
     };
@@ -553,6 +562,10 @@ export default function NodeGraph({
   };
 
   const handleCanvasClick = (e: React.MouseEvent) => {
+    if (selectionMadeRef.current) {
+      selectionMadeRef.current = false;
+      return;
+    }
     if (e.target === canvasRef.current || e.target === svgRef.current) {
       onSelectNodes([]);
       setContextMenu(null);
@@ -594,6 +607,7 @@ export default function NodeGraph({
     const target = e.target as HTMLElement;
     if (target.closest('.node-root') || target.classList.contains('node-port')) return;
 
+    e.preventDefault();
     const rect = canvasRef.current.getBoundingClientRect();
     selectionRef.current = {
       start: { x: e.clientX - rect.left, y: e.clientY - rect.top },
