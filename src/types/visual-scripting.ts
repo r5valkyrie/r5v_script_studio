@@ -53,7 +53,6 @@ export type NodeType =
   | 'return'
   | 'comment'
   | 'reroute'
-  | 'reroute-exec'
   | 'custom-function'
   | 'call-function'
   | 'set-portal'

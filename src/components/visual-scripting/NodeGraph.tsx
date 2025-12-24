@@ -1691,13 +1691,23 @@ export default function NodeGraph({
     const canvasRect = canvasRef.current.getBoundingClientRect();
     const screenPos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
     const worldPos = screenToWorld(screenPos);
-    const rerouteType = fromPort.type === 'exec' ? 'reroute-exec' : 'reroute';
-    const definition = getNodeDefinition(rerouteType);
+    const definition = getNodeDefinition('reroute');
     const newNode = buildNodeFromDefinition(definition, {
-      x: worldPos.x - 14,
-      y: worldPos.y - 14,
+      x: worldPos.x - 18,
+      y: worldPos.y - 18,
     });
     if (!newNode) return;
+
+    // Set port types based on the connection being rerouted
+    const isExec = fromPort.type === 'exec';
+    newNode.data.isExec = isExec;
+    if (isExec) {
+      newNode.inputs[0].type = 'exec';
+      newNode.outputs[0].type = 'exec';
+    } else {
+      newNode.inputs[0].dataType = fromPort.dataType;
+      newNode.outputs[0].dataType = fromPort.dataType;
+    }
 
     onAddNodeRef.current(newNode);
     onDeleteConnectionRef.current?.(conn.id);
@@ -1941,7 +1951,7 @@ export default function NodeGraph({
       let nodeType: string | null = null;
 
       if (key === 'b') nodeType = 'branch';
-      if (key === 'r') nodeType = tempConnectionRef.current.portType === 'exec' ? 'reroute-exec' : 'reroute';
+      if (key === 'r') nodeType = 'reroute';
       if (key === '1') nodeType = 'const-int';
       if (key === '3') nodeType = 'const-vector';
       if (!nodeType) return;
@@ -1965,11 +1975,24 @@ export default function NodeGraph({
       const cursorPos = lastMousePosRef.current || fallbackPos;
       const worldPos = screenToWorld(cursorPos);
       const newNode = buildNodeFromDefinition(definition, {
-        x: worldPos.x - 90,
-        y: worldPos.y - 30,
+        x: worldPos.x - (nodeType === 'reroute' ? 18 : 90),
+        y: worldPos.y - (nodeType === 'reroute' ? 18 : 30),
       });
 
       if (newNode) {
+        // Configure reroute node port types based on the connection type
+        if (nodeType === 'reroute') {
+          const isExec = sourcePort.portType === 'exec';
+          newNode.data.isExec = isExec;
+          if (isExec) {
+            newNode.inputs[0].type = 'exec';
+            newNode.outputs[0].type = 'exec';
+          } else {
+            newNode.inputs[0].dataType = sourcePort.dataType;
+            newNode.outputs[0].dataType = sourcePort.dataType;
+          }
+        }
+
         onAddNodeRef.current(newNode);
 
         if (connectPortIndex >= 0) {
@@ -2154,7 +2177,7 @@ export default function NodeGraph({
         {nodes.map((node) => {
           const isSelected = selectedNodeIds.includes(node.id);
           const nodeColor = getNodeDefinitionColor(node.type);
-          const isReroute = node.type === 'reroute' || node.type === 'reroute-exec';
+          const isReroute = node.type === 'reroute';
           const isComment = node.type === 'comment';
 
           // Render comment nodes as resizable boxes that stay behind other nodes
@@ -2265,11 +2288,18 @@ export default function NodeGraph({
           if (isReroute) {
             const inputPort = node.inputs[0];
             const outputPort = node.outputs[0];
-            const portSize = 14;
-            const nodeSize = 28;
-            const hitSize = 24;
+            const portSize = 16;
+            const nodeSize = 36;
+            const hitSize = 28;
             const portOffset = hitSize / 2;
-            const isExec = node.type === 'reroute-exec';
+            // Determine if this reroute is for exec flow by checking connected port types
+            const incomingConn = connections.find(c => c.to.nodeId === node.id && c.to.portId === inputPort?.id);
+            const outgoingConn = connections.find(c => c.from.nodeId === node.id && c.from.portId === outputPort?.id);
+            const connectedNode = incomingConn ? nodes.find(n => n.id === incomingConn.from.nodeId) : (outgoingConn ? nodes.find(n => n.id === outgoingConn.to.nodeId) : null);
+            const connectedPort = incomingConn 
+              ? connectedNode?.outputs.find(p => p.id === incomingConn.from.portId) 
+              : (outgoingConn ? connectedNode?.inputs.find(p => p.id === outgoingConn.to.portId) : null);
+            const isExec = connectedPort?.type === 'exec' || node.data?.isExec === true;
 
             return (
             <div

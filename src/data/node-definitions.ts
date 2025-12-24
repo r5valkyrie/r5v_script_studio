@@ -453,32 +453,18 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     defaultData: { signal: 'MySignal' },
   },
   {
-    type: 'reroute-exec',
-    category: 'core-flow',
-    label: 'Reroute Exec',
-    description: 'Reroute exec flow',
-    color: '#4A90E2',
-    inputs: [
-      { label: 'In', type: 'exec', isInput: true },
-    ],
-    outputs: [
-      { label: 'Out', type: 'exec', isInput: false },
-    ],
-    defaultData: {},
-  },
-  {
     type: 'reroute',
-    category: 'data',
+    category: 'utilities',
     label: 'Reroute',
-    description: 'Reroute data connection',
-    color: '#2ECC71',
+    description: 'Reroute connections for cleaner wire organization',
+    color: '#6B7280',
     inputs: [
       { label: 'In', type: 'data', dataType: 'any', isInput: true },
     ],
     outputs: [
       { label: 'Out', type: 'data', dataType: 'any', isInput: false },
     ],
-    defaultData: {},
+    defaultData: { isExec: false },
   },
   {
     type: 'return',

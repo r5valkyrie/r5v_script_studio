@@ -321,7 +321,8 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
-    case 'reroute-exec': {
+    case 'reroute': {
+      // Reroute nodes pass through execution - they're just for visual organization
       followExec('output_0');
       break;
     }
