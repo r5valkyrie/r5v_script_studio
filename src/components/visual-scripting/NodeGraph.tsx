@@ -89,6 +89,10 @@ export default function NodeGraph({
   const canvasRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
+  // RAF throttling for smooth panning (especially on Windows)
+  const rafRef = useRef<number | null>(null);
+  const pendingViewRef = useRef<{ x: number; y: number } | null>(null);
+
   // Use refs to store drag state (avoids useEffect re-registration)
   const tempConnectionRef = useRef<TempConnectionState | null>(null);
   const draggingNodeRef = useRef<DraggingNodeState | null>(null);
@@ -986,11 +990,23 @@ export default function NodeGraph({
         const { startX, startY, viewStartX, viewStartY } = panningRef.current;
         const dx = e.clientX - startX;
         const dy = e.clientY - startY;
-        setView(current => ({
-          ...current,
-          x: viewStartX + dx,
-          y: viewStartY + dy,
-        }));
+        const newX = viewStartX + dx;
+        const newY = viewStartY + dy;
+        
+        // Use RAF throttling for smoother panning (especially on Windows)
+        pendingViewRef.current = { x: newX, y: newY };
+        if (!rafRef.current) {
+          rafRef.current = requestAnimationFrame(() => {
+            rafRef.current = null;
+            if (pendingViewRef.current) {
+              setView(current => ({
+                ...current,
+                x: pendingViewRef.current!.x,
+                y: pendingViewRef.current!.y,
+              }));
+            }
+          });
+        }
       }
 
       // Handle comment resizing
@@ -1173,6 +1189,11 @@ export default function NodeGraph({
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      // Clean up any pending RAF
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
     };
   }, [view.scale, selectedNodeIds, onSelectNodes]);
 
@@ -2106,17 +2127,27 @@ export default function NodeGraph({
         }
       }}
       style={{
-        backgroundImage: 'radial-gradient(circle, #2a2e38 1px, transparent 1px)',
-        backgroundSize: `${20 * view.scale}px ${20 * view.scale}px`,
-        backgroundPosition: `${view.x}px ${view.y}px`,
         cursor: isDragging || panningRef.current ? 'grabbing' : 'default',
       }}
     >
+      {/* Separate background layer for GPU compositing */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: 'radial-gradient(circle, #2a2e38 1px, transparent 1px)',
+          backgroundSize: `${20 * view.scale}px ${20 * view.scale}px`,
+          backgroundPosition: `${view.x}px ${view.y}px`,
+          willChange: 'background-position, background-size',
+          contain: 'strict',
+        }}
+      />
       <div
         className="absolute inset-0"
         style={{
-          transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})`,
+          transform: `translate3d(${view.x}px, ${view.y}px, 0) scale(${view.scale})`,
           transformOrigin: '0 0',
+          willChange: 'transform',
+          backfaceVisibility: 'hidden',
         }}
       >
         {/* Render nodes first so DOM is ready for connection queries */}
