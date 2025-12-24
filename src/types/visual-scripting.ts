@@ -11,7 +11,8 @@ export type NodeCategory =
   | 'math'           // Vector, angles, math operations
   | 'callbacks'      // Register callbacks
   | 'data'           // Constants, variables
-  | 'utilities';     // Validation, debugging, utilities
+  | 'utilities'      // Validation, debugging, utilities
+  | 'gamemodes';     // Gamemode registration and config
 
 export type NodeDataType =
   | 'int'
@@ -53,6 +54,20 @@ export type NodeType =
   | 'reroute-exec'
   | 'custom-function'
   | 'call-function'
+
+  // ==================== GAMEMODES ====================
+  | 'gamemode-create'
+  | 'gamemode-set-name'
+  | 'gamemode-set-desc'
+  | 'gamemode-set-score-limits'
+  | 'gamemode-set-time-limits'
+  | 'gamemode-add-scoreboard-column'
+  | 'gamemode-add-shared-init'
+  | 'gamemode-add-server-init'
+  | 'gamemode-add-client-init'
+  | 'gamemode-set-evac'
+  | 'gamemode-register'
+  | 'gamemode-register-spawn-func'
 
   // ==================== EVENTS ====================
   // Weapon Events
@@ -109,6 +124,7 @@ export type NodeType =
   | 'is-player'
   | 'is-npc'
   | 'is-titan'
+  | 'is-pilot'
   | 'get-class-name'
   | 'get-ent-index'
   | 'get-script-name'
@@ -124,6 +140,8 @@ export type NodeType =
   | 'get-up-vector'
   | 'get-eye-position'
   | 'get-eye-angles'
+  | 'get-view-vector'
+  | 'get-player-name'
 
   // ==================== WEAPONS ====================
   | 'get-active-weapon'
@@ -317,7 +335,30 @@ export type NodeType =
   | 'compare-less-equal'
   | 'logic-and'
   | 'logic-or'
-  | 'logic-not';
+  | 'logic-not'
+  | 'get-players-on-team'
+  | 'get-living-players'
+  | 'get-living-players-on-team'
+  | 'get-local-player'
+  | 'get-local-view-player'
+  | 'get-ent-by-index'
+  | 'get-player-by-index'
+  | 'get-offhand-weapon'
+  | 'get-weapon-primary-clip-count'
+  | 'get-weapon-ammo-pool-type'
+  | 'ammo-type-get-ref-from-index'
+  | 'create-trigger-cylinder'
+  | 'create-trigger-radius-multiple'
+  | 'trigger-set-enabled'
+  | 'trigger-set-radius'
+  | 'trigger-set-above-height'
+  | 'trigger-set-below-height'
+  | 'trigger-set-enter-callback'
+  | 'trigger-set-leave-callback'
+  | 'trigger-search-new-touching'
+  | 'dispatch-spawn'
+  | 'take-primary-weapon'
+  | 'set-active-weapon-by-name';
 
 export interface NodePort {
   id: string;
@@ -387,4 +428,5 @@ export const CATEGORY_INFO: CategoryInfo[] = [
   { id: 'callbacks', label: 'Callbacks', color: '#8E44AD', description: 'Register event callbacks' },
   { id: 'data', label: 'Data', color: '#2ECC71', description: 'Constants, variables, and data structures' },
   { id: 'utilities', label: 'Utilities', color: '#34495E', description: 'Debugging, precaching, and utilities' },
+  { id: 'gamemodes', label: 'Gamemodes', color: '#C0392B', description: 'Register and configure gamemodes' },
 ];

@@ -209,6 +209,113 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
+    // ==================== GAMEMODES ====================
+    case 'gamemode-create': {
+      const gamemode = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}GameMode_Create(${gamemode})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'gamemode-set-name': {
+      const gamemode = getInputValue(ctx, node, 'input_1');
+      const name = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}GameMode_SetName(${gamemode}, ${name})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'gamemode-set-desc': {
+      const gamemode = getInputValue(ctx, node, 'input_1');
+      const desc = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}GameMode_SetDesc(${gamemode}, ${desc})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'gamemode-set-score-limits': {
+      const gamemode = getInputValue(ctx, node, 'input_1');
+      const scoreLimit = getInputValue(ctx, node, 'input_2');
+      const roundScoreLimit = getInputValue(ctx, node, 'input_3');
+      lines.push(`${ind}GameMode_SetDefaultScoreLimits(${gamemode}, ${scoreLimit}, ${roundScoreLimit})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'gamemode-set-time-limits': {
+      const gamemode = getInputValue(ctx, node, 'input_1');
+      const timeLimit = getInputValue(ctx, node, 'input_2');
+      const roundTimeLimit = getInputValue(ctx, node, 'input_3');
+      lines.push(`${ind}GameMode_SetDefaultTimeLimits(${gamemode}, ${timeLimit}, ${roundTimeLimit})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'gamemode-add-scoreboard-column': {
+      const gamemode = getInputValue(ctx, node, 'input_1');
+      const title = getInputValue(ctx, node, 'input_2');
+      const scoreType = getInputValue(ctx, node, 'input_3');
+      const numDigits = getInputValue(ctx, node, 'input_4');
+      lines.push(`${ind}GameMode_AddScoreboardColumnData(${gamemode}, ${title}, ${scoreType}, ${numDigits})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'gamemode-add-shared-init': {
+      const gamemode = getInputValue(ctx, node, 'input_1');
+      const func = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}GameMode_AddSharedInit(${gamemode}, ${func})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'gamemode-add-server-init': {
+      const gamemode = getInputValue(ctx, node, 'input_1');
+      const func = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}GameMode_AddServerInit(${gamemode}, ${func})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'gamemode-add-client-init': {
+      const gamemode = getInputValue(ctx, node, 'input_1');
+      const func = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}GameMode_AddClientInit(${gamemode}, ${func})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'gamemode-set-evac': {
+      const gamemode = getInputValue(ctx, node, 'input_1');
+      const enabled = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}GameMode_SetEvacEnabled(${gamemode}, ${enabled})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'gamemode-register-spawn-func': {
+      const gamemode = getInputValue(ctx, node, 'input_1');
+      const func = getInputValue(ctx, node, 'input_2');
+      const isPilot = getInputValue(ctx, node, 'input_3');
+      lines.push(`${ind}RegisterGamemodeSpawnFunc(${gamemode}, ${func}, ${isPilot})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'gamemode-register': {
+      const gamemode = getInputValue(ctx, node, 'input_1');
+      const modName = getInputValue(ctx, node, 'input_2');
+      const displayName = getInputValue(ctx, node, 'input_3');
+      const description = getInputValue(ctx, node, 'input_4');
+      const customScoreboard = getInputValue(ctx, node, 'input_5');
+      const sharedInitFn = getInputValue(ctx, node, 'input_6');
+      const serverInitFn = getInputValue(ctx, node, 'input_7');
+      const clientInitFn = getInputValue(ctx, node, 'input_8');
+      lines.push(`${ind}RegisterGamemode(${gamemode}, ${modName}, ${displayName}, ${description}, ${customScoreboard}, ${sharedInitFn}, ${serverInitFn}, ${clientInitFn})`);
+      followExec('output_0');
+      break;
+    }
+
     // ==================== DAMAGE ====================
     case 'entity-take-damage': {
       const entity = getInputValue(ctx, node, 'input_1');
@@ -355,6 +462,44 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
+    case 'give-weapon': {
+      const player = getInputValue(ctx, node, 'input_1');
+      const weaponClass = getInputValue(ctx, node, 'input_2');
+      const mods = getInputValue(ctx, node, 'input_3');
+      const resultVar = getVarName(ctx, 'weapon');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      if (mods && mods !== 'null' && mods !== '[]') {
+        lines.push(`${ind}entity ${resultVar} = ${player}.GiveWeapon(${weaponClass}, WEAPON_INVENTORY_SLOT_ANY, ${mods})`);
+      } else {
+        lines.push(`${ind}entity ${resultVar} = ${player}.GiveWeapon(${weaponClass}, WEAPON_INVENTORY_SLOT_ANY, [])`);
+      }
+      followExec('output_0');
+      break;
+    }
+
+    case 'take-weapon': {
+      const player = getInputValue(ctx, node, 'input_1');
+      const weaponClass = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}${player}.TakeWeapon(${weaponClass})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'take-all-weapons': {
+      const player = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}${player}.TakeAllWeapons()`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'switch-to-weapon': {
+      const player = getInputValue(ctx, node, 'input_1');
+      const weapon = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}${player}.SetActiveWeapon(${weapon})`);
+      followExec('output_0');
+      break;
+    }
+
     case 'fire-weapon-bullet': {
       const weapon = getInputValue(ctx, node, 'input_1');
       lines.push(`${ind}${weapon}.FireWeaponBullet()`);
@@ -390,7 +535,7 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       const z = getInputValue(ctx, node, 'input_2');
       const resultVar = getVarName(ctx, 'vec');
       ctx.variables.set(`${node.id}:output_0`, resultVar);
-      lines.push(`${ind}local ${resultVar} = Vector(${x}, ${y}, ${z})`);
+      lines.push(`${ind}vector ${resultVar} = <${x}, ${y}, ${z}>`);
       break;
     }
 
@@ -474,7 +619,7 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       const x = node.data.x ?? 0;
       const y = node.data.y ?? 0;
       const z = node.data.z ?? 0;
-      ctx.variables.set(`${node.id}:output_0`, `Vector(${x}, ${y}, ${z})`);
+      ctx.variables.set(`${node.id}:output_0`, `<${x}, ${y}, ${z}>`);
       break;
     }
 
@@ -529,6 +674,208 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       const resultVar = getVarName(ctx, 'players');
       ctx.variables.set(`${node.id}:output_0`, resultVar);
       lines.push(`${ind}local ${resultVar} = GetPlayerArray()`);
+      break;
+    }
+
+    case 'get-players-on-team': {
+      const team = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'players');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}local ${resultVar} = GetPlayerArrayOfTeam(${team})`);
+      break;
+    }
+
+    case 'get-living-players': {
+      const resultVar = getVarName(ctx, 'players');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}local ${resultVar} = GetLivingPlayers()`);
+      break;
+    }
+
+    case 'get-living-players-on-team': {
+      const team = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'players');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}local ${resultVar} = GetLivingPlayersOnTeam(${team})`);
+      break;
+    }
+
+    case 'get-local-player': {
+      const resultVar = getVarName(ctx, 'player');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}local ${resultVar} = GetLocalClientPlayer()`);
+      break;
+    }
+
+    case 'get-local-view-player': {
+      const resultVar = getVarName(ctx, 'player');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}local ${resultVar} = GetLocalViewPlayer()`);
+      break;
+    }
+
+    case 'get-ent-by-index': {
+      const index = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'ent');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}local ${resultVar} = GetEntByIndex(${index})`);
+      break;
+    }
+
+    case 'get-player-by-index': {
+      const index = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'player');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}local ${resultVar} = gp()[${index}]`);
+      break;
+    }
+
+    case 'get-offhand-weapon': {
+      const player = getInputValue(ctx, node, 'input_0');
+      const slot = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'weapon');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}local ${resultVar} = ${player}.GetOffhandWeapon(${slot})`);
+      break;
+    }
+
+    case 'get-weapon-primary-clip-count': {
+      const weapon = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'clipCount');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}local ${resultVar} = ${weapon}.GetWeaponPrimaryClipCount()`);
+      break;
+    }
+
+    case 'get-weapon-ammo-pool-type': {
+      const weapon = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'poolType');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}local ${resultVar} = ${weapon}.GetWeaponAmmoPoolType()`);
+      break;
+    }
+
+    case 'ammo-type-get-ref-from-index': {
+      const poolType = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'ammoType');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}local ${resultVar} = AmmoType_GetRefFromIndex(${poolType})`);
+      break;
+    }
+
+    case 'create-trigger-cylinder': {
+      const origin = getInputValue(ctx, node, 'input_1');
+      const angles = getInputValue(ctx, node, 'input_2');
+      const radius = getInputValue(ctx, node, 'input_3');
+      const aboveHeight = getInputValue(ctx, node, 'input_4');
+      const belowHeight = getInputValue(ctx, node, 'input_5');
+      const resultVar = getVarName(ctx, 'trigger');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}entity ${resultVar} = CreateEntity("trigger_cylinder")`);
+      lines.push(`${ind}${resultVar}.SetOrigin(${origin})`);
+      lines.push(`${ind}${resultVar}.SetAngles(${angles})`);
+      lines.push(`${ind}${resultVar}.SetRadius(${radius})`);
+      lines.push(`${ind}${resultVar}.SetAboveHeight(${aboveHeight})`);
+      lines.push(`${ind}${resultVar}.SetBelowHeight(${belowHeight})`);
+      lines.push(`${ind}DispatchSpawn(${resultVar})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'create-trigger-radius-multiple': {
+      const origin = getInputValue(ctx, node, 'input_1');
+      const angles = getInputValue(ctx, node, 'input_2');
+      const radius = getInputValue(ctx, node, 'input_3');
+      const resultVar = getVarName(ctx, 'trigger');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}entity ${resultVar} = CreateEntity("trigger_radius_multiple")`);
+      lines.push(`${ind}${resultVar}.SetOrigin(${origin})`);
+      lines.push(`${ind}${resultVar}.SetAngles(${angles})`);
+      lines.push(`${ind}${resultVar}.SetRadius(${radius})`);
+      lines.push(`${ind}DispatchSpawn(${resultVar})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'trigger-set-enabled': {
+      const trigger = getInputValue(ctx, node, 'input_1');
+      const enabled = getInputValue(ctx, node, 'input_2');
+      if (enabled === 'true') {
+        lines.push(`${ind}${trigger}.Enable()`);
+      } else {
+        lines.push(`${ind}${trigger}.Disable()`);
+      }
+      followExec('output_0');
+      break;
+    }
+
+    case 'trigger-set-radius': {
+      const trigger = getInputValue(ctx, node, 'input_1');
+      const radius = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}${trigger}.SetRadius(${radius})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'trigger-set-above-height': {
+      const trigger = getInputValue(ctx, node, 'input_1');
+      const height = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}${trigger}.SetAboveHeight(${height})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'trigger-set-below-height': {
+      const trigger = getInputValue(ctx, node, 'input_1');
+      const height = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}${trigger}.SetBelowHeight(${height})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'trigger-set-enter-callback': {
+      const trigger = getInputValue(ctx, node, 'input_1');
+      const callback = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}${trigger}.SetEnterCallback(${callback})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'trigger-set-leave-callback': {
+      const trigger = getInputValue(ctx, node, 'input_1');
+      const callback = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}${trigger}.SetLeaveCallback(${callback})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'trigger-search-new-touching': {
+      const trigger = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}${trigger}.SearchForNewTouchingEntity()`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'dispatch-spawn': {
+      const entity = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}DispatchSpawn(${entity})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'take-primary-weapon': {
+      const player = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}TakePrimaryWeapon(${player})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'set-active-weapon-by-name': {
+      const player = getInputValue(ctx, node, 'input_1');
+      const slot = getInputValue(ctx, node, 'input_2');
+      const weaponName = getInputValue(ctx, node, 'input_3');
+      lines.push(`${ind}${player}.SetActiveWeaponByName(${slot}, ${weaponName})`);
+      followExec('output_0');
       break;
     }
 
