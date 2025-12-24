@@ -30,6 +30,8 @@ interface NodePaletteProps {
   isExpanded?: boolean;
   onToggleExpanded?: () => void;
   isEmbedded?: boolean;
+  viewState?: { x: number; y: number; scale: number };
+  canvasSize?: { width: number; height: number };
 }
 
 interface CategorySectionProps {
@@ -76,7 +78,7 @@ const COLOR_CLASSES: Record<string, { bg: string; border: string; text: string; 
   slate: { bg: 'bg-slate-500/10', border: 'border-slate-500/50', text: 'text-slate-400', hover: 'hover:bg-slate-500/20 hover:border-slate-500' },
 };
 
-function CategorySection({ title, category, icon, color, onAddNode, defaultOpen = false, searchTerm = '', isCollapsed, onToggle }: CategorySectionProps) {
+function CategorySection({ title, category, icon, color, onAddNode, defaultOpen = false, searchTerm = '', isCollapsed, onToggle, viewState, canvasSize }: CategorySectionProps & { viewState?: { x: number; y: number; scale: number }; canvasSize?: { width: number; height: number } }) {
   const [localIsOpen, setLocalIsOpen] = useState(defaultOpen);
   // Use controlled state if provided, otherwise use local state
   const isOpen = isCollapsed !== undefined ? !isCollapsed : localIsOpen;
@@ -111,13 +113,24 @@ function CategorySection({ title, category, icon, color, onAddNode, defaultOpen 
     const definition = NODE_DEFINITIONS.find(def => def.type === nodeType);
     if (!definition) return;
 
+    // Calculate center of view
+    let spawnX = 300;
+    let spawnY = 200;
+    if (viewState && canvasSize) {
+      // Convert screen center to world coordinates
+      const screenCenterX = canvasSize.width / 2;
+      const screenCenterY = canvasSize.height / 2;
+      spawnX = (screenCenterX - viewState.x) / viewState.scale - 90; // Offset by half node width
+      spawnY = (screenCenterY - viewState.y) / viewState.scale - 30; // Offset by half node height
+    }
+
     // Create a new node instance
     const newNode: ScriptNode = {
       id: `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: definition.type,
       category: definition.category,
       label: definition.label,
-      position: { x: 300, y: 200 }, // Default position in center
+      position: { x: spawnX, y: spawnY },
       data: { ...definition.defaultData },
       inputs: definition.inputs.map((input, idx) => ({
         ...input,
@@ -184,7 +197,7 @@ function CategorySection({ title, category, icon, color, onAddNode, defaultOpen 
   );
 }
 
-export default function NodePalette({ onAddNode, onClose, collapsedCategories = [], onToggleCategory, isExpanded = true, onToggleExpanded, isEmbedded = false }: NodePaletteProps) {
+export default function NodePalette({ onAddNode, onClose, collapsedCategories = [], onToggleCategory, isExpanded = true, onToggleExpanded, isEmbedded = false, viewState, canvasSize }: NodePaletteProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const categories = [
@@ -289,6 +302,8 @@ export default function NodePalette({ onAddNode, onClose, collapsedCategories = 
                   searchTerm={searchTerm}
                   isCollapsed={isCollapsed}
                   onToggle={onToggleCategory ? () => onToggleCategory(cat.category) : undefined}
+                  viewState={viewState}
+                  canvasSize={canvasSize}
                 />
               );
             })}

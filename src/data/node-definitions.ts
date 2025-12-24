@@ -512,30 +512,29 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     type: 'call-function',
     category: 'core-flow',
     label: 'Call Function',
-    description: 'Call a function by name with optional argument and return value',
+    description: 'Call a function by name with optional arguments and return value. Use +/- to add arguments.',
     color: '#4A90E2',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Function', type: 'data', dataType: 'function', isInput: true },
-      { label: 'Arg', type: 'data', dataType: 'any', isInput: true },
     ],
     outputs: [
       { label: 'Out', type: 'exec', isInput: false },
       { label: 'Return', type: 'data', dataType: 'any', isInput: false },
     ],
-    defaultData: { function: 'MyFunction', returnType: 'none' },
+    defaultData: { function: 'MyFunction', returnType: 'none', argCount: 0 },
   },
   {
     type: 'custom-function',
     category: 'core-flow',
     label: 'Custom Function',
-    description: 'User-defined function entry point. Choose return type (void, int, float, bool, entity, string, vector).',
+    description: 'User-defined function entry point. Use +/- to add parameters.',
     color: '#4A90E2',
     inputs: [],
     outputs: [
       { label: 'Exec', type: 'exec', isInput: false },
     ],
-    defaultData: { functionName: 'MyFunction', returnType: 'void' },
+    defaultData: { functionName: 'MyFunction', returnType: 'void', paramCount: 0, paramNames: [], paramTypes: [] },
   },
   {
     type: 'comment',
@@ -560,7 +559,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     outputs: [
       { label: 'Out', type: 'exec', isInput: false },
     ],
-    defaultData: { portalName: 'MyPortal', portalType: 'any' },
+    defaultData: { portalName: 'MyPortal' },
   },
   {
     type: 'get-portal',
@@ -572,7 +571,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     outputs: [
       { label: 'Value', type: 'data', dataType: 'any', isInput: false },
     ],
-    defaultData: { portalName: 'MyPortal', portalType: 'any' },
+    defaultData: { portalName: 'MyPortal' },
   },
 
   // ==================== EVENTS ====================

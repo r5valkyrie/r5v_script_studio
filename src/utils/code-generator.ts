@@ -252,11 +252,18 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
 
     case 'call-function': {
       const funcName = getInputValue(ctx, node, 'input_1');
-      const arg = getInputValue(ctx, node, 'input_2');
       const returnType = typeof node.data?.returnType === 'string' ? node.data.returnType : 'none';
+      const argCount = typeof node.data?.argCount === 'number' ? node.data.argCount : 1;
       
-      // Build argument string - only include if connected
-      const argStr = (arg && arg !== 'null') ? arg : '';
+      // Build arguments list - collect all connected args
+      const args: string[] = [];
+      for (let i = 0; i < argCount; i++) {
+        const arg = getInputValue(ctx, node, `input_${i + 2}`);
+        if (arg && arg !== 'null') {
+          args.push(arg);
+        }
+      }
+      const argStr = args.join(', ');
       
       if (returnType !== 'none') {
         const resultVar = getVarName(ctx, 'result');
@@ -323,18 +330,10 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
     case 'set-portal': {
       const portalName = node.data?.portalName || 'MyPortal';
       const value = getInputValue(ctx, node, 'input_1');
-      const portalType = node.data?.portalType || 'any';
-      const sqType = getSquirrelType(portalType);
       
-      // Check if portal variable already exists
-      if (!ctx.portals.has(portalName)) {
-        const portalVar = getVarName(ctx, 'portal_' + portalName.replace(/[^a-zA-Z0-9]/g, '_'));
-        ctx.portals.set(portalName, portalVar);
-        lines.push(`${ind}${sqType} ${portalVar} = ${value}`);
-      } else {
-        const portalVar = ctx.portals.get(portalName)!;
-        lines.push(`${ind}${portalVar} = ${value}`);
-      }
+      // Store the original variable name as an alias - no new variable created
+      // This allows the portal to auto-detect the type and avoid intermediate variables
+      ctx.portals.set(portalName, value);
       followExec('output_0');
       break;
     }
@@ -343,6 +342,7 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       const portalName = node.data?.portalName || 'MyPortal';
       
       if (ctx.portals.has(portalName)) {
+        // Return the original variable name directly - auto-detects type
         ctx.variables.set(`${node.id}:output_0`, ctx.portals.get(portalName)!);
       } else {
         // Portal not set yet, use null as fallback
@@ -1361,21 +1361,21 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
     case 'compare-equal': {
       const a = getInputValue(ctx, node, 'input_0');
       const b = getInputValue(ctx, node, 'input_1');
-      ctx.variables.set(`${node.id}:output_0`, `(${a} == ${b})`);
+      ctx.variables.set(`${node.id}:output_0`, `${a} == ${b}`);
       break;
     }
 
     case 'compare-greater': {
       const a = getInputValue(ctx, node, 'input_0');
       const b = getInputValue(ctx, node, 'input_1');
-      ctx.variables.set(`${node.id}:output_0`, `(${a} > ${b})`);
+      ctx.variables.set(`${node.id}:output_0`, `${a} > ${b}`);
       break;
     }
 
     case 'compare-less': {
       const a = getInputValue(ctx, node, 'input_0');
       const b = getInputValue(ctx, node, 'input_1');
-      ctx.variables.set(`${node.id}:output_0`, `(${a} < ${b})`);
+      ctx.variables.set(`${node.id}:output_0`, `${a} < ${b}`);
       break;
     }
 
@@ -1578,8 +1578,8 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
   );
 
   // Helper to get event function parameters and setup variable mappings
-  const getEventParams = (eventType: string): { params: string; setupVars: (nodeId: string) => void } => {
-    switch (eventType) {
+  const getEventParams = (eventNode: ScriptNode): { params: string; setupVars: (nodeId: string) => void } => {
+    switch (eventNode.type) {
       case 'on-entities-did-load':
         return { params: '', setupVars: () => {} };
       case 'on-client-connected':
@@ -1649,6 +1649,27 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
             ctx.variables.set(`${nodeId}:output_2`, 'damageInfo');
           }
         };
+      case 'custom-function': {
+        // Build params from node data
+        const paramCount = typeof eventNode.data.paramCount === 'number' ? eventNode.data.paramCount : 0;
+        const paramNames = Array.isArray(eventNode.data.paramNames) ? eventNode.data.paramNames : [];
+        const paramTypes = Array.isArray(eventNode.data.paramTypes) ? eventNode.data.paramTypes : [];
+        const paramList: string[] = [];
+        for (let i = 0; i < paramCount; i++) {
+          const pName = paramNames[i] || `arg${i + 1}`;
+          const pType = paramTypes[i] || 'var';
+          paramList.push(`${pType} ${pName}`);
+        }
+        return { 
+          params: paramList.join(', '), 
+          setupVars: (nodeId: string) => {
+            for (let i = 0; i < paramCount; i++) {
+              const pName = paramNames[i] || `arg${i + 1}`;
+              ctx.variables.set(`${nodeId}:output_${i + 1}`, pName);
+            }
+          }
+        };
+      }
       default:
         return { params: '', setupVars: () => {} };
     }
@@ -1668,7 +1689,7 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
       : 'void';
     
     // Get event-specific parameters
-    const { params, setupVars } = getEventParams(eventNode.type);
+    const { params, setupVars } = getEventParams(eventNode);
     
     output.push(`${returnType} function ${eventFuncName}(${params})`);
     output.push('{');

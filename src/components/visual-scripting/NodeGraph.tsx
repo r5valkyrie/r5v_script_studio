@@ -78,6 +78,7 @@ export default function NodeGraph({
   onConnect,
   onBreakInput,
   onAddNode,
+  onViewChange,
 }: NodeGraphProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -117,6 +118,11 @@ export default function NodeGraph({
   const [renderKey, forceRender] = useState(0);
   const [view, setView] = useState({ x: 0, y: 0, scale: 1 });
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string; portId: string } | null>(null);
+
+  // Notify parent when view changes
+  useEffect(() => {
+    onViewChange?.(view);
+  }, [view, onViewChange]);
   const [selectionRect, setSelectionRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
 
   const getNodeDefinitionColor = (type: string) => {
@@ -353,52 +359,91 @@ export default function NodeGraph({
     if (node.type === 'call-function') {
       const returnType = typeof node.data.returnType === 'string' ? node.data.returnType : 'none';
       const returnTypes = ['none', 'var', 'entity', 'int', 'float', 'bool', 'string', 'vector', 'array'];
+      const argCount = typeof node.data.argCount === 'number' ? node.data.argCount : 1;
+      
+      const addArg = () => {
+        const newCount = argCount + 1;
+        const newInputs = [...node.inputs, {
+          id: `input_${newCount + 1}`,
+          label: `Arg ${newCount}`,
+          type: 'data' as const,
+          dataType: 'any' as const,
+          isInput: true,
+        }];
+        onUpdateNodeRef.current(node.id, {
+          data: { ...node.data, argCount: newCount },
+          inputs: newInputs,
+        });
+      };
+
+      const removeArg = () => {
+        if (argCount <= 0) return;
+        const newCount = argCount - 1;
+        // Keep exec input (0) and function input (1), remove last arg
+        const newInputs = node.inputs.slice(0, 2 + newCount);
+        onUpdateNodeRef.current(node.id, {
+          data: { ...node.data, argCount: newCount },
+          inputs: newInputs,
+        });
+      };
+      
       return (
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-[9px] text-gray-500">Returns:</span>
-          <select
-            value={returnType}
-            onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, returnType: e.target.value } })}
-            onMouseDown={(e) => e.stopPropagation()}
-            className="flex-1 px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
-          >
-            {returnTypes.map((rt) => (
-              <option key={rt} value={rt}>{rt}</option>
-            ))}
-          </select>
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] text-gray-500">Returns:</span>
+            <select
+              value={returnType}
+              onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, returnType: e.target.value } })}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="flex-1 px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+            >
+              {returnTypes.map((rt) => (
+                <option key={rt} value={rt}>{rt}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] text-gray-400">{argCount} args</span>
+            <div className="flex gap-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeArg();
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
+                disabled={argCount <= 0}
+                className="w-5 h-5 flex items-center justify-center rounded bg-red-500/20 hover:bg-red-500/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-red-400 text-xs font-bold"
+              >
+                −
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  addArg();
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
+                className="w-5 h-5 flex items-center justify-center rounded bg-green-500/20 hover:bg-green-500/40 transition-colors text-green-400 text-xs font-bold"
+              >
+                +
+              </button>
+            </div>
+          </div>
         </div>
       );
     }
 
     if (node.type === 'set-portal' || node.type === 'get-portal') {
       const portalName = typeof node.data.portalName === 'string' ? node.data.portalName : 'MyPortal';
-      const portalType = typeof node.data.portalType === 'string' ? node.data.portalType : 'any';
-      const portalTypes = ['any', 'entity', 'int', 'float', 'bool', 'string', 'vector'];
       
       return (
-        <div className="flex flex-col gap-1.5">
-          <input
-            type="text"
-            value={portalName}
-            onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, portalName: e.target.value } })}
-            onMouseDown={(e) => e.stopPropagation()}
-            className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
-            placeholder="PortalName"
-          />
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] text-gray-500">Type:</span>
-            <select
-              value={portalType}
-              onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, portalType: e.target.value } })}
-              onMouseDown={(e) => e.stopPropagation()}
-              className="flex-1 px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
-            >
-              {portalTypes.map((pt) => (
-                <option key={pt} value={pt}>{pt}</option>
-              ))}
-            </select>
-          </div>
-        </div>
+        <input
+          type="text"
+          value={portalName}
+          onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, portalName: e.target.value } })}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+          placeholder="PortalName"
+        />
       );
     }
 
@@ -458,6 +503,51 @@ export default function NodeGraph({
       const functionName = typeof node.data.functionName === 'string' ? node.data.functionName : 'MyFunction';
       const returnType = typeof node.data.returnType === 'string' ? node.data.returnType : 'void';
       const returnTypes = ['void', 'int', 'float', 'bool', 'entity', 'string', 'vector', 'var'];
+      const paramCount = typeof node.data.paramCount === 'number' ? node.data.paramCount : 1;
+      const paramNames = Array.isArray(node.data.paramNames) ? node.data.paramNames : [];
+      const paramTypes = Array.isArray(node.data.paramTypes) ? node.data.paramTypes : [];
+      
+      const addParam = () => {
+        const newCount = paramCount + 1;
+        const newOutputs = [...node.outputs, {
+          id: `output_${newCount}`,
+          label: `Param ${newCount}`,
+          type: 'data' as const,
+          dataType: 'any' as const,
+          isInput: false,
+        }];
+        const newParamNames = [...paramNames, `arg${newCount}`];
+        const newParamTypes = [...paramTypes, 'var'];
+        onUpdateNodeRef.current(node.id, {
+          data: { ...node.data, paramCount: newCount, paramNames: newParamNames, paramTypes: newParamTypes },
+          outputs: newOutputs,
+        });
+      };
+
+      const removeParam = () => {
+        if (paramCount <= 0) return;
+        const newCount = paramCount - 1;
+        // Keep exec output (0), remove last param
+        const newOutputs = node.outputs.slice(0, 1 + newCount);
+        const newParamNames = paramNames.slice(0, newCount);
+        const newParamTypes = paramTypes.slice(0, newCount);
+        onUpdateNodeRef.current(node.id, {
+          data: { ...node.data, paramCount: newCount, paramNames: newParamNames, paramTypes: newParamTypes },
+          outputs: newOutputs,
+        });
+      };
+
+      const updateParamName = (index: number, name: string) => {
+        const newParamNames = [...paramNames];
+        newParamNames[index] = name;
+        onUpdateNodeRef.current(node.id, { data: { ...node.data, paramNames: newParamNames } });
+      };
+
+      const updateParamType = (index: number, type: string) => {
+        const newParamTypes = [...paramTypes];
+        newParamTypes[index] = type;
+        onUpdateNodeRef.current(node.id, { data: { ...node.data, paramTypes: newParamTypes } });
+      };
       
       return (
         <div className="flex flex-col gap-1.5">
@@ -481,6 +571,62 @@ export default function NodeGraph({
                 <option key={rt} value={rt}>{rt}</option>
               ))}
             </select>
+          </div>
+          
+          {/* Parameter list with name and type editors */}
+          {paramCount > 0 && (
+            <div className="flex flex-col gap-1 mt-1">
+              <span className="text-[9px] text-gray-500">Parameters:</span>
+              {Array.from({ length: paramCount }).map((_, i) => (
+                <div key={i} className="flex gap-1">
+                  <input
+                    type="text"
+                    value={paramNames[i] || `arg${i + 1}`}
+                    onChange={(e) => updateParamName(i, e.target.value)}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    placeholder={`arg${i + 1}`}
+                    className="flex-1 px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+                  />
+                  <select
+                    value={paramTypes[i] || 'var'}
+                    onChange={(e) => updateParamType(i, e.target.value)}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    className="w-16 px-1 py-0.5 bg-[#1a1f28] rounded text-[9px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+                  >
+                    {returnTypes.filter(t => t !== 'void').map((pt) => (
+                      <option key={pt} value={pt}>{pt}</option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] text-gray-400">{paramCount} params</span>
+            <div className="flex gap-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeParam();
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
+                disabled={paramCount <= 0}
+                className="w-5 h-5 flex items-center justify-center rounded bg-red-500/20 hover:bg-red-500/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-red-400 text-xs font-bold"
+              >
+                −
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  addParam();
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
+                className="w-5 h-5 flex items-center justify-center rounded bg-green-500/20 hover:bg-green-500/40 transition-colors text-green-400 text-xs font-bold"
+              >
+                +
+              </button>
+            </div>
           </div>
         </div>
       );
@@ -703,11 +849,21 @@ export default function NodeGraph({
       const x = portRect.left - canvasRect.left + portRect.width / 2;
       const y = portRect.top - canvasRect.top + portRect.height / 2;
       
-      // Only return valid coordinates
-      if (x >= 0 && y >= 0) {
-        return { x, y };
-      }
+      return { x, y };
     }
+    
+    // Fallback: use node position if port not found (node may be off-screen)
+    const node = nodes.find(n => n.id === nodeId);
+    if (node) {
+      // Estimate port position based on node position and whether it's input/output
+      const isOutput = portId.startsWith('output_') || portId === 'flow_out';
+      const offsetX = isOutput ? 180 : 0; // Approximate node width
+      return {
+        x: node.position.x + offsetX,
+        y: node.position.y + 20 // Approximate vertical offset
+      };
+    }
+    
     return null;
   };
 
@@ -1400,12 +1556,43 @@ export default function NodeGraph({
       const fromPos = getPortPositionFromDOM(conn.from.nodeId, conn.from.portId);
       const toPos = getPortPositionFromDOM(conn.to.nodeId, conn.to.portId);
 
-      // Don't render if positions can't be determined
+      // Skip only if both positions can't be determined
+      if (!fromPos && !toPos) {
+        return null;
+      }
+      
+      // Use available position or skip this connection
       if (!fromPos || !toPos) {
         return null;
       }
 
-      const midX = (fromPos.x + toPos.x) / 2;
+      // Calculate control points for horizontal bezier curves
+      // Output ports extend to the right, input ports extend to the left
+      const distance = Math.abs(toPos.x - fromPos.x);
+      const verticalDistance = Math.abs(toPos.y - fromPos.y);
+      
+      // Smooth curve strength that adapts gradually based on alignment
+      // Use ratio to blend between horizontal and vertical alignment
+      const alignmentRatio = distance > 0 ? Math.min(verticalDistance / distance, 2) : 1;
+      
+      // Smooth factor for how "stacked" nodes are (0 = horizontal, 1 = stacked vertically)
+      // Uses smooth interpolation instead of hard threshold
+      const stackFactor = distance > 0 
+        ? Math.min(1, Math.max(0, (100 - distance) / 100)) * (verticalDistance > distance ? 1 : 0.5)
+        : 1;
+      
+      // Adaptive straight segment: smoothly interpolate between horizontal and stacked states
+      const minLength = 5 + alignmentRatio * 20;  // Horizontal state
+      const maxLength = 40 + alignmentRatio * 20; // Stacked state
+      const straightSegmentLength = Math.min(80, minLength + (maxLength - minLength) * stackFactor);
+      const baseStrength = Math.min(distance * (0.6 + alignmentRatio * 0.1), 200);
+      
+      // Control points: start with straight segment, then curve
+      const fromControlX = fromPos.x + straightSegmentLength + baseStrength; // Straight segment + curve
+      const fromControlY = fromPos.y; // Keep on same Y for straight horizontal exit
+      const toControlX = toPos.x - straightSegmentLength - baseStrength;     // Straight segment + curve
+      const toControlY = toPos.y; // Keep on same Y for straight horizontal entry
+
       const fromNode = nodes.find(node => node.id === conn.from.nodeId);
       const fromPort =
         fromNode?.outputs.find(port => port.id === conn.from.portId) ||
@@ -1415,7 +1602,7 @@ export default function NodeGraph({
       return (
         <path
           key={conn.id}
-          d={`M ${fromPos.x} ${fromPos.y} C ${midX} ${fromPos.y}, ${midX} ${toPos.y}, ${toPos.x} ${toPos.y}`}
+          d={`M ${fromPos.x} ${fromPos.y} C ${fromControlX} ${fromControlY}, ${toControlX} ${toControlY}, ${toPos.x} ${toPos.y}`}
           stroke={stroke}
           strokeWidth="2.5"
           fill="none"
@@ -1764,18 +1951,34 @@ export default function NodeGraph({
         {renderConnections()}
 
         {/* Draw temporary connection line */}
-        {tempConnectionLine && (
-          <line
-            x1={tempConnectionLine.from.x}
-            y1={tempConnectionLine.from.y}
-            x2={tempConnectionLine.to.x}
-            y2={tempConnectionLine.to.y}
-            stroke={getLineColor(tempConnectionRef.current?.portType || 'exec', tempConnectionRef.current?.dataType)}
-            strokeWidth="2.5"
-            strokeDasharray="8,4"
-            strokeLinecap="round"
-          />
-        )}
+        {tempConnectionLine && (() => {
+          const distance = Math.abs(tempConnectionLine.to.x - tempConnectionLine.from.x);
+          const verticalDistance = Math.abs(tempConnectionLine.to.y - tempConnectionLine.from.y);
+          const alignmentRatio = distance > 0 ? Math.min(verticalDistance / distance, 2) : 1;
+          const stackFactor = distance > 0 
+            ? Math.min(1, Math.max(0, (100 - distance) / 100)) * (verticalDistance > distance ? 1 : 0.5)
+            : 1;
+          const minLength = 5 + alignmentRatio * 20;
+          const maxLength = 40 + alignmentRatio * 20;
+          const straightSegmentLength = Math.min(80, minLength + (maxLength - minLength) * stackFactor);
+          const baseStrength = Math.min(distance * (0.6 + alignmentRatio * 0.1), 200);
+          
+          const fromControlX = tempConnectionLine.from.x + straightSegmentLength + baseStrength;
+          const fromControlY = tempConnectionLine.from.y; // Keep on same Y for straight horizontal exit
+          const toControlX = tempConnectionLine.to.x - straightSegmentLength - baseStrength;
+          const toControlY = tempConnectionLine.to.y; // Keep on same Y for straight horizontal entry
+          
+          return (
+            <path
+              d={`M ${tempConnectionLine.from.x} ${tempConnectionLine.from.y} C ${fromControlX} ${fromControlY}, ${toControlX} ${toControlY}, ${tempConnectionLine.to.x} ${tempConnectionLine.to.y}`}
+              stroke={getLineColor(tempConnectionRef.current?.portType || 'exec', tempConnectionRef.current?.dataType)}
+              strokeWidth="2.5"
+              strokeDasharray="8,4"
+              fill="none"
+              strokeLinecap="round"
+            />
+          );
+        })()}
       </svg>
 
       {/* Empty state */}

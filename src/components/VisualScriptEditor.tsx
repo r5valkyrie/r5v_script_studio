@@ -39,6 +39,8 @@ export default function VisualScriptEditor() {
   
   // Collapsed categories in node palette
   const [collapsedCategories, setCollapsedCategories] = useState<string[]>([]);
+  const [graphView, setGraphView] = useState({ x: 0, y: 0, scale: 1 });
+  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
 
   // Project management with multiple script files
   const {
@@ -211,36 +213,7 @@ export default function VisualScriptEditor() {
     : null;
 
   const handleAddNode = useCallback((newNode: ScriptNode) => {
-    setNodes(currentNodes => {
-      if (newNode.type !== 'custom-function') {
-        return [...currentNodes, newNode];
-      }
-
-      const functionName = newNode.data.functionName || 'MyFunction';
-      const callDefinition = getNodeDefinition('call-function');
-      if (!callDefinition) {
-        return [...currentNodes, newNode];
-      }
-
-      const callNode: ScriptNode = {
-        id: `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        type: callDefinition.type,
-        category: callDefinition.category,
-        label: callDefinition.label,
-        position: { x: newNode.position.x + 220, y: newNode.position.y },
-        data: { ...callDefinition.defaultData, function: functionName },
-        inputs: callDefinition.inputs.map((input, idx) => ({
-          ...input,
-          id: `input_${idx}`,
-        })),
-        outputs: callDefinition.outputs.map((output, idx) => ({
-          ...output,
-          id: `output_${idx}`,
-        })),
-      };
-
-      return [...currentNodes, newNode, callNode];
-    });
+    setNodes(currentNodes => [...currentNodes, newNode]);
   }, []);
 
   const handleSelectNodes = useCallback((nodeIds: string[]) => {
@@ -416,7 +389,21 @@ export default function VisualScriptEditor() {
       document.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isCodePanelOpen, codePanelWidth]);
-
+  // Track canvas size for node spawning
+  useEffect(() => {
+    const updateCanvasSize = () => {
+      // Approximate main content area size
+      const sidebarWidth = isSidebarOpen ? 280 : 0;
+      const inspectorWidth = isInspectorOpen ? 320 : 0;
+      setCanvasSize({
+        width: window.innerWidth - sidebarWidth - inspectorWidth,
+        height: window.innerHeight - 48 // Subtract header height
+      });
+    };
+    updateCanvasSize();
+    window.addEventListener('resize', updateCanvasSize);
+    return () => window.removeEventListener('resize', updateCanvasSize);
+  }, [isSidebarOpen, isInspectorOpen]);
   // Close file menu on click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -616,6 +603,8 @@ export default function VisualScriptEditor() {
                       isExpanded={isNodesSectionExpanded}
                       onToggleExpanded={() => setNodesSectionExpanded(!isNodesSectionExpanded)}
                       isEmbedded={true}
+                      viewState={graphView}
+                      canvasSize={canvasSize}
                     />
                   </div>
                 </div>
@@ -705,6 +694,7 @@ export default function VisualScriptEditor() {
                     onConnect={handleConnect}
                     onBreakInput={handleBreakInput}
                     onAddNode={handleAddNode}
+                    onViewChange={setGraphView}
                   />
                 )}
               </div>
