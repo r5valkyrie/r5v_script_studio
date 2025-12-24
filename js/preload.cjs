@@ -22,5 +22,10 @@ contextBridge.exposeInMainWorld('electron', {
   ipcRenderer: {
     on: (channel, listener) => ipcRenderer.on(channel, listener),
     removeListener: (channel, listener) => ipcRenderer.removeListener(channel, listener),
-  }
+  },
+  // Dialog APIs for save/load
+  showSaveDialog: (options) => ipcRenderer.invoke('show-save-dialog', options),
+  showOpenDialog: (options) => ipcRenderer.invoke('show-open-dialog', options),
+  readFile: (filePath) => ipcRenderer.invoke('read-file', { filePath }).then(r => r.content),
+  writeFile: (filePath, content) => ipcRenderer.invoke('write-file', { filePath, content })
 });
