@@ -37,6 +37,9 @@ export default function VisualScriptEditor() {
 
   // Open file tabs
   const [openFileTabs, setOpenFileTabs] = useState<string[]>([]);
+  
+  // Collapsed categories in node palette
+  const [collapsedCategories, setCollapsedCategories] = useState<string[]>([]);
 
   // Project management with multiple script files
   const {
@@ -58,10 +61,77 @@ export default function VisualScriptEditor() {
     renameScriptFile,
     setActiveScriptFile,
     updateActiveScriptContent,
+    updateUISettings,
     createFolder,
     deleteFolder,
     renameFolder,
   } = useProjectFiles();
+
+  // Load UI settings from project when it changes
+  const hasLoadedUIRef = useRef<string | null>(null);
+  useEffect(() => {
+    // Only load UI once per project (use createdAt + filePath as unique key)
+    const projectKey = projectData ? `${projectData.metadata.createdAt}-${currentFilePath}` : null;
+    if (projectKey && hasLoadedUIRef.current !== projectKey && projectData?.settings.ui) {
+      hasLoadedUIRef.current = projectKey;
+      const ui = projectData.settings.ui;
+      if (ui.isProjectPanelOpen !== undefined) setProjectPanelOpen(ui.isProjectPanelOpen);
+      if (ui.isPaletteOpen !== undefined) setPaletteOpen(ui.isPaletteOpen);
+      if (ui.isInspectorOpen !== undefined) setInspectorOpen(ui.isInspectorOpen);
+      if (ui.isCodePanelOpen !== undefined) setCodePanelOpen(ui.isCodePanelOpen);
+      if (ui.projectPanelWidth !== undefined) setProjectPanelWidth(ui.projectPanelWidth);
+      if (ui.paletteWidth !== undefined) setPaletteWidth(ui.paletteWidth);
+      if (ui.inspectorWidth !== undefined) setInspectorWidth(ui.inspectorWidth);
+      if (ui.codePanelWidth !== undefined) setCodePanelWidth(ui.codePanelWidth);
+      if (ui.openFileTabs !== undefined) setOpenFileTabs(ui.openFileTabs);
+      if (ui.collapsedCategories !== undefined) setCollapsedCategories(ui.collapsedCategories);
+    }
+  }, [projectData, currentFilePath]);
+
+  // Save UI settings when they change (debounced)
+  const uiSettingsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    if (!projectData) return;
+    
+    // Debounce UI settings saves
+    if (uiSettingsTimeoutRef.current) {
+      clearTimeout(uiSettingsTimeoutRef.current);
+    }
+    
+    uiSettingsTimeoutRef.current = setTimeout(() => {
+      updateUISettings({
+        isProjectPanelOpen,
+        isPaletteOpen,
+        isInspectorOpen,
+        isCodePanelOpen,
+        projectPanelWidth,
+        paletteWidth,
+        inspectorWidth,
+        codePanelWidth,
+        openFileTabs,
+        collapsedCategories,
+      });
+    }, 500); // Save after 500ms of no changes
+    
+    return () => {
+      if (uiSettingsTimeoutRef.current) {
+        clearTimeout(uiSettingsTimeoutRef.current);
+      }
+    };
+  }, [
+    projectData,
+    isProjectPanelOpen,
+    isPaletteOpen,
+    isInspectorOpen,
+    isCodePanelOpen,
+    projectPanelWidth,
+    paletteWidth,
+    inspectorWidth,
+    codePanelWidth,
+    openFileTabs,
+    collapsedCategories,
+    updateUISettings,
+  ]);
 
   // Track if we're loading to prevent marking as modified on initial load
   const isLoadingRef = useRef(false);
@@ -106,11 +176,6 @@ export default function VisualScriptEditor() {
       return newTabs;
     });
   }, [activeScriptFile?.id, setActiveScriptFile]);
-
-  // Reset open tabs when project changes
-  useEffect(() => {
-    setOpenFileTabs([]);
-  }, [projectData?.metadata.createdAt]);
 
   // Update active script when nodes/connections change (but not during initial load)
   useEffect(() => {
@@ -526,6 +591,14 @@ export default function VisualScriptEditor() {
                   <NodePalette
                     onAddNode={handleAddNode}
                     onClose={() => setPaletteOpen(false)}
+                    collapsedCategories={collapsedCategories}
+                    onToggleCategory={(category) => {
+                      setCollapsedCategories(prev => 
+                        prev.includes(category) 
+                          ? prev.filter(c => c !== category)
+                          : [...prev, category]
+                      );
+                    }}
                   />
                 </div>
                 {/* Resize Handle */}
@@ -578,19 +651,31 @@ export default function VisualScriptEditor() {
                   })}
                 </div>
               )}
-              {/* Node Graph */}
+              {/* Node Graph or Empty State */}
               <div className="flex-1">
-                <NodeGraph
-                  nodes={nodes}
-                  connections={connections}
-                  selectedNodeIds={selectedNodeIds}
-                  onSelectNodes={handleSelectNodes}
-                  onUpdateNode={handleUpdateNode}
-                  onDeleteNode={handleDeleteNode}
-                  onConnect={handleConnect}
-                  onBreakInput={handleBreakInput}
-                  onAddNode={handleAddNode}
-                />
+                {openFileTabs.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center bg-[#0f1419] text-center p-8">
+                    <div className="p-4 rounded-full bg-purple-500/10 mb-4">
+                      <FileText size={48} className="text-purple-500/50" />
+                    </div>
+                    <h2 className="text-xl font-semibold text-gray-300 mb-2">No File Open</h2>
+                    <p className="text-gray-500 text-sm max-w-xs">
+                      Select a file from the Project panel to begin editing, or create a new script file.
+                    </p>
+                  </div>
+                ) : (
+                  <NodeGraph
+                    nodes={nodes}
+                    connections={connections}
+                    selectedNodeIds={selectedNodeIds}
+                    onSelectNodes={handleSelectNodes}
+                    onUpdateNode={handleUpdateNode}
+                    onDeleteNode={handleDeleteNode}
+                    onConnect={handleConnect}
+                    onBreakInput={handleBreakInput}
+                    onAddNode={handleAddNode}
+                  />
+                )}
               </div>
             </div>
 

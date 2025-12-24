@@ -72,6 +72,7 @@ export function serializeProject(
       lastOpenedNode: settings.lastOpenedNode,
       activeScriptFile: settings.activeScriptFile,
       folders: settings.folders || [],
+      ui: settings.ui,
     },
     scriptFiles,
   };

@@ -25,6 +25,8 @@ import type { ScriptNode, NodePort } from '../../types/visual-scripting';
 interface NodePaletteProps {
   onAddNode: (node: ScriptNode) => void;
   onClose: () => void;
+  collapsedCategories?: string[];
+  onToggleCategory?: (category: string) => void;
 }
 
 interface CategorySectionProps {
@@ -33,6 +35,8 @@ interface CategorySectionProps {
   icon: React.ReactNode;
   color: string;
   onAddNode: (node: ScriptNode) => void;
+  isCollapsed?: boolean;
+  onToggle?: () => void;
   defaultOpen?: boolean;
   searchTerm?: string;
 }
@@ -69,10 +73,20 @@ const COLOR_CLASSES: Record<string, { bg: string; border: string; text: string; 
   slate: { bg: 'bg-slate-500/10', border: 'border-slate-500/50', text: 'text-slate-400', hover: 'hover:bg-slate-500/20 hover:border-slate-500' },
 };
 
-function CategorySection({ title, category, icon, color, onAddNode, defaultOpen = false, searchTerm = '' }: CategorySectionProps) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
+function CategorySection({ title, category, icon, color, onAddNode, defaultOpen = false, searchTerm = '', isCollapsed, onToggle }: CategorySectionProps) {
+  const [localIsOpen, setLocalIsOpen] = useState(defaultOpen);
+  // Use controlled state if provided, otherwise use local state
+  const isOpen = isCollapsed !== undefined ? !isCollapsed : localIsOpen;
   const allNodes = getNodesByCategory(category);
   const colorClasses = COLOR_CLASSES[color] || COLOR_CLASSES.purple;
+  
+  const handleToggle = () => {
+    if (onToggle) {
+      onToggle();
+    } else {
+      setLocalIsOpen(!localIsOpen);
+    }
+  };
   
   // Filter nodes based on search term
   const nodes = useMemo(() => {
@@ -118,7 +132,7 @@ function CategorySection({ title, category, icon, color, onAddNode, defaultOpen 
   return (
     <div className="border-b border-white/5">
       <button
-        onClick={() => !searchTerm && setIsOpen(!isOpen)}
+        onClick={() => !searchTerm && handleToggle()}
         className={`w-full flex items-center gap-2 px-3 py-2.5 hover:bg-white/5 transition-colors group`}
       >
         <div className={`p-1.5 rounded ${colorClasses.bg} ${colorClasses.text}`}>
@@ -167,7 +181,7 @@ function CategorySection({ title, category, icon, color, onAddNode, defaultOpen 
   );
 }
 
-export default function NodePalette({ onAddNode, onClose }: NodePaletteProps) {
+export default function NodePalette({ onAddNode, onClose, collapsedCategories = [], onToggleCategory }: NodePaletteProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const categories = [
@@ -231,6 +245,7 @@ export default function NodePalette({ onAddNode, onClose }: NodePaletteProps) {
       <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
         {categories.map(cat => {
           const config = CATEGORY_CONFIG[cat.category] || CATEGORY_CONFIG['core-flow'];
+          const isCollapsed = collapsedCategories.includes(cat.category);
           return (
             <CategorySection
               key={cat.category}
@@ -241,6 +256,8 @@ export default function NodePalette({ onAddNode, onClose }: NodePaletteProps) {
               onAddNode={onAddNode}
               defaultOpen={cat.defaultOpen}
               searchTerm={searchTerm}
+              isCollapsed={isCollapsed}
+              onToggle={onToggleCategory ? () => onToggleCategory(cat.category) : undefined}
             />
           );
         })}

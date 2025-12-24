@@ -14,6 +14,27 @@ export interface ProjectSettings {
   lastOpenedNode?: string;
   activeScriptFile?: string; // ID of currently open script file
   folders?: string[]; // Explicit folder paths (including empty folders)
+  
+  // UI State persistence
+  ui?: {
+    // Panel visibility
+    isProjectPanelOpen?: boolean;
+    isPaletteOpen?: boolean;
+    isInspectorOpen?: boolean;
+    isCodePanelOpen?: boolean;
+    
+    // Panel widths
+    projectPanelWidth?: number;
+    paletteWidth?: number;
+    inspectorWidth?: number;
+    codePanelWidth?: number;
+    
+    // Open file tabs
+    openFileTabs?: string[];
+    
+    // Collapsed categories in node palette
+    collapsedCategories?: string[];
+  };
 }
 
 export interface ScriptFile {
