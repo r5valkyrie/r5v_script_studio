@@ -14,7 +14,10 @@ interface NodeGraphProps {
   onDeleteNode: (nodeId: string) => void;
   onConnect: (connection: NodeConnection) => void;
   onBreakInput: (nodeId: string, portId: string) => void;
+  onDeleteConnection?: (connectionId: string) => void;
   onAddNode: (node: ScriptNode) => void;
+  onViewChange?: (view: { x: number; y: number; scale: number }) => void;
+  onRequestHistorySnapshot?: () => void;
 }
 
 interface QuickMenuState {
@@ -78,8 +81,10 @@ export default function NodeGraph({
   onDeleteNode,
   onConnect,
   onBreakInput,
+  onDeleteConnection = () => {},
   onAddNode,
   onViewChange,
+  onRequestHistorySnapshot,
 }: NodeGraphProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -94,17 +99,20 @@ export default function NodeGraph({
   const selectionRectRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
   const selectionMadeRef = useRef(false);
   const resizingCommentRef = useRef<ResizingCommentState | null>(null);
+  const rewireActiveRef = useRef(false);
 
   // Store callbacks in refs so they don't cause re-registration
   const onConnectRef = useRef(onConnect);
   const onUpdateNodeRef = useRef(onUpdateNode);
   const onAddNodeRef = useRef(onAddNode);
+  const onDeleteConnectionRef = useRef(onDeleteConnection);
 
   useEffect(() => {
     onConnectRef.current = onConnect;
     onUpdateNodeRef.current = onUpdateNode;
     onAddNodeRef.current = onAddNode;
-  }, [onConnect, onUpdateNode, onAddNode]);
+    onDeleteConnectionRef.current = onDeleteConnection;
+  }, [onConnect, onUpdateNode, onAddNode, onDeleteConnection]);
 
   // Quick node menu state
   const [quickMenu, setQuickMenu] = useState<QuickMenuState | null>(null);
@@ -1081,11 +1089,19 @@ export default function NodeGraph({
       if (draggingNodeRef.current) {
         draggingNodeRef.current = null;
         setIsDragging(false);
+        onRequestHistorySnapshot?.();
       }
 
       if (draggingSelectionRef.current) {
         draggingSelectionRef.current = null;
         setIsDragging(false);
+        onRequestHistorySnapshot?.();
+      }
+
+      if (rewireActiveRef.current) {
+        setTimeout(() => {
+          rewireActiveRef.current = false;
+        }, 0);
       }
 
       if (panningRef.current) {
@@ -1096,6 +1112,7 @@ export default function NodeGraph({
       if (resizingCommentRef.current) {
         resizingCommentRef.current = null;
         setIsDragging(false);
+        onRequestHistorySnapshot?.();
       }
 
       if (selectionRef.current && canvasRef.current) {
@@ -1184,6 +1201,86 @@ export default function NodeGraph({
     };
   }, [contextMenu]);
 
+  const handleAddCommentForSelection = useCallback(() => {
+    if (!canvasRef.current || selectedNodeIds.length === 0) return;
+    const canvasRect = canvasRef.current.getBoundingClientRect();
+    const elements = Array.from(document.querySelectorAll('.node-root')) as HTMLElement[];
+    const selectedElements = elements.filter(el => selectedNodeIds.includes(el.dataset.nodeId || ''));
+    if (selectedElements.length === 0) return;
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    selectedElements.forEach((el) => {
+      const rect = el.getBoundingClientRect();
+      minX = Math.min(minX, rect.left - canvasRect.left);
+      minY = Math.min(minY, rect.top - canvasRect.top);
+      maxX = Math.max(maxX, rect.right - canvasRect.left);
+      maxY = Math.max(maxY, rect.bottom - canvasRect.top);
+    });
+
+    if (!isFinite(minX) || !isFinite(minY)) return;
+
+    const topLeft = screenToWorld({ x: minX, y: minY });
+    const bottomRight = screenToWorld({ x: maxX, y: maxY });
+    const pad = 20 / view.scale;
+    const header = 28 / view.scale;
+
+    const definition = getNodeDefinition('comment');
+    const commentNode = buildNodeFromDefinition(definition, {
+      x: topLeft.x - pad,
+      y: topLeft.y - pad - header,
+    });
+    if (!commentNode) return;
+
+    commentNode.size = {
+      width: (bottomRight.x - topLeft.x) + pad * 2,
+      height: (bottomRight.y - topLeft.y) + pad * 2 + header,
+    };
+
+    onAddNodeRef.current(commentNode);
+    onSelectNodes([...selectedNodeIds, commentNode.id]);
+  }, [selectedNodeIds, view.scale, onSelectNodes]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target && (e.target as HTMLElement).closest('input, textarea')) return;
+      if (tempConnectionRef.current || quickMenu) return;
+
+      const key = e.key.toLowerCase();
+      const isCtrl = e.ctrlKey || e.metaKey;
+
+      if (isCtrl && key === 'c') {
+        if (selectedNodeIds.length > 0) {
+          e.preventDefault();
+          handleCopyNodes(selectedNodeIds);
+        }
+        return;
+      }
+
+      if (isCtrl && key === 'v') {
+        e.preventDefault();
+        const pastePos = lastMousePosRef.current ? screenToWorld(lastMousePosRef.current) : undefined;
+        handlePasteNodes(pastePos);
+        return;
+      }
+
+      if (!isCtrl && key === 'c') {
+        if (selectedNodeIds.length > 0) {
+          e.preventDefault();
+          handleAddCommentForSelection();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedNodeIds, quickMenu, handleAddCommentForSelection]);
+
   useEffect(() => {
     const id = requestAnimationFrame(() => {
       forceRender(k => k + 1);
@@ -1231,6 +1328,32 @@ export default function NodeGraph({
     });
   };
 
+  const startConnectionDragFromPort = (
+    nodeId: string,
+    portId: string,
+    isInput: boolean,
+    portType: 'exec' | 'data',
+    dataType?: NodeDataType
+  ) => {
+    const portPos = getPortPositionFromDOM(nodeId, portId);
+    if (!portPos) return;
+
+    tempConnectionRef.current = {
+      from: portPos,
+      to: portPos,
+      fromNodeId: nodeId,
+      fromPortId: portId,
+      fromIsInput: isInput,
+      portType,
+      dataType,
+    };
+
+    setTempConnectionLine({
+      from: portPos,
+      to: portPos,
+    });
+  };
+
   // Handle node mouse down - start dragging
   const handleNodeMouseDown = (
     e: React.MouseEvent,
@@ -1243,6 +1366,30 @@ export default function NodeGraph({
     }
 
     e.preventDefault();
+    const isCommentNode = node.type === 'comment';
+    let commentContainedIds: string[] = [];
+    if (isCommentNode && canvasRef.current) {
+      const canvasRect = canvasRef.current.getBoundingClientRect();
+      const commentElement = target.closest('.node-root') as HTMLElement | null;
+      const commentRect = commentElement?.getBoundingClientRect();
+      if (commentRect) {
+        const padding = 6;
+        const elements = Array.from(document.querySelectorAll('.node-root')) as HTMLElement[];
+        commentContainedIds = elements
+          .map((el) => {
+            const nodeId = el.dataset.nodeId;
+            if (!nodeId || nodeId === node.id) return null;
+            const rect = el.getBoundingClientRect();
+            const inside =
+              rect.left >= commentRect.left + padding &&
+              rect.right <= commentRect.right - padding &&
+              rect.top >= commentRect.top + padding &&
+              rect.bottom <= commentRect.bottom - padding;
+            return inside ? nodeId : null;
+          })
+          .filter((id): id is string => !!id);
+      }
+    }
     if (e.shiftKey) {
       const next = selectedNodeIds.includes(node.id)
         ? selectedNodeIds.filter(id => id !== node.id)
@@ -1252,7 +1399,9 @@ export default function NodeGraph({
       onSelectNodes([node.id]);
     }
 
-    const dragIds = selectedNodeIds.includes(node.id) ? selectedNodeIds : [node.id];
+    const dragIds = isCommentNode
+      ? Array.from(new Set([node.id, ...commentContainedIds]))
+      : (selectedNodeIds.includes(node.id) ? selectedNodeIds : [node.id]);
 
     if (dragIds.length > 1) {
       const nodeStarts = new Map<string, { x: number; y: number }>();
@@ -1381,6 +1530,7 @@ export default function NodeGraph({
   const handleConnectionContextMenu = (e: React.MouseEvent, connectionId: string) => {
     e.preventDefault();
     e.stopPropagation();
+    if (rewireActiveRef.current || e.ctrlKey) return;
     setContextMenu({
       x: e.clientX,
       y: e.clientY,
@@ -1466,8 +1616,85 @@ export default function NodeGraph({
     const conn = connections.find(c => c.id === connectionId);
     if (conn) {
       onBreakInput(conn.to.nodeId, conn.to.portId);
+      onDeleteConnectionRef.current?.(connectionId);
     }
     setContextMenu(null);
+  };
+
+  const handleConnectionRewireStart = (e: React.MouseEvent, conn: NodeConnection) => {
+    if (e.button !== 2 || !e.ctrlKey) return;
+    e.preventDefault();
+    e.stopPropagation();
+    rewireActiveRef.current = true;
+
+    const fromNode = nodes.find(node => node.id === conn.from.nodeId);
+    const toNode = nodes.find(node => node.id === conn.to.nodeId);
+    if (!fromNode || !toNode) return;
+
+    const fromPort = fromNode.outputs.find(port => port.id === conn.from.portId);
+    const toPort = toNode.inputs.find(port => port.id === conn.to.portId);
+    if (!fromPort || !toPort) return;
+
+    const fromPos = getPortPositionFromDOM(conn.from.nodeId, conn.from.portId);
+    const toPos = getPortPositionFromDOM(conn.to.nodeId, conn.to.portId);
+    if (!fromPos || !toPos) return;
+
+    const canvasRect = canvasRef.current?.getBoundingClientRect();
+    if (!canvasRect) return;
+    const mouseX = e.clientX - canvasRect.left;
+    const mouseY = e.clientY - canvasRect.top;
+    const distToFrom = Math.hypot(mouseX - fromPos.x, mouseY - fromPos.y);
+    const distToTo = Math.hypot(mouseX - toPos.x, mouseY - toPos.y);
+    const grabInputSide = distToTo <= distToFrom;
+
+    onDeleteConnectionRef.current?.(conn.id);
+
+    if (grabInputSide) {
+      startConnectionDragFromPort(conn.to.nodeId, conn.to.portId, true, toPort.type, toPort.dataType);
+    } else {
+      startConnectionDragFromPort(conn.from.nodeId, conn.from.portId, false, fromPort.type, fromPort.dataType);
+    }
+  };
+
+  const handleInsertReroute = (e: React.MouseEvent, conn: NodeConnection) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!canvasRef.current) return;
+
+    const fromNode = nodes.find(node => node.id === conn.from.nodeId);
+    const fromPort =
+      fromNode?.outputs.find(port => port.id === conn.from.portId) ||
+      fromNode?.inputs.find(port => port.id === conn.from.portId);
+    if (!fromPort) return;
+
+    const canvasRect = canvasRef.current.getBoundingClientRect();
+    const screenPos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
+    const worldPos = screenToWorld(screenPos);
+    const rerouteType = fromPort.type === 'exec' ? 'reroute-exec' : 'reroute';
+    const definition = getNodeDefinition(rerouteType);
+    const newNode = buildNodeFromDefinition(definition, {
+      x: worldPos.x - 14,
+      y: worldPos.y - 14,
+    });
+    if (!newNode) return;
+
+    onAddNodeRef.current(newNode);
+    onDeleteConnectionRef.current?.(conn.id);
+
+    const inputPort = newNode.inputs[0];
+    const outputPort = newNode.outputs[0];
+    if (!inputPort || !outputPort) return;
+
+    onConnectRef.current({
+      id: `conn_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+      from: { nodeId: conn.from.nodeId, portId: conn.from.portId },
+      to: { nodeId: newNode.id, portId: inputPort.id },
+    });
+    onConnectRef.current({
+      id: `conn_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+      from: { nodeId: newNode.id, portId: outputPort.id },
+      to: { nodeId: conn.to.nodeId, portId: conn.to.portId },
+    });
   };
 
   // Open quick node menu from context menu
@@ -1506,6 +1733,7 @@ export default function NodeGraph({
     if (tempConnectionRef.current || panningRef.current) return;
 
     const target = e.target as HTMLElement;
+    if (target.closest('[data-connection-hit="true"]')) return;
     if (target.closest('.node-root') || target.classList.contains('node-port')) return;
 
     e.preventDefault();
@@ -1827,10 +2055,14 @@ export default function NodeGraph({
             stroke="transparent"
             strokeWidth="12"
             fill="none"
-            style={{ cursor: 'pointer', pointerEvents: 'auto' }}
+            pointerEvents="stroke"
+            style={{ cursor: 'pointer', pointerEvents: 'stroke' }}
+            data-connection-hit="true"
             onMouseEnter={() => setHoveredConnection(conn.id)}
             onMouseLeave={() => setHoveredConnection(null)}
             onContextMenu={(e) => handleConnectionContextMenu(e, conn.id)}
+            onMouseDown={(e) => handleConnectionRewireStart(e, conn)}
+            onDoubleClick={(e) => handleInsertReroute(e, conn)}
           />
           {/* Visible connection line */}
           <path
@@ -1861,6 +2093,10 @@ export default function NodeGraph({
       onDragOver={handleCanvasDragOver}
       onDrop={handleCanvasDrop}
       onContextMenu={(e) => {
+        if (rewireActiveRef.current || e.ctrlKey) {
+          e.preventDefault();
+          return;
+        }
         // Only show canvas context menu if clicking on empty area (not on nodes)
         const target = e.target as HTMLElement;
         const isNode = target.closest('.node-root');

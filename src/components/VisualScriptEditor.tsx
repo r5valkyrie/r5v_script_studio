@@ -138,6 +138,13 @@ export default function VisualScriptEditor() {
   const isLoadingRef = useRef(false);
   const prevNodesRef = useRef<ScriptNode[]>([]);
   const prevConnectionsRef = useRef<NodeConnection[]>([]);
+  const historyRef = useRef<{
+    past: { nodes: ScriptNode[]; connections: NodeConnection[] }[];
+    present: { nodes: ScriptNode[]; connections: NodeConnection[] } | null;
+    future: { nodes: ScriptNode[]; connections: NodeConnection[] }[];
+  }>({ past: [], present: null, future: [] });
+  const historyDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const isRestoringRef = useRef(false);
 
   // Sync nodes/connections with active script file and add to open tabs
   useEffect(() => {
@@ -148,6 +155,14 @@ export default function VisualScriptEditor() {
       setSelectedNodeIds([]);
       prevNodesRef.current = activeScriptFile.nodes as ScriptNode[];
       prevConnectionsRef.current = activeScriptFile.connections as NodeConnection[];
+      historyRef.current = {
+        past: [],
+        present: {
+          nodes: JSON.parse(JSON.stringify(activeScriptFile.nodes)) as ScriptNode[],
+          connections: JSON.parse(JSON.stringify(activeScriptFile.connections)) as NodeConnection[],
+        },
+        future: [],
+      };
       // Add to open tabs if not already there
       setOpenFileTabs(tabs => {
         if (!tabs.includes(activeScriptFile.id)) {
@@ -207,6 +222,93 @@ export default function VisualScriptEditor() {
       }
     }
   }, [nodes, connections, activeScriptFile, updateActiveScriptContent]);
+
+  const getSnapshot = useCallback(() => {
+    return {
+      nodes: JSON.parse(JSON.stringify(nodes)) as ScriptNode[],
+      connections: JSON.parse(JSON.stringify(connections)) as NodeConnection[],
+    };
+  }, [nodes, connections]);
+
+  useEffect(() => {
+    if (!activeScriptFile || isLoadingRef.current) return;
+    if (isRestoringRef.current) {
+      isRestoringRef.current = false;
+      return;
+    }
+
+    if (historyDebounceRef.current) {
+      clearTimeout(historyDebounceRef.current);
+    }
+
+    historyDebounceRef.current = setTimeout(() => {
+      const snapshot = getSnapshot();
+      const present = historyRef.current.present;
+      const presentSerialized = present ? JSON.stringify(present) : null;
+      const snapshotSerialized = JSON.stringify(snapshot);
+
+      if (presentSerialized === snapshotSerialized) return;
+
+      if (present) {
+        historyRef.current.past.push(present);
+      }
+      historyRef.current.present = snapshot;
+      historyRef.current.future = [];
+    }, 250);
+
+    return () => {
+      if (historyDebounceRef.current) {
+        clearTimeout(historyDebounceRef.current);
+      }
+    };
+  }, [nodes, connections, activeScriptFile, getSnapshot]);
+
+  const restoreSnapshot = useCallback((snapshot: { nodes: ScriptNode[]; connections: NodeConnection[] }) => {
+    isRestoringRef.current = true;
+    setNodes(snapshot.nodes);
+    setConnections(snapshot.connections);
+    setSelectedNodeIds(current =>
+      current.filter(id => snapshot.nodes.some(node => node.id === id))
+    );
+  }, []);
+
+  const handleUndo = useCallback(() => {
+    const history = historyRef.current;
+    if (!history.present || history.past.length === 0) return;
+    const previous = history.past.pop();
+    if (!previous) return;
+    history.future.push(history.present);
+    history.present = previous;
+    restoreSnapshot(previous);
+  }, [restoreSnapshot]);
+
+  const handleRedo = useCallback(() => {
+    const history = historyRef.current;
+    if (!history.present || history.future.length === 0) return;
+    const next = history.future.pop();
+    if (!next) return;
+    history.past.push(history.present);
+    history.present = next;
+    restoreSnapshot(next);
+  }, [restoreSnapshot]);
+
+  const forceHistorySnapshot = useCallback(() => {
+    if (!activeScriptFile || isLoadingRef.current) return;
+    if (historyDebounceRef.current) {
+      clearTimeout(historyDebounceRef.current);
+      historyDebounceRef.current = null;
+    }
+    const snapshot = getSnapshot();
+    const present = historyRef.current.present;
+    const presentSerialized = present ? JSON.stringify(present) : null;
+    const snapshotSerialized = JSON.stringify(snapshot);
+    if (presentSerialized === snapshotSerialized) return;
+    if (present) {
+      historyRef.current.past.push(present);
+    }
+    historyRef.current.present = snapshot;
+    historyRef.current.future = [];
+  }, [activeScriptFile, getSnapshot]);
 
   const selectedNode = selectedNodeIds.length > 0
     ? nodes.find(n => n.id === selectedNodeIds[0]) ?? null
@@ -299,6 +401,18 @@ export default function VisualScriptEditor() {
         loadProject();
         return;
       }
+
+      // Undo/redo
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
+        if (e.target && (e.target as HTMLElement).closest('input, textarea')) return;
+        e.preventDefault();
+        if (e.shiftKey) {
+          handleRedo();
+        } else {
+          handleUndo();
+        }
+        return;
+      }
       
       // Delete nodes
       if (selectedNodeIds.length === 0) return;
@@ -313,7 +427,7 @@ export default function VisualScriptEditor() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedNodeIds, handleDeleteSelectedNodes, saveProject, saveProjectAs, loadProject, newProject]);
+  }, [selectedNodeIds, handleDeleteSelectedNodes, handleUndo, handleRedo, saveProject, saveProjectAs, loadProject, newProject]);
 
   const handleConnect = useCallback((newConnection: NodeConnection) => {
     // Prevent duplicate connections
@@ -334,6 +448,12 @@ export default function VisualScriptEditor() {
   const handleBreakInput = useCallback((nodeId: string, portId: string) => {
     setConnections(currentConnections =>
       currentConnections.filter(conn => !(conn.to.nodeId === nodeId && conn.to.portId === portId))
+    );
+  }, []);
+
+  const handleDeleteConnection = useCallback((connectionId: string) => {
+    setConnections(currentConnections =>
+      currentConnections.filter(conn => conn.id !== connectionId)
     );
   }, []);
 
@@ -693,8 +813,10 @@ export default function VisualScriptEditor() {
                     onDeleteNode={handleDeleteNode}
                     onConnect={handleConnect}
                     onBreakInput={handleBreakInput}
+                    onDeleteConnection={handleDeleteConnection}
                     onAddNode={handleAddNode}
                     onViewChange={setGraphView}
+                    onRequestHistorySnapshot={forceHistorySnapshot}
                   />
                 )}
               </div>
