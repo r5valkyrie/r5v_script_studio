@@ -1107,7 +1107,6 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
     ctx.threadFunctions = [];
 
     const eventFuncName = eventNode.data.functionName || `${eventNode.type.replace(/-/g, '_')}_handler`;
-    output.push(`// Event: ${eventNode.label}`);
     output.push(`void function ${eventFuncName}()`);
     output.push('{');
     ctx.indentLevel = 1;

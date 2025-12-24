@@ -789,6 +789,7 @@ export default function NodeGraph({
   const handleCanvasWheel = (e: React.WheelEvent) => {
     if (!canvasRef.current) return;
     if (panningRef.current) return;
+    if (e.target instanceof Element && e.target.closest('[data-quick-node-menu="true"]')) return;
     e.preventDefault();
 
     const rect = canvasRef.current.getBoundingClientRect();

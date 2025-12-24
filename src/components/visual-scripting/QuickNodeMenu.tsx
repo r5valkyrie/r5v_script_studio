@@ -238,6 +238,7 @@ export default function QuickNodeMenu({
   return (
     <div
       ref={menuRef}
+      data-quick-node-menu="true"
       className="fixed z-[1000] bg-[#1a1f28] border border-white/20 rounded-lg shadow-2xl overflow-hidden"
       style={{
         ...menuStyle,
