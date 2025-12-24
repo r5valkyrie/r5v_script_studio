@@ -85,9 +85,9 @@ function CategorySection({ title, category, onAddNode, defaultOpen = false }: Ca
 
 export default function NodePalette({ onAddNode, onClose }: NodePaletteProps) {
   return (
-    <div className="w-full h-full bg-[#151a21] flex flex-col">
+    <div className="w-full h-full bg-[#151a21] flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="px-3 py-3 border-b border-white/10 bg-[#0f1419] flex items-center justify-between">
+      <div className="flex-shrink-0 px-3 py-3 border-b border-white/10 bg-[#0f1419] flex items-center justify-between">
         <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
           Node Palette
         </span>
@@ -101,7 +101,7 @@ export default function NodePalette({ onAddNode, onClose }: NodePaletteProps) {
       </div>
 
       {/* Categories */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
         <CategorySection
           title="Core Flow"
           category="core-flow"
@@ -168,16 +168,9 @@ export default function NodePalette({ onAddNode, onClose }: NodePaletteProps) {
           title="Utilities"
           category="utilities"
           onAddNode={onAddNode}
-        />  
-      </div>
-
-      {/* Hints */}
-      <div className="p-3 border-t border-white/10 bg-[#0f1419]">
-        <div className="text-[10px] text-gray-600 leading-relaxed">
-          <p className="mb-1">Game scripts live under</p>
-          <p className="mb-1">R5/Platform/scripts.</p>
-          <p>Drag nodes to Flow.</p>
-        </div>
+        />
+        {/* Bottom padding to ensure last items are visible */}
+        <div className="h-4" />
       </div>
     </div>
   );

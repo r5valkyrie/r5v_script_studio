@@ -18,6 +18,7 @@ export interface UseProjectFilesReturn {
   scriptFiles: ScriptFile[];
   activeScriptFile: ScriptFile | null;
   recentProjects: Array<{ name: string; path: string; lastOpened: number }>;
+  modifiedFileIds: Set<string>; // Track which files have unsaved changes
   
   // Project actions
   newProject: () => void;
@@ -33,6 +34,8 @@ export interface UseProjectFilesReturn {
   renameScriptFile: (fileId: string, newName: string) => void;
   setActiveScriptFile: (fileId: string) => void;
   updateActiveScriptContent: (nodes: ScriptNode[], connections: NodeConnection[]) => void;
+  markFileModified: (fileId: string) => void;
+  markFileSaved: (fileId: string) => void;
   
   // Folder actions
   createFolder: (folderPath: string) => void;
@@ -49,6 +52,7 @@ export function useProjectFiles(): UseProjectFilesReturn {
   const [projectData, setProjectData] = useState<ProjectData | null>(null);
   const [currentFilePath, setCurrentFilePath] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [modifiedFileIds, setModifiedFileIds] = useState<Set<string>>(new Set());
   const [recentProjects, setRecentProjects] = useState<Array<{ name: string; path: string; lastOpened: number }>>([]);
 
   // Load recent projects from localStorage
@@ -118,6 +122,7 @@ export function useProjectFiles(): UseProjectFilesReturn {
       
       setCurrentFilePath(filePath);
       setHasUnsavedChanges(false);
+      setModifiedFileIds(new Set()); // Clear all modified file indicators
       addToRecentProjects(filePath, projectData.metadata.name || 'Untitled');
       
       return true;
@@ -151,6 +156,7 @@ export function useProjectFiles(): UseProjectFilesReturn {
       
       setCurrentFilePath(filePath);
       setHasUnsavedChanges(false);
+      setModifiedFileIds(new Set()); // Clear all modified file indicators
       addToRecentProjects(filePath, projectData.metadata.name || 'Untitled');
       
       return true;
@@ -182,6 +188,7 @@ export function useProjectFiles(): UseProjectFilesReturn {
       setProjectData(loaded);
       setCurrentFilePath(result.filePath);
       setHasUnsavedChanges(false);
+      setModifiedFileIds(new Set());
       addToRecentProjects(result.filePath, loaded.metadata.name || 'Untitled');
       
       return true;
@@ -210,6 +217,7 @@ export function useProjectFiles(): UseProjectFilesReturn {
       setProjectData(loaded);
       setCurrentFilePath(path);
       setHasUnsavedChanges(false);
+      setModifiedFileIds(new Set());
       addToRecentProjects(path, loaded.metadata.name || 'Untitled');
       
       return true;
@@ -311,6 +319,12 @@ export function useProjectFiles(): UseProjectFilesReturn {
   const updateActiveScriptContent = useCallback((nodes: ScriptNode[], connections: NodeConnection[]) => {
     setProjectData(prev => {
       if (!prev || !prev.settings.activeScriptFile) return prev;
+      // Mark this specific file as modified
+      setModifiedFileIds(ids => {
+        const newIds = new Set(ids);
+        newIds.add(prev.settings.activeScriptFile!);
+        return newIds;
+      });
       return {
         ...prev,
         scriptFiles: prev.scriptFiles.map(f =>
@@ -323,8 +337,35 @@ export function useProjectFiles(): UseProjectFilesReturn {
     setHasUnsavedChanges(true);
   }, []);
 
+  // Mark a specific file as modified
+  const markFileModified = useCallback((fileId: string) => {
+    setModifiedFileIds(ids => {
+      const newIds = new Set(ids);
+      newIds.add(fileId);
+      return newIds;
+    });
+    setHasUnsavedChanges(true);
+  }, []);
+
+  // Mark a specific file as saved (note: saving the project saves all files)
+  const markFileSaved = useCallback((fileId: string) => {
+    setModifiedFileIds(ids => {
+      const newIds = new Set(ids);
+      newIds.delete(fileId);
+      return newIds;
+    });
+    // Check if there are still other modified files
+    setModifiedFileIds(ids => {
+      if (ids.size === 0) {
+        setHasUnsavedChanges(false);
+      }
+      return ids;
+    });
+  }, []);
+
   const markSaved = useCallback(() => {
     setHasUnsavedChanges(false);
+    setModifiedFileIds(new Set());
   }, []);
 
   const markModified = useCallback(() => {
@@ -409,6 +450,7 @@ export function useProjectFiles(): UseProjectFilesReturn {
     activeScriptFile,
     recentProjects,
     folders,
+    modifiedFileIds,
     newProject,
     saveProject,
     saveProjectAs,
@@ -420,6 +462,8 @@ export function useProjectFiles(): UseProjectFilesReturn {
     renameScriptFile,
     setActiveScriptFile,
     updateActiveScriptContent,
+    markFileModified,
+    markFileSaved,
     createFolder,
     deleteFolder,
     renameFolder,

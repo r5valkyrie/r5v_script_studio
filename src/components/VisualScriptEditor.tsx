@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { PanelLeft, PanelRight, GitBranch, Code, Save, FolderOpen, FileDown, FileText, FilePlus, ChevronDown, Folder } from 'lucide-react';
+import { PanelLeft, PanelRight, GitBranch, Code, Save, FolderOpen, FileDown, FileText, FilePlus, ChevronDown, Folder, X } from 'lucide-react';
 import type { ScriptNode, NodeConnection } from '../types/visual-scripting';
 import NodeGraph from './visual-scripting/NodeGraph';
 import NodePalette from './visual-scripting/NodePalette';
@@ -13,29 +13,30 @@ import { useProjectFiles } from '../hooks/useProjectFiles';
 import { saveSquirrelCode } from '../utils/file-system';
 import { generateCodeMetadata, embedProjectInCode } from '../utils/project-manager';
 
-type EditorTab = 'visual' | 'code' | 'split';
-
 export default function VisualScriptEditor() {
   const [nodes, setNodes] = useState<ScriptNode[]>([]);
   const [connections, setConnections] = useState<NodeConnection[]>([]);
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<EditorTab>('visual');
-  const [splitRatio, setSplitRatio] = useState(0.55);
-  const splitDraggingRef = useRef(false);
 
   // Panel widths
   const [projectPanelWidth, setProjectPanelWidth] = useState(256); // 64 * 4 = 16rem
   const [paletteWidth, setPaletteWidth] = useState(256);
   const [inspectorWidth, setInspectorWidth] = useState(320);
+  const [codePanelWidth, setCodePanelWidth] = useState(500); // min size is 500
   const projectDraggingRef = useRef(false);
   const paletteDraggingRef = useRef(false);
   const inspectorDraggingRef = useRef(false);
+  const codePanelDraggingRef = useRef(false);
 
   const [isPaletteOpen, setPaletteOpen] = useState(true);
   const [isInspectorOpen, setInspectorOpen] = useState(true);
   const [isProjectPanelOpen, setProjectPanelOpen] = useState(true);
+  const [isCodePanelOpen, setCodePanelOpen] = useState(false);
   const [isFileMenuOpen, setFileMenuOpen] = useState(false);
   const fileMenuRef = useRef<HTMLDivElement>(null);
+
+  // Open file tabs
+  const [openFileTabs, setOpenFileTabs] = useState<string[]>([]);
 
   // Project management with multiple script files
   const {
@@ -46,6 +47,7 @@ export default function VisualScriptEditor() {
     activeScriptFile,
     recentProjects,
     folders,
+    modifiedFileIds,
     saveProject,
     saveProjectAs,
     loadProject,
@@ -66,7 +68,7 @@ export default function VisualScriptEditor() {
   const prevNodesRef = useRef<ScriptNode[]>([]);
   const prevConnectionsRef = useRef<NodeConnection[]>([]);
 
-  // Sync nodes/connections with active script file
+  // Sync nodes/connections with active script file and add to open tabs
   useEffect(() => {
     if (activeScriptFile) {
       isLoadingRef.current = true;
@@ -75,12 +77,40 @@ export default function VisualScriptEditor() {
       setSelectedNodeIds([]);
       prevNodesRef.current = activeScriptFile.nodes as ScriptNode[];
       prevConnectionsRef.current = activeScriptFile.connections as NodeConnection[];
+      // Add to open tabs if not already there
+      setOpenFileTabs(tabs => {
+        if (!tabs.includes(activeScriptFile.id)) {
+          return [...tabs, activeScriptFile.id];
+        }
+        return tabs;
+      });
       // Allow the next render cycle to complete before clearing the flag
       setTimeout(() => {
         isLoadingRef.current = false;
       }, 0);
     }
   }, [activeScriptFile?.id]);
+
+  // Close a file tab
+  const handleCloseTab = useCallback((fileId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpenFileTabs(tabs => {
+      const newTabs = tabs.filter(id => id !== fileId);
+      // If we're closing the active file, switch to another open file
+      if (activeScriptFile?.id === fileId && newTabs.length > 0) {
+        // Switch to the previous tab or the first remaining tab
+        const closedIndex = tabs.indexOf(fileId);
+        const newActiveIndex = Math.min(closedIndex, newTabs.length - 1);
+        setActiveScriptFile(newTabs[newActiveIndex]);
+      }
+      return newTabs;
+    });
+  }, [activeScriptFile?.id, setActiveScriptFile]);
+
+  // Reset open tabs when project changes
+  useEffect(() => {
+    setOpenFileTabs([]);
+  }, [projectData?.metadata.createdAt]);
 
   // Update active script when nodes/connections change (but not during initial load)
   useEffect(() => {
@@ -247,19 +277,6 @@ export default function VisualScriptEditor() {
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      // Split view divider
-      if (splitDraggingRef.current) {
-        const divider = document.getElementById('split-divider');
-        if (!divider) return;
-        const container = divider.parentElement;
-        if (!container) return;
-
-        const rect = container.getBoundingClientRect();
-        const ratio = (e.clientX - rect.left) / rect.width;
-        const clamped = Math.min(0.8, Math.max(0.2, ratio));
-        setSplitRatio(clamped);
-      }
-
       // Project panel resize
       if (projectDraggingRef.current) {
         const newWidth = Math.min(500, Math.max(240, e.clientX));
@@ -275,16 +292,23 @@ export default function VisualScriptEditor() {
 
       // Inspector resize
       if (inspectorDraggingRef.current) {
-        const newWidth = Math.min(500, Math.max(250, window.innerWidth - e.clientX));
+        const codeOffset = isCodePanelOpen ? codePanelWidth : 0;
+        const newWidth = Math.min(500, Math.max(250, window.innerWidth - e.clientX - codeOffset));
         setInspectorWidth(newWidth);
+      }
+
+      // Code panel resize
+      if (codePanelDraggingRef.current) {
+        const newWidth = Math.min(1000, Math.max(500, window.innerWidth - e.clientX));
+        setCodePanelWidth(newWidth);
       }
     };
 
     const handleMouseUp = () => {
-      splitDraggingRef.current = false;
       projectDraggingRef.current = false;
       paletteDraggingRef.current = false;
       inspectorDraggingRef.current = false;
+      codePanelDraggingRef.current = false;
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -294,7 +318,7 @@ export default function VisualScriptEditor() {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, []);
+  }, [isProjectPanelOpen, projectPanelWidth, isCodePanelOpen, codePanelWidth]);
 
   // Close file menu on click outside
   useEffect(() => {
@@ -402,39 +426,25 @@ export default function VisualScriptEditor() {
 
           <div className="w-px h-6 bg-white/10" />
 
-          {/* Tabs */}
-          <button
-            onClick={() => setActiveTab('visual')}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 ${
-              activeTab === 'visual'
-                ? 'text-white border-purple-500 bg-white/5'
-                : 'text-gray-400 border-transparent hover:text-white hover:bg-white/5'
-            }`}
-          >
+          {/* Visual Editor Title */}
+          <div className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white">
             <GitBranch size={16} />
             Visual Editor
-          </button>
+          </div>
+
+          <div className="flex-1" />
+
+          {/* Code Panel Toggle */}
           <button
-            onClick={() => setActiveTab('code')}
+            onClick={() => setCodePanelOpen(!isCodePanelOpen)}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 ${
-              activeTab === 'code'
+              isCodePanelOpen
                 ? 'text-white border-purple-500 bg-white/5'
                 : 'text-gray-400 border-transparent hover:text-white hover:bg-white/5'
             }`}
           >
             <Code size={16} />
-            Generated Code
-          </button>
-          <button
-            onClick={() => setActiveTab('split')}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 ${
-              activeTab === 'split'
-                ? 'text-white border-purple-500 bg-white/5'
-                : 'text-gray-400 border-transparent hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <Code size={16} />
-            Split View
+            {isCodePanelOpen ? 'Hide Code' : 'Show Code'}
           </button>
         </div>
 
@@ -448,7 +458,6 @@ export default function VisualScriptEditor() {
 
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
-        {activeTab === 'visual' ? (
           <>
             {/* Project Panel */}
             {isProjectPanelOpen && (
@@ -512,14 +521,16 @@ export default function VisualScriptEditor() {
 
             {/* Node Palette */}
             {isPaletteOpen && (
-              <div className="flex h-full" style={{ width: paletteWidth, marginLeft: !isProjectPanelOpen ? '0px' : '0px' }}>
-                <NodePalette
-                  onAddNode={handleAddNode}
-                  onClose={() => setPaletteOpen(false)}
-                />
+              <div className="flex h-full flex-shrink-0" style={{ width: paletteWidth }}>
+                <div className="flex-1 h-full overflow-hidden">
+                  <NodePalette
+                    onAddNode={handleAddNode}
+                    onClose={() => setPaletteOpen(false)}
+                  />
+                </div>
                 {/* Resize Handle */}
                 <div
-                  className="w-1 h-full bg-white/5 hover:bg-purple-500/40 cursor-col-resize transition-colors"
+                  className="w-1 h-full bg-white/5 hover:bg-purple-500/40 cursor-col-resize transition-colors flex-shrink-0"
                   onMouseDown={(e) => {
                     e.preventDefault();
                     paletteDraggingRef.current = true;
@@ -529,18 +540,58 @@ export default function VisualScriptEditor() {
             )}
 
             {/* Main Canvas */}
-            <div className="flex-1 h-full">
-              <NodeGraph
-                nodes={nodes}
-                connections={connections}
-                selectedNodeIds={selectedNodeIds}
-                onSelectNodes={handleSelectNodes}
-                onUpdateNode={handleUpdateNode}
-                onDeleteNode={handleDeleteNode}
-                onConnect={handleConnect}
-                onBreakInput={handleBreakInput}
-                onAddNode={handleAddNode}
-              />
+            <div className="flex-1 h-full flex flex-col">
+              {/* File Tabs */}
+              {openFileTabs.length > 0 && (
+                <div className="flex-shrink-0 flex items-center bg-[#1a1f26] border-b border-white/10 overflow-x-auto">
+                  {openFileTabs.map(fileId => {
+                    const file = scriptFiles.find(f => f.id === fileId);
+                    if (!file) return null;
+                    const isActive = activeScriptFile?.id === fileId;
+                    const isModified = modifiedFileIds.has(fileId);
+                    return (
+                      <div
+                        key={fileId}
+                        className={`flex items-center gap-2 px-3 py-2 cursor-pointer border-r border-white/10 group ${
+                          isActive 
+                            ? 'bg-[#2a3341] text-white border-b-2 border-b-purple-500' 
+                            : 'text-gray-400 hover:bg-[#252b35] hover:text-gray-200'
+                        }`}
+                        onClick={() => setActiveScriptFile(fileId)}
+                      >
+                        <FileText size={14} className={isActive ? 'text-purple-400' : 'text-gray-500'} />
+                        <span className="text-sm whitespace-nowrap">{file.name}</span>
+                        <button
+                          onClick={(e) => handleCloseTab(fileId, e)}
+                          className={`ml-1 p-0.5 rounded hover:bg-white/10 transition-opacity ${
+                            isModified ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                          }`}
+                          title={isModified ? "Unsaved changes - Close tab" : "Close tab"}
+                        >
+                          {isModified ? (
+                            <div className="w-3 h-3 rounded-full bg-orange-400 group-hover:hidden" />
+                          ) : null}
+                          <X size={12} className={isModified ? 'hidden group-hover:block' : ''} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {/* Node Graph */}
+              <div className="flex-1">
+                <NodeGraph
+                  nodes={nodes}
+                  connections={connections}
+                  selectedNodeIds={selectedNodeIds}
+                  onSelectNodes={handleSelectNodes}
+                  onUpdateNode={handleUpdateNode}
+                  onDeleteNode={handleDeleteNode}
+                  onConnect={handleConnect}
+                  onBreakInput={handleBreakInput}
+                  onAddNode={handleAddNode}
+                />
+              </div>
             </div>
 
             {/* Inspector Toggle Button */}
@@ -575,142 +626,55 @@ export default function VisualScriptEditor() {
                 />
               </div>
             )}
-          </>
-        ) : activeTab === 'code' ? (
-          /* Code View */
-          <div className="flex-1 h-full">
-            <CodeView code={generatedCode} />
-          </div>
-        ) : (
-          <div className="flex-1 h-full flex">
-            <div
-              className="h-full flex overflow-hidden border-r border-white/10"
-              style={{ width: `${splitRatio * 100}%` }}
-            >
-              {/* Project Panel */}
-              {isProjectPanelOpen && (
-                <div className="flex h-full" style={{ width: projectPanelWidth }}>
-                  <ProjectPanel
-                    scriptFiles={scriptFiles}
-                    activeFileId={activeScriptFile?.id || null}
-                    projectName={projectData?.metadata.name || 'Untitled Project'}
-                    onSelectFile={setActiveScriptFile}
-                    onCreateFile={createNewScriptFile}
-                    onDeleteFile={deleteScriptFile}
-                    onRenameFile={renameScriptFile}
-                    onClose={() => setProjectPanelOpen(false)}
-                  />
-                  <div
-                    className="w-1 h-full bg-white/5 hover:bg-purple-500/40 cursor-col-resize transition-colors"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      projectDraggingRef.current = true;
-                    }}
-                  />
-                </div>
-              )}
 
-              {!isProjectPanelOpen && (
-                <button
-                  onClick={() => setProjectPanelOpen(true)}
-                  className="absolute z-50 px-2 py-4 bg-[#2a3341] hover:bg-[#363f4f] border-r-2 border-purple-500/50 hover:border-purple-500 transition-all flex flex-col items-center gap-2 group shadow-xl"
-                  style={{ 
-                    top: '60px',
-                    left: isPaletteOpen ? `${paletteWidth}px` : '0px'
+            {/* Code Panel */}
+            {isCodePanelOpen && (
+              <div className="flex h-full" style={{ width: codePanelWidth }}>
+                {/* Resize Handle */}
+                <div
+                  className="w-2 h-full bg-white/10 hover:bg-purple-500/50 cursor-col-resize transition-colors flex-shrink-0"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    codePanelDraggingRef.current = true;
                   }}
-                  title="Show Project Panel (Ctrl+B)"
-                >
-                  <Folder size={18} className="text-purple-400 group-hover:text-purple-300" />
-                  <div className="text-[9px] text-gray-400 group-hover:text-purple-300 font-semibold tracking-wider" style={{ writingMode: 'vertical-rl' }}>PROJECT</div>
-                </button>
-              )}
-
-              {!isPaletteOpen && (
-                <button
-                  onClick={() => setPaletteOpen(true)}
-                  className="absolute z-50 px-2 py-4 bg-[#2a3341] hover:bg-[#363f4f] border-r-2 border-purple-500/50 hover:border-purple-500 transition-all flex flex-col items-center gap-2 group shadow-xl"
-                  style={{ 
-                    top: isProjectPanelOpen ? '60px' : '145px',
-                    left: isProjectPanelOpen ? `${projectPanelWidth}px` : '0px'
-                  }}
-                  title="Show Node Palette"
-                >
-                  <PanelRight size={18} className="text-purple-400 group-hover:text-purple-300" />
-                  <div className="text-[9px] text-gray-400 group-hover:text-purple-300 font-semibold tracking-wider" style={{ writingMode: 'vertical-rl' }}>PALETTE</div>
-                </button>
-              )}
-
-              {isPaletteOpen && (
-                <div className="flex h-full" style={{ width: paletteWidth }}>
-                  <NodePalette
-                    onAddNode={handleAddNode}
-                    onClose={() => setPaletteOpen(false)}
-                  />
-                  <div
-                    className="w-1 h-full bg-white/5 hover:bg-purple-500/40 cursor-col-resize transition-colors"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      paletteDraggingRef.current = true;
-                    }}
-                  />
-                </div>
-              )}
-
-              <div className="flex-1 h-full">
-                <NodeGraph
-                  nodes={nodes}
-                  connections={connections}
-                  selectedNodeIds={selectedNodeIds}
-                  onSelectNodes={handleSelectNodes}
-                  onUpdateNode={handleUpdateNode}
-                  onDeleteNode={handleDeleteNode}
-                  onConnect={handleConnect}
-                  onBreakInput={handleBreakInput}
-                  onAddNode={handleAddNode}
                 />
-              </div>
-
-              {selectedNode && !isInspectorOpen && (
-                <button
-                    onClick={() => setInspectorOpen(true)}
-                    className="absolute top-16 right-4 z-50 p-2 bg-[#151a21]/80 hover:bg-[#151a21] border border-white/10 rounded-lg transition-colors"
-                    title="Show Inspector"
-                >
-                    <PanelLeft size={16} />
-                </button>
-              )}
-
-              {isInspectorOpen && selectedNode && (
-                <div className="flex h-full" style={{ width: inspectorWidth }}>
-                  <div
-                    className="w-1 h-full bg-white/5 hover:bg-purple-500/40 cursor-col-resize transition-colors"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      inspectorDraggingRef.current = true;
-                    }}
-                  />
-                  <NodeInspector
-                    key={selectedNode.id}
-                    node={selectedNode}
-                    onUpdate={(updates) => handleUpdateNode(selectedNode.id, updates)}
-                    onClose={() => setInspectorOpen(false)}
-                  />
+                <div className="flex-1 h-full flex flex-col bg-[#1a1f26] overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-2 border-b border-white/10">
+                    <div className="flex items-center gap-2 text-sm font-medium text-white">
+                      <Code size={16} />
+                      Generated Code
+                    </div>
+                    <button
+                      onClick={() => setCodePanelOpen(false)}
+                      className="p-1 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                      title="Close Code Panel"
+                    >
+                      <PanelRight size={16} />
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <CodeView code={generatedCode} />
+                  </div>
                 </div>
-              )}
-            </div>
-            <div
-              id="split-divider"
-              className="w-1 h-full bg-white/10 hover:bg-purple-500/40 cursor-col-resize"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                splitDraggingRef.current = true;
-              }}
-            />
-            <div className="h-full" style={{ width: `${(1 - splitRatio) * 100}%` }}>
-              <CodeView code={generatedCode} />
-            </div>
-          </div>
-        )}
+              </div>
+            )}
+
+            {/* Code Panel Toggle Button (when closed) */}
+            {!isCodePanelOpen && (
+              <button
+                onClick={() => setCodePanelOpen(true)}
+                className="absolute z-40 px-2 py-4 bg-[#2a3341] hover:bg-[#363f4f] border-l-2 border-purple-500/50 hover:border-purple-500 transition-all flex flex-col items-center gap-2 group shadow-xl"
+                style={{ 
+                  top: '85px',
+                  right: selectedNode && isInspectorOpen ? `${inspectorWidth}px` : '0px'
+                }}
+                title="Show Generated Code"
+              >
+                <Code size={18} className="text-purple-400 group-hover:text-purple-300" />
+                <div className="text-[9px] text-gray-400 group-hover:text-purple-300 font-semibold tracking-wider" style={{ writingMode: 'vertical-rl' }}>CODE</div>
+              </button>
+            )}
+          </>
       </div>
       </>
       )}
