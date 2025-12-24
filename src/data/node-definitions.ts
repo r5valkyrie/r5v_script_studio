@@ -374,21 +374,6 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     defaultData: {},
   },
   {
-    type: 'thread',
-    category: 'core-flow',
-    label: 'Thread',
-    description: 'Start asynchronous thread execution. Name the function that runs in the thread.',
-    color: '#4A90E2',
-    inputs: [
-      { label: 'In', type: 'exec', isInput: true },
-    ],
-    outputs: [
-      { label: 'Thread', type: 'exec', isInput: false },
-      { label: 'Continue', type: 'exec', isInput: false },
-    ],
-    defaultData: { functionName: 'ThreadFunc' },
-  },
-  {
     type: 'wait',
     category: 'core-flow',
     label: 'Wait',
@@ -522,7 +507,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Out', type: 'exec', isInput: false },
       { label: 'Return', type: 'data', dataType: 'any', isInput: false },
     ],
-    defaultData: { function: 'MyFunction', returnType: 'none', argCount: 0 },
+    defaultData: { function: 'MyFunction', returnType: 'none', argCount: 0, threaded: false },
   },
   {
     type: 'custom-function',
@@ -534,7 +519,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     outputs: [
       { label: 'Exec', type: 'exec', isInput: false },
     ],
-    defaultData: { functionName: 'MyFunction', returnType: 'void', paramCount: 0, paramNames: [], paramTypes: [] },
+    defaultData: { functionName: 'MyFunction', returnType: 'void', paramCount: 0, paramNames: [], paramTypes: [], isGlobal: false },
   },
   {
     type: 'comment',

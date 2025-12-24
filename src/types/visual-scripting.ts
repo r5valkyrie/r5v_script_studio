@@ -45,7 +45,6 @@ export type NodeType =
   | 'loop-for'
   | 'loop-foreach'
   | 'loop-while'
-  | 'thread'
   | 'wait'
   | 'signal'
   | 'end-signal'

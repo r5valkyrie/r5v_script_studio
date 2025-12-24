@@ -361,6 +361,7 @@ export default function NodeGraph({
       const returnType = typeof node.data.returnType === 'string' ? node.data.returnType : 'none';
       const returnTypes = ['none', 'var', 'entity', 'int', 'float', 'bool', 'string', 'vector', 'array'];
       const argCount = typeof node.data.argCount === 'number' ? node.data.argCount : 1;
+      const threaded = typeof node.data.threaded === 'boolean' ? node.data.threaded : false;
       
       const addArg = () => {
         const newCount = argCount + 1;
@@ -392,17 +393,24 @@ export default function NodeGraph({
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-2">
             <span className="text-[9px] text-gray-500">Returns:</span>
-            <select
+            <CustomSelect
               value={returnType}
-              onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, returnType: e.target.value } })}
-              onMouseDown={(e) => e.stopPropagation()}
-              className="flex-1 px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
-            >
-              {returnTypes.map((rt) => (
-                <option key={rt} value={rt}>{rt}</option>
-              ))}
-            </select>
+              options={returnTypes}
+              onChange={(value) => onUpdateNodeRef.current(node.id, { data: { ...node.data, returnType: value } })}
+              className="flex-1"
+              size="sm"
+            />
           </div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={threaded}
+              onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, threaded: e.target.checked } })}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="w-3 h-3 rounded bg-[#1a1f28] border border-white/10 accent-purple-500"
+            />
+            <span className="text-[9px] text-gray-500">Threaded</span>
+          </label>
           <div className="flex items-center justify-between gap-2">
             <span className="text-[10px] text-gray-400">{argCount} args</span>
             <div className="flex gap-1">
@@ -486,16 +494,12 @@ export default function NodeGraph({
       return (
         <div className="flex flex-col gap-1">
           <span className="text-[9px] text-gray-500">Slot:</span>
-          <select
+          <CustomSelect
             value={slot}
-            onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, slot: e.target.value } })}
-            onMouseDown={(e) => e.stopPropagation()}
-            className="w-full px-1.5 py-1 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
-          >
-            {weaponSlots.map((ws) => (
-              <option key={ws.value} value={ws.value}>{ws.label}</option>
-            ))}
-          </select>
+            options={weaponSlots}
+            onChange={(value) => onUpdateNodeRef.current(node.id, { data: { ...node.data, slot: value } })}
+            size="sm"
+          />
         </div>
       );
     }
@@ -507,6 +511,7 @@ export default function NodeGraph({
       const paramCount = typeof node.data.paramCount === 'number' ? node.data.paramCount : 1;
       const paramNames = Array.isArray(node.data.paramNames) ? node.data.paramNames : [];
       const paramTypes = Array.isArray(node.data.paramTypes) ? node.data.paramTypes : [];
+      const isGlobal = typeof node.data.isGlobal === 'boolean' ? node.data.isGlobal : false;
       
       const addParam = () => {
         const newCount = paramCount + 1;
@@ -562,17 +567,24 @@ export default function NodeGraph({
           />
           <div className="flex items-center gap-2">
             <span className="text-[9px] text-gray-500">Returns:</span>
-            <select
+            <CustomSelect
               value={returnType}
-              onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, returnType: e.target.value } })}
-              onMouseDown={(e) => e.stopPropagation()}
-              className="flex-1 px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
-            >
-              {returnTypes.map((rt) => (
-                <option key={rt} value={rt}>{rt}</option>
-              ))}
-            </select>
+              options={returnTypes}
+              onChange={(value) => onUpdateNodeRef.current(node.id, { data: { ...node.data, returnType: value } })}
+              className="flex-1"
+              size="sm"
+            />
           </div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isGlobal}
+              onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, isGlobal: e.target.checked } })}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="w-3 h-3 rounded bg-[#1a1f28] border border-white/10 accent-purple-500"
+            />
+            <span className="text-[9px] text-gray-500">Global Function</span>
+          </label>
           
           {/* Parameter list with name and type editors */}
           {paramCount > 0 && (
@@ -588,16 +600,13 @@ export default function NodeGraph({
                     placeholder={`arg${i + 1}`}
                     className="flex-1 px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
                   />
-                  <select
+                  <CustomSelect
                     value={paramTypes[i] || 'var'}
-                    onChange={(e) => updateParamType(i, e.target.value)}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    className="w-16 px-1 py-0.5 bg-[#1a1f28] rounded text-[9px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
-                  >
-                    {returnTypes.filter(t => t !== 'void').map((pt) => (
-                      <option key={pt} value={pt}>{pt}</option>
-                    ))}
-                  </select>
+                    options={returnTypes.filter(t => t !== 'void')}
+                    onChange={(value) => updateParamType(i, value)}
+                    className="w-16"
+                    size="sm"
+                  />
                 </div>
               ))}
             </div>

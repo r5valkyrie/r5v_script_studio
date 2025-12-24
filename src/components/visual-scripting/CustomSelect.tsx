@@ -1,16 +1,27 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 
+type SelectOption = string | { value: string; label: string };
+
 interface CustomSelectProps {
   value: string;
-  options: string[];
+  options: SelectOption[];
   onChange: (value: string) => void;
   className?: string;
+  size?: 'sm' | 'md';
 }
 
-export default function CustomSelect({ value, options, onChange, className = '' }: CustomSelectProps) {
+export default function CustomSelect({ value, options, onChange, className = '', size = 'md' }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Normalize options to {value, label} format
+  const normalizedOptions = options.map(opt => 
+    typeof opt === 'string' ? { value: opt, label: opt } : opt
+  );
+
+  // Get display label for current value
+  const displayLabel = normalizedOptions.find(opt => opt.value === value)?.label || value;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -26,10 +37,18 @@ export default function CustomSelect({ value, options, onChange, className = '' 
     }
   }, [isOpen]);
 
-  const handleSelect = (option: string) => {
-    onChange(option);
+  const handleSelect = (optionValue: string) => {
+    onChange(optionValue);
     setIsOpen(false);
   };
+
+  const sizeClasses = size === 'sm' 
+    ? 'px-1.5 py-0.5 text-[10px]' 
+    : 'px-2 py-1.5 text-[11px]';
+
+  const dropdownSizeClasses = size === 'sm'
+    ? 'text-[10px]'
+    : 'text-[11px]';
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
@@ -41,11 +60,11 @@ export default function CustomSelect({ value, options, onChange, className = '' 
           setIsOpen(!isOpen);
         }}
         onMouseDown={(e) => e.stopPropagation()}
-        className="w-full px-2 py-1.5 bg-[#1a1f28] rounded text-[11px] text-gray-200 cursor-pointer hover:bg-[#151a21] transition-colors flex items-center justify-between gap-2"
+        className={`w-full ${sizeClasses} bg-[#1a1f28] rounded text-gray-200 cursor-pointer hover:bg-[#151a21] transition-colors flex items-center justify-between gap-2 border border-white/10`}
       >
-        <span className="truncate">{value}</span>
+        <span className="truncate">{displayLabel}</span>
         <ChevronDown 
-          size={12} 
+          size={size === 'sm' ? 10 : 12} 
           className={`text-gray-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} 
         />
       </button>
@@ -53,24 +72,24 @@ export default function CustomSelect({ value, options, onChange, className = '' 
       {/* Dropdown menu */}
       {isOpen && (
         <div 
-          className="absolute left-0 right-0 mt-1 bg-[#1a1f28] border border-white/10 rounded shadow-xl z-50 overflow-hidden"
+          className="absolute left-0 right-0 mt-1 bg-[#1a1f28] border border-white/10 rounded shadow-xl z-50 overflow-hidden max-h-48 overflow-y-auto"
           onMouseDown={(e) => e.stopPropagation()}
         >
-          {options.map((option) => (
+          {normalizedOptions.map((option) => (
             <button
-              key={option}
+              key={option.value}
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                handleSelect(option);
+                handleSelect(option.value);
               }}
-              className={`w-full px-2 py-1.5 text-left text-[11px] transition-colors ${
-                option === value
+              className={`w-full px-2 py-1.5 text-left ${dropdownSizeClasses} transition-colors ${
+                option.value === value
                   ? 'bg-purple-600/30 text-white'
                   : 'text-gray-300 hover:bg-white/10 hover:text-white'
               }`}
             >
-              {option}
+              {option.label}
             </button>
           ))}
         </div>

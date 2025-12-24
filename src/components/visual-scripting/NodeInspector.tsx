@@ -1,4 +1,5 @@
 import type { ScriptNode } from '../../types/visual-scripting';
+import CustomSelect from './CustomSelect';
 
 interface NodeInspectorProps {
   node: ScriptNode;
@@ -18,34 +19,22 @@ export default function NodeInspector({ node, onUpdate }: NodeInspectorProps) {
   const renderLootTierSelect = (key: string, value: string) => {
     const options = ['NONE', 'COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'HEIRLOOM'];
     return (
-      <select
+      <CustomSelect
         value={value}
-        onChange={(e) => handleDataChange(key, e.target.value)}
-        className="w-full px-3 py-2 bg-[#1a1f28] rounded-lg text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors cursor-pointer"
-      >
-        {options.map(option => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
+        options={options}
+        onChange={(val) => handleDataChange(key, val)}
+      />
     );
   };
 
   const renderWeaponTypeSelect = (key: string, value: string) => {
     const options = ['assault', 'smg', 'lmg', 'sniper', 'shotgun', 'pistol'];
     return (
-      <select
+      <CustomSelect
         value={value}
-        onChange={(e) => handleDataChange(key, e.target.value)}
-        className="w-full px-3 py-2 bg-[#1a1f28] rounded-lg text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors cursor-pointer"
-      >
-        {options.map(option => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
+        options={options}
+        onChange={(val) => handleDataChange(key, val)}
+      />
     );
   };
 

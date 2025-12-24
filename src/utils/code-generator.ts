@@ -233,23 +233,6 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
-    case 'thread': {
-      // Use custom function name if provided, otherwise generate from node ID
-      const customName = typeof node.data.functionName === 'string' && node.data.functionName.trim() 
-        ? node.data.functionName.trim().replace(/[^a-zA-Z0-9_]/g, '_')
-        : null;
-      const funcName = customName || `__Thread_${node.id.replace(/[^a-zA-Z0-9]/g, '_')}`;
-      // Register thread function to be generated later
-      ctx.threadFunctions.push({
-        name: funcName,
-        nodeId: node.id,
-        outputPortId: 'output_0', // Thread body output
-      });
-      lines.push(`${ind}thread ${funcName}()`);
-      followExec('output_1'); // Continue
-      break;
-    }
-
     case 'custom-code': {
       const code = typeof node.data?.code === 'string' ? node.data.code : '// Your code here';
       // Split code into lines and add proper indentation
@@ -265,6 +248,7 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       const funcName = getInputValue(ctx, node, 'input_1');
       const returnType = typeof node.data?.returnType === 'string' ? node.data.returnType : 'none';
       const argCount = typeof node.data?.argCount === 'number' ? node.data.argCount : 1;
+      const threaded = typeof node.data?.threaded === 'boolean' ? node.data.threaded : false;
       
       // Build arguments list - collect all connected args
       const args: string[] = [];
@@ -276,12 +260,16 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       }
       const argStr = args.join(', ');
       
-      if (returnType !== 'none') {
+      // Add thread prefix if threaded
+      const threadPrefix = threaded ? 'thread ' : '';
+      
+      if (returnType !== 'none' && !threaded) {
+        // Can't capture return value from threaded call
         const resultVar = getVarName(ctx, 'result');
         ctx.variables.set(`${node.id}:output_1`, resultVar);
         lines.push(`${ind}${returnType} ${resultVar} = ${funcName}(${argStr})`);
       } else {
-        lines.push(`${ind}${funcName}(${argStr})`);
+        lines.push(`${ind}${threadPrefix}${funcName}(${argStr})`);
       }
       followExec('output_0');
       break;
@@ -1471,22 +1459,133 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
   const clientInit = nodes.find(n => n.type === 'init-client');
   const uiInit = nodes.find(n => n.type === 'init-ui');
 
+  // Collect all global custom functions for context detection later
+  const globalCustomFunctions = nodes.filter(n => n.type === 'custom-function' && n.data.isGlobal === true);
+
+  // Server callback event types that have Register input
+  const serverCallbackTypes = ['on-entities-did-load', 'on-client-connected', 'on-client-disconnected', 'on-player-killed', 'on-player-respawned'];
+
+  // Helper to trace back from a node to find which init contexts it belongs to
+  const traceContextsFromNode = (startNodeId: string): Set<string> => {
+    const contexts = new Set<string>();
+    const visited = new Set<string>();
+    const queue = [startNodeId];
+    
+    while (queue.length > 0) {
+      const nodeId = queue.shift()!;
+      if (visited.has(nodeId)) continue;
+      visited.add(nodeId);
+      
+      const node = ctx.nodeMap.get(nodeId);
+      if (!node) continue;
+      
+      if (node.type === 'init-server') contexts.add('SERVER');
+      else if (node.type === 'init-client') contexts.add('CLIENT');
+      else if (node.type === 'init-ui') contexts.add('UI');
+      
+      // Find all nodes that connect TO this node (predecessors)
+      const incomingConns = connections.filter(c => c.to.nodeId === nodeId);
+      for (const conn of incomingConns) {
+        queue.push(conn.from.nodeId);
+      }
+    }
+    
+    return contexts;
+  };
+
+  // Helper to determine the context(s) (SERVER/CLIENT/UI) for a function based on node type
+  // Returns an array of contexts, or null if no specific context
+  const getFunctionContexts = (eventNode: ScriptNode): string[] | null => {
+    // For server callback events, trace back from the Register input to find contexts
+    if (serverCallbackTypes.includes(eventNode.type)) {
+      const contexts = traceContextsFromNode(eventNode.id);
+      
+      if (contexts.size === 0) {
+        // Default to SERVER if no context found (these are server-side callbacks)
+        return ['SERVER'];
+      }
+      
+      return Array.from(contexts).sort();
+    }
+    
+    if (eventNode.type === 'custom-function') {
+      const funcName = eventNode.data.functionName || `${eventNode.type.replace(/-/g, '_')}_handler`;
+      const callNodes = nodes.filter(n => n.type === 'call-function' && n.data.function === funcName);
+      const contexts = new Set<string>();
+      
+      for (const callNode of callNodes) {
+        const callContexts = traceContextsFromNode(callNode.id);
+        for (const ctx of callContexts) {
+          contexts.add(ctx);
+        }
+      }
+      
+      if (contexts.size === 0) {
+        return null;
+      }
+      
+      // Return sorted array of contexts for consistent output
+      return Array.from(contexts).sort();
+    }
+    
+    return null;
+  };
+
+  // Helper to format context directive (e.g., "SERVER" or "SERVER || CLIENT || UI")
+  const formatContextDirective = (contexts: string[]): string => {
+    return contexts.join(' || ');
+  };
+
+  // === OUTPUT ALL GLOBAL DECLARATIONS AT TOP OF FILE ===
+  
+  // Server init global declaration
   if (serverInit) {
     output.push('#if SERVER');
     output.push(`global function ${serverInit.data.functionName || 'CodeCallback_ModInit'}`);
     output.push('#endif');
     output.push('');
   }
+  // Client init global declaration
   if (clientInit) {
     output.push('#if CLIENT');
     output.push(`global function ${clientInit.data.functionName || 'ClientCodeCallback_ModInit'}`);
     output.push('#endif');
     output.push('');
   }
+  // UI init global declaration
   if (uiInit) {
     output.push('#if UI');
     output.push(`global function ${uiInit.data.functionName || 'UICodeCallback_ModInit'}`);
     output.push('#endif');
+    output.push('');
+  }
+  
+  // Global custom function declarations (grouped by context directive key)
+  // Use a Map to group by the formatted context directive (e.g., "SERVER", "CLIENT || SERVER", etc.)
+  const globalsByContext = new Map<string, string[]>();
+  
+  for (const funcNode of globalCustomFunctions) {
+    const funcName = funcNode.data.functionName || 'MyFunction';
+    const funcContexts = getFunctionContexts(funcNode);
+    
+    // Determine the directive key
+    const directiveKey = funcContexts ? formatContextDirective(funcContexts) : '';
+    
+    if (!globalsByContext.has(directiveKey)) {
+      globalsByContext.set(directiveKey, []);
+    }
+    globalsByContext.get(directiveKey)!.push(`global function ${funcName}`);
+  }
+  
+  // Output global declarations grouped by context
+  for (const [directive, globals] of globalsByContext) {
+    if (directive) {
+      output.push(`#if ${directive}`);
+    }
+    for (const g of globals) output.push(g);
+    if (directive) {
+      output.push('#endif');
+    }
     output.push('');
   }
 
@@ -1578,15 +1677,15 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
     output.push('');
   }
 
-  // Server callback event types that have Register input
-  const serverCallbackTypes = ['on-entities-did-load', 'on-client-connected', 'on-client-disconnected', 'on-player-killed', 'on-player-respawned'];
-
   // Handle standalone event and custom function nodes
   // For server callback events, always include them (they may have been visited via Register but still need function generated)
   const eventNodes = nodes.filter(n =>
     (n.category === 'events' || n.type === 'custom-function') &&
     (serverCallbackTypes.includes(n.type) || !ctx.visitedNodes.has(n.id))
   );
+
+  // Alias the context detection function for use below
+  const getFunctionContext = getFunctionContexts;
 
   // Helper to get event function parameters and setup variable mappings
   const getEventParams = (eventNode: ScriptNode): { params: string; setupVars: (nodeId: string) => void } => {
@@ -1702,6 +1801,31 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
     // Get event-specific parameters
     const { params, setupVars } = getEventParams(eventNode);
     
+    // Determine if this function needs context wrapping (returns array of contexts or null)
+    const functionContexts = getFunctionContext(eventNode);
+    const contextDirective = functionContexts ? formatContextDirective(functionContexts) : null;
+    
+    // Only init functions get global declarations by default
+    // Custom functions only become global if user explicitly uses a "globalize function" node
+    // Server callback events (OnClientConnected, OnEntitiesDidLoad, etc.) are internal and don't need global
+    const needsGlobalDeclaration = false; // Init functions are handled separately above
+    
+    // Add global function declaration with context wrapping (only for explicitly globalized functions)
+    if (needsGlobalDeclaration) {
+      if (contextDirective) {
+        output.push(`#if ${contextDirective}`);
+      }
+      output.push(`global function ${eventFuncName}`);
+      if (contextDirective) {
+        output.push(`#endif`);
+        output.push('');
+      }
+    }
+    
+    // Add function definition with context wrapping
+    if (contextDirective) {
+      output.push(`#if ${contextDirective}`);
+    }
     output.push(`${returnType} function ${eventFuncName}(${params})`);
     output.push('{');
     ctx.indentLevel = 1;
@@ -1721,9 +1845,14 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
 
     output.push('}');
 
+    // Generate thread functions for this context
     for (const threadFunc of ctx.threadFunctions) {
       output.push('');
       output.push(generateThreadFunction(ctx, threadFunc));
+    }
+    
+    if (contextDirective) {
+      output.push(`#endif`);
     }
 
     output.push('');
