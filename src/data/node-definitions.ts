@@ -235,6 +235,34 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     defaultData: { signal: 'MySignal' },
   },
   {
+    type: 'reroute-exec',
+    category: 'core-flow',
+    label: 'Reroute Exec',
+    description: 'Reroute exec flow',
+    color: '#4A90E2',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'reroute',
+    category: 'data',
+    label: 'Reroute',
+    description: 'Reroute data connection',
+    color: '#2ECC71',
+    inputs: [
+      { label: 'In', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'data', dataType: 'any', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
     type: 'return',
     category: 'core-flow',
     label: 'Return',
@@ -246,6 +274,21 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     ],
     outputs: [],
     defaultData: {},
+  },
+  {
+    type: 'call-function',
+    category: 'core-flow',
+    label: 'Call Function',
+    description: 'Call a function by name',
+    color: '#4A90E2',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Function', type: 'data', dataType: 'function', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { function: 'MyFunction' },
   },
   {
     type: 'comment',
@@ -574,6 +617,18 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Exec', type: 'exec', isInput: false },
     ],
     defaultData: { functionName: 'CustomEvent' },
+  },
+  {
+    type: 'custom-function',
+    category: 'events',
+    label: 'Custom Function',
+    description: 'User-defined function entry point',
+    color: '#E8A838',
+    inputs: [],
+    outputs: [
+      { label: 'Exec', type: 'exec', isInput: false },
+    ],
+    defaultData: { functionName: 'MyFunction' },
   },
 
   // ==================== ENTITY ====================
@@ -1201,6 +1256,47 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'ClassName', type: 'data', dataType: 'string', isInput: false },
     ],
     defaultData: {},
+  },
+  {
+    type: 'register-mod-weapon',
+    category: 'weapons',
+    label: 'RegisterModWeapon',
+    description: 'Register custom weapon data',
+    color: '#E67E22',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'ClassName', type: 'data', dataType: 'string', isInput: true },
+      { label: 'Name', type: 'data', dataType: 'string', isInput: true },
+      { label: 'HudIcon', type: 'data', dataType: 'asset', isInput: true },
+      { label: 'WeaponType', type: 'data', dataType: 'string', isInput: true },
+      { label: 'PickupSound1p', type: 'data', dataType: 'string', isInput: true },
+      { label: 'PickupSound3p', type: 'data', dataType: 'string', isInput: true },
+      { label: 'Tier', type: 'data', dataType: 'number', isInput: true },
+      { label: 'BaseMods', type: 'data', dataType: 'array', isInput: true },
+      { label: 'SupportedAttachments', type: 'data', dataType: 'array', isInput: true },
+      { label: 'LowWeaponChance', type: 'data', dataType: 'number', isInput: true },
+      { label: 'MedWeaponChance', type: 'data', dataType: 'number', isInput: true },
+      { label: 'HighWeaponChance', type: 'data', dataType: 'number', isInput: true },
+      { label: 'RegisterInLoot', type: 'data', dataType: 'boolean', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: {
+      className: 'mp_weapon_custom',
+      name: 'Custom Weapon',
+      hudIcon: '$""',
+      weaponType: 'assault',
+      pickupSound1p: 'survival_loot_pickup_weapon_rspn101',
+      pickupSound3p: 'survival_loot_pickup_3p_weapon_rspn101',
+      tier: 1,
+      baseMods: [],
+      supportedAttachments: [],
+      lowWeaponChance: 0.0,
+      medWeaponChance: 0.0,
+      highWeaponChance: 0.0,
+      registerInLoot: true,
+    },
   },
   {
     type: 'give-weapon',
@@ -2844,7 +2940,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     color: '#2ECC71',
     inputs: [],
     outputs: [
-      { label: 'Value', type: 'data', dataType: 'number', isInput: false },
+      { label: 'Value', type: 'data', dataType: 'float', isInput: false },
     ],
     defaultData: { value: 0.0 },
   },
@@ -2856,7 +2952,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     color: '#2ECC71',
     inputs: [],
     outputs: [
-      { label: 'Value', type: 'data', dataType: 'number', isInput: false },
+      { label: 'Value', type: 'data', dataType: 'int', isInput: false },
     ],
     defaultData: { value: 0 },
   },

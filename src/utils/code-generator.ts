@@ -33,6 +33,16 @@ function getVarName(ctx: CodeGenContext, prefix: string = 'v'): string {
   return `${prefix}${ctx.varCounter++}`;
 }
 
+function formatLiteral(value: unknown): string {
+  if (value === null || value === undefined) return 'null';
+  if (typeof value === 'string') return `"${value}"`;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) {
+    return `[${value.map(formatLiteral).join(', ')}]`;
+  }
+  return String(value);
+}
+
 function getInputValue(ctx: CodeGenContext, node: ScriptNode, portId: string): string {
   const inputConns = getInputConnections(ctx, node.id, portId);
 
@@ -60,8 +70,10 @@ function getInputValue(ctx: CodeGenContext, node: ScriptNode, portId: string): s
       const keyLower = key.toLowerCase();
       const labelLower = port.label.toLowerCase().replace(/\s+/g, '');
       if (keyLower === labelLower || labelLower.includes(keyLower)) {
-        if (typeof val === 'string') return `"${val}"`;
-        return String(val);
+        if ((port.dataType === 'asset' || port.dataType === 'function') && typeof val === 'string') {
+          return val;
+        }
+        return formatLiteral(val);
       }
     }
   }
@@ -180,8 +192,20 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
+    case 'call-function': {
+      const funcName = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}${funcName}()`);
+      followExec('output_0');
+      break;
+    }
+
     case 'return': {
       lines.push(`${ind}return`);
+      break;
+    }
+
+    case 'reroute-exec': {
+      followExec('output_0');
       break;
     }
 
@@ -288,6 +312,40 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
+    case 'register-mod-weapon': {
+      const className = getInputValue(ctx, node, 'input_1');
+      const name = getInputValue(ctx, node, 'input_2');
+      const hudIcon = getInputValue(ctx, node, 'input_3');
+      const weaponType = getInputValue(ctx, node, 'input_4');
+      const pickupSound1p = getInputValue(ctx, node, 'input_5');
+      const pickupSound3p = getInputValue(ctx, node, 'input_6');
+      const tier = getInputValue(ctx, node, 'input_7');
+      const baseMods = getInputValue(ctx, node, 'input_8');
+      const supportedAttachments = getInputValue(ctx, node, 'input_9');
+      const lowWeaponChance = getInputValue(ctx, node, 'input_10');
+      const medWeaponChance = getInputValue(ctx, node, 'input_11');
+      const highWeaponChance = getInputValue(ctx, node, 'input_12');
+      const registerInLoot = getInputValue(ctx, node, 'input_13');
+
+      const dataVar = getVarName(ctx, 'weaponData');
+      lines.push(`${ind}CustomWeaponData ${dataVar}`);
+      lines.push(`${ind}${dataVar}.className = ${className}`);
+      lines.push(`${ind}${dataVar}.name = ${name}`);
+      lines.push(`${ind}${dataVar}.hudIcon = ${hudIcon}`);
+      lines.push(`${ind}${dataVar}.weaponType = ${weaponType}`);
+      lines.push(`${ind}${dataVar}.pickupSound1p = ${pickupSound1p}`);
+      lines.push(`${ind}${dataVar}.pickupSound3p = ${pickupSound3p}`);
+      lines.push(`${ind}${dataVar}.tier = ${tier}`);
+      lines.push(`${ind}${dataVar}.baseMods = ${baseMods}`);
+      lines.push(`${ind}${dataVar}.supportedAttachments = ${supportedAttachments}`);
+      lines.push(`${ind}${dataVar}.lowWeaponChance = ${lowWeaponChance}`);
+      lines.push(`${ind}${dataVar}.medWeaponChance = ${medWeaponChance}`);
+      lines.push(`${ind}${dataVar}.highWeaponChance = ${highWeaponChance}`);
+      lines.push(`${ind}RegisterModWeapon(${dataVar}, ${registerInLoot})`);
+      followExec('output_0');
+      break;
+    }
+
     // ==================== WEAPONS ====================
     case 'get-active-weapon': {
       const player = getInputValue(ctx, node, 'input_0');
@@ -387,6 +445,18 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
+    case 'function-ref': {
+      const value = node.data.functionName || 'MyFunction';
+      ctx.variables.set(`${node.id}:output_0`, value);
+      break;
+    }
+
+    case 'const-asset': {
+      const value = node.data.value || '$""';
+      ctx.variables.set(`${node.id}:output_0`, value);
+      break;
+    }
+
     case 'const-float':
     case 'const-int': {
       const value = node.data.value ?? 0;
@@ -405,6 +475,45 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       const y = node.data.y ?? 0;
       const z = node.data.z ?? 0;
       ctx.variables.set(`${node.id}:output_0`, `Vector(${x}, ${y}, ${z})`);
+      break;
+    }
+
+    case 'reroute': {
+      const inputValue = getInputValue(ctx, node, 'input_0');
+      ctx.variables.set(`${node.id}:output_0`, inputValue);
+      break;
+    }
+
+    case 'array-create': {
+      const resultVar = getVarName(ctx, 'arr');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}local ${resultVar} = []`);
+      break;
+    }
+
+    case 'array-append': {
+      const array = getInputValue(ctx, node, 'input_1');
+      const element = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}${array}.append(${element})`);
+      ctx.variables.set(`${node.id}:output_1`, array);
+      followExec('output_0');
+      break;
+    }
+
+    case 'array-get': {
+      const array = getInputValue(ctx, node, 'input_0');
+      const index = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'elem');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}local ${resultVar} = ${array}[${index}]`);
+      break;
+    }
+
+    case 'array-length': {
+      const array = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'len');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}local ${resultVar} = ${array}.len()`);
       break;
     }
 
@@ -616,8 +725,9 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
     ctx.varCounter = 0;
     ctx.threadFunctions = [];
 
+    const eventFuncName = eventNode.data.functionName || `${eventNode.type.replace(/-/g, '_')}_handler`;
     output.push(`// Event: ${eventNode.label}`);
-    output.push(`void function ${eventNode.type.replace(/-/g, '_')}_handler()`);
+    output.push(`void function ${eventFuncName}()`);
     output.push('{');
     ctx.indentLevel = 1;
     ctx.visitedNodes.add(eventNode.id);

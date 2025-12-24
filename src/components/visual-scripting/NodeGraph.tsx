@@ -12,6 +12,7 @@ interface NodeGraphProps {
   onUpdateNode: (nodeId: string, updates: Partial<ScriptNode>) => void;
   onDeleteNode: (nodeId: string) => void;
   onConnect: (connection: NodeConnection) => void;
+  onBreakInput: (nodeId: string, portId: string) => void;
   onAddNode: (node: ScriptNode) => void;
 }
 
@@ -44,6 +45,13 @@ interface DraggingNodeState {
   nodeStartY: number;
 }
 
+interface PanState {
+  startX: number;
+  startY: number;
+  viewStartX: number;
+  viewStartY: number;
+}
+
 export default function NodeGraph({
   nodes,
   connections,
@@ -52,6 +60,7 @@ export default function NodeGraph({
   onUpdateNode,
   onDeleteNode,
   onConnect,
+  onBreakInput,
   onAddNode,
 }: NodeGraphProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -60,6 +69,8 @@ export default function NodeGraph({
   // Use refs to store drag state (avoids useEffect re-registration)
   const tempConnectionRef = useRef<TempConnectionState | null>(null);
   const draggingNodeRef = useRef<DraggingNodeState | null>(null);
+  const lastMousePosRef = useRef<{ x: number; y: number } | null>(null);
+  const panningRef = useRef<PanState | null>(null);
 
   // Store callbacks in refs so they don't cause re-registration
   const onConnectRef = useRef(onConnect);
@@ -83,10 +94,77 @@ export default function NodeGraph({
   const [tempConnectionLine, setTempConnectionLine] = useState<{ from: { x: number; y: number }; to: { x: number; y: number } } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [renderKey, forceRender] = useState(0);
+  const [view, setView] = useState({ x: 0, y: 0, scale: 1 });
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string; portId: string } | null>(null);
 
   const getNodeDefinitionColor = (type: string) => {
     const definition = getNodeDefinition(type);
     return definition?.color || '#6B7280';
+  };
+
+  const areTypesCompatible = (sourceType?: NodeDataType, targetType?: NodeDataType): boolean => {
+    if (!sourceType || !targetType) return true;
+    if (sourceType === 'any' || targetType === 'any') return true;
+    if (sourceType === targetType) return true;
+
+    const numberTypes: NodeDataType[] = ['number', 'int', 'float'];
+    if (numberTypes.includes(sourceType) && numberTypes.includes(targetType)) return true;
+
+    const rotationTypes: NodeDataType[] = ['vector', 'rotation'];
+    if (rotationTypes.includes(sourceType) && rotationTypes.includes(targetType)) return true;
+
+    const entityTypes: NodeDataType[] = ['entity', 'player', 'weapon'];
+    if (entityTypes.includes(sourceType) && entityTypes.includes(targetType)) return true;
+
+    return false;
+  };
+
+  const getPortClasses = (portType: 'exec' | 'data', dataType?: NodeDataType): string => {
+    if (portType === 'exec') {
+      return 'bg-white border-white hover:shadow-[0_0_8px_white]';
+    }
+
+    const colorMap: Record<string, string> = {
+      int: 'bg-blue-500 border-blue-500 hover:shadow-[0_0_8px_#3b82f6]',
+      float: 'bg-green-500 border-green-500 hover:shadow-[0_0_8px_#22c55e]',
+      number: 'bg-green-500 border-green-500 hover:shadow-[0_0_8px_#22c55e]',
+      string: 'bg-pink-500 border-pink-500 hover:shadow-[0_0_8px_#ec4899]',
+      vector: 'bg-yellow-400 border-yellow-400 hover:shadow-[0_0_8px_#facc15]',
+      rotation: 'bg-orange-500 border-orange-500 hover:shadow-[0_0_8px_#f97316]',
+      boolean: 'bg-red-500 border-red-500 hover:shadow-[0_0_8px_#ef4444]',
+      entity: 'bg-teal-400 border-teal-400 hover:shadow-[0_0_8px_#2dd4bf]',
+      player: 'bg-cyan-400 border-cyan-400 hover:shadow-[0_0_8px_#22d3ee]',
+      weapon: 'bg-amber-400 border-amber-400 hover:shadow-[0_0_8px_#fbbf24]',
+      array: 'bg-purple-500 border-purple-500 hover:shadow-[0_0_8px_#a855f7]',
+      table: 'bg-indigo-500 border-indigo-500 hover:shadow-[0_0_8px_#6366f1]',
+      asset: 'bg-lime-500 border-lime-500 hover:shadow-[0_0_8px_#84cc16]',
+      function: 'bg-slate-400 border-slate-400 hover:shadow-[0_0_8px_#94a3b8]',
+      any: 'bg-gray-500 border-gray-500 hover:shadow-[0_0_8px_#6b7280]',
+    };
+
+    return colorMap[dataType || 'any'] || colorMap.any;
+  };
+
+  const formatNodeDataValue = (value: unknown): string => {
+    if (typeof value === 'string') return `"${value}"`;
+    if (Array.isArray(value)) {
+      return `[${value.map(formatNodeDataValue).join(', ')}]`;
+    }
+    if (value && typeof value === 'object') {
+      try {
+        return JSON.stringify(value);
+      } catch {
+        return String(value);
+      }
+    }
+    return String(value);
+  };
+
+  const screenToWorld = (screen: { x: number; y: number }) => {
+    return {
+      x: (screen.x - view.x) / view.scale,
+      y: (screen.y - view.y) / view.scale,
+    };
   };
 
   // Get port position by querying DOM with more robust selector
@@ -117,6 +195,11 @@ export default function NodeGraph({
       const canvasRect = canvasRef.current?.getBoundingClientRect();
       if (!canvasRect) return;
 
+      lastMousePosRef.current = {
+        x: e.clientX - canvasRect.left,
+        y: e.clientY - canvasRect.top,
+      };
+
       // Handle connection dragging
       if (tempConnectionRef.current) {
         // Update the "from" position in case node moved
@@ -139,8 +222,8 @@ export default function NodeGraph({
       // Handle node dragging
       if (draggingNodeRef.current) {
         const { nodeId, startX, startY, nodeStartX, nodeStartY } = draggingNodeRef.current;
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
+        const dx = (e.clientX - startX) / view.scale;
+        const dy = (e.clientY - startY) / view.scale;
 
         onUpdateNodeRef.current(nodeId, {
           position: {
@@ -148,6 +231,17 @@ export default function NodeGraph({
             y: nodeStartY + dy,
           },
         });
+      }
+
+      if (panningRef.current) {
+        const { startX, startY, viewStartX, viewStartY } = panningRef.current;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        setView(current => ({
+          ...current,
+          x: viewStartX + dx,
+          y: viewStartY + dy,
+        }));
       }
     };
 
@@ -206,6 +300,10 @@ export default function NodeGraph({
         draggingNodeRef.current = null;
         setIsDragging(false);
       }
+
+      if (panningRef.current) {
+        panningRef.current = null;
+      }
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -215,7 +313,39 @@ export default function NodeGraph({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, []);
+  }, [view.scale]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setContextMenu(null);
+      }
+    };
+
+    const handleClick = (e: MouseEvent) => {
+      if (contextMenu) {
+        const target = e.target as HTMLElement;
+        if (!target.closest('[data-context-menu="break-input"]')) {
+          setContextMenu(null);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleClick);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleClick);
+    };
+  }, [contextMenu]);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      forceRender(k => k + 1);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [view]);
 
   // Handle port mouse down - start connection
   const handlePortMouseDown = (
@@ -226,8 +356,10 @@ export default function NodeGraph({
     portType: 'exec' | 'data',
     dataType?: NodeDataType
   ) => {
+    if (e.button !== 0) return;
     e.stopPropagation();
     e.preventDefault();
+    setContextMenu(null);
 
     const portElement = e.currentTarget as HTMLElement;
     const canvasRect = canvasRef.current?.getBoundingClientRect();
@@ -260,6 +392,7 @@ export default function NodeGraph({
     e: React.MouseEvent,
     node: ScriptNode
   ) => {
+    if (e.button !== 0) return;
     const target = e.target as HTMLElement;
     if (target.classList.contains('node-port') || target.closest('button')) {
       return;
@@ -281,12 +414,136 @@ export default function NodeGraph({
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (e.target === canvasRef.current || e.target === svgRef.current) {
       onSelectNode(null);
+      setContextMenu(null);
     }
+  };
+
+  const handlePortContextMenu = (
+    e: React.MouseEvent,
+    nodeId: string,
+    portId: string,
+    isInput: boolean
+  ) => {
+    if (!isInput) return;
+    e.preventDefault();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      nodeId,
+      portId,
+    });
+  };
+
+  const handleCanvasMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 1) return;
+    e.preventDefault();
+    panningRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      viewStartX: view.x,
+      viewStartY: view.y,
+    };
+  };
+
+  const handleCanvasWheel = (e: React.WheelEvent) => {
+    if (!canvasRef.current) return;
+    e.preventDefault();
+
+    const rect = canvasRef.current.getBoundingClientRect();
+    const cursor = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+    const newScale = Math.min(2.5, Math.max(0.3, view.scale * zoomFactor));
+
+    if (newScale === view.scale) return;
+
+    const scaleRatio = newScale / view.scale;
+    setView(current => ({
+      scale: newScale,
+      x: cursor.x - (cursor.x - current.x) * scaleRatio,
+      y: cursor.y - (cursor.y - current.y) * scaleRatio,
+    }));
+  };
+
+  const handleCanvasDragOver = (e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes('node-type')) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+    }
+  };
+
+  const handleCanvasDrop = (e: React.DragEvent) => {
+    const nodeType = e.dataTransfer.getData('node-type');
+    if (!nodeType || !canvasRef.current) return;
+    e.preventDefault();
+
+    const rect = canvasRef.current.getBoundingClientRect();
+    const screenPos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    const worldPos = screenToWorld(screenPos);
+    const definition = getNodeDefinition(nodeType);
+    const newNode = buildNodeFromDefinition(definition, {
+      x: worldPos.x - 90,
+      y: worldPos.y - 30,
+    });
+
+    if (newNode) {
+      onAddNodeRef.current(newNode);
+      setContextMenu(null);
+      requestAnimationFrame(() => {
+        forceRender(k => k + 1);
+      });
+    }
+  };
+
+  const buildNodeFromDefinition = (definition: ReturnType<typeof getNodeDefinition>, position: { x: number; y: number }): ScriptNode | null => {
+    if (!definition) return null;
+    return {
+      id: `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      type: definition.type,
+      category: definition.category,
+      label: definition.label,
+      position,
+      data: { ...definition.defaultData },
+      inputs: definition.inputs.map((input, idx) => ({
+        ...input,
+        id: `input_${idx}`,
+      })),
+      outputs: definition.outputs.map((output, idx) => ({
+        ...output,
+        id: `output_${idx}`,
+      })),
+    };
+  };
+
+  const getConnectPortIndex = (
+    definition: ReturnType<typeof getNodeDefinition>,
+    sourcePort: QuickMenuState['sourcePort']
+  ): number => {
+    if (!definition) return -1;
+    const portsToCheck = sourcePort.isInput ? definition.outputs : definition.inputs;
+
+    for (let i = 0; i < portsToCheck.length; i++) {
+      const port = portsToCheck[i];
+      if (sourcePort.portType === 'exec' && port.type === 'exec') {
+        return i;
+      }
+      if (
+        sourcePort.portType === 'data' &&
+        port.type === 'data' &&
+        areTypesCompatible(sourcePort.dataType, port.dataType)
+      ) {
+        return i;
+      }
+    }
+
+    return -1;
   };
 
   // Handle node selection from QuickNodeMenu
   const handleQuickNodeSelect = useCallback((newNode: ScriptNode, connectToPortIndex: number) => {
     if (!quickMenu) return;
+
+    const worldPos = screenToWorld(newNode.position);
+    newNode.position = worldPos;
 
     // Add the new node
     onAddNode(newNode);
@@ -318,7 +575,80 @@ export default function NodeGraph({
     requestAnimationFrame(() => {
       forceRender(k => k + 1);
     });
-  }, [quickMenu, onAddNode, onConnect]);
+  }, [quickMenu, onAddNode, onConnect, view]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!tempConnectionRef.current || quickMenu) return;
+      if (e.target && (e.target as HTMLElement).closest('input, textarea')) return;
+
+      const key = e.key.toLowerCase();
+      let nodeType: string | null = null;
+
+      if (key === 'b') nodeType = 'branch';
+      if (key === 'r') nodeType = tempConnectionRef.current.portType === 'exec' ? 'reroute-exec' : 'reroute';
+      if (key === '1') nodeType = 'const-int';
+      if (key === '3') nodeType = 'const-vector';
+      if (!nodeType) return;
+
+      const tempConn = tempConnectionRef.current;
+      if (!tempConn) return;
+
+      e.preventDefault();
+
+      const definition = getNodeDefinition(nodeType);
+      const sourcePort: QuickMenuState['sourcePort'] = {
+        nodeId: tempConn.fromNodeId,
+        portId: tempConn.fromPortId,
+        isInput: tempConn.fromIsInput,
+        portType: tempConn.portType,
+        dataType: tempConn.dataType,
+      };
+
+      const connectPortIndex = getConnectPortIndex(definition, sourcePort);
+      const fallbackPos = tempConnectionLine?.to || tempConn.to;
+      const cursorPos = lastMousePosRef.current || fallbackPos;
+      const worldPos = screenToWorld(cursorPos);
+      const newNode = buildNodeFromDefinition(definition, {
+        x: worldPos.x - 90,
+        y: worldPos.y - 30,
+      });
+
+      if (newNode) {
+        onAddNodeRef.current(newNode);
+
+        if (connectPortIndex >= 0) {
+          const newNodePorts = sourcePort.isInput ? newNode.outputs : newNode.inputs;
+          const targetPort = newNodePorts[connectPortIndex];
+          if (targetPort) {
+            const connection: NodeConnection = {
+              id: `conn_${Date.now()}`,
+              from: sourcePort.isInput
+                ? { nodeId: newNode.id, portId: targetPort.id }
+                : { nodeId: sourcePort.nodeId, portId: sourcePort.portId },
+              to: sourcePort.isInput
+                ? { nodeId: sourcePort.nodeId, portId: sourcePort.portId }
+                : { nodeId: newNode.id, portId: targetPort.id },
+            };
+            onConnectRef.current(connection);
+          }
+        }
+
+        tempConnectionRef.current = null;
+        setTempConnectionLine(null);
+        setQuickMenu(null);
+
+        requestAnimationFrame(() => {
+          forceRender(k => k + 1);
+        });
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [buildNodeFromDefinition, getConnectPortIndex, quickMenu, tempConnectionLine]);
 
   // Render connection paths
   const renderConnections = () => {
@@ -352,108 +682,172 @@ export default function NodeGraph({
       ref={canvasRef}
       className="relative w-full h-full bg-[#1a1f28] overflow-hidden"
       onClick={handleCanvasClick}
+      onMouseDown={handleCanvasMouseDown}
+      onWheel={handleCanvasWheel}
+      onDragOver={handleCanvasDragOver}
+      onDrop={handleCanvasDrop}
+      onContextMenu={(e) => {
+        if (e.target === canvasRef.current || e.target === svgRef.current) {
+          e.preventDefault();
+          setContextMenu(null);
+        }
+      }}
       style={{
         backgroundImage: 'radial-gradient(circle, #2a2e38 1px, transparent 1px)',
-        backgroundSize: '20px 20px',
-        cursor: isDragging ? 'grabbing' : 'default',
+        backgroundSize: `${20 * view.scale}px ${20 * view.scale}px`,
+        backgroundPosition: `${view.x}px ${view.y}px`,
+        cursor: isDragging || panningRef.current ? 'grabbing' : 'default',
       }}
     >
-      {/* Render nodes first so DOM is ready for connection queries */}
-      {nodes.map((node) => {
-        const isSelected = selectedNode?.id === node.id;
-        const nodeColor = getNodeDefinitionColor(node.type);
+      <div
+        className="absolute inset-0"
+        style={{
+          transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})`,
+          transformOrigin: '0 0',
+        }}
+      >
+        {/* Render nodes first so DOM is ready for connection queries */}
+        {nodes.map((node) => {
+          const isSelected = selectedNode?.id === node.id;
+          const nodeColor = getNodeDefinitionColor(node.type);
+          const isReroute = node.type === 'reroute' || node.type === 'reroute-exec';
 
-        return (
-          <div
-            key={node.id}
-            className={`absolute bg-[#2a2e38] rounded-lg shadow-xl select-none ${
-              isSelected ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-[#0f1419]' : ''
-            }`}
-            style={{
-              left: node.position.x,
-              top: node.position.y,
-              minWidth: 180,
-              cursor: 'grab',
-              userSelect: 'none',
-              zIndex: isSelected ? 100 : 1,
-            }}
-            onMouseDown={(e) => handleNodeMouseDown(e, node)}
-          >
-            {/* Node Header */}
-            <div
-              className="px-3 py-2 rounded-t-lg flex items-center justify-between"
-              style={{ backgroundColor: nodeColor }}
-            >
-              <span className="text-xs font-semibold text-white truncate">
-                {node.label.replace(/^(Event|Flow|Mod|Data|Action):\s*/, '')}
-              </span>
-              {isSelected && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteNode(node.id);
-                  }}
-                  className="p-0.5 hover:bg-black/20 rounded transition-colors"
-                >
-                  <Trash2 size={12} className="text-white" />
-                </button>
-              )}
-            </div>
+          if (isReroute) {
+            const inputPort = node.inputs[0];
+            const outputPort = node.outputs[0];
+            const portSize = 12;
+            const offset = 6;
 
-            {/* Node Body */}
-            <div className="p-2">
-              {/* Input Ports */}
-              {node.inputs.map((input) => (
-                <div key={input.id} className="flex items-center mb-2">
+            return (
+              <div
+                key={node.id}
+                className={`absolute select-none ${isSelected ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-[#0f1419]' : ''}`}
+                style={{
+                  left: node.position.x,
+                  top: node.position.y,
+                  width: 18,
+                  height: 18,
+                  cursor: 'grab',
+                  userSelect: 'none',
+                  zIndex: isSelected ? 100 : 1,
+                }}
+                onMouseDown={(e) => handleNodeMouseDown(e, node)}
+              >
+                <div className="w-full h-full rounded-full bg-[#2a2e38] border border-white/30" />
+
+                {inputPort && (
                   <div
                     data-node-id={node.id}
-                    data-port-id={input.id}
+                    data-port-id={inputPort.id}
                     data-is-input="true"
-                    className={`node-port w-4 h-4 rounded-full border-2 cursor-crosshair hover:scale-150 transition-transform ${
-                      input.type === 'exec'
-                        ? 'bg-white border-white hover:shadow-[0_0_8px_white]'
-                        : 'bg-orange-500 border-orange-500 hover:shadow-[0_0_8px_orange]'
-                    }`}
-                    onMouseDown={(e) => handlePortMouseDown(e, node.id, input.id, true, input.type, input.dataType)}
-                    title={`${input.label} (${input.type}${input.dataType ? ': ' + input.dataType : ''})`}
+                    className={`node-port absolute rounded-full border-2 cursor-crosshair hover:scale-150 transition-transform ${getPortClasses(inputPort.type, inputPort.dataType)}`}
+                    style={{ width: portSize, height: portSize, left: -offset, top: (18 - portSize) / 2 }}
+                    onMouseDown={(e) => handlePortMouseDown(e, node.id, inputPort.id, true, inputPort.type, inputPort.dataType)}
+                    onContextMenu={(e) => handlePortContextMenu(e, node.id, inputPort.id, true)}
+                    title={`${inputPort.label} (${inputPort.type}${inputPort.dataType ? ': ' + inputPort.dataType : ''})`}
                   />
-                  <span className="ml-2 text-xs text-gray-300">{input.label}</span>
-                </div>
-              ))}
+                )}
 
-              {/* Node Data Display */}
-              {Object.keys(node.data).length > 0 && (
-                <div className="my-2 px-2 py-1 bg-black/20 rounded text-[10px] text-gray-400">
-                  {Object.entries(node.data).map(([key, value]) => (
-                    <div key={key} className="truncate">
-                      {key}: {String(value)}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Output Ports */}
-              {node.outputs.map((output) => (
-                <div key={output.id} className="flex items-center justify-end mb-2">
-                  <span className="mr-2 text-xs text-gray-300">{output.label}</span>
+                {outputPort && (
                   <div
                     data-node-id={node.id}
-                    data-port-id={output.id}
+                    data-port-id={outputPort.id}
                     data-is-input="false"
-                    className={`node-port w-4 h-4 rounded-full border-2 cursor-crosshair hover:scale-150 transition-transform ${
-                      output.type === 'exec'
-                        ? 'bg-white border-white hover:shadow-[0_0_8px_white]'
-                        : 'bg-orange-500 border-orange-500 hover:shadow-[0_0_8px_orange]'
-                    }`}
-                    onMouseDown={(e) => handlePortMouseDown(e, node.id, output.id, false, output.type, output.dataType)}
-                    title={`${output.label} (${output.type}${output.dataType ? ': ' + output.dataType : ''})`}
+                    className={`node-port absolute rounded-full border-2 cursor-crosshair hover:scale-150 transition-transform ${getPortClasses(outputPort.type, outputPort.dataType)}`}
+                    style={{ width: portSize, height: portSize, right: -offset, top: (18 - portSize) / 2 }}
+                    onMouseDown={(e) => handlePortMouseDown(e, node.id, outputPort.id, false, outputPort.type, outputPort.dataType)}
+                    title={`${outputPort.label} (${outputPort.type}${outputPort.dataType ? ': ' + outputPort.dataType : ''})`}
                   />
-                </div>
-              ))}
+                )}
+              </div>
+            );
+          }
+
+          return (
+            <div
+              key={node.id}
+              className={`absolute bg-[#2a2e38] rounded-lg shadow-xl select-none ${
+                isSelected ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-[#0f1419]' : ''
+              }`}
+              style={{
+                left: node.position.x,
+                top: node.position.y,
+                minWidth: 180,
+                cursor: 'grab',
+                userSelect: 'none',
+                zIndex: isSelected ? 100 : 1,
+              }}
+              onMouseDown={(e) => handleNodeMouseDown(e, node)}
+            >
+              {/* Node Header */}
+              <div
+                className="px-3 py-2 rounded-t-lg flex items-center justify-between"
+                style={{ backgroundColor: nodeColor }}
+              >
+                <span className="text-xs font-semibold text-white truncate">
+                  {node.label.replace(/^(Event|Flow|Mod|Data|Action):\s*/, '')}
+                </span>
+                {isSelected && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteNode(node.id);
+                    }}
+                    className="p-0.5 hover:bg-black/20 rounded transition-colors"
+                  >
+                    <Trash2 size={12} className="text-white" />
+                  </button>
+                )}
+              </div>
+
+              {/* Node Body */}
+              <div className="p-2">
+                {/* Input Ports */}
+                {node.inputs.map((input) => (
+                  <div key={input.id} className="flex items-center mb-2">
+                    <div
+                      data-node-id={node.id}
+                      data-port-id={input.id}
+                      data-is-input="true"
+                      className={`node-port w-4 h-4 rounded-full border-2 cursor-crosshair hover:scale-150 transition-transform ${getPortClasses(input.type, input.dataType)}`}
+                      onMouseDown={(e) => handlePortMouseDown(e, node.id, input.id, true, input.type, input.dataType)}
+                      onContextMenu={(e) => handlePortContextMenu(e, node.id, input.id, true)}
+                      title={`${input.label} (${input.type}${input.dataType ? ': ' + input.dataType : ''})`}
+                    />
+                    <span className="ml-2 text-xs text-gray-300">{input.label}</span>
+                  </div>
+                ))}
+
+                {/* Node Data Display */}
+                {Object.keys(node.data).length > 0 && (
+                  <div className="my-2 px-2 py-1 bg-black/20 rounded text-[10px] text-gray-400">
+                    {Object.entries(node.data).map(([key, value]) => (
+                      <div key={key} className="truncate">
+                        {key}: {formatNodeDataValue(value)}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Output Ports */}
+                {node.outputs.map((output) => (
+                  <div key={output.id} className="flex items-center justify-end mb-2">
+                    <span className="mr-2 text-xs text-gray-300">{output.label}</span>
+                    <div
+                      data-node-id={node.id}
+                      data-port-id={output.id}
+                      data-is-input="false"
+                      className={`node-port w-4 h-4 rounded-full border-2 cursor-crosshair hover:scale-150 transition-transform ${getPortClasses(output.type, output.dataType)}`}
+                      onMouseDown={(e) => handlePortMouseDown(e, node.id, output.id, false, output.type, output.dataType)}
+                      title={`${output.label} (${output.type}${output.dataType ? ': ' + output.dataType : ''})`}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
 
       {/* SVG for connections - rendered after nodes so DOM queries work */}
       <svg
@@ -497,6 +891,24 @@ export default function NodeGraph({
           onSelectNode={handleQuickNodeSelect}
           onClose={() => setQuickMenu(null)}
         />
+      )}
+
+      {contextMenu && (
+        <div
+          data-context-menu="break-input"
+          className="fixed z-[1100] bg-[#1a1f28] border border-white/20 rounded-md shadow-xl text-sm text-white"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+        >
+          <button
+            className="px-3 py-2 hover:bg-white/10 w-full text-left"
+            onClick={() => {
+              onBreakInput(contextMenu.nodeId, contextMenu.portId);
+              setContextMenu(null);
+            }}
+          >
+            Break Input
+          </button>
+        </div>
       )}
     </div>
   );

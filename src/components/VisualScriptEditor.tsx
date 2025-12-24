@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { PanelLeft, PanelRight, GitBranch, Code } from 'lucide-react';
 import type { ScriptNode, NodeConnection } from '../types/visual-scripting';
 import NodeGraph from './visual-scripting/NodeGraph';
@@ -6,8 +6,9 @@ import NodePalette from './visual-scripting/NodePalette';
 import NodeInspector from './visual-scripting/NodeInspector';
 import CodeView from './visual-scripting/CodeView';
 import { generateCode } from '../utils/code-generator';
+import { getNodeDefinition } from '../data/node-definitions';
 
-type EditorTab = 'visual' | 'code';
+type EditorTab = 'visual' | 'code' | 'split';
 
 export default function VisualScriptEditor() {
   const [nodes, setNodes] = useState<ScriptNode[]>([]);
@@ -21,7 +22,36 @@ export default function VisualScriptEditor() {
   const selectedNode = nodes.find(n => n.id === selectedNodeId) ?? null;
 
   const handleAddNode = useCallback((newNode: ScriptNode) => {
-    setNodes(currentNodes => [...currentNodes, newNode]);
+    setNodes(currentNodes => {
+      if (newNode.type !== 'custom-function') {
+        return [...currentNodes, newNode];
+      }
+
+      const functionName = newNode.data.functionName || 'MyFunction';
+      const callDefinition = getNodeDefinition('call-function');
+      if (!callDefinition) {
+        return [...currentNodes, newNode];
+      }
+
+      const callNode: ScriptNode = {
+        id: `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        type: callDefinition.type,
+        category: callDefinition.category,
+        label: callDefinition.label,
+        position: { x: newNode.position.x + 220, y: newNode.position.y },
+        data: { ...callDefinition.defaultData, function: functionName },
+        inputs: callDefinition.inputs.map((input, idx) => ({
+          ...input,
+          id: `input_${idx}`,
+        })),
+        outputs: callDefinition.outputs.map((output, idx) => ({
+          ...output,
+          id: `output_${idx}`,
+        })),
+      };
+
+      return [...currentNodes, newNode, callNode];
+    });
   }, []);
 
   const handleSelectNode = useCallback((node: ScriptNode | null) => {
@@ -47,6 +77,22 @@ export default function VisualScriptEditor() {
     }
   }, [selectedNodeId]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!selectedNodeId) return;
+      if (e.target && (e.target as HTMLElement).closest('input, textarea')) return;
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        handleDeleteNode(selectedNodeId);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedNodeId, handleDeleteNode]);
+
   const handleConnect = useCallback((newConnection: NodeConnection) => {
     // Prevent duplicate connections
     setConnections(currentConnections => {
@@ -61,6 +107,12 @@ export default function VisualScriptEditor() {
       }
       return [...currentConnections, newConnection];
     });
+  }, []);
+
+  const handleBreakInput = useCallback((nodeId: string, portId: string) => {
+    setConnections(currentConnections =>
+      currentConnections.filter(conn => !(conn.to.nodeId === nodeId && conn.to.portId === portId))
+    );
   }, []);
 
   // Generate code from nodes
@@ -94,6 +146,17 @@ export default function VisualScriptEditor() {
           >
             <Code size={16} />
             Generated Code
+          </button>
+          <button
+            onClick={() => setActiveTab('split')}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === 'split'
+                ? 'text-white border-purple-500 bg-white/5'
+                : 'text-gray-400 border-transparent hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Code size={16} />
+            Split View
           </button>
         </div>
 
@@ -137,6 +200,7 @@ export default function VisualScriptEditor() {
                 onUpdateNode={handleUpdateNode}
                 onDeleteNode={handleDeleteNode}
                 onConnect={handleConnect}
+                onBreakInput={handleBreakInput}
                 onAddNode={handleAddNode}
               />
             </div>
@@ -162,10 +226,67 @@ export default function VisualScriptEditor() {
               />
             )}
           </>
-        ) : (
+        ) : activeTab === 'code' ? (
           /* Code View */
           <div className="flex-1 h-full">
             <CodeView code={generatedCode} />
+          </div>
+        ) : (
+          <div className="flex-1 h-full flex">
+            <div className="flex-1 h-full flex overflow-hidden border-r border-white/10">
+              {!isPaletteOpen && (
+                <button
+                  onClick={() => setPaletteOpen(true)}
+                  className="absolute top-16 left-4 z-50 p-2 bg-[#151a21]/80 hover:bg-[#151a21] border border-white/10 rounded-lg transition-colors"
+                  title="Show Node Palette"
+                >
+                  <PanelRight size={16} />
+                </button>
+              )}
+
+              {isPaletteOpen && (
+                <NodePalette
+                  onAddNode={handleAddNode}
+                  onClose={() => setPaletteOpen(false)}
+                />
+              )}
+
+              <div className="flex-1 h-full">
+                <NodeGraph
+                  nodes={nodes}
+                  connections={connections}
+                  selectedNode={selectedNode}
+                  onSelectNode={handleSelectNode}
+                  onUpdateNode={handleUpdateNode}
+                  onDeleteNode={handleDeleteNode}
+                  onConnect={handleConnect}
+                  onBreakInput={handleBreakInput}
+                  onAddNode={handleAddNode}
+                />
+              </div>
+
+              {selectedNode && !isInspectorOpen && (
+                <button
+                    onClick={() => setInspectorOpen(true)}
+                    className="absolute top-16 right-4 z-50 p-2 bg-[#151a21]/80 hover:bg-[#151a21] border border-white/10 rounded-lg transition-colors"
+                    title="Show Inspector"
+                >
+                    <PanelLeft size={16} />
+                </button>
+              )}
+
+              {isInspectorOpen && selectedNode && (
+                <NodeInspector
+                  key={selectedNode.id}
+                  node={selectedNode}
+                  onUpdate={(updates) => handleUpdateNode(selectedNode.id, updates)}
+                  onClose={() => setInspectorOpen(false)}
+                />
+              )}
+            </div>
+            <div className="w-[45%] h-full">
+              <CodeView code={generatedCode} />
+            </div>
           </div>
         )}
       </div>

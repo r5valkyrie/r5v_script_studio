@@ -23,6 +23,12 @@ function areTypesCompatible(sourceType?: NodeDataType, targetType?: NodeDataType
   if (sourceType === 'any' || targetType === 'any') return true;
   if (sourceType === targetType) return true;
 
+  const numberTypes: NodeDataType[] = ['number', 'int', 'float'];
+  if (numberTypes.includes(sourceType) && numberTypes.includes(targetType)) return true;
+
+  const rotationTypes: NodeDataType[] = ['vector', 'rotation'];
+  if (rotationTypes.includes(sourceType) && rotationTypes.includes(targetType)) return true;
+
   // Entity subtypes are compatible with entity
   const entityTypes: NodeDataType[] = ['entity', 'player', 'weapon'];
   if (entityTypes.includes(sourceType) && entityTypes.includes(targetType)) return true;

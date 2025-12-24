@@ -88,6 +88,19 @@ export default function NodeInspector({ node, onUpdate, onClose }: NodeInspector
                       step={key.includes('float') || key.includes('duration') ? '0.1' : '1'}
                       className="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
                     />
+                  ) : Array.isArray(value) ? (
+                    <input
+                      type="text"
+                      value={value.join(', ')}
+                      onChange={(e) => {
+                        const items = e.target.value
+                          .split(',')
+                          .map(item => item.trim())
+                          .filter(item => item.length > 0);
+                        handleDataChange(key, items);
+                      }}
+                      className="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
+                    />
                   ) : (
                     <input
                       type="text"

@@ -14,6 +14,8 @@ export type NodeCategory =
   | 'utilities';     // Validation, debugging, utilities
 
 export type NodeDataType =
+  | 'int'
+  | 'float'
   | 'string'
   | 'number'
   | 'boolean'
@@ -21,6 +23,7 @@ export type NodeDataType =
   | 'weapon'
   | 'player'
   | 'vector'
+  | 'rotation'
   | 'asset'
   | 'function'
   | 'array'
@@ -46,6 +49,10 @@ export type NodeType =
   | 'register-signal'
   | 'return'
   | 'comment'
+  | 'reroute'
+  | 'reroute-exec'
+  | 'custom-function'
+  | 'call-function'
 
   // ==================== EVENTS ====================
   // Weapon Events
@@ -122,6 +129,7 @@ export type NodeType =
   | 'get-active-weapon'
   | 'get-weapon-owner'
   | 'get-weapon-class-name'
+  | 'register-mod-weapon'
   | 'give-weapon'
   | 'take-weapon'
   | 'take-all-weapons'

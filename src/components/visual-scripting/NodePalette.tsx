@@ -66,6 +66,11 @@ function CategorySection({ title, category, onAddNode, defaultOpen = false }: Ca
             <button
               key={node.type}
               onClick={() => handleNodeClick(node.type)}
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData('node-type', node.type);
+                e.dataTransfer.effectAllowed = 'copy';
+              }}
               className="w-full px-5 py-2 text-left text-sm text-gray-300 hover:bg-purple-600/20 hover:text-white transition-colors border-l-2 border-transparent hover:border-purple-600"
               title={node.description}
             >
