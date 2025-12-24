@@ -707,7 +707,6 @@ export default function VisualScriptEditor() {
                   key={selectedNode.id}
                   node={selectedNode}
                   onUpdate={(updates) => handleUpdateNode(selectedNode.id, updates)}
-                  onClose={() => setInspectorOpen(false)}
                 />
               </div>
             )}

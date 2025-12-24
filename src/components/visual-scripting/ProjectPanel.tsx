@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, FileCode, Plus, Trash2, FolderOpen, Folder, Edit2, FolderPlus } from 'lucide-react';
+import { X, FileCode, Plus, Trash2, FolderOpen, Folder, Edit2, FolderPlus, ChevronRight, ChevronDown } from 'lucide-react';
 import type { ScriptFile } from '../../types/project';
 
 interface ProjectPanelProps {
@@ -200,46 +200,41 @@ export default function ProjectPanel({
   return (
     <div className="w-full h-full bg-[#151a21] flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b border-white/10">
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          <FolderOpen size={16} className="text-purple-400 flex-shrink-0" />
-          <span className="text-sm font-medium text-white truncate">{projectName}</span>
+      <div className="px-4 py-3 border-b border-white/10 bg-[#0f1419]">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="p-1.5 rounded bg-purple-500/10">
+            <FolderOpen size={14} className="text-purple-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block">Project</span>
+            <span className="text-sm font-medium text-white truncate block">{projectName}</span>
+          </div>
         </div>
-        <button
-          onClick={onClose}
-          className="p-1 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors"
-          title="Close Project Panel"
-        >
-          <X size={16} />
-        </button>
       </div>
 
       {/* Toolbar */}
-      <div className="flex items-center gap-1 p-2 border-b border-white/10">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5 bg-[#0f1419]/50">
         <button
           onClick={() => setIsCreating(true)}
-          className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-300 hover:text-white hover:bg-white/10 rounded transition-colors"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-300 hover:text-white bg-white/5 hover:bg-purple-500/20 rounded transition-colors border border-transparent hover:border-purple-500/50"
           title="New Script File"
         >
-          <Plus size={14} />
+          <Plus size={13} className="text-purple-400" />
           New File
         </button>
         <button
           onClick={() => setIsCreatingFolder(true)}
-          className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-300 hover:text-white hover:bg-white/10 rounded transition-colors"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-300 hover:text-white bg-white/5 hover:bg-yellow-500/20 rounded transition-colors border border-transparent hover:border-yellow-500/50"
           title="New Folder"
         >
-          <FolderPlus size={14} />
+          <FolderPlus size={13} className="text-yellow-400" />
           New Folder
         </button>
       </div>
 
       {/* File List */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-2 space-y-1">
-          <div className="text-[10px] uppercase text-gray-500 font-semibold px-2 mb-2">
-            Script Files
-          </div>
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="p-2 space-y-0.5">
 
           {/* New Folder Input */}
           {isCreatingFolder && (
@@ -313,10 +308,10 @@ export default function ProjectPanel({
                   draggable={renamingId !== file.id}
                   onDragStart={(e) => handleDragStart(e, 'file', file.id, file.name)}
                   onDragEnd={handleDragEnd}
-                  className={`group flex items-center justify-between px-2 py-1.5 rounded cursor-move transition-colors ${
+                  className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-move transition-all border border-transparent ${
                     activeFileId === file.id
-                      ? 'bg-purple-500/20 text-white'
-                      : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                      ? 'bg-purple-500/20 border-purple-500/50 text-white shadow-sm'
+                      : 'text-gray-300 hover:bg-white/5 hover:border-white/10 hover:text-white'
                   } ${draggedItem?.id === file.id ? 'opacity-50' : ''}`}
                   onClick={() => renamingId !== file.id && onSelectFile(file.id)}
                 >
@@ -336,30 +331,32 @@ export default function ProjectPanel({
                         }
                       }}
                       onBlur={() => setTimeout(() => handleRename(file.id), 100)}
-                      className="flex-1 bg-[#1a1f26] px-2 py-0.5 text-xs text-white outline-none border border-purple-500 rounded"
+                      className="flex-1 bg-[#1a1f28] px-2 py-1 text-xs text-white outline-none focus:ring-1 focus:ring-purple-500/50 rounded"
                       autoFocus
                       onClick={(e) => e.stopPropagation()}
                     />
                   ) : (
                     <>
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <FileCode size={14} className="flex-shrink-0 text-blue-400" />
-                        <span className="text-xs truncate">{fileName}</span>
+                      <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                        <div className="p-1 rounded bg-blue-500/10">
+                          <FileCode size={12} className="flex-shrink-0 text-blue-400" />
+                        </div>
+                        <span className="text-xs font-medium truncate">{fileName}</span>
                       </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={(e) => { e.stopPropagation(); startRename(file); }}
-                          className="p-1 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                          className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors"
                           title="Rename"
                         >
-                          <Edit2 size={12} />
+                          <Edit2 size={11} />
                         </button>
                         <button
-                          onClick={(e) => { e.stopPropagation(); if (confirm(`Delete "${file.name}"?`)) onDeleteFile(file.id); }}
-                          className="p-1 text-gray-400 hover:text-red-400 hover:bg-white/10 rounded transition-colors"
+                          onClick={(e) => { e.stopPropagation(); if (confirm(`Delete \"${file.name}\"?`)) onDeleteFile(file.id); }}
+                          className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
                           title="Delete"
                         >
-                          <Trash2 size={12} />
+                          <Trash2 size={11} />
                         </button>
                       </div>
                     </>
@@ -493,14 +490,20 @@ function FolderItem({
         onDragOver={(e) => handleDragOver(e, folderPath)}
         onDragLeave={handleDragLeave}
         onDrop={(e) => handleDrop(e, folderPath)}
-        className={`group flex items-center gap-1.5 px-2 py-1.5 text-gray-400 hover:text-white hover:bg-white/5 rounded cursor-pointer text-xs transition-colors ${
-          dragOverFolder === folderPath ? 'bg-purple-500/20 border-2 border-purple-500' : ''
+        className={`group flex items-center gap-2 px-3 py-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg cursor-pointer text-xs transition-all border border-transparent hover:border-white/10 ${
+          dragOverFolder === folderPath ? 'bg-yellow-500/20 border-yellow-500/50' : ''
         } ${draggedItem?.name === folderPath ? 'opacity-50' : ''}`}
         style={{ marginLeft: `${indentPx}px` }}
         onClick={() => renamingFolder !== folderPath && toggleFolder(folderPath)}
       >
-        <span className="text-[10px] w-3">{isExpanded ? '▼' : '▶'}</span>
-        <Folder size={14} className="text-yellow-500 flex-shrink-0" />
+        {isExpanded ? (
+          <ChevronDown size={12} className="flex-shrink-0 text-gray-500" />
+        ) : (
+          <ChevronRight size={12} className="flex-shrink-0 text-gray-500" />
+        )}
+        <div className="p-1 rounded bg-yellow-500/10">
+          <Folder size={12} className="text-yellow-400 flex-shrink-0" />
+        </div>
         {renamingFolder === folderPath ? (
           <input
             type="text"
@@ -534,28 +537,28 @@ function FolderItem({
                 setRenameFolderValue('');
               }, 100);
             }}
-            className="flex-1 bg-[#1a1f26] px-2 py-0.5 text-xs text-white outline-none border border-yellow-500 rounded"
+            className="flex-1 bg-[#1a1f28] px-2 py-1 text-xs text-white outline-none focus:ring-1 focus:ring-yellow-500/50 rounded"
             autoFocus
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
           <>
-            <span className="truncate flex-1">{folderName}</span>
-            <span className="text-[9px] text-gray-600">{folderFiles.filter(f => !f.name.endsWith('.placeholder')).length}</span>
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <span className="truncate flex-1 font-medium">{folderName}</span>
+            <span className="text-[9px] text-gray-500 bg-white/5 px-1.5 py-0.5 rounded">{folderFiles.filter(f => !f.name.endsWith('.placeholder')).length}</span>
+            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 onClick={(e) => { e.stopPropagation(); setRenamingFolder(folderPath); setRenameFolderValue(folderName); }}
-                className="p-1 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors"
                 title="Rename Folder"
               >
-                <Edit2 size={12} />
+                <Edit2 size={11} />
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); if (confirm(`Delete folder "${folderPath}" and all its contents?`)) onDeleteFolder(folderPath); }}
-                className="p-1 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
+                className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
                 title="Delete Folder"
               >
-                <Trash2 size={12} />
+                <Trash2 size={11} />
               </button>
             </div>
           </>
@@ -576,10 +579,10 @@ function FolderItem({
                 draggable={renamingId !== file.id}
                 onDragStart={(e) => handleDragStart(e, 'file', file.id, file.name)}
                 onDragEnd={handleDragEnd}
-                className={`group flex items-center justify-between px-2 py-1.5 rounded cursor-move transition-colors ${
+                className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-move transition-all border border-transparent ${
                   activeFileId === file.id
-                    ? 'bg-purple-500/20 text-white'
-                    : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                    ? 'bg-purple-500/20 border-purple-500/50 text-white shadow-sm'
+                    : 'text-gray-300 hover:bg-white/5 hover:border-white/10 hover:text-white'
                 } ${draggedItem?.id === file.id ? 'opacity-50' : ''}`}
                 style={{ marginLeft: `${indentPx + 20}px` }}
                 onClick={() => renamingId !== file.id && onSelectFile(file.id)}
@@ -594,30 +597,32 @@ function FolderItem({
                       if (e.key === 'Escape') { setRenamingId(null); setRenameValue(''); }
                     }}
                     onBlur={() => setTimeout(() => handleRename(file.id), 100)}
-                    className="flex-1 bg-[#1a1f26] px-2 py-0.5 text-xs text-white outline-none border border-purple-500 rounded"
+                    className="flex-1 bg-[#1a1f28] px-2 py-1 text-xs text-white outline-none focus:ring-1 focus:ring-purple-500/50 rounded"
                     autoFocus
                     onClick={(e) => e.stopPropagation()}
                   />
                 ) : (
                   <>
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <FileCode size={14} className="flex-shrink-0 text-blue-400" />
-                      <span className="text-xs truncate">{fileName}</span>
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                      <div className="p-1 rounded bg-blue-500/10">
+                        <FileCode size={12} className="flex-shrink-0 text-blue-400" />
+                      </div>
+                      <span className="text-xs font-medium truncate">{fileName}</span>
                     </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={(e) => { e.stopPropagation(); startRename(file); }}
-                        className="p-1 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                        className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors"
                         title="Rename"
                       >
-                        <Edit2 size={12} />
+                        <Edit2 size={11} />
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); if (confirm(`Delete "${file.name}"?`)) onDeleteFile(file.id); }}
-                        className="p-1 text-gray-400 hover:text-red-400 hover:bg-white/10 rounded transition-colors"
+                        className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
                         title="Delete"
                       >
-                        <Trash2 size={12} />
+                        <Trash2 size={11} />
                       </button>
                     </div>
                   </>

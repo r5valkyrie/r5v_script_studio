@@ -3,6 +3,7 @@ import { Trash2 } from 'lucide-react';
 import type { ScriptNode, NodeConnection, NodeDataType } from '../../types/visual-scripting';
 import { getNodeDefinition } from '../../data/node-definitions';
 import QuickNodeMenu from './QuickNodeMenu';
+import CustomSelect from './CustomSelect';
 
 interface NodeGraphProps {
   nodes: ScriptNode[];
@@ -213,7 +214,7 @@ export default function NodeGraph({
           value={value}
           onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, value: e.target.value } })}
           onMouseDown={(e) => e.stopPropagation()}
-          className="w-full px-2 py-1 bg-black/30 border border-white/10 rounded text-[11px] text-gray-200 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
+          className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
         />
       );
     }
@@ -241,7 +242,7 @@ export default function NodeGraph({
           step={step}
           onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, value: parseFloat(e.target.value) || 0 } })}
           onMouseDown={(e) => e.stopPropagation()}
-          className="w-full px-2 py-1 bg-black/30 border border-white/10 rounded text-[11px] text-gray-200 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
+          className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
         />
       );
     }
@@ -281,7 +282,7 @@ export default function NodeGraph({
               value={axis === 'x' ? x : axis === 'y' ? y : z}
               onChange={(e) => updateAxis(axis, parseFloat(e.target.value) || 0)}
               onMouseDown={(e) => e.stopPropagation()}
-              className="px-1 py-1 bg-black/30 border border-white/10 rounded text-[11px] text-gray-200 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/20"
+              className="px-1 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
             />
           ))}
         </div>
@@ -292,18 +293,11 @@ export default function NodeGraph({
       const value = typeof node.data.tier === 'string' ? node.data.tier : 'COMMON';
       const options = ['NONE', 'COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'HEIRLOOM'];
       return (
-        <select
+        <CustomSelect
           value={value}
-          onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, tier: e.target.value } })}
-          onMouseDown={(e) => e.stopPropagation()}
-          className="w-full px-2 py-1 bg-[#0f1419] border border-white/15 rounded text-[11px] text-gray-100 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/25 appearance-none"
-        >
-          {options.map(option => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
+          options={options}
+          onChange={(val) => onUpdateNodeRef.current(node.id, { data: { ...node.data, tier: val } })}
+        />
       );
     }
 
@@ -338,18 +332,11 @@ export default function NodeGraph({
       const value = typeof node.data.weaponType === 'string' ? node.data.weaponType : 'pistol';
       const options = ['assault', 'smg', 'lmg', 'sniper', 'shotgun', 'pistol'];
       return (
-        <select
+        <CustomSelect
           value={value}
-          onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, weaponType: e.target.value } })}
-          onMouseDown={(e) => e.stopPropagation()}
-          className="w-full px-2 py-1 bg-[#0f1419] border border-white/15 rounded text-[11px] text-gray-100 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/25 appearance-none"
-        >
-          {options.map(option => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
+          options={options}
+          onChange={(val) => onUpdateNodeRef.current(node.id, { data: { ...node.data, weaponType: val } })}
+        />
       );
     }
 
@@ -361,7 +348,7 @@ export default function NodeGraph({
           value={value}
           onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, functionName: e.target.value } })}
           onMouseDown={(e) => e.stopPropagation()}
-          className="w-full px-2 py-1 bg-black/30 border border-white/10 rounded text-[11px] text-gray-200 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
+          className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
         />
       );
     }

@@ -1,13 +1,11 @@
-import { X } from 'lucide-react';
 import type { ScriptNode } from '../../types/visual-scripting';
 
 interface NodeInspectorProps {
   node: ScriptNode;
   onUpdate: (updates: Partial<ScriptNode>) => void;
-  onClose: () => void;
 }
 
-export default function NodeInspector({ node, onUpdate, onClose }: NodeInspectorProps) {
+export default function NodeInspector({ node, onUpdate }: NodeInspectorProps) {
   const handleDataChange = (key: string, value: any) => {
     onUpdate({
       data: {
@@ -23,7 +21,7 @@ export default function NodeInspector({ node, onUpdate, onClose }: NodeInspector
       <select
         value={value}
         onChange={(e) => handleDataChange(key, e.target.value)}
-        className="w-full px-3 py-2 bg-[#0f1419] border border-white/15 rounded-lg text-sm text-gray-100 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/25 appearance-none"
+        className="w-full px-3 py-2 bg-[#1a1f28] rounded-lg text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors cursor-pointer"
       >
         {options.map(option => (
           <option key={option} value={option}>
@@ -40,7 +38,7 @@ export default function NodeInspector({ node, onUpdate, onClose }: NodeInspector
       <select
         value={value}
         onChange={(e) => handleDataChange(key, e.target.value)}
-        className="w-full px-3 py-2 bg-[#0f1419] border border-white/15 rounded-lg text-sm text-gray-100 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/25 appearance-none"
+        className="w-full px-3 py-2 bg-[#1a1f28] rounded-lg text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors cursor-pointer"
       >
         {options.map(option => (
           <option key={option} value={option}>
@@ -81,17 +79,10 @@ export default function NodeInspector({ node, onUpdate, onClose }: NodeInspector
   return (
     <div className="w-full h-full bg-[#151a21] flex flex-col">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-white/10 bg-[#0f1419] flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-white/10 bg-[#0f1419] flex items-center">
         <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
           Inspector
         </span>
-        <button
-          onClick={onClose}
-          className="p-1 hover:bg-white/10 rounded transition-colors flex-shrink-0"
-          title="Close inspector"
-        >
-          <X size={14} className="text-gray-500" />
-        </button>
       </div>
 
       {/* Content */}

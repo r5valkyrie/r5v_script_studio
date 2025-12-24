@@ -61,3 +61,51 @@ html, body, #root {
 .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1); }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 4px; }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+
+/* Dark themed select dropdowns - node inline editors */
+.node-root select {
+  color-scheme: dark;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1em 1em;
+  padding-right: 2rem;
+}
+
+.node-root select:focus {
+  border: none !important;
+  outline: none !important;
+  box-shadow: inset 0 0 0 1px rgba(168, 85, 247, 0.5) !important;
+}
+
+.node-root select option {
+  background-color: #1a1f28;
+  color: #e5e7eb;
+  padding: 8px 12px;
+}
+
+.node-root select option:checked {
+  background-color: #2d3748;
+  color: #fff;
+}
+
+/* Also style inputs inside nodes */
+.node-root input[type="text"],
+.node-root input[type="number"] {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.node-root input[type="text"]:focus,
+.node-root input[type="number"]:focus {
+  border: none !important;
+  outline: none !important;
+  box-shadow: inset 0 0 0 1px rgba(168, 85, 247, 0.5) !important;
+}

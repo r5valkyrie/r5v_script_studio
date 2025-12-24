@@ -245,6 +245,7 @@ export default function QuickNodeMenu({
         width: 320,
         maxHeight: 400,
       }}
+      onWheel={(e) => e.stopPropagation()}
     >
       {/* Header */}
       <div className="bg-[#0f1419] px-3 py-2 border-b border-white/10 flex items-center gap-2">
