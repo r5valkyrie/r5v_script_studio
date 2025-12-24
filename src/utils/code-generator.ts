@@ -602,6 +602,24 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
+    case 'const-loot-tier': {
+      const tier = node.data.tier || 'COMMON';
+      ctx.variables.set(`${node.id}:output_0`, `eLootTier.${tier}`);
+      break;
+    }
+
+    case 'const-supported-attachments': {
+      const attachments = Array.isArray(node.data.attachments) ? node.data.attachments : [];
+      ctx.variables.set(`${node.id}:output_0`, formatLiteral(attachments));
+      break;
+    }
+
+    case 'const-weapon-type': {
+      const weaponType = node.data.weaponType || 'pistol';
+      ctx.variables.set(`${node.id}:output_0`, `"${weaponType}"`);
+      break;
+    }
+
     case 'const-float':
     case 'const-int': {
       const value = node.data.value ?? 0;
@@ -972,15 +990,24 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
   const clientInit = nodes.find(n => n.type === 'init-client');
   const uiInit = nodes.find(n => n.type === 'init-ui');
 
-  const globalFunctions = new Set<string>();
-  if (serverInit) globalFunctions.add(serverInit.data.functionName || 'CodeCallback_ModInit');
-  if (clientInit) globalFunctions.add(clientInit.data.functionName || 'ClientCodeCallback_ModInit');
-  if (uiInit) globalFunctions.add(uiInit.data.functionName || 'UICodeCallback_ModInit');
-
-  for (const funcName of globalFunctions) {
-    output.push(`global function ${funcName}`);
+  if (serverInit) {
+    output.push('#if SERVER');
+    output.push(`global function ${serverInit.data.functionName || 'CodeCallback_ModInit'}`);
+    output.push('#endif');
+    output.push('');
   }
-  output.push('');
+  if (clientInit) {
+    output.push('#if CLIENT');
+    output.push(`global function ${clientInit.data.functionName || 'ClientCodeCallback_ModInit'}`);
+    output.push('#endif');
+    output.push('');
+  }
+  if (uiInit) {
+    output.push('#if UI');
+    output.push(`global function ${uiInit.data.functionName || 'UICodeCallback_ModInit'}`);
+    output.push('#endif');
+    output.push('');
+  }
 
   if (serverInit) {
     output.push('#if SERVER');

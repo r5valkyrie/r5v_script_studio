@@ -17,6 +17,67 @@ export default function NodeInspector({ node, onUpdate, onClose }: NodeInspector
     });
   };
 
+  const renderLootTierSelect = (key: string, value: string) => {
+    const options = ['NONE', 'COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'HEIRLOOM'];
+    return (
+      <select
+        value={value}
+        onChange={(e) => handleDataChange(key, e.target.value)}
+        className="w-full px-3 py-2 bg-[#0f1419] border border-white/15 rounded-lg text-sm text-gray-100 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/25 appearance-none"
+      >
+        {options.map(option => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+    );
+  };
+
+  const renderWeaponTypeSelect = (key: string, value: string) => {
+    const options = ['assault', 'smg', 'lmg', 'sniper', 'shotgun', 'pistol'];
+    return (
+      <select
+        value={value}
+        onChange={(e) => handleDataChange(key, e.target.value)}
+        className="w-full px-3 py-2 bg-[#0f1419] border border-white/15 rounded-lg text-sm text-gray-100 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/25 appearance-none"
+      >
+        {options.map(option => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+    );
+  };
+
+  const renderAttachmentsMultiSelect = (key: string, value: string[]) => {
+    const options = ['barrel', 'mag', 'sight', 'grip', 'hopup'];
+    const selected = Array.isArray(value) ? value : [];
+    const toggle = (attachment: string, checked: boolean) => {
+      const next = checked
+        ? Array.from(new Set([...selected, attachment]))
+        : selected.filter(item => item !== attachment);
+      handleDataChange(key, next);
+    };
+
+    return (
+      <div className="grid grid-cols-2 gap-2">
+        {options.map(option => (
+          <label key={option} className="flex items-center gap-2 text-sm text-gray-300">
+            <input
+              type="checkbox"
+              checked={selected.includes(option)}
+              onChange={(e) => toggle(option, e.target.checked)}
+              className="w-4 h-4 rounded border-white/10 bg-black/30 text-purple-600 focus:ring-purple-500 focus:ring-offset-0"
+            />
+            {option}
+          </label>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="w-full h-full bg-[#151a21] flex flex-col">
       {/* Header */}
@@ -68,7 +129,13 @@ export default function NodeInspector({ node, onUpdate, onClose }: NodeInspector
                     {key.replace(/([A-Z])/g, ' $1').trim()}
                   </label>
 
-                  {typeof value === 'boolean' ? (
+                  {node.type === 'const-loot-tier' && key === 'tier' ? (
+                    renderLootTierSelect(key, value as string)
+                  ) : node.type === 'const-weapon-type' && key === 'weaponType' ? (
+                    renderWeaponTypeSelect(key, value as string)
+                  ) : node.type === 'const-supported-attachments' && key === 'attachments' ? (
+                    renderAttachmentsMultiSelect(key, value as string[])
+                  ) : typeof value === 'boolean' ? (
                     <label className="flex items-center cursor-pointer">
                       <input
                         type="checkbox"

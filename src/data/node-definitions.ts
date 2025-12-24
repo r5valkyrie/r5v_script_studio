@@ -1530,7 +1530,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     defaultData: {
       className: 'mp_weapon_custom',
       name: 'Custom Weapon',
-      hudIcon: '$""',
+      hudIcon: '"$\"\""',
       weaponType: 'assault',
       pickupSound1p: 'survival_loot_pickup_weapon_rspn101',
       pickupSound3p: 'survival_loot_pickup_3p_weapon_rspn101',
@@ -3236,6 +3236,42 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Asset', type: 'data', dataType: 'asset', isInput: false },
     ],
     defaultData: { value: '$""' },
+  },
+  {
+    type: 'const-loot-tier',
+    category: 'data',
+    label: 'Loot Tier',
+    description: 'Loot tier enum value',
+    color: '#2ECC71',
+    inputs: [],
+    outputs: [
+      { label: 'Tier', type: 'data', dataType: 'number', isInput: false },
+    ],
+    defaultData: { tier: 'COMMON' },
+  },
+  {
+    type: 'const-supported-attachments',
+    category: 'data',
+    label: 'Supported Attachments',
+    description: 'Weapon supported attachments list',
+    color: '#2ECC71',
+    inputs: [],
+    outputs: [
+      { label: 'Attachments', type: 'data', dataType: 'array', isInput: false },
+    ],
+    defaultData: { attachments: ['barrel', 'mag', 'sight', 'grip', 'hopup'] },
+  },
+  {
+    type: 'const-weapon-type',
+    category: 'data',
+    label: 'Weapon Type',
+    description: 'Weapon type string',
+    color: '#2ECC71',
+    inputs: [],
+    outputs: [
+      { label: 'Type', type: 'data', dataType: 'string', isInput: false },
+    ],
+    defaultData: { weaponType: 'pistol' },
   },
   {
     type: 'variable-get',

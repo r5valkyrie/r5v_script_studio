@@ -204,6 +204,171 @@ export default function NodeGraph({
     return String(value);
   };
 
+  const renderInlineEditor = (node: ScriptNode) => {
+    if (node.type === 'const-string') {
+      const value = typeof node.data.value === 'string' ? node.data.value : '';
+      return (
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, value: e.target.value } })}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="w-full px-2 py-1 bg-black/30 border border-white/10 rounded text-[11px] text-gray-200 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
+        />
+      );
+    }
+
+    if (node.type === 'const-asset') {
+      const value = typeof node.data.value === 'string' ? node.data.value : '$\"\"';
+      return (
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, value: e.target.value } })}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="w-full px-2 py-1 bg-black/30 border border-white/10 rounded text-[11px] text-gray-200 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
+        />
+      );
+    }
+
+    if (node.type === 'const-int' || node.type === 'const-float') {
+      const value = typeof node.data.value === 'number' ? node.data.value : 0;
+      const step = node.type === 'const-float' ? '0.1' : '1';
+      return (
+        <input
+          type="number"
+          value={value}
+          step={step}
+          onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, value: parseFloat(e.target.value) || 0 } })}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="w-full px-2 py-1 bg-black/30 border border-white/10 rounded text-[11px] text-gray-200 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
+        />
+      );
+    }
+
+    if (node.type === 'const-bool') {
+      const value = !!node.data.value;
+      return (
+        <label className="flex items-center gap-2 text-[11px] text-gray-300">
+          <input
+            type="checkbox"
+            checked={value}
+            onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, value: e.target.checked } })}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="w-3 h-3 rounded border-white/10 bg-black/30 text-purple-600 focus:ring-purple-500 focus:ring-offset-0"
+          />
+          {value ? 'True' : 'False'}
+        </label>
+      );
+    }
+
+    if (node.type === 'const-vector') {
+      const x = typeof node.data.x === 'number' ? node.data.x : 0;
+      const y = typeof node.data.y === 'number' ? node.data.y : 0;
+      const z = typeof node.data.z === 'number' ? node.data.z : 0;
+      const updateAxis = (axis: 'x' | 'y' | 'z', val: number) => {
+        onUpdateNodeRef.current(node.id, {
+          data: { ...node.data, [axis]: val },
+        });
+      };
+      return (
+        <div className="grid grid-cols-3 gap-1">
+          {(['x', 'y', 'z'] as const).map((axis) => (
+            <input
+              key={axis}
+              type="number"
+              step="0.1"
+              value={axis === 'x' ? x : axis === 'y' ? y : z}
+              onChange={(e) => updateAxis(axis, parseFloat(e.target.value) || 0)}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="px-1 py-1 bg-black/30 border border-white/10 rounded text-[11px] text-gray-200 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/20"
+            />
+          ))}
+        </div>
+      );
+    }
+
+    if (node.type === 'const-loot-tier') {
+      const value = typeof node.data.tier === 'string' ? node.data.tier : 'COMMON';
+      const options = ['NONE', 'COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'HEIRLOOM'];
+      return (
+        <select
+          value={value}
+          onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, tier: e.target.value } })}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="w-full px-2 py-1 bg-[#0f1419] border border-white/15 rounded text-[11px] text-gray-100 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/25 appearance-none"
+        >
+          {options.map(option => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      );
+    }
+
+    if (node.type === 'const-supported-attachments') {
+      const options = ['barrel', 'mag', 'sight', 'grip', 'hopup'];
+      const selected = Array.isArray(node.data.attachments) ? node.data.attachments : [];
+      const toggle = (attachment: string, checked: boolean) => {
+        const next = checked
+          ? Array.from(new Set([...selected, attachment]))
+          : selected.filter((item) => item !== attachment);
+        onUpdateNodeRef.current(node.id, { data: { ...node.data, attachments: next } });
+      };
+      return (
+        <div className="grid grid-cols-2 gap-1 text-[10px] text-gray-300">
+          {options.map((attachment) => (
+            <label key={attachment} className="flex items-center gap-1">
+              <input
+                type="checkbox"
+                checked={selected.includes(attachment)}
+                onChange={(e) => toggle(attachment, e.target.checked)}
+                onMouseDown={(e) => e.stopPropagation()}
+                className="w-3 h-3 rounded border-white/10 bg-black/30 text-purple-600 focus:ring-purple-500 focus:ring-offset-0"
+              />
+              {attachment}
+            </label>
+          ))}
+        </div>
+      );
+    }
+
+    if (node.type === 'const-weapon-type') {
+      const value = typeof node.data.weaponType === 'string' ? node.data.weaponType : 'pistol';
+      const options = ['assault', 'smg', 'lmg', 'sniper', 'shotgun', 'pistol'];
+      return (
+        <select
+          value={value}
+          onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, weaponType: e.target.value } })}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="w-full px-2 py-1 bg-[#0f1419] border border-white/15 rounded text-[11px] text-gray-100 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/25 appearance-none"
+        >
+          {options.map(option => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      );
+    }
+
+    if (node.type === 'custom-function') {
+      const value = typeof node.data.functionName === 'string' ? node.data.functionName : 'MyFunction';
+      return (
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, functionName: e.target.value } })}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="w-full px-2 py-1 bg-black/30 border border-white/10 rounded text-[11px] text-gray-200 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
+        />
+      );
+    }
+
+    return null;
+  };
+
   const screenToWorld = (screen: { x: number; y: number }) => {
     return {
       x: (screen.x - view.x) / view.scale,
@@ -1047,16 +1212,20 @@ export default function NodeGraph({
                   </div>
                 ))}
 
-                {/* Node Data Display */}
-                {Object.keys(node.data).length > 0 && (
-                  <div className="my-2 px-2 py-1 bg-black/20 rounded text-[10px] text-gray-400">
-                    {Object.entries(node.data).map(([key, value]) => (
-                      <div key={key} className="truncate">
-                        {key}: {formatNodeDataValue(value)}
-                      </div>
-                    ))}
-                  </div>
-                )}
+              {/* Node Data Display */}
+              {Object.keys(node.data).length > 0 && (
+                <div className="my-2 px-2 py-1 bg-black/20 rounded text-[10px] text-gray-400">
+                  {renderInlineEditor(node) ?? (
+                    <>
+                      {Object.entries(node.data).map(([key, value]) => (
+                        <div key={key} className="truncate">
+                          {key}: {formatNodeDataValue(value)}
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              )}
 
                 {/* Output Ports */}
                 {node.outputs.map((output) => (
