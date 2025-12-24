@@ -97,7 +97,6 @@ export type NodeType =
   | 'on-ability-charge-begin'
   | 'on-ability-execute'
   // Custom Event
-  | 'event-custom'
 
   // ==================== ENTITY ====================
   | 'get-origin'

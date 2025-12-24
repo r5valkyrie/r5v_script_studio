@@ -112,6 +112,40 @@ export default function QuickNodeMenu({
       );
     }
 
+    const scoreByPort = (node: NodeDefinition) => {
+      const portsToCheck = sourcePort.isInput ? node.outputs : node.inputs;
+      if (sourcePort.portType === 'exec') {
+        return portsToCheck.some(port => port.type === 'exec') ? 1 : 0;
+      }
+      if (sourcePort.dataType) {
+        return portsToCheck.some(
+          port => port.type === 'data' && areTypesCompatible(sourcePort.dataType, port.dataType)
+        ) ? 1 : 0;
+      }
+      return 0;
+    };
+
+    if (sourcePort.portType === 'exec' || sourcePort.dataType) {
+      const preferredLabels = sourcePort.dataType === 'number'
+        ? ['float', 'int', 'number']
+        : sourcePort.dataType
+          ? [sourcePort.dataType.toLowerCase()]
+          : [];
+      const scoreByLabel = (node: NodeDefinition) => {
+        if (preferredLabels.length === 0) return 0;
+        const label = node.label.toLowerCase();
+        if (preferredLabels.some(pref => label === pref)) return 2;
+        if (preferredLabels.some(pref => label.includes(pref))) return 1;
+        return 0;
+      };
+
+      nodes = [...nodes].sort((a, b) => {
+        const portScore = scoreByPort(b) - scoreByPort(a);
+        if (portScore !== 0) return portScore;
+        return scoreByLabel(b) - scoreByLabel(a);
+      });
+    }
+
     return nodes;
   }, [compatibleNodes, selectedCategory, searchQuery]);
 

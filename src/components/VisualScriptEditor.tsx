@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { PanelLeft, PanelRight, GitBranch, Code } from 'lucide-react';
 import type { ScriptNode, NodeConnection } from '../types/visual-scripting';
 import NodeGraph from './visual-scripting/NodeGraph';
@@ -13,13 +13,17 @@ type EditorTab = 'visual' | 'code' | 'split';
 export default function VisualScriptEditor() {
   const [nodes, setNodes] = useState<ScriptNode[]>([]);
   const [connections, setConnections] = useState<NodeConnection[]>([]);
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<EditorTab>('visual');
+  const [splitRatio, setSplitRatio] = useState(0.55);
+  const splitDraggingRef = useRef(false);
 
   const [isPaletteOpen, setPaletteOpen] = useState(true);
   const [isInspectorOpen, setInspectorOpen] = useState(true);
 
-  const selectedNode = nodes.find(n => n.id === selectedNodeId) ?? null;
+  const selectedNode = selectedNodeIds.length > 0
+    ? nodes.find(n => n.id === selectedNodeIds[0]) ?? null
+    : null;
 
   const handleAddNode = useCallback((newNode: ScriptNode) => {
     setNodes(currentNodes => {
@@ -54,9 +58,9 @@ export default function VisualScriptEditor() {
     });
   }, []);
 
-  const handleSelectNode = useCallback((node: ScriptNode | null) => {
-    setSelectedNodeId(node?.id ?? null);
-    if (node && !isInspectorOpen) {
+  const handleSelectNodes = useCallback((nodeIds: string[]) => {
+    setSelectedNodeIds(nodeIds);
+    if (nodeIds.length > 0 && !isInspectorOpen) {
       setInspectorOpen(true);
     }
   }, [isInspectorOpen]);
@@ -72,18 +76,25 @@ export default function VisualScriptEditor() {
     setConnections(currentConnections =>
       currentConnections.filter(c => c.from.nodeId !== nodeId && c.to.nodeId !== nodeId)
     );
-    if (selectedNodeId === nodeId) {
-      setSelectedNodeId(null);
-    }
-  }, [selectedNodeId]);
+    setSelectedNodeIds(current => current.filter(id => id !== nodeId));
+  }, []);
+
+  const handleDeleteSelectedNodes = useCallback((nodeIds: string[]) => {
+    if (nodeIds.length === 0) return;
+    setNodes(currentNodes => currentNodes.filter(n => !nodeIds.includes(n.id)));
+    setConnections(currentConnections =>
+      currentConnections.filter(c => !nodeIds.includes(c.from.nodeId) && !nodeIds.includes(c.to.nodeId))
+    );
+    setSelectedNodeIds([]);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!selectedNodeId) return;
+      if (selectedNodeIds.length === 0) return;
       if (e.target && (e.target as HTMLElement).closest('input, textarea')) return;
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
-        handleDeleteNode(selectedNodeId);
+        handleDeleteSelectedNodes(selectedNodeIds);
       }
     };
 
@@ -91,7 +102,7 @@ export default function VisualScriptEditor() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedNodeId, handleDeleteNode]);
+  }, [selectedNodeIds, handleDeleteSelectedNodes]);
 
   const handleConnect = useCallback((newConnection: NodeConnection) => {
     // Prevent duplicate connections
@@ -119,6 +130,33 @@ export default function VisualScriptEditor() {
   const generatedCode = useMemo(() => {
     return generateCode(nodes, connections);
   }, [nodes, connections]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!splitDraggingRef.current) return;
+      const divider = document.getElementById('split-divider');
+      if (!divider) return;
+      const container = divider.parentElement;
+      if (!container) return;
+
+      const rect = container.getBoundingClientRect();
+      const ratio = (e.clientX - rect.left) / rect.width;
+      const clamped = Math.min(0.8, Math.max(0.2, ratio));
+      setSplitRatio(clamped);
+    };
+
+    const handleMouseUp = () => {
+      splitDraggingRef.current = false;
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
 
   return (
     <div className="w-screen h-screen bg-[#0f1419] text-white flex flex-col">
@@ -195,8 +233,8 @@ export default function VisualScriptEditor() {
               <NodeGraph
                 nodes={nodes}
                 connections={connections}
-                selectedNode={selectedNode}
-                onSelectNode={handleSelectNode}
+                selectedNodeIds={selectedNodeIds}
+                onSelectNodes={handleSelectNodes}
                 onUpdateNode={handleUpdateNode}
                 onDeleteNode={handleDeleteNode}
                 onConnect={handleConnect}
@@ -233,7 +271,10 @@ export default function VisualScriptEditor() {
           </div>
         ) : (
           <div className="flex-1 h-full flex">
-            <div className="flex-1 h-full flex overflow-hidden border-r border-white/10">
+            <div
+              className="h-full flex overflow-hidden border-r border-white/10"
+              style={{ width: `${splitRatio * 100}%` }}
+            >
               {!isPaletteOpen && (
                 <button
                   onClick={() => setPaletteOpen(true)}
@@ -255,8 +296,8 @@ export default function VisualScriptEditor() {
                 <NodeGraph
                   nodes={nodes}
                   connections={connections}
-                  selectedNode={selectedNode}
-                  onSelectNode={handleSelectNode}
+                  selectedNodeIds={selectedNodeIds}
+                  onSelectNodes={handleSelectNodes}
                   onUpdateNode={handleUpdateNode}
                   onDeleteNode={handleDeleteNode}
                   onConnect={handleConnect}
@@ -284,7 +325,15 @@ export default function VisualScriptEditor() {
                 />
               )}
             </div>
-            <div className="w-[45%] h-full">
+            <div
+              id="split-divider"
+              className="w-1 h-full bg-white/10 hover:bg-purple-500/40 cursor-col-resize"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                splitDraggingRef.current = true;
+              }}
+            />
+            <div className="h-full" style={{ width: `${(1 - splitRatio) * 100}%` }}>
               <CodeView code={generatedCode} />
             </div>
           </div>

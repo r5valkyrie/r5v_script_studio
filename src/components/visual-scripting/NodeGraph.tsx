@@ -7,8 +7,8 @@ import QuickNodeMenu from './QuickNodeMenu';
 interface NodeGraphProps {
   nodes: ScriptNode[];
   connections: NodeConnection[];
-  selectedNode: ScriptNode | null;
-  onSelectNode: (node: ScriptNode | null) => void;
+  selectedNodeIds: string[];
+  onSelectNodes: (nodeIds: string[]) => void;
   onUpdateNode: (nodeId: string, updates: Partial<ScriptNode>) => void;
   onDeleteNode: (nodeId: string) => void;
   onConnect: (connection: NodeConnection) => void;
@@ -45,6 +45,12 @@ interface DraggingNodeState {
   nodeStartY: number;
 }
 
+interface DraggingSelectionState {
+  startX: number;
+  startY: number;
+  nodeStarts: Map<string, { x: number; y: number }>;
+}
+
 interface PanState {
   startX: number;
   startY: number;
@@ -55,8 +61,8 @@ interface PanState {
 export default function NodeGraph({
   nodes,
   connections,
-  selectedNode,
-  onSelectNode,
+  selectedNodeIds,
+  onSelectNodes,
   onUpdateNode,
   onDeleteNode,
   onConnect,
@@ -69,8 +75,11 @@ export default function NodeGraph({
   // Use refs to store drag state (avoids useEffect re-registration)
   const tempConnectionRef = useRef<TempConnectionState | null>(null);
   const draggingNodeRef = useRef<DraggingNodeState | null>(null);
+  const draggingSelectionRef = useRef<DraggingSelectionState | null>(null);
   const lastMousePosRef = useRef<{ x: number; y: number } | null>(null);
   const panningRef = useRef<PanState | null>(null);
+  const selectionRef = useRef<{ start: { x: number; y: number }; shift: boolean } | null>(null);
+  const selectionRectRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
 
   // Store callbacks in refs so they don't cause re-registration
   const onConnectRef = useRef(onConnect);
@@ -96,6 +105,7 @@ export default function NodeGraph({
   const [renderKey, forceRender] = useState(0);
   const [view, setView] = useState({ x: 0, y: 0, scale: 1 });
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string; portId: string } | null>(null);
+  const [selectionRect, setSelectionRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
 
   const getNodeDefinitionColor = (type: string) => {
     const definition = getNodeDefinition(type);
@@ -143,6 +153,39 @@ export default function NodeGraph({
     };
 
     return colorMap[dataType || 'any'] || colorMap.any;
+  };
+
+  const getPortShapeClass = (portType: 'exec' | 'data'): string => {
+    return portType === 'exec' ? 'rounded-sm' : 'rounded-full';
+  };
+
+  const getPortShapeStyle = (portType: 'exec' | 'data'): React.CSSProperties | undefined => {
+    if (portType !== 'exec') return undefined;
+    return { clipPath: 'polygon(0 0, 100% 50%, 0 100%)' };
+  };
+
+  const getLineColor = (portType: 'exec' | 'data', dataType?: NodeDataType): string => {
+    if (portType === 'exec') return '#ffffff';
+
+    const colorMap: Record<string, string> = {
+      int: '#3b82f6',
+      float: '#22c55e',
+      number: '#22c55e',
+      string: '#ec4899',
+      vector: '#facc15',
+      rotation: '#f97316',
+      boolean: '#ef4444',
+      entity: '#2dd4bf',
+      player: '#22d3ee',
+      weapon: '#fbbf24',
+      array: '#a855f7',
+      table: '#6366f1',
+      asset: '#84cc16',
+      function: '#94a3b8',
+      any: '#ffffff',
+    };
+
+    return colorMap[dataType || 'any'] || '#ffffff';
   };
 
   const formatNodeDataValue = (value: unknown): string => {
@@ -233,6 +276,20 @@ export default function NodeGraph({
         });
       }
 
+      if (draggingSelectionRef.current) {
+        const { startX, startY, nodeStarts } = draggingSelectionRef.current;
+        const dx = (e.clientX - startX) / view.scale;
+        const dy = (e.clientY - startY) / view.scale;
+        nodeStarts.forEach((pos, nodeId) => {
+          onUpdateNodeRef.current(nodeId, {
+            position: {
+              x: pos.x + dx,
+              y: pos.y + dy,
+            },
+          });
+        });
+      }
+
       if (panningRef.current) {
         const { startX, startY, viewStartX, viewStartY } = panningRef.current;
         const dx = e.clientX - startX;
@@ -242,6 +299,19 @@ export default function NodeGraph({
           x: viewStartX + dx,
           y: viewStartY + dy,
         }));
+      }
+
+      if (selectionRef.current && canvasRef.current) {
+        const rect = canvasRef.current.getBoundingClientRect();
+        const start = selectionRef.current.start;
+        const current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        const x = Math.min(start.x, current.x);
+        const y = Math.min(start.y, current.y);
+        const width = Math.abs(start.x - current.x);
+        const height = Math.abs(start.y - current.y);
+        const nextRect = { x, y, width, height };
+        selectionRectRef.current = nextRect;
+        setSelectionRect(nextRect);
       }
     };
 
@@ -301,8 +371,56 @@ export default function NodeGraph({
         setIsDragging(false);
       }
 
+      if (draggingSelectionRef.current) {
+        draggingSelectionRef.current = null;
+        setIsDragging(false);
+      }
+
       if (panningRef.current) {
         panningRef.current = null;
+      }
+
+      if (selectionRef.current) {
+        const shift = selectionRef.current.shift;
+        selectionRef.current = null;
+        const rect = selectionRectRef.current;
+        setSelectionRect(null);
+        selectionRectRef.current = null;
+
+        if (rect) {
+          const selected: string[] = [];
+          const elements = document.querySelectorAll('.node-root');
+          elements.forEach((el) => {
+            const nodeId = (el as HTMLElement).dataset.nodeId;
+            if (!nodeId) return;
+            const nodeRect = (el as HTMLElement).getBoundingClientRect();
+            const canvasRect = canvasRef.current?.getBoundingClientRect();
+            if (!canvasRect) return;
+            const localRect = {
+              left: nodeRect.left - canvasRect.left,
+              right: nodeRect.right - canvasRect.left,
+              top: nodeRect.top - canvasRect.top,
+              bottom: nodeRect.bottom - canvasRect.top,
+            };
+
+            const intersects =
+              rect.x < localRect.right &&
+              rect.x + rect.width > localRect.left &&
+              rect.y < localRect.bottom &&
+              rect.y + rect.height > localRect.top;
+
+            if (intersects) selected.push(nodeId);
+          });
+
+          if (selected.length > 0) {
+            const next = shift
+              ? Array.from(new Set([...selectedNodeIds, ...selected]))
+              : selected;
+            onSelectNodes(next);
+          } else if (!shift) {
+            onSelectNodes([]);
+          }
+        }
       }
     };
 
@@ -313,7 +431,7 @@ export default function NodeGraph({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [view.scale]);
+  }, [view.scale, selectedNodeIds, onSelectNodes]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -399,21 +517,44 @@ export default function NodeGraph({
     }
 
     e.preventDefault();
-    onSelectNode(node);
+    if (e.shiftKey) {
+      const next = selectedNodeIds.includes(node.id)
+        ? selectedNodeIds.filter(id => id !== node.id)
+        : [...selectedNodeIds, node.id];
+      onSelectNodes(next);
+    } else if (!selectedNodeIds.includes(node.id)) {
+      onSelectNodes([node.id]);
+    }
 
-    draggingNodeRef.current = {
-      nodeId: node.id,
-      startX: e.clientX,
-      startY: e.clientY,
-      nodeStartX: node.position.x,
-      nodeStartY: node.position.y,
-    };
+    const dragIds = selectedNodeIds.includes(node.id) ? selectedNodeIds : [node.id];
+
+    if (dragIds.length > 1) {
+      const nodeStarts = new Map<string, { x: number; y: number }>();
+      nodes.forEach((n) => {
+        if (dragIds.includes(n.id)) {
+          nodeStarts.set(n.id, { x: n.position.x, y: n.position.y });
+        }
+      });
+      draggingSelectionRef.current = {
+        startX: e.clientX,
+        startY: e.clientY,
+        nodeStarts,
+      };
+    } else {
+      draggingNodeRef.current = {
+        nodeId: node.id,
+        startX: e.clientX,
+        startY: e.clientY,
+        nodeStartX: node.position.x,
+        nodeStartY: node.position.y,
+      };
+    }
     setIsDragging(true);
   };
 
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (e.target === canvasRef.current || e.target === svgRef.current) {
-      onSelectNode(null);
+      onSelectNodes([]);
       setContextMenu(null);
     }
   };
@@ -445,8 +586,30 @@ export default function NodeGraph({
     };
   };
 
+  const handleSelectionStart = (e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    if (!canvasRef.current) return;
+    if (tempConnectionRef.current || panningRef.current) return;
+
+    const target = e.target as HTMLElement;
+    if (target.closest('.node-root') || target.classList.contains('node-port')) return;
+
+    const rect = canvasRef.current.getBoundingClientRect();
+    selectionRef.current = {
+      start: { x: e.clientX - rect.left, y: e.clientY - rect.top },
+      shift: e.shiftKey,
+    };
+    const nextRect = { x: e.clientX - rect.left, y: e.clientY - rect.top, width: 0, height: 0 };
+    selectionRectRef.current = nextRect;
+    setSelectionRect(nextRect);
+    if (!e.shiftKey) {
+      onSelectNodes([]);
+    }
+  };
+
   const handleCanvasWheel = (e: React.WheelEvent) => {
     if (!canvasRef.current) return;
+    if (panningRef.current) return;
     e.preventDefault();
 
     const rect = canvasRef.current.getBoundingClientRect();
@@ -542,8 +705,18 @@ export default function NodeGraph({
   const handleQuickNodeSelect = useCallback((newNode: ScriptNode, connectToPortIndex: number) => {
     if (!quickMenu) return;
 
-    const worldPos = screenToWorld(newNode.position);
-    newNode.position = worldPos;
+    if (canvasRef.current) {
+      const rect = canvasRef.current.getBoundingClientRect();
+      const screenPos = {
+        x: quickMenu.position.x - rect.left,
+        y: quickMenu.position.y - rect.top,
+      };
+      const worldPos = screenToWorld(screenPos);
+      newNode.position = {
+        x: worldPos.x - 90,
+        y: worldPos.y - 30,
+      };
+    }
 
     // Add the new node
     onAddNode(newNode);
@@ -662,12 +835,17 @@ export default function NodeGraph({
       }
 
       const midX = (fromPos.x + toPos.x) / 2;
+      const fromNode = nodes.find(node => node.id === conn.from.nodeId);
+      const fromPort =
+        fromNode?.outputs.find(port => port.id === conn.from.portId) ||
+        fromNode?.inputs.find(port => port.id === conn.from.portId);
+      const stroke = getLineColor(fromPort?.type || 'data', fromPort?.dataType);
 
       return (
         <path
           key={conn.id}
           d={`M ${fromPos.x} ${fromPos.y} C ${midX} ${fromPos.y}, ${midX} ${toPos.y}, ${toPos.x} ${toPos.y}`}
-          stroke="#a78bfa"
+          stroke={stroke}
           strokeWidth="2.5"
           fill="none"
           strokeLinecap="round"
@@ -683,6 +861,7 @@ export default function NodeGraph({
       className="relative w-full h-full bg-[#1a1f28] overflow-hidden"
       onClick={handleCanvasClick}
       onMouseDown={handleCanvasMouseDown}
+      onMouseDownCapture={handleSelectionStart}
       onWheel={handleCanvasWheel}
       onDragOver={handleCanvasDragOver}
       onDrop={handleCanvasDrop}
@@ -708,7 +887,7 @@ export default function NodeGraph({
       >
         {/* Render nodes first so DOM is ready for connection queries */}
         {nodes.map((node) => {
-          const isSelected = selectedNode?.id === node.id;
+          const isSelected = selectedNodeIds.includes(node.id);
           const nodeColor = getNodeDefinitionColor(node.type);
           const isReroute = node.type === 'reroute' || node.type === 'reroute-exec';
 
@@ -716,16 +895,18 @@ export default function NodeGraph({
             const inputPort = node.inputs[0];
             const outputPort = node.outputs[0];
             const portSize = 12;
-            const offset = 6;
+            const hitSize = 20;
+            const offset = hitSize / 2;
 
             return (
-              <div
-                key={node.id}
-                className={`absolute select-none ${isSelected ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-[#0f1419]' : ''}`}
-                style={{
-                  left: node.position.x,
-                  top: node.position.y,
-                  width: 18,
+            <div
+              key={node.id}
+              className={`node-root absolute select-none ${isSelected ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-[#0f1419]' : ''}`}
+              data-node-id={node.id}
+              style={{
+                left: node.position.x,
+                top: node.position.y,
+                width: 18,
                   height: 18,
                   cursor: 'grab',
                   userSelect: 'none',
@@ -740,12 +921,26 @@ export default function NodeGraph({
                     data-node-id={node.id}
                     data-port-id={inputPort.id}
                     data-is-input="true"
-                    className={`node-port absolute rounded-full border-2 cursor-crosshair hover:scale-150 transition-transform ${getPortClasses(inputPort.type, inputPort.dataType)}`}
-                    style={{ width: portSize, height: portSize, left: -offset, top: (18 - portSize) / 2 }}
+                    className="node-port absolute flex items-center justify-center cursor-crosshair group"
+                    style={{
+                      width: hitSize,
+                      height: hitSize,
+                      left: -offset,
+                      top: (18 - hitSize) / 2,
+                    }}
                     onMouseDown={(e) => handlePortMouseDown(e, node.id, inputPort.id, true, inputPort.type, inputPort.dataType)}
                     onContextMenu={(e) => handlePortContextMenu(e, node.id, inputPort.id, true)}
                     title={`${inputPort.label} (${inputPort.type}${inputPort.dataType ? ': ' + inputPort.dataType : ''})`}
-                  />
+                  >
+                    <div
+                      className={`border-2 transition-transform group-hover:scale-125 ${getPortClasses(inputPort.type, inputPort.dataType)} ${getPortShapeClass(inputPort.type)}`}
+                      style={{
+                        width: portSize,
+                        height: portSize,
+                        ...getPortShapeStyle(inputPort.type),
+                      }}
+                    />
+                  </div>
                 )}
 
                 {outputPort && (
@@ -753,11 +948,25 @@ export default function NodeGraph({
                     data-node-id={node.id}
                     data-port-id={outputPort.id}
                     data-is-input="false"
-                    className={`node-port absolute rounded-full border-2 cursor-crosshair hover:scale-150 transition-transform ${getPortClasses(outputPort.type, outputPort.dataType)}`}
-                    style={{ width: portSize, height: portSize, right: -offset, top: (18 - portSize) / 2 }}
+                    className="node-port absolute flex items-center justify-center cursor-crosshair group"
+                    style={{
+                      width: hitSize,
+                      height: hitSize,
+                      right: -offset,
+                      top: (18 - hitSize) / 2,
+                    }}
                     onMouseDown={(e) => handlePortMouseDown(e, node.id, outputPort.id, false, outputPort.type, outputPort.dataType)}
                     title={`${outputPort.label} (${outputPort.type}${outputPort.dataType ? ': ' + outputPort.dataType : ''})`}
-                  />
+                  >
+                    <div
+                      className={`border-2 transition-transform group-hover:scale-125 ${getPortClasses(outputPort.type, outputPort.dataType)} ${getPortShapeClass(outputPort.type)}`}
+                      style={{
+                        width: portSize,
+                        height: portSize,
+                        ...getPortShapeStyle(outputPort.type),
+                      }}
+                    />
+                  </div>
                 )}
               </div>
             );
@@ -766,9 +975,10 @@ export default function NodeGraph({
           return (
             <div
               key={node.id}
-              className={`absolute bg-[#2a2e38] rounded-lg shadow-xl select-none ${
+              className={`node-root absolute bg-[#2a2e38] rounded-lg shadow-xl select-none ${
                 isSelected ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-[#0f1419]' : ''
               }`}
+              data-node-id={node.id}
               style={{
                 left: node.position.x,
                 top: node.position.y,
@@ -809,11 +1019,16 @@ export default function NodeGraph({
                       data-node-id={node.id}
                       data-port-id={input.id}
                       data-is-input="true"
-                      className={`node-port w-4 h-4 rounded-full border-2 cursor-crosshair hover:scale-150 transition-transform ${getPortClasses(input.type, input.dataType)}`}
+                      className="node-port w-6 h-6 flex items-center justify-center cursor-crosshair group"
                       onMouseDown={(e) => handlePortMouseDown(e, node.id, input.id, true, input.type, input.dataType)}
                       onContextMenu={(e) => handlePortContextMenu(e, node.id, input.id, true)}
                       title={`${input.label} (${input.type}${input.dataType ? ': ' + input.dataType : ''})`}
-                    />
+                    >
+                      <div
+                        className={`w-4 h-4 border-2 transition-transform group-hover:scale-125 ${getPortClasses(input.type, input.dataType)} ${getPortShapeClass(input.type)}`}
+                        style={getPortShapeStyle(input.type)}
+                      />
+                    </div>
                     <span className="ml-2 text-xs text-gray-300">{input.label}</span>
                   </div>
                 ))}
@@ -837,10 +1052,15 @@ export default function NodeGraph({
                       data-node-id={node.id}
                       data-port-id={output.id}
                       data-is-input="false"
-                      className={`node-port w-4 h-4 rounded-full border-2 cursor-crosshair hover:scale-150 transition-transform ${getPortClasses(output.type, output.dataType)}`}
+                      className="node-port w-6 h-6 flex items-center justify-center cursor-crosshair group"
                       onMouseDown={(e) => handlePortMouseDown(e, node.id, output.id, false, output.type, output.dataType)}
                       title={`${output.label} (${output.type}${output.dataType ? ': ' + output.dataType : ''})`}
-                    />
+                    >
+                      <div
+                        className={`w-4 h-4 border-2 transition-transform group-hover:scale-125 ${getPortClasses(output.type, output.dataType)} ${getPortShapeClass(output.type)}`}
+                        style={getPortShapeStyle(output.type)}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -865,7 +1085,7 @@ export default function NodeGraph({
             y1={tempConnectionLine.from.y}
             x2={tempConnectionLine.to.x}
             y2={tempConnectionLine.to.y}
-            stroke="#9b59b6"
+            stroke={getLineColor(tempConnectionRef.current?.portType || 'exec', tempConnectionRef.current?.dataType)}
             strokeWidth="2.5"
             strokeDasharray="8,4"
             strokeLinecap="round"
@@ -890,6 +1110,18 @@ export default function NodeGraph({
           sourcePort={quickMenu.sourcePort}
           onSelectNode={handleQuickNodeSelect}
           onClose={() => setQuickMenu(null)}
+        />
+      )}
+
+      {selectionRect && (
+        <div
+          className="absolute border border-purple-400/80 bg-purple-500/10 pointer-events-none"
+          style={{
+            left: selectionRect.x,
+            top: selectionRect.y,
+            width: selectionRect.width,
+            height: selectionRect.height,
+          }}
         />
       )}
 

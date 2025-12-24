@@ -1060,9 +1060,9 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
     output.push('');
   }
 
-  // Handle standalone event nodes
+  // Handle standalone event and custom function nodes
   const eventNodes = nodes.filter(n =>
-    n.category === 'events' &&
+    (n.category === 'events' || n.type === 'custom-function') &&
     !ctx.visitedNodes.has(n.id)
   );
 

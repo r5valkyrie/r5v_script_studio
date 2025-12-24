@@ -507,6 +507,18 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     defaultData: { function: 'MyFunction' },
   },
   {
+    type: 'custom-function',
+    category: 'core-flow',
+    label: 'Custom Function',
+    description: 'User-defined function entry point',
+    color: '#4A90E2',
+    inputs: [],
+    outputs: [
+      { label: 'Exec', type: 'exec', isInput: false },
+    ],
+    defaultData: { functionName: 'MyFunction' },
+  },
+  {
     type: 'comment',
     category: 'core-flow',
     label: 'Comment',
@@ -822,31 +834,6 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     ],
     defaultData: { functionName: 'OnAbilityExecute' },
   },
-  {
-    type: 'event-custom',
-    category: 'events',
-    label: 'Custom Event',
-    description: 'Custom event/callback function',
-    color: '#E8A838',
-    inputs: [],
-    outputs: [
-      { label: 'Exec', type: 'exec', isInput: false },
-    ],
-    defaultData: { functionName: 'CustomEvent' },
-  },
-  {
-    type: 'custom-function',
-    category: 'events',
-    label: 'Custom Function',
-    description: 'User-defined function entry point',
-    color: '#E8A838',
-    inputs: [],
-    outputs: [
-      { label: 'Exec', type: 'exec', isInput: false },
-    ],
-    defaultData: { functionName: 'MyFunction' },
-  },
-
   // ==================== ENTITY ====================
   {
     type: 'get-origin',
