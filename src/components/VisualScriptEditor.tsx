@@ -19,18 +19,17 @@ export default function VisualScriptEditor() {
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
 
   // Panel widths
-  const [projectPanelWidth, setProjectPanelWidth] = useState(256); // 64 * 4 = 16rem
-  const [paletteWidth, setPaletteWidth] = useState(256);
+  const [sidebarWidth, setSidebarWidth] = useState(280); // Unified sidebar width
   const [inspectorWidth, setInspectorWidth] = useState(320);
   const [codePanelWidth, setCodePanelWidth] = useState(500); // min size is 500
-  const projectDraggingRef = useRef(false);
-  const paletteDraggingRef = useRef(false);
+  const sidebarDraggingRef = useRef(false);
   const inspectorDraggingRef = useRef(false);
   const codePanelDraggingRef = useRef(false);
 
-  const [isPaletteOpen, setPaletteOpen] = useState(true);
+  const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const [isProjectSectionExpanded, setProjectSectionExpanded] = useState(true);
+  const [isNodesSectionExpanded, setNodesSectionExpanded] = useState(true);
   const [isInspectorOpen, setInspectorOpen] = useState(true);
-  const [isProjectPanelOpen, setProjectPanelOpen] = useState(true);
   const [isCodePanelOpen, setCodePanelOpen] = useState(false);
   const [isFileMenuOpen, setFileMenuOpen] = useState(false);
   const fileMenuRef = useRef<HTMLDivElement>(null);
@@ -75,12 +74,12 @@ export default function VisualScriptEditor() {
     if (projectKey && hasLoadedUIRef.current !== projectKey && projectData?.settings.ui) {
       hasLoadedUIRef.current = projectKey;
       const ui = projectData.settings.ui;
-      if (ui.isProjectPanelOpen !== undefined) setProjectPanelOpen(ui.isProjectPanelOpen);
-      if (ui.isPaletteOpen !== undefined) setPaletteOpen(ui.isPaletteOpen);
+      if (ui.isSidebarOpen !== undefined) setSidebarOpen(ui.isSidebarOpen);
+      if (ui.isProjectSectionExpanded !== undefined) setProjectSectionExpanded(ui.isProjectSectionExpanded);
+      if (ui.isNodesSectionExpanded !== undefined) setNodesSectionExpanded(ui.isNodesSectionExpanded);
       if (ui.isInspectorOpen !== undefined) setInspectorOpen(ui.isInspectorOpen);
       if (ui.isCodePanelOpen !== undefined) setCodePanelOpen(ui.isCodePanelOpen);
-      if (ui.projectPanelWidth !== undefined) setProjectPanelWidth(ui.projectPanelWidth);
-      if (ui.paletteWidth !== undefined) setPaletteWidth(ui.paletteWidth);
+      if (ui.sidebarWidth !== undefined) setSidebarWidth(ui.sidebarWidth);
       if (ui.inspectorWidth !== undefined) setInspectorWidth(ui.inspectorWidth);
       if (ui.codePanelWidth !== undefined) setCodePanelWidth(ui.codePanelWidth);
       if (ui.openFileTabs !== undefined) setOpenFileTabs(ui.openFileTabs);
@@ -100,12 +99,12 @@ export default function VisualScriptEditor() {
     
     uiSettingsTimeoutRef.current = setTimeout(() => {
       updateUISettings({
-        isProjectPanelOpen,
-        isPaletteOpen,
+        isSidebarOpen,
+        isProjectSectionExpanded,
+        isNodesSectionExpanded,
         isInspectorOpen,
         isCodePanelOpen,
-        projectPanelWidth,
-        paletteWidth,
+        sidebarWidth,
         inspectorWidth,
         codePanelWidth,
         openFileTabs,
@@ -120,12 +119,12 @@ export default function VisualScriptEditor() {
     };
   }, [
     projectData,
-    isProjectPanelOpen,
-    isPaletteOpen,
+    isSidebarOpen,
+    isProjectSectionExpanded,
+    isNodesSectionExpanded,
     isInspectorOpen,
     isCodePanelOpen,
-    projectPanelWidth,
-    paletteWidth,
+    sidebarWidth,
     inspectorWidth,
     codePanelWidth,
     openFileTabs,
@@ -164,15 +163,30 @@ export default function VisualScriptEditor() {
   // Close a file tab
   const handleCloseTab = useCallback((fileId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setOpenFileTabs(tabs => {
-      const newTabs = tabs.filter(id => id !== fileId);
-      // If we're closing the active file, switch to another open file
-      if (activeScriptFile?.id === fileId && newTabs.length > 0) {
-        // Switch to the previous tab or the first remaining tab
-        const closedIndex = tabs.indexOf(fileId);
-        const newActiveIndex = Math.min(closedIndex, newTabs.length - 1);
-        setActiveScriptFile(newTabs[newActiveIndex]);
-      }
+    
+    // Get the current tabs state to calculate new tabs
+    setOpenFileTabs(prevTabs => {
+      const newTabs = prevTabs.filter(id => id !== fileId);
+      
+      // Schedule the active file update for after this state update
+      // Use setTimeout to avoid calling state setters inside state updater
+      setTimeout(() => {
+        if (activeScriptFile?.id === fileId) {
+          if (newTabs.length > 0) {
+            // Switch to the previous tab or the first remaining tab
+            const closedIndex = prevTabs.indexOf(fileId);
+            const newActiveIndex = Math.min(closedIndex, newTabs.length - 1);
+            setActiveScriptFile(newTabs[newActiveIndex]);
+          } else {
+            // No more tabs, clear the active file and graph state
+            setActiveScriptFile(null);
+            setNodes([]);
+            setConnections([]);
+            setSelectedNodeIds([]);
+          }
+        }
+      }, 0);
+      
       return newTabs;
     });
   }, [activeScriptFile?.id, setActiveScriptFile]);
@@ -240,6 +254,32 @@ export default function VisualScriptEditor() {
     setNodes(currentNodes =>
       currentNodes.map(n => (n.id === nodeId ? { ...n, ...updates } : n))
     );
+    
+    // If outputs were updated, clean up connections to removed outputs
+    if (updates.outputs) {
+      const validOutputIds = new Set(updates.outputs.map(o => o.id));
+      setConnections(currentConnections =>
+        currentConnections.filter(c => {
+          // Keep connections not from this node
+          if (c.from.nodeId !== nodeId) return true;
+          // Keep connections to outputs that still exist
+          return validOutputIds.has(c.from.portId);
+        })
+      );
+    }
+    
+    // If inputs were updated, clean up connections to removed inputs
+    if (updates.inputs) {
+      const validInputIds = new Set(updates.inputs.map(i => i.id));
+      setConnections(currentConnections =>
+        currentConnections.filter(c => {
+          // Keep connections not to this node
+          if (c.to.nodeId !== nodeId) return true;
+          // Keep connections to inputs that still exist
+          return validInputIds.has(c.to.portId);
+        })
+      );
+    }
   }, []);
 
   const handleDeleteNode = useCallback((nodeId: string) => {
@@ -342,17 +382,10 @@ export default function VisualScriptEditor() {
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      // Project panel resize
-      if (projectDraggingRef.current) {
+      // Unified sidebar resize
+      if (sidebarDraggingRef.current) {
         const newWidth = Math.min(500, Math.max(240, e.clientX));
-        setProjectPanelWidth(newWidth);
-      }
-
-      // Palette resize
-      if (paletteDraggingRef.current) {
-        const leftOffset = isProjectPanelOpen ? projectPanelWidth : 0;
-        const newWidth = Math.min(400, Math.max(200, e.clientX - leftOffset));
-        setPaletteWidth(newWidth);
+        setSidebarWidth(newWidth);
       }
 
       // Inspector resize
@@ -370,8 +403,7 @@ export default function VisualScriptEditor() {
     };
 
     const handleMouseUp = () => {
-      projectDraggingRef.current = false;
-      paletteDraggingRef.current = false;
+      sidebarDraggingRef.current = false;
       inspectorDraggingRef.current = false;
       codePanelDraggingRef.current = false;
     };
@@ -383,7 +415,7 @@ export default function VisualScriptEditor() {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isProjectPanelOpen, projectPanelWidth, isCodePanelOpen, codePanelWidth]);
+  }, [isCodePanelOpen, codePanelWidth]);
 
   // Close file menu on click outside
   useEffect(() => {
@@ -524,92 +556,91 @@ export default function VisualScriptEditor() {
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
           <>
-            {/* Project Panel */}
-            {isProjectPanelOpen && (
-              <div className="flex h-full" style={{ width: projectPanelWidth }}>
-                <ProjectPanel
-                  scriptFiles={scriptFiles}
-                  activeFileId={activeScriptFile?.id || null}
-                  projectName={projectData?.metadata.name || 'Untitled Project'}
-                  folders={folders}
-                  onSelectFile={setActiveScriptFile}
-                  onCreateFile={createNewScriptFile}
-                  onDeleteFile={deleteScriptFile}
-                  onRenameFile={renameScriptFile}
-                  onCreateFolder={createFolder}
-                  onDeleteFolder={deleteFolder}
-                  onRenameFolder={renameFolder}
-                  onClose={() => setProjectPanelOpen(false)}
-                />
-                {/* Resize Handle */}
-                <div
-                  className="w-1 h-full bg-white/5 hover:bg-purple-500/40 cursor-col-resize transition-colors"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    projectDraggingRef.current = true;
-                  }}
-                />
-              </div>
-            )}
+            {/* Unified Sidebar - Project + Nodes */}
+            {isSidebarOpen && (
+              <div className="flex h-full flex-shrink-0" style={{ width: sidebarWidth }}>
+                <div className="flex-1 h-full flex flex-col bg-[#151a21] overflow-hidden">
+                  {/* Project Section - Collapsible */}
+                  <div className="flex-shrink-0 border-b border-white/10">
+                    {/* Project Header */}
+                    <button
+                      onClick={() => setProjectSectionExpanded(!isProjectSectionExpanded)}
+                      className="w-full flex items-center justify-between px-3 py-2.5 bg-[#0f1419] hover:bg-[#1a1f28] transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="p-1 rounded bg-purple-500/10">
+                          <Folder size={14} className="text-purple-400" />
+                        </div>
+                        <div className="flex flex-col items-start">
+                          <span className="text-[9px] font-semibold tracking-wider text-gray-500 uppercase">Project</span>
+                          <span className="text-xs font-medium text-white truncate max-w-[140px]">{projectData?.metadata.name || 'Untitled'}</span>
+                        </div>
+                      </div>
+                      <ChevronDown size={14} className={`text-gray-400 transition-transform ${isProjectSectionExpanded ? '' : '-rotate-90'}`} />
+                    </button>
+                    
+                    {/* Project Content */}
+                    {isProjectSectionExpanded && (
+                      <div className="max-h-[550px] overflow-y-auto">
+                        <ProjectPanel
+                          scriptFiles={scriptFiles}
+                          activeFileId={activeScriptFile?.id || null}
+                          projectName={projectData?.metadata.name || 'Untitled Project'}
+                          folders={folders}
+                          onSelectFile={setActiveScriptFile}
+                          onCreateFile={createNewScriptFile}
+                          onDeleteFile={deleteScriptFile}
+                          onRenameFile={renameScriptFile}
+                          onCreateFolder={createFolder}
+                          onDeleteFolder={deleteFolder}
+                          onRenameFolder={renameFolder}
+                          isEmbedded={true}
+                        />
+                      </div>
+                    )}
+                  </div>
 
-            {/* Project Panel Toggle Button */}
-            {!isProjectPanelOpen && (
-              <button
-                onClick={() => setProjectPanelOpen(true)}
-                className="absolute z-50 px-2 py-4 bg-[#2a3341] hover:bg-[#363f4f] border-r-2 border-purple-500/50 hover:border-purple-500 transition-all flex flex-col items-center gap-2 group shadow-xl"
-                style={{ 
-                  top: '85px',
-                  left: isPaletteOpen ? `${paletteWidth}px` : '0px'
-                }}
-                title="Show Project Panel (Ctrl+B)"
-              >
-                <Folder size={18} className="text-purple-400 group-hover:text-purple-300" />
-                <div className="text-[9px] text-gray-400 group-hover:text-purple-300 font-semibold tracking-wider" style={{ writingMode: 'vertical-rl' }}>PROJECT</div>
-              </button>
-            )}
-
-            {/* Palette Toggle Button */}
-            {!isPaletteOpen && (
-              <button
-                onClick={() => setPaletteOpen(true)}
-                className="absolute z-50 px-2 py-4 bg-[#2a3341] hover:bg-[#363f4f] border-r-2 border-purple-500/50 hover:border-purple-500 transition-all flex flex-col items-center gap-2 group shadow-xl"
-                style={{ 
-                  top: isProjectPanelOpen ? '85px' : '184px',
-                  left: isProjectPanelOpen ? `${projectPanelWidth}px` : '0px'
-                }}
-                title="Show Node Palette"
-              >
-                <PanelRight size={18} className="text-purple-400 group-hover:text-purple-300" />
-                <div className="text-[9px] text-gray-400 group-hover:text-purple-300 font-semibold tracking-wider" style={{ writingMode: 'vertical-rl' }}>PALETTE</div>
-              </button>
-            )}
-
-            {/* Node Palette */}
-            {isPaletteOpen && (
-              <div className="flex h-full flex-shrink-0" style={{ width: paletteWidth }}>
-                <div className="flex-1 h-full overflow-hidden">
-                  <NodePalette
-                    onAddNode={handleAddNode}
-                    onClose={() => setPaletteOpen(false)}
-                    collapsedCategories={collapsedCategories}
-                    onToggleCategory={(category) => {
-                      setCollapsedCategories(prev => 
-                        prev.includes(category) 
-                          ? prev.filter(c => c !== category)
-                          : [...prev, category]
-                      );
-                    }}
-                  />
+                  {/* Node Palette Section */}
+                  <div className={`${isNodesSectionExpanded ? 'flex-1' : 'flex-shrink-0'} overflow-hidden`}>
+                    <NodePalette
+                      onAddNode={handleAddNode}
+                      onClose={() => setSidebarOpen(false)}
+                      collapsedCategories={collapsedCategories}
+                      onToggleCategory={(category) => {
+                        setCollapsedCategories(prev => 
+                          prev.includes(category) 
+                            ? prev.filter(c => c !== category)
+                            : [...prev, category]
+                        );
+                      }}
+                      isExpanded={isNodesSectionExpanded}
+                      onToggleExpanded={() => setNodesSectionExpanded(!isNodesSectionExpanded)}
+                      isEmbedded={true}
+                    />
+                  </div>
                 </div>
                 {/* Resize Handle */}
                 <div
-                  className="w-1 h-full bg-white/5 hover:bg-purple-500/40 cursor-col-resize transition-colors flex-shrink-0"
+                  className="w-1 h-full bg-purple-500/30 hover:bg-purple-500/60 cursor-col-resize transition-colors flex-shrink-0"
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    paletteDraggingRef.current = true;
+                    sidebarDraggingRef.current = true;
                   }}
                 />
               </div>
+            )}
+
+            {/* Sidebar Toggle Button */}
+            {!isSidebarOpen && (
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="absolute z-50 px-2 py-4 bg-[#2a3341] hover:bg-[#363f4f] border-r-2 border-purple-500/50 hover:border-purple-500 transition-all flex flex-col items-center gap-2 group shadow-xl"
+                style={{ top: '85px', left: '0px' }}
+                title="Show Sidebar"
+              >
+                <PanelRight size={18} className="text-purple-400 group-hover:text-purple-300" />
+                <div className="text-[9px] text-gray-400 group-hover:text-purple-300 font-semibold tracking-wider" style={{ writingMode: 'vertical-rl' }}>SIDEBAR</div>
+              </button>
             )}
 
             {/* Main Canvas */}
@@ -653,7 +684,7 @@ export default function VisualScriptEditor() {
               )}
               {/* Node Graph or Empty State */}
               <div className="flex-1">
-                {openFileTabs.length === 0 ? (
+                {!activeScriptFile ? (
                   <div className="h-full flex flex-col items-center justify-center bg-[#0f1419] text-center p-8">
                     <div className="p-4 rounded-full bg-purple-500/10 mb-4">
                       <FileText size={48} className="text-purple-500/50" />
@@ -697,7 +728,7 @@ export default function VisualScriptEditor() {
               <div className="flex h-full" style={{ width: inspectorWidth }}>
                 {/* Resize Handle */}
                 <div
-                  className="w-1 h-full bg-white/5 hover:bg-purple-500/40 cursor-col-resize transition-colors"
+                  className="w-1 h-full bg-purple-500/30 hover:bg-purple-500/60 cursor-col-resize transition-colors"
                   onMouseDown={(e) => {
                     e.preventDefault();
                     inspectorDraggingRef.current = true;
@@ -716,7 +747,7 @@ export default function VisualScriptEditor() {
               <div className="flex h-full" style={{ width: codePanelWidth }}>
                 {/* Resize Handle */}
                 <div
-                  className="w-2 h-full bg-white/10 hover:bg-purple-500/50 cursor-col-resize transition-colors flex-shrink-0"
+                  className="w-1 h-full bg-purple-500/30 hover:bg-purple-500/60 cursor-col-resize transition-colors flex-shrink-0"
                   onMouseDown={(e) => {
                     e.preventDefault();
                     codePanelDraggingRef.current = true;

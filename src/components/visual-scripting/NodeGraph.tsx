@@ -59,6 +59,15 @@ interface PanState {
   viewStartY: number;
 }
 
+interface ResizingCommentState {
+  nodeId: string;
+  startX: number;
+  startY: number;
+  startWidth: number;
+  startHeight: number;
+  edge: 'right' | 'bottom' | 'corner';
+}
+
 export default function NodeGraph({
   nodes,
   connections,
@@ -82,6 +91,7 @@ export default function NodeGraph({
   const selectionRef = useRef<{ start: { x: number; y: number }; shift: boolean } | null>(null);
   const selectionRectRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
   const selectionMadeRef = useRef(false);
+  const resizingCommentRef = useRef<ResizingCommentState | null>(null);
 
   // Store callbacks in refs so they don't cause re-registration
   const onConnectRef = useRef(onConnect);
@@ -340,16 +350,332 @@ export default function NodeGraph({
       );
     }
 
-    if (node.type === 'custom-function') {
-      const value = typeof node.data.functionName === 'string' ? node.data.functionName : 'MyFunction';
+    if (node.type === 'call-function') {
+      const returnType = typeof node.data.returnType === 'string' ? node.data.returnType : 'none';
+      const returnTypes = ['none', 'var', 'entity', 'int', 'float', 'bool', 'string', 'vector', 'array'];
       return (
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, functionName: e.target.value } })}
-          onMouseDown={(e) => e.stopPropagation()}
-          className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
-        />
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-[9px] text-gray-500">Returns:</span>
+          <select
+            value={returnType}
+            onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, returnType: e.target.value } })}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="flex-1 px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+          >
+            {returnTypes.map((rt) => (
+              <option key={rt} value={rt}>{rt}</option>
+            ))}
+          </select>
+        </div>
+      );
+    }
+
+    if (node.type === 'set-portal' || node.type === 'get-portal') {
+      const portalName = typeof node.data.portalName === 'string' ? node.data.portalName : 'MyPortal';
+      const portalType = typeof node.data.portalType === 'string' ? node.data.portalType : 'any';
+      const portalTypes = ['any', 'entity', 'int', 'float', 'bool', 'string', 'vector'];
+      
+      return (
+        <div className="flex flex-col gap-1.5">
+          <input
+            type="text"
+            value={portalName}
+            onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, portalName: e.target.value } })}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+            placeholder="PortalName"
+          />
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] text-gray-500">Type:</span>
+            <select
+              value={portalType}
+              onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, portalType: e.target.value } })}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="flex-1 px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+            >
+              {portalTypes.map((pt) => (
+                <option key={pt} value={pt}>{pt}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      );
+    }
+
+    // Server callback event nodes - show function name input
+    if (['on-entities-did-load', 'on-client-connected', 'on-client-disconnected', 'on-player-killed', 'on-player-respawned'].includes(node.type)) {
+      const functionName = typeof node.data.functionName === 'string' ? node.data.functionName : '';
+      
+      return (
+        <div className="flex flex-col gap-1">
+          <span className="text-[9px] text-gray-500">Function Name:</span>
+          <input
+            type="text"
+            value={functionName}
+            onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, functionName: e.target.value } })}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+            placeholder="MyCallback"
+          />
+        </div>
+      );
+    }
+
+    // Give weapon node - show slot dropdown
+    if (node.type === 'give-weapon') {
+      const slot = typeof node.data.slot === 'string' ? node.data.slot : 'WEAPON_INVENTORY_SLOT_PRIMARY_0';
+      const weaponSlots = [
+        { value: 'WEAPON_INVENTORY_SLOT_PRIMARY_0', label: 'Primary 0' },
+        { value: 'WEAPON_INVENTORY_SLOT_PRIMARY_1', label: 'Primary 1' },
+        { value: 'WEAPON_INVENTORY_SLOT_PRIMARY_2', label: 'Primary 2' },
+        { value: 'WEAPON_INVENTORY_SLOT_PRIMARY_3', label: 'Primary 3' },
+        { value: 'WEAPON_INVENTORY_SLOT_ANTI_TITAN', label: 'Anti-Titan' },
+        { value: 'WEAPON_INVENTORY_SLOT_ANY', label: 'Any' },
+        { value: 'WEAPON_INVENTORY_SLOT_DUALPRIMARY_0', label: 'Dual Primary 0' },
+        { value: 'WEAPON_INVENTORY_SLOT_DUALPRIMARY_1', label: 'Dual Primary 1' },
+        { value: 'WEAPON_INVENTORY_SLOT_DUALPRIMARY_2', label: 'Dual Primary 2' },
+        { value: 'WEAPON_INVENTORY_SLOT_DUALPRIMARY_3', label: 'Dual Primary 3' },
+      ];
+      
+      return (
+        <div className="flex flex-col gap-1">
+          <span className="text-[9px] text-gray-500">Slot:</span>
+          <select
+            value={slot}
+            onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, slot: e.target.value } })}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="w-full px-1.5 py-1 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+          >
+            {weaponSlots.map((ws) => (
+              <option key={ws.value} value={ws.value}>{ws.label}</option>
+            ))}
+          </select>
+        </div>
+      );
+    }
+
+    if (node.type === 'custom-function') {
+      const functionName = typeof node.data.functionName === 'string' ? node.data.functionName : 'MyFunction';
+      const returnType = typeof node.data.returnType === 'string' ? node.data.returnType : 'void';
+      const returnTypes = ['void', 'int', 'float', 'bool', 'entity', 'string', 'vector', 'var'];
+      
+      return (
+        <div className="flex flex-col gap-1.5">
+          <input
+            type="text"
+            value={functionName}
+            onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, functionName: e.target.value } })}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+            placeholder="FunctionName"
+          />
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] text-gray-500">Returns:</span>
+            <select
+              value={returnType}
+              onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, returnType: e.target.value } })}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="flex-1 px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+            >
+              {returnTypes.map((rt) => (
+                <option key={rt} value={rt}>{rt}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      );
+    }
+
+    if (node.type === 'thread') {
+      const value = typeof node.data.functionName === 'string' ? node.data.functionName : 'ThreadFunc';
+      return (
+        <div className="flex flex-col gap-1">
+          <span className="text-[9px] text-gray-500">Thread Function:</span>
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, functionName: e.target.value } })}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+            placeholder="ThreadFunc"
+          />
+        </div>
+      );
+    }
+
+    if (node.type === 'exec-sequence') {
+      const outputCount = typeof node.data.outputCount === 'number' ? node.data.outputCount : 2;
+      
+      const addOutput = () => {
+        const newCount = outputCount + 1;
+        const newOutputs = [...node.outputs, {
+          id: `output_${newCount - 1}`,
+          label: `Then ${newCount - 1}`,
+          type: 'exec' as const,
+          isInput: false,
+        }];
+        onUpdateNodeRef.current(node.id, {
+          data: { ...node.data, outputCount: newCount },
+          outputs: newOutputs,
+        });
+      };
+
+      const removeOutput = () => {
+        if (outputCount <= 1) return;
+        const newCount = outputCount - 1;
+        const newOutputs = node.outputs.slice(0, newCount);
+        onUpdateNodeRef.current(node.id, {
+          data: { ...node.data, outputCount: newCount },
+          outputs: newOutputs,
+        });
+      };
+
+      return (
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] text-gray-400">{outputCount} outputs</span>
+          <div className="flex gap-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                removeOutput();
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              disabled={outputCount <= 1}
+              className="w-5 h-5 flex items-center justify-center rounded bg-red-500/20 hover:bg-red-500/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-red-400 text-xs font-bold"
+            >
+              −
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                addOutput();
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="w-5 h-5 flex items-center justify-center rounded bg-green-500/20 hover:bg-green-500/40 transition-colors text-green-400 text-xs font-bold"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // String builder - dynamic input count
+    if (node.type === 'string-builder') {
+      const inputCount = typeof node.data.inputCount === 'number' ? node.data.inputCount : 2;
+      
+      const addInput = () => {
+        const newCount = inputCount + 1;
+        const newInputs = [...node.inputs, {
+          id: `input_${newCount - 1}`,
+          label: `Part ${newCount - 1}`,
+          type: 'data' as const,
+          dataType: 'any' as const,
+          isInput: true,
+        }];
+        onUpdateNodeRef.current(node.id, {
+          data: { ...node.data, inputCount: newCount },
+          inputs: newInputs,
+        });
+      };
+
+      const removeInput = () => {
+        if (inputCount <= 1) return;
+        const newCount = inputCount - 1;
+        const newInputs = node.inputs.slice(0, newCount);
+        onUpdateNodeRef.current(node.id, {
+          data: { ...node.data, inputCount: newCount },
+          inputs: newInputs,
+        });
+      };
+
+      return (
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] text-gray-400">{inputCount} parts</span>
+          <div className="flex gap-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                removeInput();
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              disabled={inputCount <= 1}
+              className="w-5 h-5 flex items-center justify-center rounded bg-red-500/20 hover:bg-red-500/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-red-400 text-xs font-bold"
+            >
+              −
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                addInput();
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="w-5 h-5 flex items-center justify-center rounded bg-green-500/20 hover:bg-green-500/40 transition-colors text-green-400 text-xs font-bold"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // Print - dynamic part count (auto-concatenates)
+    if (node.type === 'print') {
+      const partCount = typeof node.data.partCount === 'number' ? node.data.partCount : 2;
+      
+      const addPart = () => {
+        const newCount = partCount + 1;
+        const newInputs = [...node.inputs, {
+          id: `input_${newCount}`,
+          label: `Part ${newCount - 1}`,
+          type: 'data' as const,
+          dataType: 'any' as const,
+          isInput: true,
+        }];
+        onUpdateNodeRef.current(node.id, {
+          data: { ...node.data, partCount: newCount },
+          inputs: newInputs,
+        });
+      };
+
+      const removePart = () => {
+        if (partCount <= 1) return;
+        const newCount = partCount - 1;
+        // Keep exec input (0), remove last part
+        const newInputs = node.inputs.slice(0, 1 + newCount);
+        onUpdateNodeRef.current(node.id, {
+          data: { ...node.data, partCount: newCount },
+          inputs: newInputs,
+        });
+      };
+
+      return (
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] text-gray-400">{partCount} parts</span>
+          <div className="flex gap-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                removePart();
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              disabled={partCount <= 1}
+              className="w-5 h-5 flex items-center justify-center rounded bg-red-500/20 hover:bg-red-500/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-red-400 text-xs font-bold"
+            >
+              −
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                addPart();
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="w-5 h-5 flex items-center justify-center rounded bg-green-500/20 hover:bg-green-500/40 transition-colors text-green-400 text-xs font-bold"
+            >
+              +
+            </button>
+          </div>
+        </div>
       );
     }
 
@@ -454,6 +780,30 @@ export default function NodeGraph({
         }));
       }
 
+      // Handle comment resizing
+      if (resizingCommentRef.current) {
+        const { nodeId, startX, startY, startWidth, startHeight, edge } = resizingCommentRef.current;
+        const dx = (e.clientX - startX) / view.scale;
+        const dy = (e.clientY - startY) / view.scale;
+
+        const minWidth = 200;
+        const minHeight = 100;
+
+        let newWidth = startWidth;
+        let newHeight = startHeight;
+
+        if (edge === 'right' || edge === 'corner') {
+          newWidth = Math.max(minWidth, startWidth + dx);
+        }
+        if (edge === 'bottom' || edge === 'corner') {
+          newHeight = Math.max(minHeight, startHeight + dy);
+        }
+
+        onUpdateNodeRef.current(nodeId, {
+          size: { width: newWidth, height: newHeight },
+        });
+      }
+
       if (selectionRef.current && canvasRef.current) {
         const rect = canvasRef.current.getBoundingClientRect();
         const start = selectionRef.current.start;
@@ -531,6 +881,12 @@ export default function NodeGraph({
 
       if (panningRef.current) {
         panningRef.current = null;
+      }
+
+      // Handle comment resize end
+      if (resizingCommentRef.current) {
+        resizingCommentRef.current = null;
+        setIsDragging(false);
       }
 
       if (selectionRef.current && canvasRef.current) {
@@ -713,6 +1069,30 @@ export default function NodeGraph({
     setIsDragging(true);
   };
 
+  // Handle comment resize start
+  const handleCommentResizeStart = (
+    e: React.MouseEvent,
+    node: ScriptNode,
+    edge: 'right' | 'bottom' | 'corner'
+  ) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    e.preventDefault();
+
+    const width = node.size?.width || 300;
+    const height = node.size?.height || 150;
+
+    resizingCommentRef.current = {
+      nodeId: node.id,
+      startX: e.clientX,
+      startY: e.clientY,
+      startWidth: width,
+      startHeight: height,
+      edge,
+    };
+    setIsDragging(true);
+  };
+
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (selectionMadeRef.current) {
       selectionMadeRef.current = false;
@@ -773,7 +1153,9 @@ export default function NodeGraph({
     }
   };
 
-  const handleCanvasWheel = (e: React.WheelEvent) => {
+  // Wheel handler attached via useEffect with { passive: false } to allow preventDefault
+  const handleCanvasWheelRef = useRef<((e: WheelEvent) => void) | undefined>(undefined);
+  handleCanvasWheelRef.current = (e: WheelEvent) => {
     if (!canvasRef.current) return;
     if (panningRef.current) return;
     if (e.target instanceof Element && e.target.closest('[data-quick-node-menu="true"]')) return;
@@ -793,6 +1175,21 @@ export default function NodeGraph({
       y: cursor.y - (cursor.y - current.y) * scaleRatio,
     }));
   };
+
+  // Attach wheel listener with { passive: false } to allow preventDefault
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      handleCanvasWheelRef.current?.(e);
+    };
+
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      canvas.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
 
   const handleCanvasDragOver = (e: React.DragEvent) => {
     if (e.dataTransfer.types.includes('node-type')) {
@@ -826,7 +1223,7 @@ export default function NodeGraph({
 
   const buildNodeFromDefinition = (definition: ReturnType<typeof getNodeDefinition>, position: { x: number; y: number }): ScriptNode | null => {
     if (!definition) return null;
-    return {
+    const node: ScriptNode = {
       id: `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: definition.type,
       category: definition.category,
@@ -842,6 +1239,13 @@ export default function NodeGraph({
         id: `output_${idx}`,
       })),
     };
+
+    // Set default size for comment nodes
+    if (definition.type === 'comment') {
+      node.size = { width: 300, height: 150 };
+    }
+
+    return node;
   };
 
   const getConnectPortIndex = (
@@ -1029,7 +1433,6 @@ export default function NodeGraph({
       onClick={handleCanvasClick}
       onMouseDown={handleCanvasMouseDown}
       onMouseDownCapture={handleSelectionStart}
-      onWheel={handleCanvasWheel}
       onDragOver={handleCanvasDragOver}
       onDrop={handleCanvasDrop}
       onContextMenu={(e) => {
@@ -1057,31 +1460,142 @@ export default function NodeGraph({
           const isSelected = selectedNodeIds.includes(node.id);
           const nodeColor = getNodeDefinitionColor(node.type);
           const isReroute = node.type === 'reroute' || node.type === 'reroute-exec';
+          const isComment = node.type === 'comment';
+
+          // Render comment nodes as resizable boxes that stay behind other nodes
+          if (isComment) {
+            const width = node.size?.width || 300;
+            const height = node.size?.height || 150;
+            const commentColor = typeof node.data.commentColor === 'string' ? node.data.commentColor : '#6C7A89';
+            const commentText = typeof node.data.comment === 'string' ? node.data.comment : 'Comment';
+
+            return (
+              <div
+                key={node.id}
+                className={`node-root absolute select-none ${isSelected ? 'ring-2 ring-purple-500' : ''}`}
+                data-node-id={node.id}
+                style={{
+                  left: node.position.x,
+                  top: node.position.y,
+                  width,
+                  height,
+                  zIndex: isSelected ? 0 : -1, // Always behind other nodes
+                  cursor: 'grab',
+                  userSelect: 'none',
+                }}
+                onMouseDown={(e) => handleNodeMouseDown(e, node)}
+              >
+                {/* Comment background */}
+                <div
+                  className="absolute inset-0 rounded-lg border-2"
+                  style={{
+                    backgroundColor: `${commentColor}20`,
+                    borderColor: `${commentColor}60`,
+                  }}
+                />
+
+                {/* Comment header/title bar */}
+                <div
+                  className="absolute top-0 left-0 right-0 px-3 py-1.5 rounded-t-lg flex items-center justify-between"
+                  style={{ backgroundColor: commentColor }}
+                >
+                  <input
+                    type="text"
+                    value={commentText}
+                    onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, comment: e.target.value } })}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    className="bg-transparent text-white text-sm font-semibold outline-none flex-1 min-w-0"
+                    placeholder="Comment"
+                  />
+                  {isSelected && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteNode(node.id);
+                      }}
+                      className="p-0.5 hover:bg-black/20 rounded transition-colors ml-2"
+                    >
+                      <Trash2 size={12} className="text-white" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Color picker - only shown when selected */}
+                {isSelected && (
+                  <div className="absolute top-8 left-2 flex gap-1">
+                    {['#6C7A89', '#E74C3C', '#E67E22', '#F1C40F', '#27AE60', '#3498DB', '#9B59B6', '#1ABC9C'].map((color) => (
+                      <button
+                        key={color}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onUpdateNodeRef.current(node.id, { data: { ...node.data, commentColor: color } });
+                        }}
+                        className={`w-4 h-4 rounded-full border-2 transition-transform hover:scale-110 ${color === commentColor ? 'border-white' : 'border-transparent'}`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Resize handle - right edge */}
+                <div
+                  className="absolute top-8 bottom-2 right-0 w-2 cursor-ew-resize hover:bg-purple-500/30 transition-colors"
+                  onMouseDown={(e) => handleCommentResizeStart(e, node, 'right')}
+                />
+
+                {/* Resize handle - bottom edge */}
+                <div
+                  className="absolute bottom-0 left-0 right-2 h-2 cursor-ns-resize hover:bg-purple-500/30 transition-colors"
+                  onMouseDown={(e) => handleCommentResizeStart(e, node, 'bottom')}
+                />
+
+                {/* Resize handle - corner */}
+                <div
+                  className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize group"
+                  onMouseDown={(e) => handleCommentResizeStart(e, node, 'corner')}
+                >
+                  <svg
+                    className="w-full h-full text-white/30 group-hover:text-purple-400 transition-colors"
+                    viewBox="0 0 16 16"
+                    fill="currentColor"
+                  >
+                    <path d="M14 14H16V16H14V14ZM10 14H12V16H10V14ZM14 10H16V12H14V10Z" />
+                  </svg>
+                </div>
+              </div>
+            );
+          }
 
           if (isReroute) {
             const inputPort = node.inputs[0];
             const outputPort = node.outputs[0];
-            const portSize = 12;
-            const hitSize = 20;
-            const offset = hitSize / 2;
+            const portSize = 14;
+            const nodeSize = 28;
+            const hitSize = 24;
+            const portOffset = hitSize / 2;
+            const isExec = node.type === 'reroute-exec';
 
             return (
             <div
               key={node.id}
-              className={`node-root absolute select-none ${isSelected ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-[#0f1419]' : ''}`}
+              className={`node-root absolute select-none ${isSelected ? 'ring-2 ring-purple-500 ring-offset-1 ring-offset-[#0f1419]' : ''}`}
               data-node-id={node.id}
               style={{
                 left: node.position.x,
                 top: node.position.y,
-                width: 18,
-                  height: 18,
-                  cursor: 'grab',
-                  userSelect: 'none',
-                  zIndex: isSelected ? 100 : 1,
-                }}
-                onMouseDown={(e) => handleNodeMouseDown(e, node)}
-              >
-                <div className="w-full h-full rounded-full bg-[#2a2e38] border border-white/30" />
+                width: nodeSize,
+                height: nodeSize,
+                cursor: 'grab',
+                userSelect: 'none',
+                zIndex: isSelected ? 100 : 1,
+              }}
+              onMouseDown={(e) => handleNodeMouseDown(e, node)}
+            >
+              {/* Central diamond/circle shape */}
+              <div 
+                className={`absolute inset-1 ${isExec ? 'rotate-45' : 'rounded-full'} bg-[#2a2e38] border-2 transition-colors ${isSelected ? 'border-purple-400' : 'border-white/40 hover:border-white/60'}`}
+                style={{ backgroundColor: isExec ? '#3a3f4a' : '#2a2e38' }}
+              />
 
                 {inputPort && (
                   <div
@@ -1092,8 +1606,8 @@ export default function NodeGraph({
                     style={{
                       width: hitSize,
                       height: hitSize,
-                      left: -offset,
-                      top: (18 - hitSize) / 2,
+                      left: -portOffset,
+                      top: (nodeSize - hitSize) / 2,
                     }}
                     onMouseDown={(e) => handlePortMouseDown(e, node.id, inputPort.id, true, inputPort.type, inputPort.dataType)}
                     onContextMenu={(e) => handlePortContextMenu(e, node.id, inputPort.id, true)}
@@ -1119,8 +1633,8 @@ export default function NodeGraph({
                     style={{
                       width: hitSize,
                       height: hitSize,
-                      right: -offset,
-                      top: (18 - hitSize) / 2,
+                      right: -portOffset,
+                      top: (nodeSize - hitSize) / 2,
                     }}
                     onMouseDown={(e) => handlePortMouseDown(e, node.id, outputPort.id, false, outputPort.type, outputPort.dataType)}
                     title={`${outputPort.label} (${outputPort.type}${outputPort.dataType ? ': ' + outputPort.dataType : ''})`}

@@ -273,6 +273,23 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     defaultData: {},
   },
   {
+    type: 'exec-sequence',
+    category: 'core-flow',
+    label: 'Exec Sequence',
+    description: 'Split execution into multiple outputs that fire in order. Click + to add outputs, - to remove.',
+    color: '#6B5B95',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Then 0', type: 'exec', isInput: false },
+      { label: 'Then 1', type: 'exec', isInput: false },
+    ],
+    defaultData: {
+      outputCount: 2,
+    },
+  },
+  {
     type: 'branch',
     category: 'core-flow',
     label: 'Branch',
@@ -360,7 +377,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     type: 'thread',
     category: 'core-flow',
     label: 'Thread',
-    description: 'Start asynchronous thread execution',
+    description: 'Start asynchronous thread execution. Name the function that runs in the thread.',
     color: '#4A90E2',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
@@ -369,7 +386,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Thread', type: 'exec', isInput: false },
       { label: 'Continue', type: 'exec', isInput: false },
     ],
-    defaultData: {},
+    defaultData: { functionName: 'ThreadFunc' },
   },
   {
     type: 'wait',
@@ -495,38 +512,67 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     type: 'call-function',
     category: 'core-flow',
     label: 'Call Function',
-    description: 'Call a function by name',
+    description: 'Call a function by name with optional argument and return value',
     color: '#4A90E2',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Function', type: 'data', dataType: 'function', isInput: true },
+      { label: 'Arg', type: 'data', dataType: 'any', isInput: true },
     ],
     outputs: [
       { label: 'Out', type: 'exec', isInput: false },
+      { label: 'Return', type: 'data', dataType: 'any', isInput: false },
     ],
-    defaultData: { function: 'MyFunction' },
+    defaultData: { function: 'MyFunction', returnType: 'none' },
   },
   {
     type: 'custom-function',
     category: 'core-flow',
     label: 'Custom Function',
-    description: 'User-defined function entry point',
+    description: 'User-defined function entry point. Choose return type (void, int, float, bool, entity, string, vector).',
     color: '#4A90E2',
     inputs: [],
     outputs: [
       { label: 'Exec', type: 'exec', isInput: false },
     ],
-    defaultData: { functionName: 'MyFunction' },
+    defaultData: { functionName: 'MyFunction', returnType: 'void' },
   },
   {
     type: 'comment',
     category: 'core-flow',
     label: 'Comment',
-    description: 'Add a comment to the script',
+    description: 'Add a resizable comment box to organize nodes (stays behind other nodes)',
     color: '#6C7A89',
     inputs: [],
     outputs: [],
-    defaultData: { comment: 'Add your comment here' },
+    defaultData: { comment: 'Comment', commentColor: '#6C7A89' },
+  },
+  {
+    type: 'set-portal',
+    category: 'core-flow',
+    label: 'Set Portal',
+    description: 'Store a value in a named portal for use elsewhere without wires',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { portalName: 'MyPortal', portalType: 'any' },
+  },
+  {
+    type: 'get-portal',
+    category: 'core-flow',
+    label: 'Get Portal',
+    description: 'Retrieve a value from a named portal',
+    color: '#9B59B6',
+    inputs: [],
+    outputs: [
+      { label: 'Value', type: 'data', dataType: 'any', isInput: false },
+    ],
+    defaultData: { portalName: 'MyPortal', portalType: 'any' },
   },
 
   // ==================== EVENTS ====================
@@ -833,6 +879,88 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Weapon', type: 'data', dataType: 'weapon', isInput: false },
     ],
     defaultData: { functionName: 'OnAbilityExecute' },
+  },
+  // Server Callback Events (with exec input to register in init flow)
+  {
+    type: 'on-entities-did-load',
+    category: 'events',
+    label: 'OnEntitiesDidLoad',
+    description: 'Callback for when all map entities have loaded (SERVER)',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+    ],
+    defaultData: { functionName: 'OnEntitiesDidLoad' },
+  },
+  {
+    type: 'on-client-connected',
+    category: 'events',
+    label: 'OnClientConnected',
+    description: 'Callback for when a player connects to the server (SERVER)',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnClientConnected' },
+  },
+  {
+    type: 'on-client-disconnected',
+    category: 'events',
+    label: 'OnClientDisconnected',
+    description: 'Callback for when a player disconnects from the server (SERVER)',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnClientDisconnected' },
+  },
+  {
+    type: 'on-player-killed',
+    category: 'events',
+    label: 'OnPlayerKilled',
+    description: 'Callback for when a player is killed (SERVER)',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Victim', type: 'data', dataType: 'entity', isInput: false },
+      { label: 'Attacker', type: 'data', dataType: 'entity', isInput: false },
+      { label: 'DamageInfo', type: 'data', dataType: 'var', isInput: false },
+    ],
+    defaultData: { functionName: 'OnPlayerKilled' },
+  },
+  {
+    type: 'on-player-respawned',
+    category: 'events',
+    label: 'OnPlayerRespawned',
+    description: 'Callback for when a player respawns (SERVER)',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnPlayerRespawned' },
   },
   // ==================== ENTITY ====================
   {
@@ -1559,7 +1687,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Out', type: 'exec', isInput: false },
       { label: 'Weapon', type: 'data', dataType: 'weapon', isInput: false },
     ],
-    defaultData: { weaponClass: 'mp_weapon_r97', mods: [] },
+    defaultData: { weaponClass: 'mp_weapon_r97', mods: [], slot: 'WEAPON_INVENTORY_SLOT_PRIMARY_0' },
   },
   {
     type: 'take-weapon',
@@ -2625,6 +2753,70 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     serverOnly: true,
   },
 
+  // ==================== STRING ====================
+  {
+    type: 'string-concat',
+    category: 'string',
+    label: 'String Concat',
+    description: 'Concatenate two strings together',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'A', type: 'data', dataType: 'string', isInput: true },
+      { label: 'B', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Result', type: 'data', dataType: 'string', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'string-format',
+    category: 'string',
+    label: 'Format String',
+    description: 'Format string with values (use format() function)',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'Format', type: 'data', dataType: 'string', isInput: true },
+      { label: 'Arg1', type: 'data', dataType: 'any', isInput: true },
+      { label: 'Arg2', type: 'data', dataType: 'any', isInput: true },
+      { label: 'Arg3', type: 'data', dataType: 'any', isInput: true },
+      { label: 'Arg4', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Result', type: 'data', dataType: 'string', isInput: false },
+    ],
+    defaultData: { formatStr: '%s %s' },
+  },
+  {
+    type: 'to-string',
+    category: 'string',
+    label: 'To String',
+    description: 'Convert any value to string using string()',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'String', type: 'data', dataType: 'string', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'string-builder',
+    category: 'string',
+    label: 'String Builder',
+    description: 'Build a string from multiple parts',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'Part 0', type: 'data', dataType: 'any', isInput: true },
+      { label: 'Part 1', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Result', type: 'data', dataType: 'string', isInput: false },
+    ],
+    defaultData: { inputCount: 2 },
+  },
+
   // ==================== MATH ====================
   {
     type: 'vector-create',
@@ -3405,52 +3597,23 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     ],
     defaultData: { key: 'key' },
   },
-  {
-    type: 'string-format',
-    category: 'data',
-    label: 'Format String',
-    description: 'Format string with arguments',
-    color: '#2ECC71',
-    inputs: [
-      { label: 'Format', type: 'data', dataType: 'string', isInput: true },
-      { label: 'Args', type: 'data', dataType: 'array', isInput: true },
-    ],
-    outputs: [
-      { label: 'Result', type: 'data', dataType: 'string', isInput: false },
-    ],
-    defaultData: { format: 'Hello %s!' },
-  },
-  {
-    type: 'string-concat',
-    category: 'data',
-    label: 'Concat Strings',
-    description: 'Concatenate strings',
-    color: '#2ECC71',
-    inputs: [
-      { label: 'A', type: 'data', dataType: 'string', isInput: true },
-      { label: 'B', type: 'data', dataType: 'string', isInput: true },
-    ],
-    outputs: [
-      { label: 'Result', type: 'data', dataType: 'string', isInput: false },
-    ],
-    defaultData: {},
-  },
 
   // ==================== UTILITIES ====================
   {
     type: 'print',
     category: 'utilities',
     label: 'Print',
-    description: 'Print to console',
+    description: 'Print message to console (auto-concatenates all parts)',
     color: '#34495E',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
-      { label: 'Message', type: 'data', dataType: 'any', isInput: true },
+      { label: 'Part 0', type: 'data', dataType: 'any', isInput: true },
+      { label: 'Part 1', type: 'data', dataType: 'any', isInput: true },
     ],
     outputs: [
       { label: 'Out', type: 'exec', isInput: false },
     ],
-    defaultData: { message: 'Debug message' },
+    defaultData: { partCount: 2 },
   },
   {
     type: 'print-warning',

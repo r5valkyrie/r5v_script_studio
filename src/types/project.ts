@@ -18,14 +18,14 @@ export interface ProjectSettings {
   // UI State persistence
   ui?: {
     // Panel visibility
-    isProjectPanelOpen?: boolean;
-    isPaletteOpen?: boolean;
+    isSidebarOpen?: boolean;
+    isProjectSectionExpanded?: boolean;
+    isNodesSectionExpanded?: boolean;
     isInspectorOpen?: boolean;
     isCodePanelOpen?: boolean;
     
     // Panel widths
-    projectPanelWidth?: number;
-    paletteWidth?: number;
+    sidebarWidth?: number;
     inspectorWidth?: number;
     codePanelWidth?: number;
     

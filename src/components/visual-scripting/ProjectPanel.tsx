@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import { X, FileCode, Plus, Trash2, FolderOpen, Folder, Edit2, FolderPlus, ChevronRight, ChevronDown } from 'lucide-react';
 import type { ScriptFile } from '../../types/project';
+import ConfirmDialog from './ConfirmDialog';
+
+// Delete confirmation state type
+interface DeleteConfirmState {
+  isOpen: boolean;
+  type: 'file' | 'folder';
+  id: string;
+  name: string;
+}
 
 interface ProjectPanelProps {
   scriptFiles: ScriptFile[];
@@ -14,7 +23,8 @@ interface ProjectPanelProps {
   onRenameFile: (fileId: string, newName: string) => void;
   onDeleteFolder: (folderPath: string) => void;
   onRenameFolder: (oldPath: string, newPath: string) => void;
-  onClose: () => void;
+  onClose?: () => void;
+  isEmbedded?: boolean;
 }
 
 export default function ProjectPanel({
@@ -30,6 +40,7 @@ export default function ProjectPanel({
   onDeleteFolder,
   onRenameFolder,
   onClose,
+  isEmbedded = false,
 }: ProjectPanelProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
@@ -42,6 +53,25 @@ export default function ProjectPanel({
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['root']));
   const [draggedItem, setDraggedItem] = useState<{ type: 'file' | 'folder'; id: string; name: string } | null>(null);
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmState>({ isOpen: false, type: 'file', id: '', name: '' });
+
+  // Handle delete confirmation
+  const showDeleteConfirm = (type: 'file' | 'folder', id: string, name: string) => {
+    setDeleteConfirm({ isOpen: true, type, id, name });
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteConfirm.type === 'file') {
+      onDeleteFile(deleteConfirm.id);
+    } else {
+      onDeleteFolder(deleteConfirm.id);
+    }
+    setDeleteConfirm({ isOpen: false, type: 'file', id: '', name: '' });
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteConfirm({ isOpen: false, type: 'file', id: '', name: '' });
+  };
 
   // Group files by folder path and build folder tree structure
   const groupFilesByFolder = () => {
@@ -198,43 +228,60 @@ export default function ProjectPanel({
   };
 
   return (
-    <div className="w-full h-full bg-[#151a21] flex flex-col">
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-white/10 bg-[#0f1419]">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="p-1.5 rounded bg-purple-500/10">
-            <FolderOpen size={14} className="text-purple-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block">Project</span>
-            <span className="text-sm font-medium text-white truncate block">{projectName}</span>
+    <>
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        title={deleteConfirm.type === 'folder' ? 'Delete Folder' : 'Delete File'}
+        message={
+          deleteConfirm.type === 'folder'
+            ? `Are you sure you want to delete the folder "${deleteConfirm.name}" and all its contents? This action cannot be undone.`
+            : `Are you sure you want to delete "${deleteConfirm.name}"? This action cannot be undone.`
+        }
+        confirmLabel="Delete"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
+
+      <div className={`${isEmbedded ? '' : 'w-full h-full bg-[#151a21]'} flex flex-col`}>
+        {/* Header - only show when not embedded */}
+        {!isEmbedded && (
+          <div className="px-4 py-3 border-b border-white/10 bg-[#0f1419]">
+            <div className="flex items-center gap-2 min-w-0">
+            <div className="p-1.5 rounded bg-purple-500/10">
+              <FolderOpen size={14} className="text-purple-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block">Project</span>
+              <span className="text-sm font-medium text-white truncate block">{projectName}</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Toolbar */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5 bg-[#0f1419]/50">
+      <div className={`flex items-center gap-1.5 px-2 py-1.5 ${isEmbedded ? 'bg-[#0f1419]/30' : 'border-b border-white/5 bg-[#0f1419]/50'}`}>
         <button
           onClick={() => setIsCreating(true)}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-300 hover:text-white bg-white/5 hover:bg-purple-500/20 rounded transition-colors border border-transparent hover:border-purple-500/50"
+          className={`flex items-center gap-1 ${isEmbedded ? 'px-2 py-1' : 'px-2.5 py-1.5'} text-[10px] font-medium text-gray-300 hover:text-white bg-white/5 hover:bg-purple-500/20 rounded transition-colors border border-transparent hover:border-purple-500/50`}
           title="New Script File"
         >
-          <Plus size={13} className="text-purple-400" />
-          New File
+          <Plus size={11} className="text-purple-400" />
+          File
         </button>
         <button
           onClick={() => setIsCreatingFolder(true)}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-300 hover:text-white bg-white/5 hover:bg-yellow-500/20 rounded transition-colors border border-transparent hover:border-yellow-500/50"
+          className={`flex items-center gap-1 ${isEmbedded ? 'px-2 py-1' : 'px-2.5 py-1.5'} text-[10px] font-medium text-gray-300 hover:text-white bg-white/5 hover:bg-yellow-500/20 rounded transition-colors border border-transparent hover:border-yellow-500/50`}
           title="New Folder"
         >
-          <FolderPlus size={13} className="text-yellow-400" />
-          New Folder
+          <FolderPlus size={11} className="text-yellow-400" />
+          Folder
         </button>
       </div>
 
       {/* File List */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
-        <div className="p-2 space-y-0.5">
+      <div className={`flex-1 overflow-y-auto custom-scrollbar ${isEmbedded ? '' : ''}`}>
+        <div className={`${isEmbedded ? 'p-1.5' : 'p-2'} space-y-0.5`}>
 
           {/* New Folder Input */}
           {isCreatingFolder && (
@@ -352,7 +399,7 @@ export default function ProjectPanel({
                           <Edit2 size={11} />
                         </button>
                         <button
-                          onClick={(e) => { e.stopPropagation(); if (confirm(`Delete \"${file.name}\"?`)) onDeleteFile(file.id); }}
+                          onClick={(e) => { e.stopPropagation(); showDeleteConfirm('file', file.id, file.name); }}
                           className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
                           title="Delete"
                         >
@@ -397,6 +444,7 @@ export default function ProjectPanel({
                 activeFileId={activeFileId}
                 onSelectFile={onSelectFile}
                 onDeleteFile={onDeleteFile}
+                showDeleteConfirm={showDeleteConfirm}
               />
             ))}
           </div>
@@ -410,7 +458,8 @@ export default function ProjectPanel({
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 
@@ -444,6 +493,7 @@ function FolderItem({
   activeFileId,
   onSelectFile,
   onDeleteFile,
+  showDeleteConfirm,
 }: {
   folderPath: string;
   depth: number;
@@ -473,6 +523,7 @@ function FolderItem({
   activeFileId: string | null;
   onSelectFile: (fileId: string) => void;
   onDeleteFile: (fileId: string) => void;
+  showDeleteConfirm: (type: 'file' | 'folder', id: string, name: string) => void;
 }) {
   const isExpanded = expandedFolders.has(folderPath);
   const folderFiles = filesByFolder[folderPath] || [];
@@ -554,7 +605,7 @@ function FolderItem({
                 <Edit2 size={11} />
               </button>
               <button
-                onClick={(e) => { e.stopPropagation(); if (confirm(`Delete folder "${folderPath}" and all its contents?`)) onDeleteFolder(folderPath); }}
+                onClick={(e) => { e.stopPropagation(); showDeleteConfirm('folder', folderPath, folderPath); }}
                 className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
                 title="Delete Folder"
               >
@@ -618,7 +669,7 @@ function FolderItem({
                         <Edit2 size={11} />
                       </button>
                       <button
-                        onClick={(e) => { e.stopPropagation(); if (confirm(`Delete "${file.name}"?`)) onDeleteFile(file.id); }}
+                        onClick={(e) => { e.stopPropagation(); showDeleteConfirm('file', file.id, file.name); }}
                         className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
                         title="Delete"
                       >
@@ -663,6 +714,7 @@ function FolderItem({
               activeFileId={activeFileId}
               onSelectFile={onSelectFile}
               onDeleteFile={onDeleteFile}
+              showDeleteConfirm={showDeleteConfirm}
             />
           ))}
         </>

@@ -27,6 +27,9 @@ interface NodePaletteProps {
   onClose: () => void;
   collapsedCategories?: string[];
   onToggleCategory?: (category: string) => void;
+  isExpanded?: boolean;
+  onToggleExpanded?: () => void;
+  isEmbedded?: boolean;
 }
 
 interface CategorySectionProps {
@@ -181,7 +184,7 @@ function CategorySection({ title, category, icon, color, onAddNode, defaultOpen 
   );
 }
 
-export default function NodePalette({ onAddNode, onClose, collapsedCategories = [], onToggleCategory }: NodePaletteProps) {
+export default function NodePalette({ onAddNode, onClose, collapsedCategories = [], onToggleCategory, isExpanded = true, onToggleExpanded, isEmbedded = false }: NodePaletteProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const categories = [
@@ -198,79 +201,109 @@ export default function NodePalette({ onAddNode, onClose, collapsedCategories = 
     { title: 'Callbacks', category: 'callbacks' },
     { title: 'Data', category: 'data' },
     { title: 'Utilities', category: 'utilities' },
+    { title: 'String', category: 'string' }
   ];
 
+  // Count total nodes
+  const totalNodes = categories.reduce((acc, cat) => acc + getNodesByCategory(cat.category).length, 0);
+
   return (
-    <div className="w-full h-full bg-gradient-to-b from-[#151a21] to-[#0f1419] flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex-shrink-0 px-3 py-3 border-b border-white/10 bg-[#0a0d10] flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded bg-purple-500/20">
-            <Workflow size={14} className="text-purple-400" />
-          </div>
-          <span className="text-sm font-semibold text-white">Nodes</span>
-        </div>
+    <div className="w-full h-full flex flex-col overflow-hidden">
+      {/* Collapsible Header - matching Project style */}
+      {isEmbedded && (
         <button
-          onClick={onClose}
-          className="p-1.5 hover:bg-white/10 rounded transition-colors flex-shrink-0"
-          title="Hide palette"
+          onClick={onToggleExpanded}
+          className="w-full flex items-center justify-between px-3 py-2.5 bg-[#0f1419] hover:bg-[#1a1f28] transition-colors border-b border-white/10 flex-shrink-0"
         >
-          <X size={14} className="text-gray-500 hover:text-white" />
+          <div className="flex items-center gap-2">
+            <div className="p-1 rounded bg-purple-500/10">
+              <Workflow size={14} className="text-purple-400" />
+            </div>
+            <div className="flex flex-col items-start">
+              <span className="text-[9px] font-semibold tracking-wider text-gray-500 uppercase">Nodes</span>
+              <span className="text-xs font-medium text-white">{totalNodes} available</span>
+            </div>
+          </div>
+          <ChevronDown size={14} className={`text-gray-400 transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
         </button>
-      </div>
+      )}
 
-      {/* Search */}
-      <div className="flex-shrink-0 p-2 border-b border-white/5">
-        <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-          <input
-            type="text"
-            placeholder="Search nodes..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 bg-black/30 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/25 transition-all"
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded"
-            >
-              <X size={12} className="text-gray-500" />
-            </button>
+      {/* Content - only show when expanded (or always when not embedded) */}
+      {(isExpanded || !isEmbedded) && (
+        <div className="flex-1 flex flex-col overflow-hidden bg-gradient-to-b from-[#151a21] to-[#0f1419]">
+          {/* Non-embedded header */}
+          {!isEmbedded && (
+            <div className="flex-shrink-0 px-3 py-3 border-b border-white/10 bg-[#0a0d10] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded bg-purple-500/20">
+                  <Workflow size={14} className="text-purple-400" />
+                </div>
+                <span className="text-sm font-semibold text-white">Nodes</span>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-1.5 hover:bg-white/10 rounded transition-colors flex-shrink-0"
+                title="Hide palette"
+              >
+                <X size={14} className="text-gray-500 hover:text-white" />
+              </button>
+            </div>
           )}
+
+          {/* Search */}
+          <div className="flex-shrink-0 p-2 border-b border-white/5">
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+              <input
+                type="text"
+                placeholder="Search nodes..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 bg-black/30 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/25 transition-all"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded"
+                >
+                  <X size={12} className="text-gray-500" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Categories */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
+            {categories.map(cat => {
+              const config = CATEGORY_CONFIG[cat.category] || CATEGORY_CONFIG['core-flow'];
+              const isCollapsed = collapsedCategories.includes(cat.category);
+              return (
+                <CategorySection
+                  key={cat.category}
+                  title={cat.title}
+                  category={cat.category}
+                  icon={config.icon}
+                  color={config.color}
+                  onAddNode={onAddNode}
+                  defaultOpen={cat.defaultOpen}
+                  searchTerm={searchTerm}
+                  isCollapsed={isCollapsed}
+                  onToggle={onToggleCategory ? () => onToggleCategory(cat.category) : undefined}
+                />
+              );
+            })}
+            {/* Bottom padding to ensure last items are visible */}
+            <div className="h-4" />
+          </div>
+
+          {/* Footer hint */}
+          <div className="flex-shrink-0 px-3 py-2 border-t border-white/5 bg-black/20">
+            <p className="text-[10px] text-gray-600 text-center">
+              Drag nodes to canvas or click to add
+            </p>
+          </div>
         </div>
-      </div>
-
-      {/* Categories */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
-        {categories.map(cat => {
-          const config = CATEGORY_CONFIG[cat.category] || CATEGORY_CONFIG['core-flow'];
-          const isCollapsed = collapsedCategories.includes(cat.category);
-          return (
-            <CategorySection
-              key={cat.category}
-              title={cat.title}
-              category={cat.category}
-              icon={config.icon}
-              color={config.color}
-              onAddNode={onAddNode}
-              defaultOpen={cat.defaultOpen}
-              searchTerm={searchTerm}
-              isCollapsed={isCollapsed}
-              onToggle={onToggleCategory ? () => onToggleCategory(cat.category) : undefined}
-            />
-          );
-        })}
-        {/* Bottom padding to ensure last items are visible */}
-        <div className="h-4" />
-      </div>
-
-      {/* Footer hint */}
-      <div className="flex-shrink-0 px-3 py-2 border-t border-white/5 bg-black/20">
-        <p className="text-[10px] text-gray-600 text-center">
-          Drag nodes to canvas or click to add
-        </p>
-      </div>
+      )}
     </div>
   );
 }

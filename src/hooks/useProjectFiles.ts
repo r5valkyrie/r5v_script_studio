@@ -33,7 +33,7 @@ export interface UseProjectFilesReturn {
   createNewScriptFile: (name: string) => void;
   deleteScriptFile: (fileId: string) => void;
   renameScriptFile: (fileId: string, newName: string) => void;
-  setActiveScriptFile: (fileId: string) => void;
+  setActiveScriptFile: (fileId: string | null) => void;
   updateActiveScriptContent: (nodes: ScriptNode[], connections: NodeConnection[]) => void;
   markFileModified: (fileId: string) => void;
   markFileSaved: (fileId: string) => void;
@@ -81,7 +81,8 @@ export function useProjectFiles(): UseProjectFilesReturn {
   const scriptFiles = projectData?.scriptFiles || [];
   const folders = projectData?.settings.folders || [];
   const activeFileId = projectData?.settings.activeScriptFile;
-  const activeScriptFile = scriptFiles.find(f => f.id === activeFileId) || scriptFiles[0] || null;
+  // Only use the explicit activeFileId, don't fall back to first file
+  const activeScriptFile = activeFileId ? (scriptFiles.find(f => f.id === activeFileId) || null) : null;
 
   // Create new project
   const newProject = useCallback(() => {
@@ -321,14 +322,14 @@ export function useProjectFiles(): UseProjectFilesReturn {
   }, []);
 
   // Set active script file
-  const setActiveScriptFile = useCallback((fileId: string) => {
+  const setActiveScriptFile = useCallback((fileId: string | null) => {
     setProjectData(prev => {
       if (!prev) return prev;
       return {
         ...prev,
         settings: {
           ...prev.settings,
-          activeScriptFile: fileId,
+          activeScriptFile: fileId ?? undefined,
         },
       };
     });

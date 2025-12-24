@@ -9,6 +9,7 @@ export type NodeCategory =
   | 'damage'         // Damage system, traces
   | 'ui'             // RUI system
   | 'math'           // Vector, angles, math operations
+  | 'string'         // String manipulation and formatting
   | 'callbacks'      // Register callbacks
   | 'data'           // Constants, variables
   | 'utilities'      // Validation, debugging, utilities
@@ -29,6 +30,7 @@ export type NodeDataType =
   | 'function'
   | 'array'
   | 'table'
+  | 'var'
   | 'any';
 
 export type NodeType =
@@ -37,6 +39,7 @@ export type NodeType =
   | 'init-client'
   | 'init-ui'
   | 'sequence'
+  | 'exec-sequence'
   | 'branch'
   | 'delay'
   | 'loop-for'
@@ -54,6 +57,8 @@ export type NodeType =
   | 'reroute-exec'
   | 'custom-function'
   | 'call-function'
+  | 'set-portal'
+  | 'get-portal'
 
   // ==================== GAMEMODES ====================
   | 'gamemode-create'
@@ -96,6 +101,12 @@ export type NodeType =
   | 'on-ability-end'
   | 'on-ability-charge-begin'
   | 'on-ability-execute'
+  // Server Callback Events
+  | 'on-entities-did-load'
+  | 'on-client-connected'
+  | 'on-client-disconnected'
+  | 'on-player-killed'
+  | 'on-player-respawned'
   // Custom Event
 
   // ==================== ENTITY ====================
@@ -241,6 +252,13 @@ export type NodeType =
   | 'announcement'
   | 'server-to-client-string-command'
 
+  // ==================== STRING ====================
+  | 'string-concat'
+  | 'string-format'
+  | 'to-string'
+  | 'get-player-name'
+  | 'string-builder'
+
   // ==================== MATH ====================
   | 'vector-create'
   | 'vector-add'
@@ -307,8 +325,6 @@ export type NodeType =
   | 'table-get'
   | 'table-set'
   | 'table-has-key'
-  | 'string-format'
-  | 'string-concat'
 
   // ==================== UTILITIES ====================
   | 'print'
@@ -376,6 +392,7 @@ export interface ScriptNode {
   category: NodeCategory;
   label: string;
   position: { x: number; y: number };
+  size?: { width: number; height: number }; // For resizable nodes like comments
   data: Record<string, any>;
   inputs: NodePort[];
   outputs: NodePort[];
