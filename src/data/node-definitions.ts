@@ -509,7 +509,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'comment',
-    category: 'core-flow',
+    category: 'utilities',
     label: 'Comment',
     description: 'Add a resizable comment box to organize nodes (stays behind other nodes)',
     color: '#6C7A89',
@@ -533,7 +533,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'set-portal',
-    category: 'core-flow',
+    category: 'utilities',
     label: 'Set Portal',
     description: 'Store a value in a named portal for use elsewhere without wires',
     color: '#9B59B6',
@@ -548,7 +548,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-portal',
-    category: 'core-flow',
+    category: 'utilities',
     label: 'Get Portal',
     description: 'Retrieve a value from a named portal',
     color: '#9B59B6',
@@ -867,8 +867,8 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   // Server Callback Events (with exec input to register in init flow)
   {
     type: 'on-entities-did-load',
-    category: 'events',
-    label: 'OnEntitiesDidLoad',
+    category: 'callbacks',
+    label: 'AddCallback_EntitiesDidLoad',
     description: 'Callback for when all map entities have loaded (SERVER)',
     color: '#E8A838',
     inputs: [
@@ -882,8 +882,8 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'on-client-connected',
-    category: 'events',
-    label: 'OnClientConnected',
+    category: 'callbacks',
+    label: 'AddCallback_OnClientConnected',
     description: 'Callback for when a player connects to the server (SERVER)',
     color: '#E8A838',
     inputs: [
@@ -898,8 +898,8 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'on-client-disconnected',
-    category: 'events',
-    label: 'OnClientDisconnected',
+    category: 'callbacks',
+    label: 'AddCallback_OnClientDisconnected',
     description: 'Callback for when a player disconnects from the server (SERVER)',
     color: '#E8A838',
     inputs: [
@@ -914,8 +914,8 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'on-player-killed',
-    category: 'events',
-    label: 'OnPlayerKilled',
+    category: 'callbacks',
+    label: 'AddCallback_OnPlayerKilled',
     description: 'Callback for when a player is killed (SERVER)',
     color: '#E8A838',
     inputs: [
@@ -932,8 +932,8 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'on-player-respawned',
-    category: 'events',
-    label: 'OnPlayerRespawned',
+    category: 'callbacks',
+    label: 'AddCallback_OnPlayerRespawned',
     description: 'Callback for when a player respawns (SERVER)',
     color: '#E8A838',
     inputs: [
@@ -945,6 +945,560 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
     ],
     defaultData: { functionName: 'OnPlayerRespawned' },
+  },
+  {
+    type: 'on-npc-killed',
+    category: 'callbacks',
+    label: 'AddCallback_OnNPCKilled',
+    description: 'Callback for when an NPC is killed',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'NPC', type: 'data', dataType: 'entity', isInput: false },
+      { label: 'Attacker', type: 'data', dataType: 'entity', isInput: false },
+      { label: 'DamageInfo', type: 'data', dataType: 'var', isInput: false },
+    ],
+    defaultData: { functionName: 'OnNPCKilled' },
+  },
+  {
+    type: 'on-client-connecting',
+    category: 'callbacks',
+    label: 'AddCallback_OnClientConnecting',
+    description: 'Callback for when a client is connecting',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnClientConnecting' },
+  },
+  {
+    type: 'on-entity-changed-team',
+    category: 'callbacks',
+    label: 'AddCallback_EntityChangedTeam',
+    description: 'Callback for when an entity changes team',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Entity', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnEntityChangedTeam' },
+  },
+  {
+    type: 'on-player-assist',
+    category: 'callbacks',
+    label: 'AddCallback_OnPlayerAssist',
+    description: 'Callback for when a player gets an assist',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+      { label: 'Victim', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnPlayerAssist' },
+  },
+  {
+    type: 'on-player-inventory-changed',
+    category: 'callbacks',
+    label: 'AddCallback_OnPlayerInventoryChanged',
+    description: 'Callback for when player inventory changes',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnPlayerInventoryChanged' },
+  },
+  {
+    type: 'on-weapon-attack',
+    category: 'callbacks',
+    label: 'AddCallback_OnWeaponAttack',
+    description: 'Callback for when a weapon attacks',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Weapon', type: 'data', dataType: 'entity', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnWeaponAttack' },
+  },
+  {
+    type: 'on-death-box-spawned',
+    category: 'callbacks',
+    label: 'AddCallback_OnDeathBoxSpawned',
+    description: 'Callback for when a death box spawns',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'DeathBox', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnDeathBoxSpawned' },
+  },
+  {
+    type: 'on-game-state-enter',
+    category: 'callbacks',
+    label: 'AddCallback_GameStatePostEnter',
+    description: 'Callback for when game state changes',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'GameState', type: 'data', dataType: 'int', isInput: false },
+    ],
+    defaultData: { functionName: 'OnGameStatePostEnter' },
+  },
+  {
+    type: 'on-player-weapon-activated',
+    category: 'callbacks',
+    label: 'AddCallback_OnPlayerWeaponActivated',
+    description: 'Callback for when player activates a weapon',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+      { label: 'Weapon', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnPlayerWeaponActivated' },
+  },
+  {
+    type: 'on-player-used-offhand',
+    category: 'callbacks',
+    label: 'AddCallback_OnPlayerUsedOffhandWeapon',
+    description: 'Callback for when player uses offhand weapon',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+      { label: 'Weapon', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnPlayerUsedOffhandWeapon' },
+  },
+  {
+    type: 'on-leave-match',
+    category: 'callbacks',
+    label: 'AddCallback_OnLeaveMatch',
+    description: 'Callback for when player leaves match',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+    ],
+    defaultData: { functionName: 'OnLeaveMatch' },
+  },
+  {
+    type: 'on-use-button-pressed',
+    category: 'callbacks',
+    label: 'AddCallback_OnUseButtonPressed',
+    description: 'Callback for when use button is pressed',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnUseButtonPressed' },
+  },
+  {
+    type: 'on-use-button-released',
+    category: 'callbacks',
+    label: 'AddCallback_OnUseButtonReleased',
+    description: 'Callback for when use button is released',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnUseButtonReleased' },
+  },
+  {
+    type: 'on-player-class-changed',
+    category: 'callbacks',
+    label: 'AddCallback_PlayerClassChanged',
+    description: 'Callback for when player class changes',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnPlayerClassChanged' },
+  },
+  {
+    type: 'on-vehicle-launch',
+    category: 'callbacks',
+    label: 'AddCallback_OnVehicleLaunch',
+    description: 'Callback for when vehicle launches',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Vehicle', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnVehicleLaunch' },
+  },
+  {
+    type: 'on-vehicle-collide',
+    category: 'callbacks',
+    label: 'AddCallback_OnVehicleCollide',
+    description: 'Callback for when vehicle collides',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Vehicle', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnVehicleCollide' },
+  },
+  {
+    type: 'on-player-changed-team',
+    category: 'callbacks',
+    label: 'AddCallback_OnPlayerChangedTeam',
+    description: 'Callback for when player changes team',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnPlayerChangedTeam' },
+  },
+  {
+    type: 'on-player-zoom-in',
+    category: 'callbacks',
+    label: 'AddCallback_OnPlayerZoomIn',
+    description: 'Callback for when player zooms in (ADS)',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnPlayerZoomIn' },
+  },
+  {
+    type: 'on-player-zoom-out',
+    category: 'callbacks',
+    label: 'AddCallback_OnPlayerZoomOut',
+    description: 'Callback for when player zooms out',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnPlayerZoomOut' },
+  },
+  {
+    type: 'on-passive-changed',
+    category: 'callbacks',
+    label: 'AddCallback_OnPassiveChanged',
+    description: 'Callback for when passive ability state changes',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnPassiveChanged' },
+  },
+  {
+    type: 'on-ping-created',
+    category: 'callbacks',
+    label: 'AddCallback_OnPingCreatedByAnyPlayer',
+    description: 'Callback for when any player creates a ping',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnPingCreatedByAnyPlayer' },
+  },
+  {
+    type: 'on-player-match-state-changed',
+    category: 'callbacks',
+    label: 'AddCallback_OnPlayerMatchStateChanged',
+    description: 'Callback for when player match state changes',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnPlayerMatchStateChanged' },
+  },
+  {
+    type: 'on-deathfield-stage-changed',
+    category: 'callbacks',
+    label: 'AddCallback_OnSurvivalDeathFieldStageChanged',
+    description: 'Callback for when death field stage changes',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Stage', type: 'data', dataType: 'int', isInput: false },
+    ],
+    defaultData: { functionName: 'OnSurvivalDeathFieldStageChanged' },
+  },
+  {
+    type: 'on-bleedout-started',
+    category: 'callbacks',
+    label: 'AddCallback_OnBleedoutStarted',
+    description: 'Callback for when player starts bleeding out',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnBleedoutStarted' },
+  },
+  {
+    type: 'on-bleedout-ended',
+    category: 'callbacks',
+    label: 'AddCallback_OnBleedoutEnded',
+    description: 'Callback for when player stops bleeding out',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnBleedoutEnded' },
+  },
+  {
+    type: 'on-player-life-state-changed',
+    category: 'callbacks',
+    label: 'AddCallback_OnPlayerLifeStateChanged',
+    description: 'Callback for when player life state changes',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+      { label: 'OldState', type: 'data', dataType: 'int', isInput: false },
+      { label: 'NewState', type: 'data', dataType: 'int', isInput: false },
+    ],
+    defaultData: { functionName: 'OnPlayerLifeStateChanged' },
+  },
+  {
+    type: 'on-you-respawned',
+    category: 'callbacks',
+    label: 'AddCallback_OnYouRespawned',
+    description: 'Callback for when local player respawns (CLIENT)',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+    ],
+    defaultData: { functionName: 'OnYouRespawned' },
+  },
+  {
+    type: 'on-you-died',
+    category: 'callbacks',
+    label: 'AddCallback_OnYouDied',
+    description: 'Callback for when local player dies (CLIENT)',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+    ],
+    defaultData: { functionName: 'OnYouDied' },
+  },
+  {
+    type: 'on-player-scored',
+    category: 'callbacks',
+    label: 'AddCallback_OnPlayerScored',
+    description: 'Callback for when player scores',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnPlayerScored' },
+  },
+  {
+    type: 'on-lootbin-opened',
+    category: 'callbacks',
+    label: 'Survival_AddCallback_OnLootbinOpened',
+    description: 'Callback for when lootbin is opened',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+      { label: 'Lootbin', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnLootbinOpened' },
+  },
+  {
+    type: 'on-player-add-weapon-mod',
+    category: 'callbacks',
+    label: 'AddCallback_OnPlayerAddWeaponMod',
+    description: 'Callback for when player adds a weapon mod',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+      { label: 'Weapon', type: 'data', dataType: 'entity', isInput: false },
+      { label: 'ModName', type: 'data', dataType: 'string', isInput: false },
+    ],
+    defaultData: { functionName: 'OnPlayerAddWeaponMod' },
+  },
+  {
+    type: 'on-player-remove-weapon-mod',
+    category: 'callbacks',
+    label: 'AddCallback_OnPlayerRemoveWeaponMod',
+    description: 'Callback for when player removes a weapon mod',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+      { label: 'Weapon', type: 'data', dataType: 'entity', isInput: false },
+      { label: 'ModName', type: 'data', dataType: 'string', isInput: false },
+    ],
+    defaultData: { functionName: 'OnPlayerRemoveWeaponMod' },
+  },
+  {
+    type: 'on-grappled',
+    category: 'callbacks',
+    label: 'AddCallback_OnGrappled',
+    description: 'Callback for when player grapples',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnGrappled' },
+  },
+  {
+    type: 'on-grapple-detached',
+    category: 'callbacks',
+    label: 'AddCallback_OnGrappleDetached',
+    description: 'Callback for when grapple detaches',
+    color: '#E8A838',
+    inputs: [
+      { label: 'Register', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Next', type: 'exec', isInput: false },
+      { label: 'Exec', type: 'exec', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { functionName: 'OnGrappleDetached' },
   },
   // ==================== ENTITY ====================
   {
@@ -3239,22 +3793,6 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
 
   // ==================== CALLBACKS ====================
-  {
-    type: 'add-callback',
-    category: 'callbacks',
-    label: 'AddCallback',
-    description: 'Add generic callback',
-    color: '#8E44AD',
-    inputs: [
-      { label: 'In', type: 'exec', isInput: true },
-      { label: 'CallbackType', type: 'data', dataType: 'string', isInput: true },
-      { label: 'Function', type: 'data', dataType: 'function', isInput: true },
-    ],
-    outputs: [
-      { label: 'Out', type: 'exec', isInput: false },
-    ],
-    defaultData: { callbackType: 'OnClientConnected' },
-  },
   {
     type: 'add-client-command-callback',
     category: 'callbacks',

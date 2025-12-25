@@ -18,12 +18,25 @@ interface NodeGraphProps {
   onAddNode: (node: ScriptNode) => void;
   onViewChange?: (view: { x: number; y: number; scale: number }) => void;
   onRequestHistorySnapshot?: () => void;
+  // Appearance settings
+  showGridLines?: boolean;
+  gridSize?: number;
+  nodeOpacity?: number;
+  connectionStyle?: 'bezier' | 'straight' | 'step';
+  accentColor?: string;
+  theme?: 'light' | 'dark';
+  // Editor settings
+  snapToGrid?: boolean;
+  showMinimap?: boolean;
+  autoConnect?: boolean;
+  highlightConnections?: boolean;
+  animateConnections?: boolean;
 }
 
 interface QuickMenuState {
   screenPosition: { x: number; y: number };
   canvasPosition: { x: number; y: number };
-  sourcePort: {
+  sourcePort?: {
     nodeId: string;
     portId: string;
     isInput: boolean;
@@ -85,6 +98,19 @@ export default function NodeGraph({
   onAddNode,
   onViewChange,
   onRequestHistorySnapshot,
+  // Appearance settings with defaults
+  showGridLines = true,
+  gridSize = 20,
+  nodeOpacity = 100,
+  connectionStyle = 'bezier',
+  accentColor = '#8B5CF6',
+  theme = 'dark',
+  // Editor settings with defaults
+  snapToGrid = false,
+  showMinimap = false,
+  autoConnect = true,
+  highlightConnections = true,
+  animateConnections = false,
 }: NodeGraphProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -111,12 +137,18 @@ export default function NodeGraph({
   const onAddNodeRef = useRef(onAddNode);
   const onDeleteConnectionRef = useRef(onDeleteConnection);
 
+  // Store settings in refs for use in event handlers
+  const snapToGridRef = useRef(snapToGrid);
+  const gridSizeRef = useRef(gridSize);
+
   useEffect(() => {
     onConnectRef.current = onConnect;
     onUpdateNodeRef.current = onUpdateNode;
     onAddNodeRef.current = onAddNode;
     onDeleteConnectionRef.current = onDeleteConnection;
-  }, [onConnect, onUpdateNode, onAddNode, onDeleteConnection]);
+    snapToGridRef.current = snapToGrid;
+    gridSizeRef.current = gridSize;
+  }, [onConnect, onUpdateNode, onAddNode, onDeleteConnection, snapToGrid, gridSize]);
 
   // Quick node menu state
   const [quickMenu, setQuickMenu] = useState<QuickMenuState | null>(null);
@@ -143,6 +175,7 @@ export default function NodeGraph({
   const [codeEditorModal, setCodeEditorModal] = useState<{ nodeId: string; code: string } | null>(null);
   const [clipboard, setClipboard] = useState<{ nodes: ScriptNode[]; connections: NodeConnection[] }>({ nodes: [], connections: [] });
   const [hoveredConnection, setHoveredConnection] = useState<string | null>(null);
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
   // Notify parent when view changes
   useEffect(() => {
@@ -231,6 +264,40 @@ export default function NodeGraph({
     return colorMap[dataType || 'any'] || '#ffffff';
   };
 
+  // Generate connection path based on style setting
+  const generateConnectionPath = (
+    fromPos: { x: number; y: number },
+    toPos: { x: number; y: number }
+  ): string => {
+    if (connectionStyle === 'straight') {
+      return `M ${fromPos.x} ${fromPos.y} L ${toPos.x} ${toPos.y}`;
+    }
+    
+    if (connectionStyle === 'step') {
+      const midX = (fromPos.x + toPos.x) / 2;
+      return `M ${fromPos.x} ${fromPos.y} L ${midX} ${fromPos.y} L ${midX} ${toPos.y} L ${toPos.x} ${toPos.y}`;
+    }
+    
+    // Default: bezier curve
+    const distance = Math.abs(toPos.x - fromPos.x);
+    const verticalDistance = Math.abs(toPos.y - fromPos.y);
+    const alignmentRatio = distance > 0 ? Math.min(verticalDistance / distance, 2) : 1;
+    const stackFactor = distance > 0 
+      ? Math.min(1, Math.max(0, (100 - distance) / 100)) * (verticalDistance > distance ? 1 : 0.5)
+      : 1;
+    const minLength = 5 + alignmentRatio * 20;
+    const maxLength = 40 + alignmentRatio * 20;
+    const straightSegmentLength = Math.min(80, minLength + (maxLength - minLength) * stackFactor);
+    const baseStrength = Math.min(distance * (0.6 + alignmentRatio * 0.1), 200);
+    
+    const fromControlX = fromPos.x + straightSegmentLength + baseStrength;
+    const fromControlY = fromPos.y;
+    const toControlX = toPos.x - straightSegmentLength - baseStrength;
+    const toControlY = toPos.y;
+    
+    return `M ${fromPos.x} ${fromPos.y} C ${fromControlX} ${fromControlY}, ${toControlX} ${toControlY}, ${toPos.x} ${toPos.y}`;
+  };
+
   const formatNodeDataValue = (value: unknown): string => {
     if (typeof value === 'string') return `"${value}"`;
     if (Array.isArray(value)) {
@@ -314,7 +381,7 @@ export default function NodeGraph({
         });
       };
       return (
-        <div className="grid grid-cols-3 gap-1">
+        <div className="grid grid-cols-3 gap-1" style={{ width: '140px' }}>
           {(['x', 'y', 'z'] as const).map((axis) => (
             <input
               key={axis}
@@ -323,7 +390,7 @@ export default function NodeGraph({
               value={axis === 'x' ? x : axis === 'y' ? y : z}
               onChange={(e) => updateAxis(axis, parseFloat(e.target.value) || 0)}
               onMouseDown={(e) => e.stopPropagation()}
-              className="px-1 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+              className="w-full px-1 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
             />
           ))}
         </div>
@@ -698,7 +765,10 @@ export default function NodeGraph({
                 setCodeEditorModal({ nodeId: node.id, code });
               }}
               onMouseDown={(e) => e.stopPropagation()}
-              className="px-2 py-0.5 bg-purple-500/20 hover:bg-purple-500/40 rounded text-[9px] text-purple-300 transition-colors"
+              className="px-2 py-0.5 rounded text-[9px] transition-colors"
+              style={{ backgroundColor: 'var(--accent-color-bg)', color: 'var(--accent-color)' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-color-dim)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-color-bg)'}
             >
               Edit Code
             </button>
@@ -964,11 +1034,17 @@ export default function NodeGraph({
         const dx = (e.clientX - startX) / view.scale;
         const dy = (e.clientY - startY) / view.scale;
 
+        let newX = nodeStartX + dx;
+        let newY = nodeStartY + dy;
+
+        // Apply snap-to-grid if enabled
+        if (snapToGridRef.current) {
+          newX = Math.round(newX / gridSizeRef.current) * gridSizeRef.current;
+          newY = Math.round(newY / gridSizeRef.current) * gridSizeRef.current;
+        }
+
         onUpdateNodeRef.current(nodeId, {
-          position: {
-            x: nodeStartX + dx,
-            y: nodeStartY + dy,
-          },
+          position: { x: newX, y: newY },
         });
       }
 
@@ -977,11 +1053,17 @@ export default function NodeGraph({
         const dx = (e.clientX - startX) / view.scale;
         const dy = (e.clientY - startY) / view.scale;
         nodeStarts.forEach((pos, nodeId) => {
+          let newX = pos.x + dx;
+          let newY = pos.y + dy;
+
+          // Apply snap-to-grid if enabled
+          if (snapToGridRef.current) {
+            newX = Math.round(newX / gridSizeRef.current) * gridSizeRef.current;
+            newY = Math.round(newY / gridSizeRef.current) * gridSizeRef.current;
+          }
+
           onUpdateNodeRef.current(nodeId, {
-            position: {
-              x: pos.x + dx,
-              y: pos.y + dy,
-            },
+            position: { x: newX, y: newY },
           });
         });
       }
@@ -1734,15 +1816,11 @@ export default function NodeGraph({
     if (!canvasRect) return;
     
     // Store the canvas position for node placement, screen position for menu display
+    // No sourcePort means show all nodes
     setQuickMenu({
       screenPosition: screenPosition,
       canvasPosition: canvasPosition,
-      sourcePort: {
-        nodeId: '',
-        portId: '',
-        isInput: false,
-        portType: 'exec',
-      },
+      sourcePort: undefined,
     });
     setContextMenu(null);
   };
@@ -1880,7 +1958,7 @@ export default function NodeGraph({
     definition: ReturnType<typeof getNodeDefinition>,
     sourcePort: QuickMenuState['sourcePort']
   ): number => {
-    if (!definition) return -1;
+    if (!definition || !sourcePort) return -1;
     const portsToCheck = sourcePort.isInput ? definition.outputs : definition.inputs;
 
     for (let i = 0; i < portsToCheck.length; i++) {
@@ -1913,24 +1991,26 @@ export default function NodeGraph({
     // Add the new node
     onAddNode(newNode);
 
-    // Create the connection
+    // Create the connection only if we have a sourcePort
     const sourcePort = quickMenu.sourcePort;
 
-    // Determine which port on the new node to connect to
-    const newNodePorts = sourcePort.isInput ? newNode.outputs : newNode.inputs;
-    const targetPort = newNodePorts[connectToPortIndex];
+    if (sourcePort && connectToPortIndex >= 0) {
+      // Determine which port on the new node to connect to
+      const newNodePorts = sourcePort.isInput ? newNode.outputs : newNode.inputs;
+      const targetPort = newNodePorts[connectToPortIndex];
 
-    if (targetPort) {
-      const connection: NodeConnection = {
-        id: `conn_${Date.now()}`,
-        from: sourcePort.isInput
-          ? { nodeId: newNode.id, portId: targetPort.id }
-          : { nodeId: sourcePort.nodeId, portId: sourcePort.portId },
-        to: sourcePort.isInput
-          ? { nodeId: sourcePort.nodeId, portId: sourcePort.portId }
-          : { nodeId: newNode.id, portId: targetPort.id },
-      };
-      onConnect(connection);
+      if (targetPort) {
+        const connection: NodeConnection = {
+          id: `conn_${Date.now()}`,
+          from: sourcePort.isInput
+            ? { nodeId: newNode.id, portId: targetPort.id }
+            : { nodeId: sourcePort.nodeId, portId: sourcePort.portId },
+          to: sourcePort.isInput
+            ? { nodeId: sourcePort.nodeId, portId: sourcePort.portId }
+            : { nodeId: newNode.id, portId: targetPort.id },
+        };
+        onConnect(connection);
+      }
     }
 
     // Close the menu
@@ -2044,45 +2124,24 @@ export default function NodeGraph({
         return null;
       }
 
-      // Calculate control points for horizontal bezier curves
-      // Output ports extend to the right, input ports extend to the left
-      const distance = Math.abs(toPos.x - fromPos.x);
-      const verticalDistance = Math.abs(toPos.y - fromPos.y);
-      
-      // Smooth curve strength that adapts gradually based on alignment
-      // Use ratio to blend between horizontal and vertical alignment
-      const alignmentRatio = distance > 0 ? Math.min(verticalDistance / distance, 2) : 1;
-      
-      // Smooth factor for how "stacked" nodes are (0 = horizontal, 1 = stacked vertically)
-      // Uses smooth interpolation instead of hard threshold
-      const stackFactor = distance > 0 
-        ? Math.min(1, Math.max(0, (100 - distance) / 100)) * (verticalDistance > distance ? 1 : 0.5)
-        : 1;
-      
-      // Adaptive straight segment: smoothly interpolate between horizontal and stacked states
-      const minLength = 5 + alignmentRatio * 20;  // Horizontal state
-      const maxLength = 40 + alignmentRatio * 20; // Stacked state
-      const straightSegmentLength = Math.min(80, minLength + (maxLength - minLength) * stackFactor);
-      const baseStrength = Math.min(distance * (0.6 + alignmentRatio * 0.1), 200);
-      
-      // Control points: start with straight segment, then curve
-      const fromControlX = fromPos.x + straightSegmentLength + baseStrength; // Straight segment + curve
-      const fromControlY = fromPos.y; // Keep on same Y for straight horizontal exit
-      const toControlX = toPos.x - straightSegmentLength - baseStrength;     // Straight segment + curve
-      const toControlY = toPos.y; // Keep on same Y for straight horizontal entry
+      // Generate path based on connection style setting
+      const pathD = generateConnectionPath(fromPos, toPos);
 
       const fromNode = nodes.find(node => node.id === conn.from.nodeId);
       const fromPort =
         fromNode?.outputs.find(port => port.id === conn.from.portId) ||
         fromNode?.inputs.find(port => port.id === conn.from.portId);
       const stroke = getLineColor(fromPort?.type || 'data', fromPort?.dataType);
-      const pathD = `M ${fromPos.x} ${fromPos.y} C ${fromControlX} ${fromControlY}, ${toControlX} ${toControlY}, ${toPos.x} ${toPos.y}`;
       const isHovered = hoveredConnection === conn.id;
+      
+      // Highlight connections when hovering over connected node
+      const isNodeHighlighted = highlightConnections && hoveredNodeId && 
+        (conn.from.nodeId === hoveredNodeId || conn.to.nodeId === hoveredNodeId);
 
       return (
         <g key={conn.id}>
-          {/* Glow effect on hover */}
-          {isHovered && (
+          {/* Glow effect on hover or node highlight */}
+          {(isHovered || isNodeHighlighted) && (
             <path
               d={pathD}
               stroke={stroke}
@@ -2112,16 +2171,32 @@ export default function NodeGraph({
           <path
             d={pathD}
             stroke={stroke}
-            strokeWidth={isHovered ? "3.5" : "2.5"}
+            strokeWidth={(isHovered || isNodeHighlighted) ? "3.5" : "2.5"}
             fill="none"
             strokeLinecap="round"
             strokeLinejoin="round"
             style={{ 
               pointerEvents: 'none',
               transition: 'stroke-width 0.15s ease-out',
-              filter: isHovered ? 'brightness(1.3)' : undefined
+              filter: (isHovered || isNodeHighlighted) ? 'brightness(1.3)' : undefined
             }}
           />
+          {/* Animated flow indicator */}
+          {animateConnections && (
+            <circle
+              r="3"
+              fill={stroke}
+              style={{
+                filter: 'brightness(1.5)',
+              }}
+            >
+              <animateMotion
+                dur="1.5s"
+                repeatCount="indefinite"
+                path={pathD}
+              />
+            </circle>
+          )}
         </g>
       );
     });
@@ -2154,16 +2229,18 @@ export default function NodeGraph({
       }}
     >
       {/* Separate background layer for GPU compositing */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: 'radial-gradient(circle, #2a2e38 1px, transparent 1px)',
-          backgroundSize: `${20 * view.scale}px ${20 * view.scale}px`,
-          backgroundPosition: `${view.x}px ${view.y}px`,
-          willChange: 'background-position, background-size',
-          contain: 'strict',
-        }}
-      />
+      {showGridLines && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: `radial-gradient(circle, ${theme === 'light' ? 'rgba(0,0,0,0.12)' : '#2a2e38'} 1px, transparent 1px)`,
+            backgroundSize: `${gridSize * view.scale}px ${gridSize * view.scale}px`,
+            backgroundPosition: `${view.x}px ${view.y}px`,
+            willChange: 'background-position, background-size',
+            contain: 'strict',
+          }}
+        />
+      )}
       <div
         className="absolute inset-0"
         style={{
@@ -2190,7 +2267,7 @@ export default function NodeGraph({
             return (
               <div
                 key={node.id}
-                className={`node-root absolute select-none ${isSelected ? 'ring-2 ring-purple-500' : ''}`}
+                className="node-root absolute select-none"
                 data-node-id={node.id}
                 style={{
                   left: node.position.x,
@@ -2199,10 +2276,14 @@ export default function NodeGraph({
                   height,
                   zIndex: isSelected ? 0 : -1, // Always behind other nodes
                   cursor: 'grab',
+                  opacity: nodeOpacity / 100,
                   userSelect: 'none',
+                  boxShadow: isSelected ? `0 0 0 2px ${accentColor}` : undefined,
                 }}
                 onMouseDown={(e) => handleNodeMouseDown(e, node)}
                 onContextMenu={(e) => handleNodeContextMenu(e, node.id)}
+                onMouseEnter={() => setHoveredNodeId(node.id)}
+                onMouseLeave={() => setHoveredNodeId(null)}
               >
                 {/* Comment background */}
                 <div
@@ -2304,7 +2385,7 @@ export default function NodeGraph({
             return (
             <div
               key={node.id}
-              className={`node-root absolute select-none ${isSelected ? 'ring-2 ring-purple-500 ring-offset-1 ring-offset-[#0f1419]' : ''}`}
+              className="node-root absolute select-none"
               data-node-id={node.id}
               style={{
                 left: node.position.x,
@@ -2314,14 +2395,24 @@ export default function NodeGraph({
                 cursor: 'grab',
                 userSelect: 'none',
                 zIndex: isSelected ? 100 : 1,
+                opacity: nodeOpacity / 100,
+                boxShadow: isSelected ? `0 0 0 2px ${accentColor}` : undefined,
+                borderRadius: '4px',
               }}
               onMouseDown={(e) => handleNodeMouseDown(e, node)}
               onContextMenu={(e) => handleNodeContextMenu(e, node.id)}
+              onMouseEnter={() => setHoveredNodeId(node.id)}
+              onMouseLeave={() => setHoveredNodeId(null)}
             >
               {/* Central diamond/circle shape */}
               <div 
-                className={`absolute inset-1 ${isExec ? 'rotate-45' : 'rounded-full'} bg-[#2a2e38] border-2 transition-colors ${isSelected ? 'border-purple-400' : 'border-white/40 hover:border-white/60'}`}
-                style={{ backgroundColor: isExec ? '#3a3f4a' : '#2a2e38' }}
+                className={`absolute inset-1 ${isExec ? 'rotate-45' : 'rounded-full'} border-2 transition-colors ${isSelected ? '' : 'border-white/40 hover:border-white/60'}`}
+                style={{ 
+                  backgroundColor: theme === 'light' 
+                    ? (isExec ? '#e9ecef' : '#f8f9fa') 
+                    : (isExec ? '#3a3f4a' : '#2a2e38'),
+                  borderColor: isSelected ? accentColor : (theme === 'light' ? 'rgba(0,0,0,0.3)' : undefined),
+                }}
               />
 
                 {inputPort && (
@@ -2383,9 +2474,7 @@ export default function NodeGraph({
           return (
             <div
               key={node.id}
-              className={`node-root absolute bg-[#2a2e38] rounded-lg shadow-xl select-none ${
-                isSelected ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-[#0f1419]' : ''
-              }`}
+              className="node-root absolute bg-[#2a2e38] rounded-lg select-none"
               data-node-id={node.id}
               style={{
                 left: node.position.x,
@@ -2394,9 +2483,15 @@ export default function NodeGraph({
                 cursor: 'grab',
                 userSelect: 'none',
                 zIndex: isSelected ? 100 : 1,
+                opacity: nodeOpacity / 100,
+                boxShadow: isSelected 
+                  ? `0 0 0 2px ${accentColor}, 0 0 0 4px #0f1419, 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)` 
+                  : '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
               }}
               onMouseDown={(e) => handleNodeMouseDown(e, node)}
               onContextMenu={(e) => handleNodeContextMenu(e, node.id)}
+              onMouseEnter={() => setHoveredNodeId(node.id)}
+              onMouseLeave={() => setHoveredNodeId(null)}
             >
               {/* Node Header */}
               <div
@@ -2492,34 +2587,16 @@ export default function NodeGraph({
         {renderConnections()}
 
         {/* Draw temporary connection line */}
-        {tempConnectionLine && (() => {
-          const distance = Math.abs(tempConnectionLine.to.x - tempConnectionLine.from.x);
-          const verticalDistance = Math.abs(tempConnectionLine.to.y - tempConnectionLine.from.y);
-          const alignmentRatio = distance > 0 ? Math.min(verticalDistance / distance, 2) : 1;
-          const stackFactor = distance > 0 
-            ? Math.min(1, Math.max(0, (100 - distance) / 100)) * (verticalDistance > distance ? 1 : 0.5)
-            : 1;
-          const minLength = 5 + alignmentRatio * 20;
-          const maxLength = 40 + alignmentRatio * 20;
-          const straightSegmentLength = Math.min(80, minLength + (maxLength - minLength) * stackFactor);
-          const baseStrength = Math.min(distance * (0.6 + alignmentRatio * 0.1), 200);
-          
-          const fromControlX = tempConnectionLine.from.x + straightSegmentLength + baseStrength;
-          const fromControlY = tempConnectionLine.from.y; // Keep on same Y for straight horizontal exit
-          const toControlX = tempConnectionLine.to.x - straightSegmentLength - baseStrength;
-          const toControlY = tempConnectionLine.to.y; // Keep on same Y for straight horizontal entry
-          
-          return (
-            <path
-              d={`M ${tempConnectionLine.from.x} ${tempConnectionLine.from.y} C ${fromControlX} ${fromControlY}, ${toControlX} ${toControlY}, ${tempConnectionLine.to.x} ${tempConnectionLine.to.y}`}
-              stroke={getLineColor(tempConnectionRef.current?.portType || 'exec', tempConnectionRef.current?.dataType)}
-              strokeWidth="2.5"
-              strokeDasharray="8,4"
-              fill="none"
-              strokeLinecap="round"
-            />
-          );
-        })()}
+        {tempConnectionLine && (
+          <path
+            d={generateConnectionPath(tempConnectionLine.from, tempConnectionLine.to)}
+            stroke={getLineColor(tempConnectionRef.current?.portType || 'exec', tempConnectionRef.current?.dataType)}
+            strokeWidth="2.5"
+            strokeDasharray="8,4"
+            fill="none"
+            strokeLinecap="round"
+          />
+        )}
       </svg>
 
       {/* Empty state */}
@@ -2544,12 +2621,14 @@ export default function NodeGraph({
 
       {selectionRect && (
         <div
-          className="absolute border border-purple-400/80 bg-purple-500/10 pointer-events-none"
+          className="absolute pointer-events-none"
           style={{
             left: selectionRect.x,
             top: selectionRect.y,
             width: selectionRect.width,
             height: selectionRect.height,
+            border: `1px solid ${accentColor}`,
+            backgroundColor: `${accentColor}15`,
           }}
         />
       )}
@@ -2658,6 +2737,73 @@ export default function NodeGraph({
               Break Input
             </button>
           )}
+        </div>
+      )}
+
+      {/* Minimap */}
+      {showMinimap && nodes.length > 0 && (
+        <div 
+          className="absolute bottom-4 right-4 border rounded-lg overflow-hidden pointer-events-auto"
+          style={{
+            width: 200,
+            height: 150,
+            backgroundColor: theme === 'light' ? 'rgba(255,255,255,0.95)' : 'rgba(26, 31, 40, 0.95)',
+            borderColor: theme === 'light' ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.1)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          }}
+        >
+          {(() => {
+            // Calculate bounds of all nodes
+            const padding = 50;
+            const minX = Math.min(...nodes.map(n => n.position.x)) - padding;
+            const maxX = Math.max(...nodes.map(n => n.position.x + (n.size?.width || 180))) + padding;
+            const minY = Math.min(...nodes.map(n => n.position.y)) - padding;
+            const maxY = Math.max(...nodes.map(n => n.position.y + (n.size?.height || 100))) + padding;
+            const boundsWidth = maxX - minX || 1;
+            const boundsHeight = maxY - minY || 1;
+            const scale = Math.min(200 / boundsWidth, 150 / boundsHeight);
+            
+            // Calculate viewport rect in minimap space
+            const canvasRect = canvasRef.current?.getBoundingClientRect();
+            const viewportWidth = (canvasRect?.width || 800) / view.scale;
+            const viewportHeight = (canvasRect?.height || 600) / view.scale;
+            const viewportX = -view.x / view.scale;
+            const viewportY = -view.y / view.scale;
+            
+            return (
+              <svg width="200" height="150" className="pointer-events-auto">
+                {/* Nodes */}
+                {nodes.map((node) => {
+                  const nodeColor = getNodeDefinitionColor(node.type);
+                  const nodeWidth = (node.size?.width || 180) * scale;
+                  const nodeHeight = (node.size?.height || 40) * scale;
+                  return (
+                    <rect
+                      key={node.id}
+                      x={(node.position.x - minX) * scale}
+                      y={(node.position.y - minY) * scale}
+                      width={Math.max(nodeWidth, 4)}
+                      height={Math.max(nodeHeight, 3)}
+                      fill={nodeColor}
+                      opacity={0.8}
+                      rx={1}
+                    />
+                  );
+                })}
+                {/* Viewport indicator */}
+                <rect
+                  x={(viewportX - minX) * scale}
+                  y={(viewportY - minY) * scale}
+                  width={viewportWidth * scale}
+                  height={viewportHeight * scale}
+                  fill="none"
+                  stroke={accentColor}
+                  strokeWidth={2}
+                  opacity={0.8}
+                />
+              </svg>
+            );
+          })()}
         </div>
       )}
 

@@ -49,7 +49,12 @@ export interface UseProjectFilesReturn {
   markModified: () => void;
 }
 
-export function useProjectFiles(): UseProjectFilesReturn {
+export interface UseProjectFilesOptions {
+  maxRecentProjects?: number;
+}
+
+export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjectFilesReturn {
+  const { maxRecentProjects = 10 } = options;
   const [projectData, setProjectData] = useState<ProjectData | null>(null);
   const [currentFilePath, setCurrentFilePath] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -72,11 +77,11 @@ export function useProjectFiles(): UseProjectFilesReturn {
   const addToRecentProjects = useCallback((path: string, name: string) => {
     setRecentProjects(prev => {
       const filtered = prev.filter(p => p.path !== path);
-      const updated = [{ name, path, lastOpened: Date.now() }, ...filtered].slice(0, 10);
+      const updated = [{ name, path, lastOpened: Date.now() }, ...filtered].slice(0, maxRecentProjects);
       localStorage.setItem('recentProjects', JSON.stringify(updated));
       return updated;
     });
-  }, []);
+  }, [maxRecentProjects]);
 
   const scriptFiles = projectData?.scriptFiles || [];
   const folders = projectData?.settings.folders || [];

@@ -311,6 +311,244 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
+    case 'on-npc-killed': {
+      const funcName = node.data?.functionName || 'OnNPCKilled';
+      lines.push(`${ind}AddCallback_OnNPCKilled( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-client-connecting': {
+      const funcName = node.data?.functionName || 'OnClientConnecting';
+      lines.push(`${ind}AddCallback_OnClientConnecting( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-entity-changed-team': {
+      const funcName = node.data?.functionName || 'OnEntityChangedTeam';
+      lines.push(`${ind}AddCallback_EntityChangedTeam( "player", ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-player-assist': {
+      const funcName = node.data?.functionName || 'OnPlayerAssist';
+      lines.push(`${ind}AddCallback_OnPlayerAssist( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-player-inventory-changed': {
+      const funcName = node.data?.functionName || 'OnPlayerInventoryChanged';
+      lines.push(`${ind}AddCallback_OnPlayerInventoryChanged( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-weapon-attack': {
+      const funcName = node.data?.functionName || 'OnWeaponAttack';
+      lines.push(`${ind}AddCallback_OnWeaponAttack( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-death-box-spawned': {
+      const funcName = node.data?.functionName || 'OnDeathBoxSpawned';
+      lines.push(`${ind}AddCallback_OnDeathBoxSpawned( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-game-state-enter': {
+      const funcName = node.data?.functionName || 'OnGameStatePostEnter';
+      lines.push(`${ind}AddCallback_GameStatePostEnter( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-player-weapon-activated': {
+      const funcName = node.data?.functionName || 'OnPlayerWeaponActivated';
+      lines.push(`${ind}AddCallback_OnPlayerWeaponActivated( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-player-used-offhand': {
+      const funcName = node.data?.functionName || 'OnPlayerUsedOffhandWeapon';
+      lines.push(`${ind}AddCallback_OnPlayerUsedOffhandWeapon( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-leave-match': {
+      const funcName = node.data?.functionName || 'OnLeaveMatch';
+      lines.push(`${ind}AddCallback_OnLeaveMatch( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-use-button-pressed': {
+      const funcName = node.data?.functionName || 'OnUseButtonPressed';
+      lines.push(`${ind}AddCallback_OnUseButtonPressed( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-use-button-released': {
+      const funcName = node.data?.functionName || 'OnUseButtonReleased';
+      lines.push(`${ind}AddCallback_OnUseButtonReleased( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-player-class-changed': {
+      const funcName = node.data?.functionName || 'OnPlayerClassChanged';
+      lines.push(`${ind}AddCallback_PlayerClassChanged( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-vehicle-launch': {
+      const funcName = node.data?.functionName || 'OnVehicleLaunch';
+      lines.push(`${ind}AddCallback_OnVehicleLaunch( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-vehicle-collide': {
+      const funcName = node.data?.functionName || 'OnVehicleCollide';
+      lines.push(`${ind}AddCallback_OnVehicleCollide( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-player-changed-team': {
+      const funcName = node.data?.functionName || 'OnPlayerChangedTeam';
+      lines.push(`${ind}AddCallback_OnPlayerChangedTeam( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-player-zoom-in': {
+      const funcName = node.data?.functionName || 'OnPlayerZoomIn';
+      lines.push(`${ind}AddCallback_OnPlayerZoomIn( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-player-zoom-out': {
+      const funcName = node.data?.functionName || 'OnPlayerZoomOut';
+      lines.push(`${ind}AddCallback_OnPlayerZoomOut( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-passive-changed': {
+      const funcName = node.data?.functionName || 'OnPassiveChanged';
+      lines.push(`${ind}AddCallback_OnPassiveChanged( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-ping-created': {
+      const funcName = node.data?.functionName || 'OnPingCreatedByAnyPlayer';
+      lines.push(`${ind}AddCallback_OnPingCreatedByAnyPlayer( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-player-match-state-changed': {
+      const funcName = node.data?.functionName || 'OnPlayerMatchStateChanged';
+      lines.push(`${ind}AddCallback_OnPlayerMatchStateChanged( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-deathfield-stage-changed': {
+      const funcName = node.data?.functionName || 'OnSurvivalDeathFieldStageChanged';
+      lines.push(`${ind}AddCallback_OnSurvivalDeathFieldStageChanged( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-bleedout-started': {
+      const funcName = node.data?.functionName || 'OnBleedoutStarted';
+      lines.push(`${ind}AddCallback_OnBleedoutStarted( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-bleedout-ended': {
+      const funcName = node.data?.functionName || 'OnBleedoutEnded';
+      lines.push(`${ind}AddCallback_OnBleedoutEnded( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-player-life-state-changed': {
+      const funcName = node.data?.functionName || 'OnPlayerLifeStateChanged';
+      lines.push(`${ind}AddCallback_OnPlayerLifeStateChanged( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-you-respawned': {
+      const funcName = node.data?.functionName || 'OnYouRespawned';
+      lines.push(`${ind}AddCallback_OnYouRespawned( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-you-died': {
+      const funcName = node.data?.functionName || 'OnYouDied';
+      lines.push(`${ind}AddCallback_OnYouDied( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-player-scored': {
+      const funcName = node.data?.functionName || 'OnPlayerScored';
+      lines.push(`${ind}AddCallback_OnPlayerScored( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-lootbin-opened': {
+      const funcName = node.data?.functionName || 'OnLootbinOpened';
+      lines.push(`${ind}Survival_AddCallback_OnLootbinOpened( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-player-add-weapon-mod': {
+      const funcName = node.data?.functionName || 'OnPlayerAddWeaponMod';
+      lines.push(`${ind}AddCallback_OnPlayerAddWeaponMod( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-player-remove-weapon-mod': {
+      const funcName = node.data?.functionName || 'OnPlayerRemoveWeaponMod';
+      lines.push(`${ind}AddCallback_OnPlayerRemoveWeaponMod( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-grappled': {
+      const funcName = node.data?.functionName || 'OnGrappled';
+      lines.push(`${ind}AddCallback_OnGrappled( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'on-grapple-detached': {
+      const funcName = node.data?.functionName || 'OnGrappleDetached';
+      lines.push(`${ind}AddCallback_OnGrappleDetached( ${funcName} )`);
+      followExec('output_0');
+      break;
+    }
+
     case 'return': {
       const returnValue = getInputValue(ctx, node, 'input_1');
       if (returnValue && returnValue !== 'null') {
@@ -322,7 +560,11 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
     }
 
     case 'reroute': {
-      // Reroute nodes pass through execution - they're just for visual organization
+      // Reroute nodes pass through both execution and data - they're just for visual organization
+      // Pass through data value from input to output
+      const inputValue = getInputValue(ctx, node, 'input_0');
+      ctx.variables.set(`${node.id}:output_0`, inputValue);
+      // Also follow exec if this is an exec reroute
       followExec('output_0');
       break;
     }
@@ -944,13 +1186,7 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
-    case 'get-player-name': {
-      const player = getInputValue(ctx, node, 'input_0');
-      const resultVar = getVarName(ctx, 'name');
-      ctx.variables.set(`${node.id}:output_0`, resultVar);
-      lines.push(`${ind}string ${resultVar} = ${player}.GetPlayerName()`);
-      break;
-    }
+    // get-player-name case is handled earlier in the switch
 
     case 'string-builder': {
       const inputCount = typeof node.data?.inputCount === 'number' ? node.data.inputCount : node.inputs.length;
@@ -1088,11 +1324,7 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
-    case 'reroute': {
-      const inputValue = getInputValue(ctx, node, 'input_0');
-      ctx.variables.set(`${node.id}:output_0`, inputValue);
-      break;
-    }
+    // reroute case is handled earlier in the switch (handles both exec and data passthrough)
 
     case 'array-create': {
       const resultVar = getVarName(ctx, 'arr');
@@ -1464,7 +1696,16 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
   const globalCustomFunctions = nodes.filter(n => n.type === 'custom-function' && n.data.isGlobal === true);
 
   // Server callback event types that have Register input
-  const serverCallbackTypes = ['on-entities-did-load', 'on-client-connected', 'on-client-disconnected', 'on-player-killed', 'on-player-respawned'];
+  const serverCallbackTypes = [
+    'on-entities-did-load', 'on-client-connected', 'on-client-disconnected', 'on-player-killed', 'on-player-respawned',
+    'on-npc-killed', 'on-client-connecting', 'on-entity-changed-team', 'on-player-assist', 'on-player-inventory-changed',
+    'on-weapon-attack', 'on-death-box-spawned', 'on-game-state-enter', 'on-player-weapon-activated', 'on-player-used-offhand',
+    'on-leave-match', 'on-use-button-pressed', 'on-use-button-released', 'on-player-class-changed', 'on-vehicle-launch',
+    'on-vehicle-collide', 'on-player-changed-team', 'on-player-zoom-in', 'on-player-zoom-out', 'on-passive-changed',
+    'on-ping-created', 'on-player-match-state-changed', 'on-deathfield-stage-changed', 'on-bleedout-started', 'on-bleedout-ended',
+    'on-player-life-state-changed', 'on-you-respawned', 'on-you-died', 'on-player-scored', 'on-lootbin-opened',
+    'on-player-add-weapon-mod', 'on-player-remove-weapon-mod', 'on-grappled', 'on-grapple-detached'
+  ];
 
   // Helper to trace back from a node to find which init contexts it belongs to
   const traceContextsFromNode = (startNodeId: string): Set<string> => {
@@ -1681,7 +1922,7 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
   // Handle standalone event and custom function nodes
   // For server callback events, always include them (they may have been visited via Register but still need function generated)
   const eventNodes = nodes.filter(n =>
-    (n.category === 'events' || n.type === 'custom-function') &&
+    (n.category === 'events' || n.category === 'callbacks' || n.type === 'custom-function') &&
     (serverCallbackTypes.includes(n.type) || !ctx.visitedNodes.has(n.id))
   );
 
@@ -1758,6 +1999,117 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
           setupVars: (nodeId: string) => {
             ctx.variables.set(`${nodeId}:output_1`, 'ent');
             ctx.variables.set(`${nodeId}:output_2`, 'damageInfo');
+          }
+        };
+      // New callback types
+      case 'on-npc-killed':
+        return { 
+          params: 'entity npc, entity attacker, var damageInfo', 
+          setupVars: (nodeId: string) => {
+            ctx.variables.set(`${nodeId}:output_2`, 'npc');
+            ctx.variables.set(`${nodeId}:output_3`, 'attacker');
+            ctx.variables.set(`${nodeId}:output_4`, 'damageInfo');
+          }
+        };
+      case 'on-client-connecting':
+      case 'on-entity-changed-team':
+      case 'on-player-inventory-changed':
+      case 'on-player-class-changed':
+      case 'on-player-changed-team':
+      case 'on-player-zoom-in':
+      case 'on-player-zoom-out':
+      case 'on-passive-changed':
+      case 'on-ping-created':
+      case 'on-player-match-state-changed':
+      case 'on-bleedout-started':
+      case 'on-bleedout-ended':
+      case 'on-player-scored':
+      case 'on-use-button-pressed':
+      case 'on-use-button-released':
+      case 'on-grappled':
+      case 'on-grapple-detached':
+        return { 
+          params: 'entity player', 
+          setupVars: (nodeId: string) => {
+            ctx.variables.set(`${nodeId}:output_2`, 'player');
+          }
+        };
+      case 'on-player-assist':
+        return { 
+          params: 'entity player, entity victim', 
+          setupVars: (nodeId: string) => {
+            ctx.variables.set(`${nodeId}:output_2`, 'player');
+            ctx.variables.set(`${nodeId}:output_3`, 'victim');
+          }
+        };
+      case 'on-weapon-attack':
+      case 'on-player-weapon-activated':
+      case 'on-player-used-offhand':
+        return { 
+          params: 'entity weapon, entity player', 
+          setupVars: (nodeId: string) => {
+            ctx.variables.set(`${nodeId}:output_2`, 'weapon');
+            ctx.variables.set(`${nodeId}:output_3`, 'player');
+          }
+        };
+      case 'on-death-box-spawned':
+        return { 
+          params: 'entity deathBox', 
+          setupVars: (nodeId: string) => {
+            ctx.variables.set(`${nodeId}:output_2`, 'deathBox');
+          }
+        };
+      case 'on-game-state-enter':
+        return { 
+          params: 'int gameState', 
+          setupVars: (nodeId: string) => {
+            ctx.variables.set(`${nodeId}:output_2`, 'gameState');
+          }
+        };
+      case 'on-deathfield-stage-changed':
+        return { 
+          params: 'int stage', 
+          setupVars: (nodeId: string) => {
+            ctx.variables.set(`${nodeId}:output_2`, 'stage');
+          }
+        };
+      case 'on-leave-match':
+      case 'on-you-respawned':
+      case 'on-you-died':
+        return { params: '', setupVars: () => {} };
+      case 'on-vehicle-launch':
+      case 'on-vehicle-collide':
+        return { 
+          params: 'entity vehicle', 
+          setupVars: (nodeId: string) => {
+            ctx.variables.set(`${nodeId}:output_2`, 'vehicle');
+          }
+        };
+      case 'on-player-life-state-changed':
+        return { 
+          params: 'entity player, int oldState, int newState', 
+          setupVars: (nodeId: string) => {
+            ctx.variables.set(`${nodeId}:output_2`, 'player');
+            ctx.variables.set(`${nodeId}:output_3`, 'oldState');
+            ctx.variables.set(`${nodeId}:output_4`, 'newState');
+          }
+        };
+      case 'on-lootbin-opened':
+        return { 
+          params: 'entity player, entity lootbin', 
+          setupVars: (nodeId: string) => {
+            ctx.variables.set(`${nodeId}:output_2`, 'player');
+            ctx.variables.set(`${nodeId}:output_3`, 'lootbin');
+          }
+        };
+      case 'on-player-add-weapon-mod':
+      case 'on-player-remove-weapon-mod':
+        return { 
+          params: 'entity player, entity weapon, string modName', 
+          setupVars: (nodeId: string) => {
+            ctx.variables.set(`${nodeId}:output_2`, 'player');
+            ctx.variables.set(`${nodeId}:output_3`, 'weapon');
+            ctx.variables.set(`${nodeId}:output_4`, 'modName');
           }
         };
       case 'custom-function': {

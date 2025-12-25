@@ -229,8 +229,8 @@ export default function NodePalette({ onAddNode, onClose, collapsedCategories = 
           className="w-full flex items-center justify-between px-3 py-2.5 bg-[#0f1419] hover:bg-[#1a1f28] transition-colors border-b border-white/10 flex-shrink-0"
         >
           <div className="flex items-center gap-2">
-            <div className="p-1 rounded bg-purple-500/10">
-              <Workflow size={14} className="text-purple-400" />
+            <div className="p-1 rounded" style={{ backgroundColor: 'var(--accent-color-bg)' }}>
+              <Workflow size={14} style={{ color: 'var(--accent-color)' }} />
             </div>
             <div className="flex flex-col items-start">
               <span className="text-[9px] font-semibold tracking-wider text-gray-500 uppercase">Nodes</span>
@@ -248,8 +248,8 @@ export default function NodePalette({ onAddNode, onClose, collapsedCategories = 
           {!isEmbedded && (
             <div className="flex-shrink-0 px-3 py-3 border-b border-white/10 bg-[#0a0d10] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded bg-purple-500/20">
-                  <Workflow size={14} className="text-purple-400" />
+                <div className="p-1.5 rounded" style={{ backgroundColor: 'var(--accent-color-bg)' }}>
+                  <Workflow size={14} style={{ color: 'var(--accent-color)' }} />
                 </div>
                 <span className="text-sm font-semibold text-white">Nodes</span>
               </div>
@@ -272,7 +272,9 @@ export default function NodePalette({ onAddNode, onClose, collapsedCategories = 
                 placeholder="Search nodes..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-black/30 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/25 transition-all"
+                className="w-full pl-9 pr-3 py-2 bg-black/30 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none transition-all"
+                onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--accent-color-dim)'; e.currentTarget.style.boxShadow = '0 0 0 2px var(--accent-color-bg)'; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = ''; }}
               />
               {searchTerm && (
                 <button

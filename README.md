@@ -1,6 +1,6 @@
 # R5V Visual Script Editor
 
-This is a standalone visual script editor for Apex Legends R5 Reloaded.
+This is a standalone visual script editor for Apex Legends R5V.
 
 ## Running the application
 

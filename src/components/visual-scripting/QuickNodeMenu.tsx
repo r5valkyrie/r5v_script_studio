@@ -6,7 +6,7 @@ import { CATEGORY_INFO } from '../../types/visual-scripting';
 
 interface QuickNodeMenuProps {
   position: { x: number; y: number };
-  sourcePort: {
+  sourcePort?: {
     nodeId: string;
     portId: string;
     isInput: boolean;
@@ -75,6 +75,11 @@ export default function QuickNodeMenu({
 
   // Filter nodes based on port compatibility
   const compatibleNodes = useMemo(() => {
+    // If no sourcePort, show all nodes
+    if (!sourcePort) {
+      return NODE_DEFINITIONS;
+    }
+    
     return NODE_DEFINITIONS.filter((def) => {
       // If dragging from an output, we need nodes with compatible inputs
       // If dragging from an input, we need nodes with compatible outputs
@@ -112,42 +117,45 @@ export default function QuickNodeMenu({
       );
     }
 
-    const scoreByPort = (node: NodeDefinition) => {
-      const portsToCheck = sourcePort.isInput ? node.outputs : node.inputs;
-      if (sourcePort.portType === 'exec') {
-        return portsToCheck.some(port => port.type === 'exec') ? 1 : 0;
-      }
-      if (sourcePort.dataType) {
-        return portsToCheck.some(
-          port => port.type === 'data' && areTypesCompatible(sourcePort.dataType, port.dataType)
-        ) ? 1 : 0;
-      }
-      return 0;
-    };
-
-    if (sourcePort.portType === 'exec' || sourcePort.dataType) {
-      const preferredLabels = sourcePort.dataType === 'number'
-        ? ['float', 'int', 'number']
-        : sourcePort.dataType
-          ? [sourcePort.dataType.toLowerCase()]
-          : [];
-      const scoreByLabel = (node: NodeDefinition) => {
-        if (preferredLabels.length === 0) return 0;
-        const label = node.label.toLowerCase();
-        if (preferredLabels.some(pref => label === pref)) return 2;
-        if (preferredLabels.some(pref => label.includes(pref))) return 1;
+    // Only apply port-based sorting if we have a sourcePort
+    if (sourcePort) {
+      const scoreByPort = (node: NodeDefinition) => {
+        const portsToCheck = sourcePort.isInput ? node.outputs : node.inputs;
+        if (sourcePort.portType === 'exec') {
+          return portsToCheck.some(port => port.type === 'exec') ? 1 : 0;
+        }
+        if (sourcePort.dataType) {
+          return portsToCheck.some(
+            port => port.type === 'data' && areTypesCompatible(sourcePort.dataType, port.dataType)
+          ) ? 1 : 0;
+        }
         return 0;
       };
 
-      nodes = [...nodes].sort((a, b) => {
-        const portScore = scoreByPort(b) - scoreByPort(a);
-        if (portScore !== 0) return portScore;
-        return scoreByLabel(b) - scoreByLabel(a);
-      });
+      if (sourcePort.portType === 'exec' || sourcePort.dataType) {
+        const preferredLabels = sourcePort.dataType === 'number'
+          ? ['float', 'int', 'number']
+          : sourcePort.dataType
+            ? [sourcePort.dataType.toLowerCase()]
+            : [];
+        const scoreByLabel = (node: NodeDefinition) => {
+          if (preferredLabels.length === 0) return 0;
+          const label = node.label.toLowerCase();
+          if (preferredLabels.some(pref => label === pref)) return 2;
+          if (preferredLabels.some(pref => label.includes(pref))) return 1;
+          return 0;
+        };
+
+        nodes = [...nodes].sort((a, b) => {
+          const portScore = scoreByPort(b) - scoreByPort(a);
+          if (portScore !== 0) return portScore;
+          return scoreByLabel(b) - scoreByLabel(a);
+        });
+      }
     }
 
     return nodes;
-  }, [compatibleNodes, selectedCategory, searchQuery]);
+  }, [compatibleNodes, selectedCategory, searchQuery, sourcePort]);
 
   // Group by category
   const groupedNodes = useMemo(() => {
@@ -162,23 +170,26 @@ export default function QuickNodeMenu({
   }, [filteredNodes]);
 
   const handleNodeClick = (definition: NodeDefinition) => {
-    // Find the port index that will be connected
-    const portsToCheck = sourcePort.isInput ? definition.outputs : definition.inputs;
+    // Find the port index that will be connected (only if we have a sourcePort)
     let connectPortIndex = -1;
+    
+    if (sourcePort) {
+      const portsToCheck = sourcePort.isInput ? definition.outputs : definition.inputs;
 
-    for (let i = 0; i < portsToCheck.length; i++) {
-      const port = portsToCheck[i];
-      if (sourcePort.portType === 'exec' && port.type === 'exec') {
-        connectPortIndex = i;
-        break;
-      }
-      if (
-        sourcePort.portType === 'data' &&
-        port.type === 'data' &&
-        areTypesCompatible(sourcePort.dataType, port.dataType)
-      ) {
-        connectPortIndex = i;
-        break;
+      for (let i = 0; i < portsToCheck.length; i++) {
+        const port = portsToCheck[i];
+        if (sourcePort.portType === 'exec' && port.type === 'exec') {
+          connectPortIndex = i;
+          break;
+        }
+        if (
+          sourcePort.portType === 'data' &&
+          port.type === 'data' &&
+          areTypesCompatible(sourcePort.dataType, port.dataType)
+        ) {
+          connectPortIndex = i;
+          break;
+        }
       }
     }
 
@@ -272,9 +283,10 @@ export default function QuickNodeMenu({
           onClick={() => setSelectedCategory(null)}
           className={`px-2 py-1 text-xs rounded whitespace-nowrap transition-colors ${
             selectedCategory === null
-              ? 'bg-purple-600 text-white'
+              ? 'text-white'
               : 'bg-white/5 text-gray-400 hover:bg-white/10'
           }`}
+          style={selectedCategory === null ? { backgroundColor: 'var(--accent-color)' } : undefined}
         >
           All
         </button>
@@ -321,7 +333,10 @@ export default function QuickNodeMenu({
                 <button
                   key={node.type}
                   onClick={() => handleNodeClick(node)}
-                  className="w-full px-3 py-2 text-left hover:bg-purple-600/20 transition-colors flex items-start gap-2 border-b border-white/5"
+                  className="w-full px-3 py-2 text-left transition-colors flex items-start gap-2 border-b border-white/5"
+                  style={{ ['--tw-bg-opacity' as string]: 0.2 }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-color-bg)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   <div
                     className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
@@ -340,7 +355,11 @@ export default function QuickNodeMenu({
 
       {/* Footer hint */}
       <div className="px-3 py-2 bg-[#0f1419] border-t border-white/10 text-xs text-gray-600">
-        {sourcePort.portType === 'exec' ? 'Showing nodes with exec ports' : `Showing nodes with ${sourcePort.dataType || 'data'} ports`}
+        {!sourcePort 
+          ? 'Showing all nodes' 
+          : sourcePort.portType === 'exec' 
+            ? 'Showing nodes with exec ports' 
+            : `Showing nodes with ${sourcePort.dataType || 'data'} ports`}
       </div>
     </div>
   );

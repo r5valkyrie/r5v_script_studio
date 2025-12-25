@@ -248,8 +248,8 @@ export default function ProjectPanel({
         {!isEmbedded && (
           <div className="px-4 py-3 border-b border-white/10 bg-[#0f1419]">
             <div className="flex items-center gap-2 min-w-0">
-            <div className="p-1.5 rounded bg-purple-500/10">
-              <FolderOpen size={14} className="text-purple-400" />
+            <div className="p-1.5 rounded" style={{ backgroundColor: 'var(--accent-color-bg)' }}>
+              <FolderOpen size={14} style={{ color: 'var(--accent-color)' }} />
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block">Project</span>
@@ -263,10 +263,13 @@ export default function ProjectPanel({
       <div className={`flex items-center gap-1.5 px-2 py-1.5 ${isEmbedded ? 'bg-[#0f1419]/30' : 'border-b border-white/5 bg-[#0f1419]/50'}`}>
         <button
           onClick={() => setIsCreating(true)}
-          className={`flex items-center gap-1 ${isEmbedded ? 'px-2 py-1' : 'px-2.5 py-1.5'} text-[10px] font-medium text-gray-300 hover:text-white bg-white/5 hover:bg-purple-500/20 rounded transition-colors border border-transparent hover:border-purple-500/50`}
+          className={`flex items-center gap-1 ${isEmbedded ? 'px-2 py-1' : 'px-2.5 py-1.5'} text-[10px] font-medium text-gray-300 hover:text-white bg-white/5 rounded transition-colors border border-transparent`}
+          style={{ ['--hover-bg' as string]: 'var(--accent-color-bg)' }}
+          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--accent-color-bg)'; e.currentTarget.style.borderColor = 'var(--accent-color-dim)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.borderColor = 'transparent'; }}
           title="New Script File"
         >
-          <Plus size={11} className="text-purple-400" />
+          <Plus size={11} style={{ color: 'var(--accent-color)' }} />
           File
         </button>
         <button
@@ -310,7 +313,7 @@ export default function ProjectPanel({
 
           {/* New File Input */}
           {isCreating && (
-            <div className="px-2 py-1.5 bg-white/5 rounded border border-purple-500/30">
+            <div className="px-2 py-1.5 bg-white/5 rounded" style={{ border: '1px solid var(--accent-color-dim)' }}>
               <input
                 type="text"
                 value={newFileName}
@@ -338,10 +341,11 @@ export default function ProjectPanel({
             onDragOver={(e) => handleDragOver(e, 'root')}
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, 'root')}
-            className={`min-h-[60px] transition-colors ${dragOverFolder === 'root' ? 'bg-purple-500/10 border-2 border-dashed border-purple-500 rounded p-2' : ''}`}
+            className={`min-h-[60px] transition-colors ${dragOverFolder === 'root' ? 'border-2 border-dashed rounded p-2' : ''}`}
+            style={dragOverFolder === 'root' ? { backgroundColor: 'var(--accent-color-bg)', borderColor: 'var(--accent-color)' } : undefined}
           >
             {dragOverFolder === 'root' && scriptFiles.length > 0 && (
-              <div className="text-sm text-purple-400 text-center py-8 font-medium">Drop here to move to root</div>
+              <div className="text-sm text-center py-8 font-medium" style={{ color: 'var(--accent-color)' }}>Drop here to move to root</div>
             )}
             
             {/* Root level files */}
@@ -357,9 +361,10 @@ export default function ProjectPanel({
                   onDragEnd={handleDragEnd}
                   className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-move transition-all border border-transparent ${
                     activeFileId === file.id
-                      ? 'bg-purple-500/20 border-purple-500/50 text-white shadow-sm'
+                      ? 'text-white shadow-sm'
                       : 'text-gray-300 hover:bg-white/5 hover:border-white/10 hover:text-white'
                   } ${draggedItem?.id === file.id ? 'opacity-50' : ''}`}
+                  style={activeFileId === file.id ? { backgroundColor: 'var(--accent-color-bg)', borderColor: 'var(--accent-color-dim)' } : undefined}
                   onClick={() => renamingId !== file.id && onSelectFile(file.id)}
                 >
                   {renamingId === file.id ? (
@@ -378,7 +383,8 @@ export default function ProjectPanel({
                         }
                       }}
                       onBlur={() => setTimeout(() => handleRename(file.id), 100)}
-                      className="flex-1 bg-[#1a1f28] px-2 py-1 text-xs text-white outline-none focus:ring-1 focus:ring-purple-500/50 rounded"
+                      className="flex-1 bg-[#1a1f28] px-2 py-1 text-xs text-white outline-none rounded"
+                      style={{ boxShadow: '0 0 0 1px var(--accent-color-dim)' }}
                       autoFocus
                       onClick={(e) => e.stopPropagation()}
                     />
@@ -632,10 +638,10 @@ function FolderItem({
                 onDragEnd={handleDragEnd}
                 className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-move transition-all border border-transparent ${
                   activeFileId === file.id
-                    ? 'bg-purple-500/20 border-purple-500/50 text-white shadow-sm'
+                    ? 'text-white shadow-sm'
                     : 'text-gray-300 hover:bg-white/5 hover:border-white/10 hover:text-white'
                 } ${draggedItem?.id === file.id ? 'opacity-50' : ''}`}
-                style={{ marginLeft: `${indentPx + 20}px` }}
+                style={{ marginLeft: `${indentPx + 20}px`, ...(activeFileId === file.id ? { backgroundColor: 'var(--accent-color-bg)', borderColor: 'var(--accent-color-dim)' } : {}) }}
                 onClick={() => renamingId !== file.id && onSelectFile(file.id)}
               >
                 {renamingId === file.id ? (
@@ -648,7 +654,8 @@ function FolderItem({
                       if (e.key === 'Escape') { setRenamingId(null); setRenameValue(''); }
                     }}
                     onBlur={() => setTimeout(() => handleRename(file.id), 100)}
-                    className="flex-1 bg-[#1a1f28] px-2 py-1 text-xs text-white outline-none focus:ring-1 focus:ring-purple-500/50 rounded"
+                    className="flex-1 bg-[#1a1f28] px-2 py-1 text-xs text-white outline-none rounded"
+                    style={{ boxShadow: '0 0 0 1px var(--accent-color-dim)' }}
                     autoFocus
                     onClick={(e) => e.stopPropagation()}
                   />

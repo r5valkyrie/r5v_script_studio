@@ -1,5 +1,7 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { PanelLeft, PanelRight, GitBranch, Code, Save, FolderOpen, FileDown, FileText, FilePlus, ChevronDown, Folder, X } from 'lucide-react';
+import { PanelLeft, PanelRight, GitBranch, Code, Save, FolderOpen, FileDown, FileText, FilePlus, ChevronDown, ChevronLeft, ChevronRight, Folder, X, Settings } from 'lucide-react';
+import SettingsModal, { loadSettings, saveSettings, DEFAULT_SETTINGS } from './visual-scripting/SettingsModal';
+import type { AppSettings } from './visual-scripting/SettingsModal';
 import type { ScriptNode, NodeConnection } from '../types/visual-scripting';
 import NodeGraph from './visual-scripting/NodeGraph';
 import NodePalette from './visual-scripting/NodePalette';
@@ -32,7 +34,17 @@ export default function VisualScriptEditor() {
   const [isInspectorOpen, setInspectorOpen] = useState(true);
   const [isCodePanelOpen, setCodePanelOpen] = useState(false);
   const [isFileMenuOpen, setFileMenuOpen] = useState(false);
+  const [isSettingsOpen, setSettingsOpen] = useState(false);
+  // Initialize with defaults to avoid hydration mismatch, then load from localStorage
+  const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [isHydrated, setIsHydrated] = useState(false);
   const fileMenuRef = useRef<HTMLDivElement>(null);
+
+  // Load settings from localStorage after hydration
+  useEffect(() => {
+    setAppSettings(loadSettings());
+    setIsHydrated(true);
+  }, []);
 
   // Open file tabs
   const [openFileTabs, setOpenFileTabs] = useState<string[]>([]);
@@ -66,7 +78,21 @@ export default function VisualScriptEditor() {
     createFolder,
     deleteFolder,
     renameFolder,
-  } = useProjectFiles();
+  } = useProjectFiles({ maxRecentProjects: appSettings.general.maxRecentProjects });
+
+  // Auto-save functionality
+  useEffect(() => {
+    if (!appSettings.general.autoSave || !projectData || !currentFilePath) return;
+    
+    const intervalMs = appSettings.general.autoSaveInterval * 60 * 1000;
+    const intervalId = setInterval(() => {
+      if (hasUnsavedChanges) {
+        saveProject();
+      }
+    }, intervalMs);
+
+    return () => clearInterval(intervalId);
+  }, [appSettings.general.autoSave, appSettings.general.autoSaveInterval, projectData, currentFilePath, hasUnsavedChanges, saveProject]);
 
   // Load UI settings from project when it changes
   const hasLoadedUIRef = useRef<string | null>(null);
@@ -358,21 +384,42 @@ export default function VisualScriptEditor() {
   }, []);
 
   const handleDeleteNode = useCallback((nodeId: string) => {
-    setNodes(currentNodes => currentNodes.filter(n => n.id !== nodeId));
-    setConnections(currentConnections =>
-      currentConnections.filter(c => c.from.nodeId !== nodeId && c.to.nodeId !== nodeId)
-    );
-    setSelectedNodeIds(current => current.filter(id => id !== nodeId));
-  }, []);
+    const doDelete = () => {
+      setNodes(currentNodes => currentNodes.filter(n => n.id !== nodeId));
+      setConnections(currentConnections =>
+        currentConnections.filter(c => c.from.nodeId !== nodeId && c.to.nodeId !== nodeId)
+      );
+      setSelectedNodeIds(current => current.filter(id => id !== nodeId));
+    };
+
+    if (appSettings.general.confirmOnDelete) {
+      if (window.confirm('Are you sure you want to delete this node?')) {
+        doDelete();
+      }
+    } else {
+      doDelete();
+    }
+  }, [appSettings.general.confirmOnDelete]);
 
   const handleDeleteSelectedNodes = useCallback((nodeIds: string[]) => {
     if (nodeIds.length === 0) return;
-    setNodes(currentNodes => currentNodes.filter(n => !nodeIds.includes(n.id)));
-    setConnections(currentConnections =>
-      currentConnections.filter(c => !nodeIds.includes(c.from.nodeId) && !nodeIds.includes(c.to.nodeId))
-    );
-    setSelectedNodeIds([]);
-  }, []);
+    
+    const doDelete = () => {
+      setNodes(currentNodes => currentNodes.filter(n => !nodeIds.includes(n.id)));
+      setConnections(currentConnections =>
+        currentConnections.filter(c => !nodeIds.includes(c.from.nodeId) && !nodeIds.includes(c.to.nodeId))
+      );
+      setSelectedNodeIds([]);
+    };
+
+    if (appSettings.general.confirmOnDelete) {
+      if (window.confirm(`Are you sure you want to delete ${nodeIds.length} node${nodeIds.length > 1 ? 's' : ''}?`)) {
+        doDelete();
+      }
+    } else {
+      doDelete();
+    }
+  }, [appSettings.general.confirmOnDelete]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -538,8 +585,53 @@ export default function VisualScriptEditor() {
     }
   }, [isFileMenuOpen]);
 
+  // Compute font size class based on settings
+  const fontSizeClass = {
+    small: 'text-xs',
+    medium: 'text-sm',
+    large: 'text-base',
+  }[appSettings.appearance.fontSize];
+
+  // Compute accent color variants
+  const accentColor = appSettings.appearance.accentColor;
+  const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : { r: 139, g: 92, b: 246 };
+  };
+  const rgb = hexToRgb(accentColor);
+  const accentHover = `rgb(${Math.min(255, rgb.r + 30)}, ${Math.min(255, rgb.g + 30)}, ${Math.min(255, rgb.b + 30)})`;
+  const accentDim = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)`;
+  const accentBg = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.2)`;
+
+  // Determine effective theme
+  const effectiveTheme = appSettings.appearance.theme === 'system' 
+    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : appSettings.appearance.theme;
+
+  // Set theme on document element for global styling
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', effectiveTheme);
+  }, [effectiveTheme]);
+
   return (
-    <div className="w-screen h-screen bg-[#0f1419] text-white flex flex-col">
+    <div 
+      className={`w-screen h-screen flex flex-col ${fontSizeClass} ${
+        effectiveTheme === 'light' 
+          ? 'bg-gray-100 text-gray-900' 
+          : 'bg-[#0f1419] text-white'
+      }`}
+      data-theme={effectiveTheme}
+      style={{
+        '--accent-color': accentColor,
+        '--accent-color-hover': accentHover,
+        '--accent-color-dim': accentDim,
+        '--accent-color-bg': accentBg,
+      } as React.CSSProperties}
+    >
       {/* Show welcome screen if no project is open */}
       {!projectData ? (
         <WelcomeScreen
@@ -547,6 +639,7 @@ export default function VisualScriptEditor() {
           onOpenProject={loadProject}
           onOpenRecent={loadProjectFromPath}
           recentProjects={recentProjects}
+          accentColor={accentColor}
         />
       ) : (
         <>
@@ -630,26 +723,17 @@ export default function VisualScriptEditor() {
 
           <div className="w-px h-6 bg-white/10" />
 
-          {/* Visual Editor Title */}
-          <div className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white">
-            <GitBranch size={16} />
-            Visual Editor
-          </div>
+          {/* Settings Button */}
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition-colors"
+            title="Settings"
+          >
+            <Settings size={16} />
+            Settings
+          </button>
 
           <div className="flex-1" />
-
-          {/* Code Panel Toggle */}
-          <button
-            onClick={() => setCodePanelOpen(!isCodePanelOpen)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 ${
-              isCodePanelOpen
-                ? 'text-white border-purple-500 bg-white/5'
-                : 'text-gray-400 border-transparent hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <Code size={16} />
-            {isCodePanelOpen ? 'Hide Code' : 'Show Code'}
-          </button>
         </div>
 
         {/* Node count indicator */}
@@ -661,12 +745,67 @@ export default function VisualScriptEditor() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
-          <>
+      <div className="flex-1 flex flex-col overflow-hidden">
+          {/* File Tabs - spans full width */}
+          {openFileTabs.length > 0 && (
+            <div className="flex-shrink-0 flex items-center bg-[#1a1f26] border-b border-white/10 overflow-x-auto">
+              {openFileTabs.map(fileId => {
+                const file = scriptFiles.find(f => f.id === fileId);
+                if (!file) return null;
+                const isActive = activeScriptFile?.id === fileId;
+                const isModified = modifiedFileIds.has(fileId);
+                return (
+                  <div
+                    key={fileId}
+                    className={`flex items-center gap-2 px-3 py-2 cursor-pointer border-r border-white/10 group ${
+                      isActive 
+                        ? 'bg-[#2a3341] text-white' 
+                        : 'text-gray-400 hover:bg-[#252b35] hover:text-gray-200'
+                    }`}
+                    style={isActive ? { borderBottom: `2px solid ${accentColor}` } : undefined}
+                    onClick={() => setActiveScriptFile(fileId)}
+                  >
+                    <FileText size={14} style={{ color: isActive ? accentColor : undefined }} className={isActive ? '' : 'text-gray-500'} />
+                    <span className="text-sm whitespace-nowrap">{file.name}</span>
+                    <button
+                      onClick={(e) => handleCloseTab(fileId, e)}
+                      className={`ml-1 p-0.5 rounded hover:bg-white/10 transition-opacity ${
+                        isModified ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                      }`}
+                      title={isModified ? "Unsaved changes - Close tab" : "Close tab"}
+                    >
+                      {isModified ? (
+                        <div className="w-3 h-3 rounded-full bg-orange-400 group-hover:hidden" />
+                      ) : null}
+                      <X size={12} className={isModified ? 'hidden group-hover:block' : ''} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Content area below tabs */}
+          <div className="flex-1 flex overflow-hidden">
             {/* Unified Sidebar - Project + Nodes */}
             {isSidebarOpen && (
               <div className="flex h-full flex-shrink-0" style={{ width: sidebarWidth }}>
                 <div className="flex-1 h-full flex flex-col bg-[#151a21] overflow-hidden">
+                  {/* Sidebar Header with minimize button */}
+                  <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-[#161b22] to-[#1c222b] border-b border-white/10 flex-shrink-0">
+                    <div className="flex items-center gap-2">
+                      <Folder size={16} style={{ color: accentColor }} />
+                      <span className="text-sm font-medium text-gray-200">Project & Nodes</span>
+                    </div>
+                    <button
+                      onClick={() => setSidebarOpen(false)}
+                      className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                      title="Close Sidebar"
+                    >
+                      <PanelLeft size={14} />
+                    </button>
+                  </div>
+
                   {/* Project Section - Collapsible */}
                   <div className="flex-shrink-0 border-b border-white/10">
                     {/* Project Header */}
@@ -675,8 +814,8 @@ export default function VisualScriptEditor() {
                       className="w-full flex items-center justify-between px-3 py-2.5 bg-[#0f1419] hover:bg-[#1a1f28] transition-colors"
                     >
                       <div className="flex items-center gap-2">
-                        <div className="p-1 rounded bg-purple-500/10">
-                          <Folder size={14} className="text-purple-400" />
+                        <div className="p-1 rounded" style={{ backgroundColor: `${accentColor}20` }}>
+                          <Folder size={14} style={{ color: accentColor }} />
                         </div>
                         <div className="flex flex-col items-start">
                           <span className="text-[9px] font-semibold tracking-wider text-gray-500 uppercase">Project</span>
@@ -730,7 +869,8 @@ export default function VisualScriptEditor() {
                 </div>
                 {/* Resize Handle */}
                 <div
-                  className="w-1 h-full bg-purple-500/30 hover:bg-purple-500/60 cursor-col-resize transition-colors flex-shrink-0"
+                  className="w-1 h-full cursor-col-resize transition-colors flex-shrink-0"
+                  style={{ backgroundColor: `${accentColor}50` }}
                   onMouseDown={(e) => {
                     e.preventDefault();
                     sidebarDraggingRef.current = true;
@@ -741,62 +881,43 @@ export default function VisualScriptEditor() {
 
             {/* Sidebar Toggle Button */}
             {!isSidebarOpen && (
-              <button
+              <div
                 onClick={() => setSidebarOpen(true)}
-                className="absolute z-50 px-2 py-4 bg-[#2a3341] hover:bg-[#363f4f] border-r-2 border-purple-500/50 hover:border-purple-500 transition-all flex flex-col items-center gap-2 group shadow-xl"
-                style={{ top: '85px', left: '0px' }}
+                className="flex-shrink-0 h-full w-[28px] bg-gradient-to-r from-[#1a1f26] to-[#1e242c] hover:from-[#1e2430] hover:to-[#252d38] transition-all flex flex-col items-center justify-center gap-3 group cursor-pointer shadow-2xl relative"
+                style={{ borderRight: `1px solid ${accentColor}50` }}
                 title="Show Sidebar"
               >
-                <PanelRight size={18} className="text-purple-400 group-hover:text-purple-300" />
-                <div className="text-[9px] text-gray-400 group-hover:text-purple-300 font-semibold tracking-wider" style={{ writingMode: 'vertical-rl' }}>SIDEBAR</div>
-              </button>
+                {/* Icon at top */}
+                <div className="absolute top-4 p-1.5 rounded transition-colors" style={{ backgroundColor: `${accentColor}30` }}>
+                  <Folder size={12} style={{ color: accentColor }} />
+                </div>
+                
+                {/* Vertical text in center */}
+                <div 
+                  className="text-[10px] text-gray-500 group-hover:text-white font-bold tracking-[0.2em] transition-colors"
+                  style={{ writingMode: 'vertical-rl' }}
+                >
+                  SIDEBAR
+                </div>
+                
+                {/* Chevron hint */}
+                <div className="absolute bottom-4 text-gray-600 group-hover:text-white transition-colors">
+                  <ChevronRight size={14} />
+                </div>
+                
+                {/* Side glow line on hover */}
+                <div className="absolute right-0 top-0 bottom-0 w-px transition-colors" style={{ backgroundColor: `${accentColor}00` }} />
+              </div>
             )}
 
             {/* Main Canvas */}
             <div className="flex-1 h-full flex flex-col">
-              {/* File Tabs */}
-              {openFileTabs.length > 0 && (
-                <div className="flex-shrink-0 flex items-center bg-[#1a1f26] border-b border-white/10 overflow-x-auto">
-                  {openFileTabs.map(fileId => {
-                    const file = scriptFiles.find(f => f.id === fileId);
-                    if (!file) return null;
-                    const isActive = activeScriptFile?.id === fileId;
-                    const isModified = modifiedFileIds.has(fileId);
-                    return (
-                      <div
-                        key={fileId}
-                        className={`flex items-center gap-2 px-3 py-2 cursor-pointer border-r border-white/10 group ${
-                          isActive 
-                            ? 'bg-[#2a3341] text-white border-b-2 border-b-purple-500' 
-                            : 'text-gray-400 hover:bg-[#252b35] hover:text-gray-200'
-                        }`}
-                        onClick={() => setActiveScriptFile(fileId)}
-                      >
-                        <FileText size={14} className={isActive ? 'text-purple-400' : 'text-gray-500'} />
-                        <span className="text-sm whitespace-nowrap">{file.name}</span>
-                        <button
-                          onClick={(e) => handleCloseTab(fileId, e)}
-                          className={`ml-1 p-0.5 rounded hover:bg-white/10 transition-opacity ${
-                            isModified ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                          }`}
-                          title={isModified ? "Unsaved changes - Close tab" : "Close tab"}
-                        >
-                          {isModified ? (
-                            <div className="w-3 h-3 rounded-full bg-orange-400 group-hover:hidden" />
-                          ) : null}
-                          <X size={12} className={isModified ? 'hidden group-hover:block' : ''} />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
               {/* Node Graph or Empty State */}
               <div className="flex-1">
                 {!activeScriptFile ? (
                   <div className="h-full flex flex-col items-center justify-center bg-[#0f1419] text-center p-8">
-                    <div className="p-4 rounded-full bg-purple-500/10 mb-4">
-                      <FileText size={48} className="text-purple-500/50" />
+                    <div className="p-4 rounded-full mb-4" style={{ backgroundColor: `${accentColor}20` }}>
+                      <FileText size={48} style={{ color: `${accentColor}80` }} />
                     </div>
                     <h2 className="text-xl font-semibold text-gray-300 mb-2">No File Open</h2>
                     <p className="text-gray-500 text-sm max-w-xs">
@@ -817,6 +938,17 @@ export default function VisualScriptEditor() {
                     onAddNode={handleAddNode}
                     onViewChange={setGraphView}
                     onRequestHistorySnapshot={forceHistorySnapshot}
+                    showGridLines={appSettings.appearance.showGridLines}
+                    gridSize={appSettings.appearance.gridSize}
+                    nodeOpacity={appSettings.appearance.nodeOpacity}
+                    connectionStyle={appSettings.appearance.connectionStyle}
+                    accentColor={appSettings.appearance.accentColor}
+                    theme={effectiveTheme}
+                    snapToGrid={appSettings.editor.snapToGrid}
+                    showMinimap={appSettings.editor.showMinimap}
+                    autoConnect={appSettings.editor.autoConnect}
+                    highlightConnections={appSettings.editor.highlightConnections}
+                    animateConnections={appSettings.editor.animateConnections}
                   />
                 )}
               </div>
@@ -826,21 +958,22 @@ export default function VisualScriptEditor() {
             {selectedNode && !isInspectorOpen && (
               <button
                   onClick={() => setInspectorOpen(true)}
-                  className="absolute right-0 z-50 px-2 py-4 bg-[#2a3341] hover:bg-[#363f4f] border-l-2 border-purple-500/50 hover:border-purple-500 transition-all flex flex-col items-center gap-2 group shadow-xl"
-                  style={{ top: '60px' }}
+                  className="absolute right-0 z-50 px-2 py-4 bg-[#2a3341] hover:bg-[#363f4f] transition-all flex flex-col items-center gap-2 group shadow-xl"
+                  style={{ top: '60px', borderLeft: `2px solid ${accentColor}80` }}
                   title="Show Inspector"
               >
-                  <PanelLeft size={18} className="text-purple-400 group-hover:text-purple-300" />
-                  <div className="text-[9px] text-gray-400 group-hover:text-purple-300 font-semibold tracking-wider" style={{ writingMode: 'vertical-rl' }}>INSPECTOR</div>
+                  <PanelLeft size={18} style={{ color: accentColor }} />
+                  <div className="text-[9px] text-gray-400 group-hover:text-white font-semibold tracking-wider" style={{ writingMode: 'vertical-rl' }}>INSPECTOR</div>
               </button>
             )}
 
             {/* Node Inspector */}
             {isInspectorOpen && selectedNode && (
-              <div className="flex h-full" style={{ width: inspectorWidth }}>
+              <div className="flex h-full flex-shrink-0" style={{ width: inspectorWidth }}>
                 {/* Resize Handle */}
                 <div
-                  className="w-1 h-full bg-purple-500/30 hover:bg-purple-500/60 cursor-col-resize transition-colors"
+                  className="w-1 h-full cursor-col-resize transition-colors"
+                  style={{ backgroundColor: `${accentColor}50` }}
                   onMouseDown={(e) => {
                     e.preventDefault();
                     inspectorDraggingRef.current = true;
@@ -856,53 +989,66 @@ export default function VisualScriptEditor() {
 
             {/* Code Panel */}
             {isCodePanelOpen && (
-              <div className="flex h-full" style={{ width: codePanelWidth }}>
+              <div className="flex h-full flex-shrink-0" style={{ width: codePanelWidth }}>
                 {/* Resize Handle */}
                 <div
-                  className="w-1 h-full bg-purple-500/30 hover:bg-purple-500/60 cursor-col-resize transition-colors flex-shrink-0"
+                  className="w-1 h-full cursor-col-resize transition-colors flex-shrink-0"
+                  style={{ backgroundColor: `${accentColor}4D` }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `${accentColor}99`}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = `${accentColor}4D`}
                   onMouseDown={(e) => {
                     e.preventDefault();
                     codePanelDraggingRef.current = true;
                   }}
                 />
                 <div className="flex-1 h-full flex flex-col bg-[#1a1f26] overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-2 border-b border-white/10">
-                    <div className="flex items-center gap-2 text-sm font-medium text-white">
-                      <Code size={16} />
-                      Generated Code
-                    </div>
-                    <button
-                      onClick={() => setCodePanelOpen(false)}
-                      className="p-1 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors"
-                      title="Close Code Panel"
-                    >
-                      <PanelRight size={16} />
-                    </button>
-                  </div>
-                  <div className="flex-1 overflow-hidden">
-                    <CodeView code={generatedCode} />
-                  </div>
+                  <CodeView code={generatedCode} onClose={() => setCodePanelOpen(false)} />
                 </div>
               </div>
             )}
 
             {/* Code Panel Toggle Button (when closed) */}
             {!isCodePanelOpen && (
-              <button
+              <div 
+                className="flex-shrink-0 h-full w-[28px] bg-gradient-to-l from-[#1a1f26] to-[#1e242c] hover:from-[#1e2430] hover:to-[#252d38] transition-all flex flex-col items-center justify-center gap-3 group cursor-pointer shadow-2xl relative"
+                style={{ borderLeft: `1px solid ${accentColor}4D` }}
+                onMouseEnter={(e) => e.currentTarget.style.borderLeftColor = `${accentColor}99`}
+                onMouseLeave={(e) => e.currentTarget.style.borderLeftColor = `${accentColor}4D`}
                 onClick={() => setCodePanelOpen(true)}
-                className="absolute z-40 px-2 py-4 bg-[#2a3341] hover:bg-[#363f4f] border-l-2 border-purple-500/50 hover:border-purple-500 transition-all flex flex-col items-center gap-2 group shadow-xl"
-                style={{ 
-                  top: '85px',
-                  right: selectedNode && isInspectorOpen ? `${inspectorWidth}px` : '0px'
-                }}
-                title="Show Generated Code"
+                title="Show Generated Code (Ctrl+Shift+C)"
               >
-                <Code size={18} className="text-purple-400 group-hover:text-purple-300" />
-                <div className="text-[9px] text-gray-400 group-hover:text-purple-300 font-semibold tracking-wider" style={{ writingMode: 'vertical-rl' }}>CODE</div>
-              </button>
+                {/* Icon at top */}
+                <div className="absolute top-4 p-1.5 rounded transition-colors" style={{ backgroundColor: `${accentColor}33` }}>
+                  <Code size={12} style={{ color: accentColor }} />
+                </div>
+                
+                {/* Vertical text in center */}
+                <div 
+                  className="text-[10px] text-gray-500 group-hover:text-gray-300 font-bold tracking-[0.2em] transition-colors"
+                  style={{ writingMode: 'vertical-rl' }}
+                >
+                  CODE
+                </div>
+                
+                {/* Chevron hint */}
+                <div className="absolute bottom-4 text-gray-600 transition-colors" style={{ color: undefined }}>
+                  <ChevronLeft size={14} className="group-hover:text-gray-400" />
+                </div>
+                
+                {/* Side glow line on hover */}
+                <div className="absolute left-0 top-0 bottom-0 w-px transition-colors" style={{ backgroundColor: `${accentColor}00` }} />
+              </div>
             )}
-          </>
+          </div>
       </div>
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        settings={appSettings}
+        onSettingsChange={setAppSettings}
+      />
       </>
       )}
     </div>
