@@ -2121,6 +2121,13 @@ export default function NodeGraph({
 
   // Render connection paths
   const renderConnections = () => {
+    // Calculate scale-compensated stroke widths so lines stay consistent regardless of zoom
+    const baseStroke = 2.5 * view.scale;
+    const hoverStroke = 3.5 * view.scale;
+    const glowStroke = 8 * view.scale;
+    const hitStroke = 12 * view.scale;
+    const flowRadius = 3 * view.scale;
+
     return connections.map((conn) => {
       const fromPos = getPortPositionFromDOM(conn.from.nodeId, conn.from.portId);
       const toPos = getPortPositionFromDOM(conn.to.nodeId, conn.to.portId);
@@ -2156,7 +2163,7 @@ export default function NodeGraph({
             <path
               d={pathD}
               stroke={stroke}
-              strokeWidth="8"
+              strokeWidth={glowStroke}
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -2167,7 +2174,7 @@ export default function NodeGraph({
           <path
             d={pathD}
             stroke="transparent"
-            strokeWidth="12"
+            strokeWidth={hitStroke}
             fill="none"
             pointerEvents="stroke"
             style={{ cursor: 'pointer', pointerEvents: 'stroke' }}
@@ -2182,7 +2189,7 @@ export default function NodeGraph({
           <path
             d={pathD}
             stroke={stroke}
-            strokeWidth={(isHovered || isNodeHighlighted) ? "3.5" : "2.5"}
+            strokeWidth={(isHovered || isNodeHighlighted) ? hoverStroke : baseStroke}
             fill="none"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -2195,7 +2202,7 @@ export default function NodeGraph({
           {/* Animated flow indicator */}
           {animateConnections && (
             <circle
-              r="3"
+              r={flowRadius}
               fill={stroke}
               style={{
                 filter: 'brightness(1.5)',
@@ -2602,8 +2609,8 @@ export default function NodeGraph({
           <path
             d={generateConnectionPath(tempConnectionLine.from, tempConnectionLine.to)}
             stroke={getLineColor(tempConnectionRef.current?.portType || 'exec', tempConnectionRef.current?.dataType)}
-            strokeWidth="2.5"
-            strokeDasharray="8,4"
+            strokeWidth={2.5 * view.scale}
+            strokeDasharray={`${8 * view.scale},${4 * view.scale}`}
             fill="none"
             strokeLinecap="round"
           />
