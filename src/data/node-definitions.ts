@@ -254,6 +254,35 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       clientInitFn: '',
     },
   },
+  {
+    type: 'get-game-state',
+    category: 'gamemodes',
+    label: 'GetGameState',
+    description: 'Get current game state',
+    color: '#C0392B',
+    inputs: [],
+    outputs: [
+      { label: 'State', type: 'data', dataType: 'int', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['gamestate', 'state', 'gamemode'],
+  },
+  {
+    type: 'set-game-state',
+    category: 'gamemodes',
+    label: 'SetGameState',
+    description: 'Set game state',
+    color: '#C0392B',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'State', type: 'data', dataType: 'int', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { state: 0 },
+    tags: ['gamestate', 'state', 'gamemode'],
+  },
 
   // Core Flow Nodes
   {
@@ -1676,6 +1705,55 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     defaultData: {},
   },
   {
+    type: 'freeze',
+    category: 'entity',
+    label: 'Freeze',
+    description: 'Freeze entity in place',
+    color: '#27AE60',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['freeze', 'movement', 'physics'],
+  },
+  {
+    type: 'unfreeze',
+    category: 'entity',
+    label: 'Unfreeze',
+    description: 'Unfreeze entity',
+    color: '#27AE60',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['unfreeze', 'movement', 'physics'],
+  },
+  {
+    type: 'look-at',
+    category: 'entity',
+    label: 'LookAt',
+    description: 'Make entity look at target',
+    color: '#27AE60',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Target', type: 'data', dataType: 'entity', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['lookat', 'rotation', 'angles'],
+  },
+  {
     type: 'get-player-name',
     category: 'entity',
     label: 'GetPlayerName',
@@ -2797,12 +2875,13 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
 
   // ==================== ENTITY STRUCT PROPERTIES ====================
+  // Context-aware nodes that adapt based on the init node they're connected to
   // player.p.* (ServerPlayerStruct / ClientPlayerStruct)
   {
-    type: 'player-get-property-server',
-    category: 'entity',
-    label: 'Player: Get Property (Server)',
-    description: 'Get a property from player.p (ServerPlayerStruct). Access server-side player data like isAdmin, lastRespawnTime, storedWeapons, etc.',
+    type: 'player-get-property',
+    category: 'entity-props',
+    label: 'Player: Get Property',
+    description: 'Get a property from player.p (ServerPlayerStruct or ClientPlayerStruct). Automatically adapts to the context (Server/Client) based on which init node this graph is connected to.',
     color: '#16A085',
     inputs: [
       { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
@@ -2811,14 +2890,13 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Value', type: 'data', dataType: 'any', isInput: false },
     ],
     defaultData: { property: 'isAdmin' },
-    serverOnly: true,
-    tags: ['player.p', 'ServerPlayerStruct', 'player property', 'server', 'script struct'],
+    tags: ['player.p', 'ServerPlayerStruct', 'ClientPlayerStruct', 'player property', 'script struct', 'context-aware'],
   },
   {
-    type: 'player-set-property-server',
-    category: 'entity',
-    label: 'Player: Set Property (Server)',
-    description: 'Set a property on player.p (ServerPlayerStruct). Modify server-side player data.',
+    type: 'player-set-property',
+    category: 'entity-props',
+    label: 'Player: Set Property',
+    description: 'Set a property on player.p (ServerPlayerStruct or ClientPlayerStruct). Automatically adapts to the context based on which init node this graph is connected to.',
     color: '#16A085',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
@@ -2829,50 +2907,15 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { property: 'isAdmin' },
-    serverOnly: true,
-    tags: ['player.p', 'ServerPlayerStruct', 'player property', 'server', 'script struct'],
-  },
-  {
-    type: 'player-get-property-client',
-    category: 'entity',
-    label: 'Player: Get Property (Client)',
-    description: 'Get a property from player.p (ClientPlayerStruct). Access client-side player data like isSkydiving, skydiveFreelookEnabled, etc.',
-    color: '#3498DB',
-    inputs: [
-      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
-    ],
-    outputs: [
-      { label: 'Value', type: 'data', dataType: 'any', isInput: false },
-    ],
-    defaultData: { property: 'isSkydiving' },
-    clientOnly: true,
-    tags: ['player.p', 'ClientPlayerStruct', 'player property', 'client', 'script struct'],
-  },
-  {
-    type: 'player-set-property-client',
-    category: 'entity',
-    label: 'Player: Set Property (Client)',
-    description: 'Set a property on player.p (ClientPlayerStruct). Modify client-side player data.',
-    color: '#3498DB',
-    inputs: [
-      { label: 'In', type: 'exec', isInput: true },
-      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
-      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
-    ],
-    outputs: [
-      { label: 'Out', type: 'exec', isInput: false },
-    ],
-    defaultData: { property: 'isSkydiving' },
-    clientOnly: true,
-    tags: ['player.p', 'ClientPlayerStruct', 'player property', 'client', 'script struct'],
+    tags: ['player.p', 'ServerPlayerStruct', 'ClientPlayerStruct', 'player property', 'script struct', 'context-aware'],
   },
 
   // entity.e.* (ServerEntityStruct / ClientEntityStruct)
   {
-    type: 'entity-get-property-server',
-    category: 'entity',
-    label: 'Entity: Get Property (Server)',
-    description: 'Get a property from entity.e (ServerEntityStruct). Access server-side entity data like spawnTime, lastAttacker, fxArray, etc.',
+    type: 'entity-get-property',
+    category: 'entity-props',
+    label: 'Entity: Get Property',
+    description: 'Get a property from entity.e (ServerEntityStruct or ClientEntityStruct). Automatically adapts to the context based on which init node this graph is connected to.',
     color: '#1ABC9C',
     inputs: [
       { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
@@ -2881,14 +2924,13 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Value', type: 'data', dataType: 'any', isInput: false },
     ],
     defaultData: { property: 'spawnTime' },
-    serverOnly: true,
-    tags: ['entity.e', 'ServerEntityStruct', 'entity property', 'server', 'script struct'],
+    tags: ['entity.e', 'ServerEntityStruct', 'ClientEntityStruct', 'entity property', 'script struct', 'context-aware'],
   },
   {
-    type: 'entity-set-property-server',
-    category: 'entity',
-    label: 'Entity: Set Property (Server)',
-    description: 'Set a property on entity.e (ServerEntityStruct). Modify server-side entity data.',
+    type: 'entity-set-property',
+    category: 'entity-props',
+    label: 'Entity: Set Property',
+    description: 'Set a property on entity.e (ServerEntityStruct or ClientEntityStruct). Automatically adapts to the context based on which init node this graph is connected to.',
     color: '#1ABC9C',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
@@ -2899,50 +2941,15 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { property: 'canBeMeleed' },
-    serverOnly: true,
-    tags: ['entity.e', 'ServerEntityStruct', 'entity property', 'server', 'script struct'],
-  },
-  {
-    type: 'entity-get-property-client',
-    category: 'entity',
-    label: 'Entity: Get Property (Client)',
-    description: 'Get a property from entity.e (ClientEntityStruct). Access client-side entity data.',
-    color: '#5DADE2',
-    inputs: [
-      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
-    ],
-    outputs: [
-      { label: 'Value', type: 'data', dataType: 'any', isInput: false },
-    ],
-    defaultData: { property: 'fxArray' },
-    clientOnly: true,
-    tags: ['entity.e', 'ClientEntityStruct', 'entity property', 'client', 'script struct'],
-  },
-  {
-    type: 'entity-set-property-client',
-    category: 'entity',
-    label: 'Entity: Set Property (Client)',
-    description: 'Set a property on entity.e (ClientEntityStruct). Modify client-side entity data.',
-    color: '#5DADE2',
-    inputs: [
-      { label: 'In', type: 'exec', isInput: true },
-      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
-      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
-    ],
-    outputs: [
-      { label: 'Out', type: 'exec', isInput: false },
-    ],
-    defaultData: { property: 'fxArray' },
-    clientOnly: true,
-    tags: ['entity.e', 'ClientEntityStruct', 'entity property', 'client', 'script struct'],
+    tags: ['entity.e', 'ServerEntityStruct', 'ClientEntityStruct', 'entity property', 'script struct', 'context-aware'],
   },
 
   // npc.ai.* (ServerAIStruct) - Server only, no client equivalent
   {
-    type: 'npc-get-property-server',
-    category: 'entity',
+    type: 'npc-get-property',
+    category: 'entity-props',
     label: 'NPC: Get AI Property',
-    description: 'Get a property from npc.ai (ServerAIStruct). Access AI/NPC script data like titanSettings, crawling, killCount, etc. Server only.',
+    description: 'Get a property from npc.ai (ServerAIStruct). Access AI/NPC script data like titanSettings, crawling, killCount, etc. Server only - no client equivalent exists.',
     color: '#2ECC71',
     inputs: [
       { label: 'NPC', type: 'data', dataType: 'entity', isInput: true },
@@ -2955,10 +2962,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     tags: ['npc.ai', 'ServerAIStruct', 'ai property', 'npc data', 'server', 'script struct'],
   },
   {
-    type: 'npc-set-property-server',
-    category: 'entity',
+    type: 'npc-set-property',
+    category: 'entity-props',
     label: 'NPC: Set AI Property',
-    description: 'Set a property on npc.ai (ServerAIStruct). Modify AI/NPC script data. Server only.',
+    description: 'Set a property on npc.ai (ServerAIStruct). Modify AI/NPC script data. Server only - no client equivalent exists.',
     color: '#2ECC71',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
@@ -2975,10 +2982,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
 
   // weapon.w.* (ServerWeaponStruct / ClientWeaponStruct)
   {
-    type: 'weapon-get-struct-property-server',
-    category: 'weapons',
-    label: 'Weapon: Get Property (Server)',
-    description: 'Get a property from weapon.w (ServerWeaponStruct). Access server-side weapon data like lastFireTime, bubbleShield, statusEffects, etc.',
+    type: 'weapon-get-struct-property',
+    category: 'entity-props',
+    label: 'Weapon: Get Property',
+    description: 'Get a property from weapon.w (ServerWeaponStruct or ClientWeaponStruct). Automatically adapts to the context based on which init node this graph is connected to.',
     color: '#E67E22',
     inputs: [
       { label: 'Weapon', type: 'data', dataType: 'entity', isInput: true },
@@ -2987,14 +2994,13 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Value', type: 'data', dataType: 'any', isInput: false },
     ],
     defaultData: { property: 'lastFireTime' },
-    serverOnly: true,
-    tags: ['weapon.w', 'ServerWeaponStruct', 'weapon property', 'server', 'script struct'],
+    tags: ['weapon.w', 'ServerWeaponStruct', 'ClientWeaponStruct', 'weapon property', 'script struct', 'context-aware'],
   },
   {
-    type: 'weapon-set-struct-property-server',
-    category: 'weapons',
-    label: 'Weapon: Set Property (Server)',
-    description: 'Set a property on weapon.w (ServerWeaponStruct). Modify server-side weapon data.',
+    type: 'weapon-set-struct-property',
+    category: 'entity-props',
+    label: 'Weapon: Set Property',
+    description: 'Set a property on weapon.w (ServerWeaponStruct or ClientWeaponStruct). Automatically adapts to the context based on which init node this graph is connected to.',
     color: '#E67E22',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
@@ -3005,50 +3011,15 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { property: 'wasCharged' },
-    serverOnly: true,
-    tags: ['weapon.w', 'ServerWeaponStruct', 'weapon property', 'server', 'script struct'],
-  },
-  {
-    type: 'weapon-get-struct-property-client',
-    category: 'weapons',
-    label: 'Weapon: Get Property (Client)',
-    description: 'Get a property from weapon.w (ClientWeaponStruct). Access client-side weapon data.',
-    color: '#F39C12',
-    inputs: [
-      { label: 'Weapon', type: 'data', dataType: 'entity', isInput: true },
-    ],
-    outputs: [
-      { label: 'Value', type: 'data', dataType: 'any', isInput: false },
-    ],
-    defaultData: { property: 'fxHandles' },
-    clientOnly: true,
-    tags: ['weapon.w', 'ClientWeaponStruct', 'weapon property', 'client', 'script struct'],
-  },
-  {
-    type: 'weapon-set-struct-property-client',
-    category: 'weapons',
-    label: 'Weapon: Set Property (Client)',
-    description: 'Set a property on weapon.w (ClientWeaponStruct). Modify client-side weapon data.',
-    color: '#F39C12',
-    inputs: [
-      { label: 'In', type: 'exec', isInput: true },
-      { label: 'Weapon', type: 'data', dataType: 'entity', isInput: true },
-      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
-    ],
-    outputs: [
-      { label: 'Out', type: 'exec', isInput: false },
-    ],
-    defaultData: { property: 'fxHandles' },
-    clientOnly: true,
-    tags: ['weapon.w', 'ClientWeaponStruct', 'weapon property', 'client', 'script struct'],
+    tags: ['weapon.w', 'ServerWeaponStruct', 'ClientWeaponStruct', 'weapon property', 'script struct', 'context-aware'],
   },
 
   // projectile.proj.* (ServerProjectileStruct / ClientProjectileStruct)
   {
-    type: 'projectile-get-property-server',
-    category: 'entity',
-    label: 'Projectile: Get Property (Server)',
-    description: 'Get a property from projectile.proj (ServerProjectileStruct). Access server-side projectile data like isChargedShot, damageScale, etc.',
+    type: 'projectile-get-property',
+    category: 'entity-props',
+    label: 'Projectile: Get Property',
+    description: 'Get a property from projectile.proj (ServerProjectileStruct or ClientProjectileStruct). Automatically adapts to the context based on which init node this graph is connected to.',
     color: '#9B59B6',
     inputs: [
       { label: 'Projectile', type: 'data', dataType: 'entity', isInput: true },
@@ -3057,14 +3028,13 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Value', type: 'data', dataType: 'any', isInput: false },
     ],
     defaultData: { property: 'damageScale' },
-    serverOnly: true,
-    tags: ['projectile.proj', 'ServerProjectileStruct', 'projectile property', 'server', 'script struct'],
+    tags: ['projectile.proj', 'ServerProjectileStruct', 'ClientProjectileStruct', 'projectile property', 'script struct', 'context-aware'],
   },
   {
-    type: 'projectile-set-property-server',
-    category: 'entity',
-    label: 'Projectile: Set Property (Server)',
-    description: 'Set a property on projectile.proj (ServerProjectileStruct). Modify server-side projectile data.',
+    type: 'projectile-set-property',
+    category: 'entity-props',
+    label: 'Projectile: Set Property',
+    description: 'Set a property on projectile.proj (ServerProjectileStruct or ClientProjectileStruct). Automatically adapts to the context based on which init node this graph is connected to.',
     color: '#9B59B6',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
@@ -3075,50 +3045,15 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { property: 'damageScale' },
-    serverOnly: true,
-    tags: ['projectile.proj', 'ServerProjectileStruct', 'projectile property', 'server', 'script struct'],
-  },
-  {
-    type: 'projectile-get-property-client',
-    category: 'entity',
-    label: 'Projectile: Get Property (Client)',
-    description: 'Get a property from projectile.proj (ClientProjectileStruct). Access client-side projectile data.',
-    color: '#BB8FCE',
-    inputs: [
-      { label: 'Projectile', type: 'data', dataType: 'entity', isInput: true },
-    ],
-    outputs: [
-      { label: 'Value', type: 'data', dataType: 'any', isInput: false },
-    ],
-    defaultData: { property: 'fxHandles' },
-    clientOnly: true,
-    tags: ['projectile.proj', 'ClientProjectileStruct', 'projectile property', 'client', 'script struct'],
-  },
-  {
-    type: 'projectile-set-property-client',
-    category: 'entity',
-    label: 'Projectile: Set Property (Client)',
-    description: 'Set a property on projectile.proj (ClientProjectileStruct). Modify client-side projectile data.',
-    color: '#BB8FCE',
-    inputs: [
-      { label: 'In', type: 'exec', isInput: true },
-      { label: 'Projectile', type: 'data', dataType: 'entity', isInput: true },
-      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
-    ],
-    outputs: [
-      { label: 'Out', type: 'exec', isInput: false },
-    ],
-    defaultData: { property: 'fxHandles' },
-    clientOnly: true,
-    tags: ['projectile.proj', 'ClientProjectileStruct', 'projectile property', 'client', 'script struct'],
+    tags: ['projectile.proj', 'ServerProjectileStruct', 'ClientProjectileStruct', 'projectile property', 'script struct', 'context-aware'],
   },
 
   // soul.soul.* (ServerTitanSoulStruct / ClientTitanSoulStruct)
   {
-    type: 'soul-get-property-server',
-    category: 'entity',
-    label: 'Soul: Get Property (Server)',
-    description: 'Get a property from soul.soul (ServerTitanSoulStruct). Access server-side titan soul data like batteryTime, upgradeCount, titanLoadout, etc.',
+    type: 'soul-get-property',
+    category: 'entity-props',
+    label: 'Soul: Get Property',
+    description: 'Get a property from soul.soul (ServerTitanSoulStruct or ClientTitanSoulStruct). Automatically adapts to the context based on which init node this graph is connected to.',
     color: '#8E44AD',
     inputs: [
       { label: 'Soul', type: 'data', dataType: 'entity', isInput: true },
@@ -3127,14 +3062,13 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Value', type: 'data', dataType: 'any', isInput: false },
     ],
     defaultData: { property: 'upgradeCount' },
-    serverOnly: true,
-    tags: ['soul.soul', 'ServerTitanSoulStruct', 'soul property', 'titan soul', 'server', 'script struct'],
+    tags: ['soul.soul', 'ServerTitanSoulStruct', 'ClientTitanSoulStruct', 'soul property', 'titan soul', 'script struct', 'context-aware'],
   },
   {
-    type: 'soul-set-property-server',
-    category: 'entity',
-    label: 'Soul: Set Property (Server)',
-    description: 'Set a property on soul.soul (ServerTitanSoulStruct). Modify server-side titan soul data.',
+    type: 'soul-set-property',
+    category: 'entity-props',
+    label: 'Soul: Set Property',
+    description: 'Set a property on soul.soul (ServerTitanSoulStruct or ClientTitanSoulStruct). Automatically adapts to the context based on which init node this graph is connected to.',
     color: '#8E44AD',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
@@ -3145,42 +3079,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { property: 'regensHealth' },
-    serverOnly: true,
-    tags: ['soul.soul', 'ServerTitanSoulStruct', 'soul property', 'titan soul', 'server', 'script struct'],
-  },
-  {
-    type: 'soul-get-property-client',
-    category: 'entity',
-    label: 'Soul: Get Property (Client)',
-    description: 'Get a property from soul.soul (ClientTitanSoulStruct). Access client-side titan soul data.',
-    color: '#A569BD',
-    inputs: [
-      { label: 'Soul', type: 'data', dataType: 'entity', isInput: true },
-    ],
-    outputs: [
-      { label: 'Value', type: 'data', dataType: 'any', isInput: false },
-    ],
-    defaultData: { property: 'titanLoadout' },
-    clientOnly: true,
-    tags: ['soul.soul', 'ClientTitanSoulStruct', 'soul property', 'titan soul', 'client', 'script struct'],
-  },
-  {
-    type: 'soul-set-property-client',
-    category: 'entity',
-    label: 'Soul: Set Property (Client)',
-    description: 'Set a property on soul.soul (ClientTitanSoulStruct). Modify client-side titan soul data.',
-    color: '#A569BD',
-    inputs: [
-      { label: 'In', type: 'exec', isInput: true },
-      { label: 'Soul', type: 'data', dataType: 'entity', isInput: true },
-      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
-    ],
-    outputs: [
-      { label: 'Out', type: 'exec', isInput: false },
-    ],
-    defaultData: { property: 'titanLoadout' },
-    clientOnly: true,
-    tags: ['soul.soul', 'ClientTitanSoulStruct', 'soul property', 'titan soul', 'client', 'script struct'],
+    tags: ['soul.soul', 'ServerTitanSoulStruct', 'ClientTitanSoulStruct', 'soul property', 'titan soul', 'script struct', 'context-aware'],
   },
 
   // ==================== WEAPONS ====================
@@ -4412,6 +4311,179 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     ],
     defaultData: { inputCount: 2 },
   },
+  {
+    type: 'string-length',
+    category: 'string',
+    label: 'String Length',
+    description: 'Get string length (.len())',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'String', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Length', type: 'data', dataType: 'int', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['string', 'length', 'len'],
+  },
+  {
+    type: 'string-substring',
+    category: 'string',
+    label: 'Substring',
+    description: 'Get substring from string (.slice)',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'String', type: 'data', dataType: 'string', isInput: true },
+      { label: 'Start', type: 'data', dataType: 'int', isInput: true },
+      { label: 'End', type: 'data', dataType: 'int', isInput: true },
+    ],
+    outputs: [
+      { label: 'Result', type: 'data', dataType: 'string', isInput: false },
+    ],
+    defaultData: { start: 0, end: -1 },
+    tags: ['string', 'substring', 'slice'],
+  },
+  {
+    type: 'string-split',
+    category: 'string',
+    label: 'String Split',
+    description: 'Split string by delimiter (.split)',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'String', type: 'data', dataType: 'string', isInput: true },
+      { label: 'Delimiter', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Array', type: 'data', dataType: 'array', isInput: false },
+    ],
+    defaultData: { delimiter: ' ' },
+    tags: ['string', 'split', 'delimiter'],
+  },
+  {
+    type: 'string-replace',
+    category: 'string',
+    label: 'String Replace',
+    description: 'Replace text in string (.replace)',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'String', type: 'data', dataType: 'string', isInput: true },
+      { label: 'Find', type: 'data', dataType: 'string', isInput: true },
+      { label: 'Replace', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Result', type: 'data', dataType: 'string', isInput: false },
+    ],
+    defaultData: { find: 'old', replace: 'new' },
+    tags: ['string', 'replace'],
+  },
+  {
+    type: 'string-to-lower',
+    category: 'string',
+    label: 'To Lower',
+    description: 'Convert string to lowercase (.tolower())',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'String', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Result', type: 'data', dataType: 'string', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['string', 'lowercase', 'tolower'],
+  },
+  {
+    type: 'string-to-upper',
+    category: 'string',
+    label: 'To Upper',
+    description: 'Convert string to uppercase (.toupper())',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'String', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Result', type: 'data', dataType: 'string', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['string', 'uppercase', 'toupper'],
+  },
+  {
+    type: 'string-trim',
+    category: 'string',
+    label: 'String Trim',
+    description: 'Remove whitespace from both ends (.strip())',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'String', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Result', type: 'data', dataType: 'string', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['string', 'trim', 'strip'],
+  },
+  {
+    type: 'string-contains',
+    category: 'string',
+    label: 'String Contains',
+    description: 'Check if string contains substring',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'String', type: 'data', dataType: 'string', isInput: true },
+      { label: 'Substring', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Contains', type: 'data', dataType: 'boolean', isInput: false },
+    ],
+    defaultData: { substring: 'text' },
+    tags: ['string', 'contains', 'includes'],
+  },
+  {
+    type: 'string-find',
+    category: 'string',
+    label: 'String Find',
+    description: 'Find index of substring in string (.find)',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'String', type: 'data', dataType: 'string', isInput: true },
+      { label: 'Substring', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Index', type: 'data', dataType: 'int', isInput: false },
+    ],
+    defaultData: { substring: 'text' },
+    tags: ['string', 'find', 'index'],
+  },
+  {
+    type: 'string-repeat',
+    category: 'string',
+    label: 'String Repeat',
+    description: 'Repeat string N times',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'String', type: 'data', dataType: 'string', isInput: true },
+      { label: 'Count', type: 'data', dataType: 'int', isInput: true },
+    ],
+    outputs: [
+      { label: 'Result', type: 'data', dataType: 'string', isInput: false },
+    ],
+    defaultData: { count: 3 },
+    tags: ['string', 'repeat'],
+  },
+  {
+    type: 'string-reverse',
+    category: 'string',
+    label: 'String Reverse',
+    description: 'Reverse string characters',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'String', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Result', type: 'data', dataType: 'string', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['string', 'reverse'],
+  },
 
   // ==================== MATH ====================
   {
@@ -4559,6 +4631,22 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Angles', type: 'data', dataType: 'vector', isInput: false },
     ],
     defaultData: {},
+  },
+  {
+    type: 'vector-lerp',
+    category: 'math',
+    label: 'Vector Lerp',
+    description: 'Linear interpolation between two vectors',
+    color: '#95A5A6',
+    inputs: [
+      { label: 'A', type: 'data', dataType: 'vector', isInput: true },
+      { label: 'B', type: 'data', dataType: 'vector', isInput: true },
+      { label: 'T', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'Result', type: 'data', dataType: 'vector', isInput: false },
+    ],
+    defaultData: { t: 0.5 },
   },
   {
     type: 'math-add',
@@ -4725,6 +4813,35 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Result', type: 'data', dataType: 'number', isInput: false },
     ],
     defaultData: { t: 0.5 },
+  },
+  {
+    type: 'math-tan',
+    category: 'math',
+    label: 'Tan',
+    description: 'Tangent function (radians)',
+    color: '#95A5A6',
+    inputs: [
+      { label: 'Value', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'Result', type: 'data', dataType: 'number', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'math-pow',
+    category: 'math',
+    label: 'Pow',
+    description: 'Power function (base^exponent)',
+    color: '#95A5A6',
+    inputs: [
+      { label: 'Base', type: 'data', dataType: 'number', isInput: true },
+      { label: 'Exponent', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'Result', type: 'data', dataType: 'number', isInput: false },
+    ],
+    defaultData: {},
   },
   {
     type: 'graph-capped',

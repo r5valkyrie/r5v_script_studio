@@ -686,6 +686,20 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
+    case 'get-game-state': {
+      const resultVar = getVarName(ctx, 'gameState');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}int ${resultVar} = GetGameState()`);
+      break;
+    }
+
+    case 'set-game-state': {
+      const state = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}SetGameState(${state})`);
+      followExec('output_0');
+      break;
+    }
+
     case 'gamemode-register': {
       const gamemode = getInputValue(ctx, node, 'input_1');
       const modName = getInputValue(ctx, node, 'input_2');
@@ -1031,6 +1045,28 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
+    case 'freeze': {
+      const entity = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}${entity}.Freeze()`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'unfreeze': {
+      const entity = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}${entity}.Unfreeze()`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'look-at': {
+      const entity = getInputValue(ctx, node, 'input_1');
+      const target = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}${entity}.LookAt(${target})`);
+      followExec('output_0');
+      break;
+    }
+
     case 'get-weapon-owner': {
       const weapon = getInputValue(ctx, node, 'input_0');
       const resultVar = getVarName(ctx, 'owner');
@@ -1074,8 +1110,9 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
     }
 
     // ==================== ENTITY STRUCT PROPERTIES ====================
+    // Context-aware nodes that work in both SERVER and CLIENT contexts
     // player.p.* (ServerPlayerStruct / ClientPlayerStruct)
-    case 'player-get-property-server': {
+    case 'player-get-property': {
       const player = getInputValue(ctx, node, 'input_0');
       const property = node.data?.property || 'isSkydiving';
       const resultVar = getVarName(ctx, `player_${property}`);
@@ -1084,25 +1121,7 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
-    case 'player-get-property-client': {
-      const player = getInputValue(ctx, node, 'input_0');
-      const property = node.data?.property || 'isSkydiving';
-      const resultVar = getVarName(ctx, `player_${property}`);
-      ctx.variables.set(`${node.id}:output_0`, resultVar);
-      lines.push(`${ind}var ${resultVar} = ${player}.p.${property}`);
-      break;
-    }
-
-    case 'player-set-property-server': {
-      const player = getInputValue(ctx, node, 'input_0');
-      const value = getInputValue(ctx, node, 'input_1');
-      const property = node.data?.property || 'isAdmin';
-      lines.push(`${ind}${player}.p.${property} = ${value}`);
-      followExec('output_0');
-      break;
-    }
-
-    case 'player-set-property-client': {
+    case 'player-set-property': {
       const player = getInputValue(ctx, node, 'input_0');
       const value = getInputValue(ctx, node, 'input_1');
       const property = node.data?.property || 'isAdmin';
@@ -1112,7 +1131,7 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
     }
 
     // entity.e.* (ServerEntityStruct / ClientEntityStruct)
-    case 'entity-get-property-server': {
+    case 'entity-get-property': {
       const entity = getInputValue(ctx, node, 'input_0');
       const property = node.data?.property || 'spawnTime';
       const resultVar = getVarName(ctx, `ent_${property}`);
@@ -1121,25 +1140,7 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
-    case 'entity-get-property-client': {
-      const entity = getInputValue(ctx, node, 'input_0');
-      const property = node.data?.property || 'spawnTime';
-      const resultVar = getVarName(ctx, `ent_${property}`);
-      ctx.variables.set(`${node.id}:output_0`, resultVar);
-      lines.push(`${ind}var ${resultVar} = ${entity}.e.${property}`);
-      break;
-    }
-
-    case 'entity-set-property-server': {
-      const entity = getInputValue(ctx, node, 'input_0');
-      const value = getInputValue(ctx, node, 'input_1');
-      const property = node.data?.property || 'canBeMeleed';
-      lines.push(`${ind}${entity}.e.${property} = ${value}`);
-      followExec('output_0');
-      break;
-    }
-
-    case 'entity-set-property-client': {
+    case 'entity-set-property': {
       const entity = getInputValue(ctx, node, 'input_0');
       const value = getInputValue(ctx, node, 'input_1');
       const property = node.data?.property || 'canBeMeleed';
@@ -1149,7 +1150,7 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
     }
 
     // npc.ai.* (ServerAIStruct) - Server only
-    case 'npc-get-property-server': {
+    case 'npc-get-property': {
       const npc = getInputValue(ctx, node, 'input_0');
       const property = node.data?.property || 'killCount';
       const resultVar = getVarName(ctx, `ai_${property}`);
@@ -1158,7 +1159,7 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
-    case 'npc-set-property-server': {
+    case 'npc-set-property': {
       const npc = getInputValue(ctx, node, 'input_0');
       const value = getInputValue(ctx, node, 'input_1');
       const property = node.data?.property || 'buddhaMode';
@@ -1168,7 +1169,7 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
     }
 
     // weapon.w.* (ServerWeaponStruct / ClientWeaponStruct)
-    case 'weapon-get-struct-property-server': {
+    case 'weapon-get-struct-property': {
       const weapon = getInputValue(ctx, node, 'input_0');
       const property = node.data?.property || 'lastFireTime';
       const resultVar = getVarName(ctx, `wpn_${property}`);
@@ -1177,25 +1178,7 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
-    case 'weapon-get-struct-property-client': {
-      const weapon = getInputValue(ctx, node, 'input_0');
-      const property = node.data?.property || 'lastFireTime';
-      const resultVar = getVarName(ctx, `wpn_${property}`);
-      ctx.variables.set(`${node.id}:output_0`, resultVar);
-      lines.push(`${ind}var ${resultVar} = ${weapon}.w.${property}`);
-      break;
-    }
-
-    case 'weapon-set-struct-property-server': {
-      const weapon = getInputValue(ctx, node, 'input_0');
-      const value = getInputValue(ctx, node, 'input_1');
-      const property = node.data?.property || 'wasCharged';
-      lines.push(`${ind}${weapon}.w.${property} = ${value}`);
-      followExec('output_0');
-      break;
-    }
-
-    case 'weapon-set-struct-property-client': {
+    case 'weapon-set-struct-property': {
       const weapon = getInputValue(ctx, node, 'input_0');
       const value = getInputValue(ctx, node, 'input_1');
       const property = node.data?.property || 'wasCharged';
@@ -1205,7 +1188,7 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
     }
 
     // projectile.proj.* (ServerProjectileStruct / ClientProjectileStruct)
-    case 'projectile-get-property-server': {
+    case 'projectile-get-property': {
       const projectile = getInputValue(ctx, node, 'input_0');
       const property = node.data?.property || 'damageScale';
       const resultVar = getVarName(ctx, `proj_${property}`);
@@ -1214,25 +1197,7 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
-    case 'projectile-get-property-client': {
-      const projectile = getInputValue(ctx, node, 'input_0');
-      const property = node.data?.property || 'damageScale';
-      const resultVar = getVarName(ctx, `proj_${property}`);
-      ctx.variables.set(`${node.id}:output_0`, resultVar);
-      lines.push(`${ind}var ${resultVar} = ${projectile}.proj.${property}`);
-      break;
-    }
-
-    case 'projectile-set-property-server': {
-      const projectile = getInputValue(ctx, node, 'input_0');
-      const value = getInputValue(ctx, node, 'input_1');
-      const property = node.data?.property || 'damageScale';
-      lines.push(`${ind}${projectile}.proj.${property} = ${value}`);
-      followExec('output_0');
-      break;
-    }
-
-    case 'projectile-set-property-client': {
+    case 'projectile-set-property': {
       const projectile = getInputValue(ctx, node, 'input_0');
       const value = getInputValue(ctx, node, 'input_1');
       const property = node.data?.property || 'damageScale';
@@ -1242,7 +1207,7 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
     }
 
     // soul.soul.* (ServerTitanSoulStruct / ClientTitanSoulStruct)
-    case 'soul-get-property-server': {
+    case 'soul-get-property': {
       const soul = getInputValue(ctx, node, 'input_0');
       const property = node.data?.property || 'upgradeCount';
       const resultVar = getVarName(ctx, `soul_${property}`);
@@ -1251,25 +1216,7 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
-    case 'soul-get-property-client': {
-      const soul = getInputValue(ctx, node, 'input_0');
-      const property = node.data?.property || 'upgradeCount';
-      const resultVar = getVarName(ctx, `soul_${property}`);
-      ctx.variables.set(`${node.id}:output_0`, resultVar);
-      lines.push(`${ind}var ${resultVar} = ${soul}.soul.${property}`);
-      break;
-    }
-
-    case 'soul-set-property-server': {
-      const soul = getInputValue(ctx, node, 'input_0');
-      const value = getInputValue(ctx, node, 'input_1');
-      const property = node.data?.property || 'regensHealth';
-      lines.push(`${ind}${soul}.soul.${property} = ${value}`);
-      followExec('output_0');
-      break;
-    }
-
-    case 'soul-set-property-client': {
+    case 'soul-set-property': {
       const soul = getInputValue(ctx, node, 'input_0');
       const value = getInputValue(ctx, node, 'input_1');
       const property = node.data?.property || 'regensHealth';
@@ -1416,6 +1363,108 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
+    case 'string-length': {
+      const str = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'length');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}int ${resultVar} = ${str}.len()`);
+      break;
+    }
+
+    case 'string-substring': {
+      const str = getInputValue(ctx, node, 'input_0');
+      const start = getInputValue(ctx, node, 'input_1');
+      const end = getInputValue(ctx, node, 'input_2');
+      const resultVar = getVarName(ctx, 'result');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}string ${resultVar} = ${str}.slice(${start}, ${end})`);
+      break;
+    }
+
+    case 'string-split': {
+      const str = getInputValue(ctx, node, 'input_0');
+      const delimiter = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'array');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}array ${resultVar} = split(${str}, ${delimiter})`);
+      break;
+    }
+
+    case 'string-replace': {
+      const str = getInputValue(ctx, node, 'input_0');
+      const find = getInputValue(ctx, node, 'input_1');
+      const replace = getInputValue(ctx, node, 'input_2');
+      const resultVar = getVarName(ctx, 'result');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}string ${resultVar} = ${str}.replace(${find}, ${replace})`);
+      break;
+    }
+
+    case 'string-to-lower': {
+      const str = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'result');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}string ${resultVar} = ${str}.tolower()`);
+      break;
+    }
+
+    case 'string-to-upper': {
+      const str = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'result');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}string ${resultVar} = ${str}.toupper()`);
+      break;
+    }
+
+    case 'string-trim': {
+      const str = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'result');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}string ${resultVar} = ${str}.strip()`);
+      break;
+    }
+
+    case 'string-contains': {
+      const str = getInputValue(ctx, node, 'input_0');
+      const substr = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'contains');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}bool ${resultVar} = ${str}.find(${substr}) != null`);
+      break;
+    }
+
+    case 'string-find': {
+      const str = getInputValue(ctx, node, 'input_0');
+      const substr = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'index');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}int ${resultVar} = ${str}.find(${substr})`);
+      break;
+    }
+
+    case 'string-repeat': {
+      const str = getInputValue(ctx, node, 'input_0');
+      const count = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'result');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}string ${resultVar} = ""`);
+      lines.push(`${ind}for (local i = 0; i < ${count}; i++) {`);
+      lines.push(`${ind}  ${resultVar} += ${str}`);
+      lines.push(`${ind}}`);
+      break;
+    }
+
+    case 'string-reverse': {
+      const str = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'result');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}string ${resultVar} = ""`);
+      lines.push(`${ind}for (local i = ${str}.len() - 1; i >= 0; i--) {`);
+      lines.push(`${ind}  ${resultVar} += ${str}[i]`);
+      lines.push(`${ind}}`);
+      break;
+    }
+
     // ==================== MATH ====================
     case 'vector-create': {
       const x = getInputValue(ctx, node, 'input_0');
@@ -1444,6 +1493,16 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
+    case 'vector-lerp': {
+      const a = getInputValue(ctx, node, 'input_0');
+      const b = getInputValue(ctx, node, 'input_1');
+      const t = getInputValue(ctx, node, 'input_2');
+      const resultVar = getVarName(ctx, 'result');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}vector ${resultVar} = LerpVector(${a}, ${b}, ${t})`);
+      break;
+    }
+
     case 'math-add': {
       const a = getInputValue(ctx, node, 'input_0');
       const b = getInputValue(ctx, node, 'input_1');
@@ -1459,6 +1518,23 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       const resultVar = getVarName(ctx, 'result');
       ctx.variables.set(`${node.id}:output_0`, resultVar);
       lines.push(`${ind}var ${resultVar} = ${a} * ${b}`);
+      break;
+    }
+
+    case 'math-tan': {
+      const value = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'result');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = tan(${value})`);
+      break;
+    }
+
+    case 'math-pow': {
+      const base = getInputValue(ctx, node, 'input_0');
+      const exponent = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'result');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = pow(${base}, ${exponent})`);
       break;
     }
 

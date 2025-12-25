@@ -98,6 +98,8 @@ export type NodeType =
   | 'gamemode-set-evac'
   | 'gamemode-register'
   | 'gamemode-register-spawn-func'
+  | 'get-game-state'
+  | 'set-game-state'
 
   // ==================== EVENTS ====================
   // Weapon Events
@@ -209,6 +211,9 @@ export type NodeType =
   | 'get-eye-angles'
   | 'get-view-vector'
   | 'get-player-name'
+  | 'freeze'
+  | 'unfreeze'
+  | 'look-at'
 
   // ==================== ENTITY CREATION ====================
   | 'create-entity'
@@ -252,34 +257,25 @@ export type NodeType =
   | 'kv-custom'
 
   // ==================== ENTITY PROPERTIES (Script Structs) ====================
+  // Context-aware nodes that detect SERVER/CLIENT based on init node connection
   // player.p.* (ServerPlayerStruct / ClientPlayerStruct)
-  | 'player-get-property-server'
-  | 'player-set-property-server'
-  | 'player-get-property-client'
-  | 'player-set-property-client'
+  | 'player-get-property'
+  | 'player-set-property'
   // entity.e.* (ServerEntityStruct / ClientEntityStruct)
-  | 'entity-get-property-server'
-  | 'entity-set-property-server'
-  | 'entity-get-property-client'
-  | 'entity-set-property-client'
+  | 'entity-get-property'
+  | 'entity-set-property'
   // npc.ai.* (ServerAIStruct) - Server only
-  | 'npc-get-property-server'
-  | 'npc-set-property-server'
+  | 'npc-get-property'
+  | 'npc-set-property'
   // weapon.w.* (ServerWeaponStruct / ClientWeaponStruct)
-  | 'weapon-get-struct-property-server'
-  | 'weapon-set-struct-property-server'
-  | 'weapon-get-struct-property-client'
-  | 'weapon-set-struct-property-client'
+  | 'weapon-get-struct-property'
+  | 'weapon-set-struct-property'
   // projectile.proj.* (ServerProjectileStruct / ClientProjectileStruct)
-  | 'projectile-get-property-server'
-  | 'projectile-set-property-server'
-  | 'projectile-get-property-client'
-  | 'projectile-set-property-client'
+  | 'projectile-get-property'
+  | 'projectile-set-property'
   // soul.soul.* (ServerTitanSoulStruct / ClientTitanSoulStruct)
-  | 'soul-get-property-server'
-  | 'soul-set-property-server'
-  | 'soul-get-property-client'
-  | 'soul-set-property-client'
+  | 'soul-get-property'
+  | 'soul-set-property'
 
   // ==================== NPC ====================
   | 'create-npc-dummie'
@@ -404,6 +400,17 @@ export type NodeType =
   | 'to-string'
   | 'get-player-name'
   | 'string-builder'
+  | 'string-length'
+  | 'string-substring'
+  | 'string-split'
+  | 'string-replace'
+  | 'string-to-lower'
+  | 'string-to-upper'
+  | 'string-trim'
+  | 'string-contains'
+  | 'string-find'
+  | 'string-repeat'
+  | 'string-reverse'
 
   // ==================== MATH ====================
   | 'vector-create'
@@ -416,6 +423,7 @@ export type NodeType =
   | 'vector-normalize'
   | 'vector-length'
   | 'vector-distance'
+  | 'vector-lerp'
   | 'angles-to-forward'
   | 'angles-to-right'
   | 'angles-to-up'
@@ -434,6 +442,8 @@ export type NodeType =
   | 'math-round'
   | 'math-sin'
   | 'math-cos'
+  | 'math-tan'
+  | 'math-pow'
   | 'math-random-int'
   | 'math-random-float'
   | 'math-lerp'
