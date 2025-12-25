@@ -1,4 +1,4 @@
-# R5V Mod Studio
+# R5V Script Studio
 
 <p align="center">
   <img src="public/favicon.svg" alt="R5V Mod Studio" width="120" height="120">
@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/r5valkyrie/r5v_mod_studio/releases">Download</a> •
+  <a href="https://github.com/r5valkyrie/r5v_script_studio/releases">Download</a> •
   <a href="#features">Features</a> •
   <a href="#installation">Installation</a> •
   <a href="#usage">Usage</a> •
@@ -32,9 +32,9 @@
 
 ### From Release
 
-1. Download the latest release from the [Releases page](https://github.com/r5valkyrie/r5v_mod_studio/releases)
+1. Download the latest release from the [Releases page](https://github.com/r5valkyrie/r5v_script_studio/releases)
 2. Run the installer or extract the archive
-3. Launch R5V Mod Studio
+3. Launch R5V Script Studio
 
 ### From Source
 
@@ -42,8 +42,8 @@ Prerequisites: [Node.js](https://nodejs.org/) (v18+) and npm
 
 ```bash
 # Clone the repository
-git clone https://github.com/r5valkyrie/r5v_mod_studio.git
-cd r5v_mod_studio
+git clone https://github.com/r5valkyrie/r5v_script_studio.git
+cd r5v_script_studio
 
 # Install dependencies
 npm install
@@ -59,7 +59,7 @@ npm run build
 
 ### Creating a Project
 
-1. Launch R5V Mod Studio
+1. Launch R5V Script Studio
 2. Click **New Project** or press `Ctrl+N`
 3. Add nodes from the sidebar by dragging them onto the canvas
 4. Connect nodes by dragging from output ports to input ports
@@ -122,7 +122,7 @@ npm run build
 ### Project Structure
 
 ```
-r5v_mod_studio/
+r5v_script_studio/
 ├── electron/          # Electron main process (bundled from js/)
 ├── js/                # Electron source files
 │   ├── main.js        # Main process
