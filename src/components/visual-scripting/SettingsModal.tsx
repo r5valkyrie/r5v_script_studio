@@ -7,6 +7,7 @@ const DEFAULT_KEYBINDINGS: Record<string, string> = {
   'saveAs': 'Ctrl+Shift+S',
   'open': 'Ctrl+O',
   'newProject': 'Ctrl+N',
+  'compile': 'Ctrl+B',
   'undo': 'Ctrl+Z',
   'redo': 'Ctrl+Shift+Z',
   'delete': 'Delete',
@@ -16,7 +17,7 @@ const DEFAULT_KEYBINDINGS: Record<string, string> = {
   'selectAll': 'Ctrl+A',
   'search': 'Ctrl+F',
   'toggleCodePanel': 'Ctrl+Shift+C',
-  'toggleSidebar': 'Ctrl+B',
+  'toggleSidebar': 'Ctrl+\\',
   'zoomIn': 'Ctrl+=',
   'zoomOut': 'Ctrl+-',
   'resetZoom': 'Ctrl+0',
@@ -29,6 +30,7 @@ const KEYBINDING_LABELS: Record<string, string> = {
   'saveAs': 'Save Project As',
   'open': 'Open Project',
   'newProject': 'New Project',
+  'compile': 'Compile Project',
   'undo': 'Undo',
   'redo': 'Redo',
   'delete': 'Delete Selected',
@@ -47,7 +49,7 @@ const KEYBINDING_LABELS: Record<string, string> = {
 
 // Group keybindings by category
 const KEYBINDING_CATEGORIES = {
-  'File': ['save', 'saveAs', 'open', 'newProject'],
+  'File': ['save', 'saveAs', 'open', 'newProject', 'compile'],
   'Edit': ['undo', 'redo', 'delete', 'copy', 'paste', 'cut', 'selectAll'],
   'View': ['toggleCodePanel', 'toggleSidebar', 'search'],
   'Navigation': ['zoomIn', 'zoomOut', 'resetZoom', 'fitToView'],

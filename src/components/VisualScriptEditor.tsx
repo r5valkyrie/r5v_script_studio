@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { PanelLeft, PanelRight, GitBranch, Code, Save, FolderOpen, FileDown, FileText, FilePlus, ChevronDown, ChevronLeft, ChevronRight, Folder, X, Settings } from 'lucide-react';
+import { PanelLeft, PanelRight, GitBranch, Code, Save, FolderOpen, FileDown, FileText, FilePlus, ChevronDown, ChevronLeft, ChevronRight, Folder, X, Settings, Package } from 'lucide-react';
 import SettingsModal, { loadSettings, saveSettings, DEFAULT_SETTINGS } from './visual-scripting/SettingsModal';
 import ProjectSettingsModal from './visual-scripting/ProjectSettingsModal';
 import { NotificationContainer, ExportPathModal, useNotifications } from './visual-scripting/Notification';
@@ -547,58 +547,108 @@ export default function VisualScriptEditor() {
     updateModSettings(settings);
   }, [projectData, updateModSettings]);
 
-  // Keyboard shortcuts
+  // Helper to check if a keyboard event matches a keybinding string like "Ctrl+Shift+S"
+  const matchesKeybind = useCallback((e: KeyboardEvent, keybind: string): boolean => {
+    if (!keybind) return false;
+    const parts = keybind.toLowerCase().split('+');
+    const key = parts[parts.length - 1];
+    const needsCtrl = parts.includes('ctrl');
+    const needsShift = parts.includes('shift');
+    const needsAlt = parts.includes('alt');
+    const needsMeta = parts.includes('meta') || parts.includes('cmd');
+
+    const hasCtrl = e.ctrlKey || e.metaKey;
+    const hasShift = e.shiftKey;
+    const hasAlt = e.altKey;
+
+    if (needsCtrl !== hasCtrl) return false;
+    if (needsShift !== hasShift) return false;
+    if (needsAlt !== hasAlt) return false;
+    if (needsMeta && !e.metaKey) return false;
+
+    // Handle special key names
+    const eventKey = e.key.toLowerCase();
+    if (key === 'delete') return eventKey === 'delete';
+    if (key === 'backspace') return eventKey === 'backspace';
+    if (key === '\\') return eventKey === '\\';
+    if (key === '=') return eventKey === '=' || eventKey === '+';
+    if (key === '-') return eventKey === '-' || eventKey === '_';
+
+    return eventKey === key;
+  }, []);
+
+  // Keyboard shortcuts using settings
   useEffect(() => {
+    const keybinds = appSettings.keybindings;
+
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip if in input/textarea (except for some shortcuts)
+      const inInput = e.target && (e.target as HTMLElement).closest('input, textarea');
+
       // New project
-      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+      if (matchesKeybind(e, keybinds.newProject)) {
         e.preventDefault();
         newProject();
         return;
       }
       
       // Save shortcuts
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      if (matchesKeybind(e, keybinds.save)) {
         e.preventDefault();
         saveProject();
         return;
       }
       
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'S') {
+      if (matchesKeybind(e, keybinds.saveAs)) {
         e.preventDefault();
         saveProjectAs();
         return;
       }
       
-      if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+      if (matchesKeybind(e, keybinds.open)) {
         e.preventDefault();
         loadProject();
         return;
       }
 
       // Compile project
-      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+      if (matchesKeybind(e, keybinds.compile)) {
         e.preventDefault();
         handleCompileProject();
         return;
       }
 
-      // Undo/redo
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
-        if (e.target && (e.target as HTMLElement).closest('input, textarea')) return;
+      // Toggle code panel
+      if (matchesKeybind(e, keybinds.toggleCodePanel)) {
         e.preventDefault();
-        if (e.shiftKey) {
-          handleRedo();
-        } else {
-          handleUndo();
-        }
+        setCodePanelOpen(prev => !prev);
+        return;
+      }
+
+      // Toggle sidebar
+      if (matchesKeybind(e, keybinds.toggleSidebar)) {
+        e.preventDefault();
+        setSidebarOpen(prev => !prev);
+        return;
+      }
+
+      // Undo/redo - skip if in input
+      if (!inInput && matchesKeybind(e, keybinds.undo)) {
+        e.preventDefault();
+        handleUndo();
         return;
       }
       
-      // Delete nodes
+      if (!inInput && matchesKeybind(e, keybinds.redo)) {
+        e.preventDefault();
+        handleRedo();
+        return;
+      }
+      
+      // Delete nodes - skip if in input
+      if (inInput) return;
       if (selectedNodeIds.length === 0) return;
-      if (e.target && (e.target as HTMLElement).closest('input, textarea')) return;
-      if (e.key === 'Delete' || e.key === 'Backspace') {
+      if (matchesKeybind(e, keybinds.delete) || e.key === 'Backspace') {
         e.preventDefault();
         handleDeleteSelectedNodes(selectedNodeIds);
       }
@@ -608,7 +658,7 @@ export default function VisualScriptEditor() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedNodeIds, handleDeleteSelectedNodes, handleUndo, handleRedo, saveProject, saveProjectAs, loadProject, newProject, handleCompileProject]);
+  }, [selectedNodeIds, handleDeleteSelectedNodes, handleUndo, handleRedo, saveProject, saveProjectAs, loadProject, newProject, handleCompileProject, appSettings.keybindings, matchesKeybind]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -853,6 +903,19 @@ export default function VisualScriptEditor() {
           <span>{nodes.length} nodes</span>
           <span>{connections.length} connections</span>
           {currentFilePath && <span className="truncate max-w-xs" title={currentFilePath}>{currentFilePath.split('/').pop()}</span>}
+          
+          <div className="flex-1" />
+          
+          {/* Compile button */}
+          <button
+            onClick={handleCompileProject}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-white transition-colors hover:brightness-110"
+            style={{ backgroundColor: accentColor }}
+            title="Compile Project (Ctrl+B)"
+          >
+            <Package size={14} />
+            <span className="font-medium">Compile</span>
+          </button>
         </div>
       </div>
 
