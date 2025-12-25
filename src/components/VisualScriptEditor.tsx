@@ -1178,6 +1178,7 @@ export default function VisualScriptEditor() {
                     onViewChange={setGraphView}
                     onRequestHistorySnapshot={forceHistorySnapshot}
                     showGridLines={appSettings.appearance.showGridLines}
+                    gridStyle={appSettings.appearance.gridStyle}
                     gridSize={appSettings.appearance.gridSize}
                     nodeOpacity={appSettings.appearance.nodeOpacity}
                     connectionStyle={appSettings.appearance.connectionStyle}

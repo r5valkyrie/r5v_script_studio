@@ -25,6 +25,7 @@ interface NodeGraphProps {
   connectionStyle?: 'bezier' | 'straight' | 'step';
   accentColor?: string;
   theme?: 'light' | 'dark';
+  gridStyle?: 'dots' | 'lines' | 'crosshatch';
   // Editor settings
   snapToGrid?: boolean;
   autoConnect?: boolean;
@@ -99,6 +100,7 @@ export default function NodeGraph({
   onRequestHistorySnapshot,
   // Appearance settings with defaults
   showGridLines = true,
+  gridStyle = 'dots',
   gridSize = 20,
   nodeOpacity = 100,
   connectionStyle = 'bezier',
@@ -2253,8 +2255,21 @@ export default function NodeGraph({
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: `radial-gradient(circle, ${theme === 'light' ? 'rgba(0,0,0,0.12)' : '#2a2e38'} 1px, transparent 1px)`,
-            backgroundSize: `${gridSize * view.scale}px ${gridSize * view.scale}px`,
+            backgroundImage: gridStyle === 'dots' 
+              ? `radial-gradient(circle, ${theme === 'light' ? 'rgba(0,0,0,0.15)' : '#2a2e38'} 1px, transparent 1px)`
+              : gridStyle === 'lines'
+              ? `linear-gradient(to right, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : '#252a33'} 1px, transparent 1px),
+                 linear-gradient(to bottom, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : '#252a33'} 1px, transparent 1px)`
+              : // crosshatch - grid lines plus diagonal pattern
+                `linear-gradient(to right, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : '#2a2e38'} 1px, transparent 1px),
+                 linear-gradient(to bottom, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : '#2a2e38'} 1px, transparent 1px),
+                 repeating-linear-gradient(45deg, transparent, transparent 10px, ${theme === 'light' ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.02)'} 10px, ${theme === 'light' ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.02)'} 11px),
+                 repeating-linear-gradient(-45deg, transparent, transparent 10px, ${theme === 'light' ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.02)'} 10px, ${theme === 'light' ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.02)'} 11px)`,
+            backgroundSize: gridStyle === 'dots'
+              ? `${gridSize * view.scale}px ${gridSize * view.scale}px`
+              : gridStyle === 'lines'
+              ? `${gridSize * view.scale}px ${gridSize * view.scale}px`
+              : `${gridSize * view.scale}px ${gridSize * view.scale}px, ${gridSize * view.scale}px ${gridSize * view.scale}px, auto, auto`,
             backgroundPosition: `${view.x}px ${view.y}px`,
             willChange: 'background-position, background-size',
             contain: 'strict',

@@ -69,6 +69,7 @@ export interface AppSettings {
     accentColor: string;
     fontSize: 'small' | 'medium' | 'large';
     showGridLines: boolean;
+    gridStyle: 'dots' | 'lines' | 'crosshatch';
     gridSize: number;
     nodeOpacity: number;
     connectionStyle: 'bezier' | 'straight' | 'step';
@@ -96,6 +97,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     accentColor: '#8B5CF6', // purple-500
     fontSize: 'medium',
     showGridLines: true,
+    gridStyle: 'dots',
     gridSize: 20,
     nodeOpacity: 100,
     connectionStyle: 'bezier',
@@ -479,7 +481,7 @@ export default function SettingsModal({
 
                   <label className="flex items-center justify-between">
                     <div>
-                      <div className="text-sm text-white">Show Grid Lines</div>
+                      <div className="text-sm text-white">Show Grid</div>
                       <div className="text-xs text-gray-500">Display grid in the node editor</div>
                     </div>
                     <input
@@ -489,6 +491,63 @@ export default function SettingsModal({
                       className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-purple-500"
                     />
                   </label>
+
+                  {localSettings.appearance.showGridLines && (
+                    <div>
+                      <label className="text-sm text-white mb-2 block">Grid Style</label>
+                      <div className="flex gap-2">
+                        {(['dots', 'lines', 'crosshatch'] as const).map((style) => (
+                          <button
+                            key={style}
+                            onClick={() => updateSettings('appearance', 'gridStyle', style)}
+                            className={`flex-1 px-3 py-2 rounded-lg text-xs capitalize transition-all duration-200 flex flex-col items-center gap-1.5 ${
+                              localSettings.appearance.gridStyle === style
+                                ? 'text-white'
+                                : 'bg-black/30 text-gray-400 hover:bg-black/40 hover:text-white'
+                            }`}
+                            style={localSettings.appearance.gridStyle === style ? {
+                              backgroundColor: `${localSettings.appearance.accentColor}30`,
+                              boxShadow: `0 0 0 2px ${localSettings.appearance.accentColor}`,
+                            } : undefined}
+                          >
+                            {/* Grid style preview */}
+                            <div className="w-8 h-8 rounded border border-white/20 bg-[#1a1f28] overflow-hidden">
+                              {style === 'dots' && (
+                                <svg viewBox="0 0 24 24" className="w-full h-full">
+                                  {[4, 12, 20].map(x => [4, 12, 20].map(y => (
+                                    <circle key={`${x}-${y}`} cx={x} cy={y} r="1" fill="#4b5563" />
+                                  )))}
+                                </svg>
+                              )}
+                              {style === 'lines' && (
+                                <svg viewBox="0 0 24 24" className="w-full h-full">
+                                  {[8, 16].map(pos => (
+                                    <g key={pos}>
+                                      <line x1={pos} y1="0" x2={pos} y2="24" stroke="#4b5563" strokeWidth="0.5" />
+                                      <line x1="0" y1={pos} x2="24" y2={pos} stroke="#4b5563" strokeWidth="0.5" />
+                                    </g>
+                                  ))}
+                                </svg>
+                              )}
+                              {style === 'crosshatch' && (
+                                <svg viewBox="0 0 24 24" className="w-full h-full">
+                                  {[8, 16].map(pos => (
+                                    <g key={pos}>
+                                      <line x1={pos} y1="0" x2={pos} y2="24" stroke="#4b5563" strokeWidth="0.5" />
+                                      <line x1="0" y1={pos} x2="24" y2={pos} stroke="#4b5563" strokeWidth="0.5" />
+                                    </g>
+                                  ))}
+                                  <line x1="0" y1="0" x2="24" y2="24" stroke="#374151" strokeWidth="0.3" />
+                                  <line x1="24" y1="0" x2="0" y2="24" stroke="#374151" strokeWidth="0.3" />
+                                </svg>
+                              )}
+                            </div>
+                            {style}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <label className="flex items-center justify-between">
                     <span className="text-sm text-white">Grid Size</span>
