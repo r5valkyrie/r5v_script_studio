@@ -26,7 +26,7 @@ interface NodeGraphProps {
   connectionsBehindNodes?: boolean;
   accentColor?: string;
   theme?: 'light' | 'dark';
-  gridStyle?: 'dots' | 'lines' | 'crosshatch';
+  gridStyle?: 'dots' | 'lines' | 'crosshatch' | 'hexagons' | 'isometric' | 'blueprint';
   // Editor settings
   snapToGrid?: boolean;
   autoConnect?: boolean;
@@ -2962,21 +2962,40 @@ export default function NodeGraph({
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
+            backgroundColor: gridStyle === 'blueprint' ? (theme === 'light' ? '#e8f4fc' : '#0d1f33') : undefined,
             backgroundImage: gridStyle === 'dots' 
               ? `radial-gradient(circle, ${theme === 'light' ? 'rgba(0,0,0,0.15)' : '#2a2e38'} 1px, transparent 1px)`
               : gridStyle === 'lines'
               ? `linear-gradient(to right, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : '#252a33'} 1px, transparent 1px),
                  linear-gradient(to bottom, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : '#252a33'} 1px, transparent 1px)`
-              : // crosshatch - grid lines plus diagonal pattern
-                `linear-gradient(to right, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : '#2a2e38'} 1px, transparent 1px),
+              : gridStyle === 'crosshatch'
+              ? `linear-gradient(to right, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : '#2a2e38'} 1px, transparent 1px),
                  linear-gradient(to bottom, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : '#2a2e38'} 1px, transparent 1px),
                  repeating-linear-gradient(45deg, transparent, transparent 10px, ${theme === 'light' ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.02)'} 10px, ${theme === 'light' ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.02)'} 11px),
-                 repeating-linear-gradient(-45deg, transparent, transparent 10px, ${theme === 'light' ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.02)'} 10px, ${theme === 'light' ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.02)'} 11px)`,
+                 repeating-linear-gradient(-45deg, transparent, transparent 10px, ${theme === 'light' ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.02)'} 10px, ${theme === 'light' ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.02)'} 11px)`
+              : gridStyle === 'hexagons'
+              ? `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cpath fill='none' stroke='${theme === 'light' ? '%23000' : '%23333'}' stroke-width='0.5' stroke-opacity='${theme === 'light' ? '0.15' : '0.4'}' d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM14 0L0 8.25v16.5L14 33l14-8.25V8.25L14 0z'/%3E%3C/svg%3E")`
+              : gridStyle === 'isometric'
+              ? `repeating-linear-gradient(30deg, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)'} 0px, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)'} 1px, transparent 1px, transparent 20px),
+                 repeating-linear-gradient(150deg, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)'} 0px, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)'} 1px, transparent 1px, transparent 20px),
+                 repeating-linear-gradient(90deg, ${theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.03)'} 0px, ${theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.03)'} 1px, transparent 1px, transparent 20px)`
+              : // blueprint
+                `linear-gradient(to right, ${theme === 'light' ? 'rgba(49,130,206,0.2)' : 'rgba(49,130,206,0.15)'} 1px, transparent 1px),
+                 linear-gradient(to bottom, ${theme === 'light' ? 'rgba(49,130,206,0.2)' : 'rgba(49,130,206,0.15)'} 1px, transparent 1px),
+                 linear-gradient(to right, ${theme === 'light' ? 'rgba(49,130,206,0.4)' : 'rgba(49,130,206,0.3)'} 1px, transparent 1px),
+                 linear-gradient(to bottom, ${theme === 'light' ? 'rgba(49,130,206,0.4)' : 'rgba(49,130,206,0.3)'} 1px, transparent 1px)`,
             backgroundSize: gridStyle === 'dots'
               ? `${gridSize * view.scale}px ${gridSize * view.scale}px`
               : gridStyle === 'lines'
               ? `${gridSize * view.scale}px ${gridSize * view.scale}px`
-              : `${gridSize * view.scale}px ${gridSize * view.scale}px, ${gridSize * view.scale}px ${gridSize * view.scale}px, auto, auto`,
+              : gridStyle === 'crosshatch'
+              ? `${gridSize * view.scale}px ${gridSize * view.scale}px, ${gridSize * view.scale}px ${gridSize * view.scale}px, auto, auto`
+              : gridStyle === 'hexagons'
+              ? `${28 * view.scale}px ${49 * view.scale}px`
+              : gridStyle === 'isometric'
+              ? 'auto'
+              : // blueprint - small grid + large grid (5x size)
+                `${gridSize * view.scale}px ${gridSize * view.scale}px, ${gridSize * view.scale}px ${gridSize * view.scale}px, ${gridSize * 5 * view.scale}px ${gridSize * 5 * view.scale}px, ${gridSize * 5 * view.scale}px ${gridSize * 5 * view.scale}px`,
             backgroundPosition: `${view.x}px ${view.y}px`,
             willChange: 'background-position, background-size',
             contain: 'strict',

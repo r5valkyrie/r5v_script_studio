@@ -62,11 +62,10 @@ export interface AppSettings {
     accentColor: string;
     fontSize: 'small' | 'medium' | 'large';
     showGridLines: boolean;
-    gridStyle: 'dots' | 'lines' | 'crosshatch';
+    gridStyle: 'dots' | 'lines' | 'crosshatch' | 'hexagons' | 'isometric' | 'blueprint';
     gridSize: number;
     nodeOpacity: number;
     connectionStyle: 'bezier' | 'straight' | 'step';
-    connectionsBehindNodes: boolean;
   };
   editor: {
     snapToGrid: boolean;
@@ -74,6 +73,7 @@ export interface AppSettings {
     autoConnect: boolean;
     highlightConnections: boolean;
     animateConnections: boolean;
+    connectionsBehindNodes: boolean;
   };
   ui: {
     isSidebarOpen: boolean;
@@ -106,7 +106,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
     gridSize: 20,
     nodeOpacity: 100,
     connectionStyle: 'bezier',
-    connectionsBehindNodes: false,
   },
   editor: {
     snapToGrid: false,
@@ -114,6 +113,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     autoConnect: true,
     highlightConnections: true,
     animateConnections: false,
+    connectionsBehindNodes: false,
   },
   ui: {
     isSidebarOpen: true,
@@ -513,8 +513,8 @@ export default function SettingsModal({
                   {localSettings.appearance.showGridLines && (
                     <div>
                       <label className="text-sm text-white mb-2 block">Grid Style</label>
-                      <div className="flex gap-2">
-                        {(['dots', 'lines', 'crosshatch'] as const).map((style) => (
+                      <div className="flex flex-wrap gap-2">
+                        {(['dots', 'lines', 'crosshatch', 'hexagons', 'isometric', 'blueprint'] as const).map((style) => (
                           <button
                             key={style}
                             onClick={() => updateSettings('appearance', 'gridStyle', style)}
@@ -557,6 +557,35 @@ export default function SettingsModal({
                                   ))}
                                   <line x1="0" y1="0" x2="24" y2="24" stroke="#374151" strokeWidth="0.3" />
                                   <line x1="24" y1="0" x2="0" y2="24" stroke="#374151" strokeWidth="0.3" />
+                                </svg>
+                              )}
+                              {style === 'hexagons' && (
+                                <svg viewBox="0 0 24 24" className="w-full h-full">
+                                  <path d="M12 2 L20 6 L20 14 L12 18 L4 14 L4 6 Z" fill="none" stroke="#4b5563" strokeWidth="0.5" />
+                                  <path d="M12 18 L12 24" stroke="#4b5563" strokeWidth="0.5" />
+                                  <path d="M4 6 L0 4" stroke="#4b5563" strokeWidth="0.5" />
+                                  <path d="M20 6 L24 4" stroke="#4b5563" strokeWidth="0.5" />
+                                </svg>
+                              )}
+                              {style === 'isometric' && (
+                                <svg viewBox="0 0 24 24" className="w-full h-full">
+                                  <line x1="0" y1="12" x2="24" y2="0" stroke="#4b5563" strokeWidth="0.5" />
+                                  <line x1="0" y1="12" x2="24" y2="24" stroke="#4b5563" strokeWidth="0.5" />
+                                  <line x1="0" y1="24" x2="24" y2="12" stroke="#4b5563" strokeWidth="0.5" />
+                                  <line x1="12" y1="0" x2="12" y2="24" stroke="#374151" strokeWidth="0.3" />
+                                </svg>
+                              )}
+                              {style === 'blueprint' && (
+                                <svg viewBox="0 0 24 24" className="w-full h-full">
+                                  <rect x="0" y="0" width="24" height="24" fill="#1a365d" />
+                                  {[6, 12, 18].map(pos => (
+                                    <g key={pos}>
+                                      <line x1={pos} y1="0" x2={pos} y2="24" stroke="#2c5282" strokeWidth="0.5" />
+                                      <line x1="0" y1={pos} x2="24" y2={pos} stroke="#2c5282" strokeWidth="0.5" />
+                                    </g>
+                                  ))}
+                                  <line x1="12" y1="0" x2="12" y2="24" stroke="#3182ce" strokeWidth="0.8" />
+                                  <line x1="0" y1="12" x2="24" y2="12" stroke="#3182ce" strokeWidth="0.8" />
                                 </svg>
                               )}
                             </div>
@@ -615,19 +644,6 @@ export default function SettingsModal({
                         </button>
                       ))}n                    </div>
                   </div>
-
-                  <label className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm text-white">Connections Behind Nodes</div>
-                      <div className="text-xs text-gray-500">Render connection lines behind nodes instead of in front</div>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={localSettings.appearance.connectionsBehindNodes}
-                      onChange={(e) => updateSettings('appearance', 'connectionsBehindNodes', e.target.checked)}
-                      className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-purple-500"
-                    />
-                  </label>
                 </div>
               </div>
             )}
@@ -698,6 +714,19 @@ export default function SettingsModal({
                       type="checkbox"
                       checked={localSettings.editor.animateConnections}
                       onChange={(e) => updateSettings('editor', 'animateConnections', e.target.checked)}
+                      className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-purple-500"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm text-white">Connections Behind Nodes</div>
+                      <div className="text-xs text-gray-500">Render connection lines behind nodes instead of in front</div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={localSettings.editor.connectionsBehindNodes}
+                      onChange={(e) => updateSettings('editor', 'connectionsBehindNodes', e.target.checked)}
                       className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-purple-500"
                     />
                   </label>

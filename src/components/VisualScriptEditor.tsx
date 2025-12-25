@@ -1170,7 +1170,7 @@ export default function VisualScriptEditor() {
                     gridSize={appSettings.appearance.gridSize}
                     nodeOpacity={appSettings.appearance.nodeOpacity}
                     connectionStyle={appSettings.appearance.connectionStyle}
-                    connectionsBehindNodes={appSettings.appearance.connectionsBehindNodes}
+                    connectionsBehindNodes={appSettings.editor.connectionsBehindNodes}
                     accentColor={appSettings.appearance.accentColor}
                     theme={effectiveTheme}
                     snapToGrid={appSettings.editor.snapToGrid}
