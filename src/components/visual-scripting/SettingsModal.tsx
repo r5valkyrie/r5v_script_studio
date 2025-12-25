@@ -65,7 +65,7 @@ export interface AppSettings {
     gridStyle: 'dots' | 'lines' | 'crosshatch' | 'hexagons' | 'isometric' | 'blueprint' | 'diamonds' | 'triangles' | 'graph' | 'waves';
     gridSize: number;
     nodeOpacity: number;
-    connectionStyle: 'bezier' | 'straight' | 'step';
+    connectionStyle: 'bezier' | 'straight' | 'step' | 'smooth-step' | 'metro' | 'quadratic';
   };
   editor: {
     snapToGrid: boolean;
@@ -657,23 +657,88 @@ export default function SettingsModal({
 
                   <div>
                     <label className="text-sm text-white mb-2 block">Connection Style</label>
-                    <div className="flex gap-2">
-                      {(['bezier', 'straight', 'step'] as const).map((style) => (
+                    <div className="grid grid-cols-3 gap-2">
+                      {(['bezier', 'straight', 'step', 'smooth-step', 'metro', 'quadratic'] as const).map((style) => (
                         <button
                           key={style}
                           onClick={() => updateSettings('appearance', 'connectionStyle', style)}
-                          className={`px-4 py-2 rounded-lg text-sm capitalize transition-colors ${
+                          className={`px-2 py-2 rounded-lg text-xs capitalize transition-all duration-200 flex flex-col items-center gap-1 ${
                             localSettings.appearance.connectionStyle === style
                               ? 'text-white'
-                              : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
+                              : 'bg-black/30 text-gray-400 hover:bg-black/40 hover:text-white'
                           }`}
                           style={localSettings.appearance.connectionStyle === style ? {
-                            backgroundColor: localSettings.appearance.accentColor,
+                            backgroundColor: `${localSettings.appearance.accentColor}30`,
+                            boxShadow: `0 0 0 2px ${localSettings.appearance.accentColor}`,
                           } : undefined}
                         >
-                          {style}
+                          {/* Connection style preview */}
+                          <div className="w-10 h-7 rounded border border-white/20 bg-[#1a1f28] overflow-hidden">
+                            {style === 'bezier' && (
+                              <svg viewBox="0 0 40 28" className="w-full h-full">
+                                <path d="M4 14 C16 14, 16 6, 36 6" fill="none" stroke={localSettings.appearance.connectionStyle === style ? localSettings.appearance.accentColor : '#4b5563'} strokeWidth="1.5" />
+                                <path d="M4 22 C20 22, 20 14, 36 14" fill="none" stroke={localSettings.appearance.connectionStyle === style ? localSettings.appearance.accentColor : '#4b5563'} strokeWidth="1.5" />
+                                <circle cx="4" cy="14" r="2" fill="#6b7280" />
+                                <circle cx="36" cy="6" r="2" fill="#6b7280" />
+                                <circle cx="4" cy="22" r="2" fill="#6b7280" />
+                                <circle cx="36" cy="14" r="2" fill="#6b7280" />
+                              </svg>
+                            )}
+                            {style === 'straight' && (
+                              <svg viewBox="0 0 40 28" className="w-full h-full">
+                                <line x1="4" y1="14" x2="36" y2="6" stroke={localSettings.appearance.connectionStyle === style ? localSettings.appearance.accentColor : '#4b5563'} strokeWidth="1.5" />
+                                <line x1="4" y1="22" x2="36" y2="14" stroke={localSettings.appearance.connectionStyle === style ? localSettings.appearance.accentColor : '#4b5563'} strokeWidth="1.5" />
+                                <circle cx="4" cy="14" r="2" fill="#6b7280" />
+                                <circle cx="36" cy="6" r="2" fill="#6b7280" />
+                                <circle cx="4" cy="22" r="2" fill="#6b7280" />
+                                <circle cx="36" cy="14" r="2" fill="#6b7280" />
+                              </svg>
+                            )}
+                            {style === 'step' && (
+                              <svg viewBox="0 0 40 28" className="w-full h-full">
+                                <path d="M4 10 L20 10 L20 6 L36 6" fill="none" stroke={localSettings.appearance.connectionStyle === style ? localSettings.appearance.accentColor : '#4b5563'} strokeWidth="1.5" />
+                                <path d="M4 22 L20 22 L20 18 L36 18" fill="none" stroke={localSettings.appearance.connectionStyle === style ? localSettings.appearance.accentColor : '#4b5563'} strokeWidth="1.5" />
+                                <circle cx="4" cy="10" r="2" fill="#6b7280" />
+                                <circle cx="36" cy="6" r="2" fill="#6b7280" />
+                                <circle cx="4" cy="22" r="2" fill="#6b7280" />
+                                <circle cx="36" cy="18" r="2" fill="#6b7280" />
+                              </svg>
+                            )}
+                            {style === 'smooth-step' && (
+                              <svg viewBox="0 0 40 28" className="w-full h-full">
+                                <path d="M4 10 L16 10 Q20 10 20 6 L20 6 Q20 2 24 2 L36 2" fill="none" stroke={localSettings.appearance.connectionStyle === style ? localSettings.appearance.accentColor : '#4b5563'} strokeWidth="1.5" />
+                                <path d="M4 22 L16 22 Q20 22 20 18 L20 18 Q20 14 24 14 L36 14" fill="none" stroke={localSettings.appearance.connectionStyle === style ? localSettings.appearance.accentColor : '#4b5563'} strokeWidth="1.5" />
+                                <circle cx="4" cy="10" r="2" fill="#6b7280" />
+                                <circle cx="36" cy="2" r="2" fill="#6b7280" />
+                                <circle cx="4" cy="22" r="2" fill="#6b7280" />
+                                <circle cx="36" cy="14" r="2" fill="#6b7280" />
+                              </svg>
+                            )}
+                            {style === 'metro' && (
+                              <svg viewBox="0 0 40 28" className="w-full h-full">
+                                <path d="M4 14 L10 14 L16 8 L30 8 L36 6" fill="none" stroke={localSettings.appearance.connectionStyle === style ? localSettings.appearance.accentColor : '#4b5563'} strokeWidth="1.5" />
+                                <path d="M4 24 L10 24 L16 18 L30 18 L36 16" fill="none" stroke={localSettings.appearance.connectionStyle === style ? localSettings.appearance.accentColor : '#4b5563'} strokeWidth="1.5" />
+                                <circle cx="4" cy="14" r="2" fill="#6b7280" />
+                                <circle cx="36" cy="6" r="2" fill="#6b7280" />
+                                <circle cx="4" cy="24" r="2" fill="#6b7280" />
+                                <circle cx="36" cy="16" r="2" fill="#6b7280" />
+                              </svg>
+                            )}
+                            {style === 'quadratic' && (
+                              <svg viewBox="0 0 40 28" className="w-full h-full">
+                                <path d="M4 14 Q20 14 20 10 T36 6" fill="none" stroke={localSettings.appearance.connectionStyle === style ? localSettings.appearance.accentColor : '#4b5563'} strokeWidth="1.5" />
+                                <path d="M4 24 Q20 24 20 20 T36 16" fill="none" stroke={localSettings.appearance.connectionStyle === style ? localSettings.appearance.accentColor : '#4b5563'} strokeWidth="1.5" />
+                                <circle cx="4" cy="14" r="2" fill="#6b7280" />
+                                <circle cx="36" cy="6" r="2" fill="#6b7280" />
+                                <circle cx="4" cy="24" r="2" fill="#6b7280" />
+                                <circle cx="36" cy="16" r="2" fill="#6b7280" />
+                              </svg>
+                            )}
+                          </div>
+                          {style.replace('-', ' ')}
                         </button>
-                      ))}n                    </div>
+                      ))}
+                      </div>
                   </div>
                 </div>
               </div>

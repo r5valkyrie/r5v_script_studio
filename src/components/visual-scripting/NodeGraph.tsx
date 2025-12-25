@@ -22,7 +22,7 @@ interface NodeGraphProps {
   showGridLines?: boolean;
   gridSize?: number;
   nodeOpacity?: number;
-  connectionStyle?: 'bezier' | 'straight' | 'step';
+  connectionStyle?: 'bezier' | 'straight' | 'step' | 'smooth-step' | 'metro' | 'quadratic';
   connectionsBehindNodes?: boolean;
   accentColor?: string;
   theme?: 'light' | 'dark';
@@ -396,6 +396,87 @@ export default function NodeGraph({
       return `M ${fromPos.x} ${fromPos.y} L ${midX} ${fromPos.y} L ${midX} ${toPos.y} L ${toPos.x} ${toPos.y}`;
     }
     
+    if (connectionStyle === 'smooth-step') {
+      // Right-angle lines with rounded corners (like Unreal Blueprints)
+      const midX = (fromPos.x + toPos.x) / 2;
+      const radius = Math.min(15, Math.abs(toPos.y - fromPos.y) / 2, Math.abs(midX - fromPos.x) / 2);
+      const yDir = toPos.y > fromPos.y ? 1 : -1;
+      
+      if (radius < 2) {
+        // Too small for curves, fall back to step
+        return `M ${fromPos.x} ${fromPos.y} L ${midX} ${fromPos.y} L ${midX} ${toPos.y} L ${toPos.x} ${toPos.y}`;
+      }
+      
+      return `M ${fromPos.x} ${fromPos.y} ` +
+        `L ${midX - radius} ${fromPos.y} ` +
+        `Q ${midX} ${fromPos.y} ${midX} ${fromPos.y + radius * yDir} ` +
+        `L ${midX} ${toPos.y - radius * yDir} ` +
+        `Q ${midX} ${toPos.y} ${midX + radius} ${toPos.y} ` +
+        `L ${toPos.x} ${toPos.y}`;
+    }
+    
+    if (connectionStyle === 'metro') {
+      // Clean metro-style with 45° diagonal in the middle
+      const dx = toPos.x - fromPos.x;
+      const dy = toPos.y - fromPos.y;
+      const absDy = Math.abs(dy);
+      const absDx = Math.abs(dx);
+      const yDir = dy > 0 ? 1 : -1;
+      
+      // For very short or nearly horizontal connections, use straight
+      if (absDx < 20 || absDy < 5) {
+        return `M ${fromPos.x} ${fromPos.y} L ${toPos.x} ${toPos.y}`;
+      }
+      
+      // Calculate diagonal segment - the 45° part covers the vertical distance
+      // Horizontal segments at start and end
+      const minHorizontal = 20;
+      const availableForDiagonal = absDx - (minHorizontal * 2);
+      
+      if (availableForDiagonal < absDy) {
+        // Not enough horizontal space for a clean 45° - use a steeper angle with mid horizontal
+        const startH = minHorizontal;
+        const endH = minHorizontal;
+        const midX = (fromPos.x + toPos.x) / 2;
+        const diagLen = Math.min(absDy / 2, (midX - fromPos.x - startH));
+        
+        return `M ${fromPos.x} ${fromPos.y} ` +
+          `L ${fromPos.x + startH} ${fromPos.y} ` +
+          `L ${fromPos.x + startH + diagLen} ${fromPos.y + diagLen * yDir} ` +
+          `L ${midX} ${fromPos.y + diagLen * yDir} ` +
+          `L ${midX} ${toPos.y - diagLen * yDir} ` +
+          `L ${toPos.x - endH - diagLen} ${toPos.y - diagLen * yDir} ` +
+          `L ${toPos.x - endH} ${toPos.y} ` +
+          `L ${toPos.x} ${toPos.y}`;
+      }
+      
+      // Standard metro: horizontal -> 45° diagonal -> horizontal
+      // The diagonal covers the full vertical distance at 45°
+      const diagonalHorizontal = absDy; // At 45°, horizontal = vertical distance
+      const remainingHorizontal = absDx - diagonalHorizontal;
+      const startH = remainingHorizontal / 2;
+      const endH = remainingHorizontal / 2;
+      
+      return `M ${fromPos.x} ${fromPos.y} ` +
+        `L ${fromPos.x + startH} ${fromPos.y} ` +
+        `L ${fromPos.x + startH + diagonalHorizontal} ${toPos.y} ` +
+        `L ${toPos.x} ${toPos.y}`;
+    }
+    
+    if (connectionStyle === 'quadratic') {
+      // Simple single control point curve (lighter performance)
+      const midX = (fromPos.x + toPos.x) / 2;
+      const controlX = midX;
+      const controlY = (fromPos.y + toPos.y) / 2;
+      
+      // Use the midpoint but offset it based on horizontal distance for a nice curve
+      const offset = Math.min(Math.abs(toPos.x - fromPos.x) * 0.3, 80);
+      
+      return `M ${fromPos.x} ${fromPos.y} ` +
+        `Q ${fromPos.x + offset} ${fromPos.y}, ${midX} ${controlY} ` +
+        `T ${toPos.x} ${toPos.y}`;
+    }
+    
     // Default: bezier curve (fixed values - no scale dependency for stable canvas-space rendering)
     const distance = Math.abs(toPos.x - fromPos.x);
     const verticalDistance = Math.abs(toPos.y - fromPos.y);
@@ -430,8 +511,78 @@ export default function NodeGraph({
       return `M ${fromPos.x} ${fromPos.y} L ${midX} ${fromPos.y} L ${midX} ${toPos.y} L ${toPos.x} ${toPos.y}`;
     }
     
-    // Default: bezier curve with scale for screen-space temp line
     const scale = view.scale;
+    
+    if (connectionStyle === 'smooth-step') {
+      const midX = (fromPos.x + toPos.x) / 2;
+      const radius = Math.min(15 * scale, Math.abs(toPos.y - fromPos.y) / 2, Math.abs(midX - fromPos.x) / 2);
+      const yDir = toPos.y > fromPos.y ? 1 : -1;
+      
+      if (radius < 2 * scale) {
+        return `M ${fromPos.x} ${fromPos.y} L ${midX} ${fromPos.y} L ${midX} ${toPos.y} L ${toPos.x} ${toPos.y}`;
+      }
+      
+      return `M ${fromPos.x} ${fromPos.y} ` +
+        `L ${midX - radius} ${fromPos.y} ` +
+        `Q ${midX} ${fromPos.y} ${midX} ${fromPos.y + radius * yDir} ` +
+        `L ${midX} ${toPos.y - radius * yDir} ` +
+        `Q ${midX} ${toPos.y} ${midX + radius} ${toPos.y} ` +
+        `L ${toPos.x} ${toPos.y}`;
+    }
+    
+    if (connectionStyle === 'metro') {
+      // Clean metro-style with 45° diagonal in the middle
+      const dx = toPos.x - fromPos.x;
+      const dy = toPos.y - fromPos.y;
+      const absDy = Math.abs(dy);
+      const absDx = Math.abs(dx);
+      const yDir = dy > 0 ? 1 : -1;
+      
+      // For very short or nearly horizontal connections, use straight
+      if (absDx < 20 * scale || absDy < 5 * scale) {
+        return `M ${fromPos.x} ${fromPos.y} L ${toPos.x} ${toPos.y}`;
+      }
+      
+      const minHorizontal = 20 * scale;
+      const availableForDiagonal = absDx - (minHorizontal * 2);
+      
+      if (availableForDiagonal < absDy) {
+        const startH = minHorizontal;
+        const endH = minHorizontal;
+        const midX = (fromPos.x + toPos.x) / 2;
+        const diagLen = Math.min(absDy / 2, (midX - fromPos.x - startH));
+        
+        return `M ${fromPos.x} ${fromPos.y} ` +
+          `L ${fromPos.x + startH} ${fromPos.y} ` +
+          `L ${fromPos.x + startH + diagLen} ${fromPos.y + diagLen * yDir} ` +
+          `L ${midX} ${fromPos.y + diagLen * yDir} ` +
+          `L ${midX} ${toPos.y - diagLen * yDir} ` +
+          `L ${toPos.x - endH - diagLen} ${toPos.y - diagLen * yDir} ` +
+          `L ${toPos.x - endH} ${toPos.y} ` +
+          `L ${toPos.x} ${toPos.y}`;
+      }
+      
+      const diagonalHorizontal = absDy;
+      const remainingHorizontal = absDx - diagonalHorizontal;
+      const startH = remainingHorizontal / 2;
+      
+      return `M ${fromPos.x} ${fromPos.y} ` +
+        `L ${fromPos.x + startH} ${fromPos.y} ` +
+        `L ${fromPos.x + startH + diagonalHorizontal} ${toPos.y} ` +
+        `L ${toPos.x} ${toPos.y}`;
+    }
+    
+    if (connectionStyle === 'quadratic') {
+      const midX = (fromPos.x + toPos.x) / 2;
+      const controlY = (fromPos.y + toPos.y) / 2;
+      const offset = Math.min(Math.abs(toPos.x - fromPos.x) * 0.3, 80 * scale);
+      
+      return `M ${fromPos.x} ${fromPos.y} ` +
+        `Q ${fromPos.x + offset} ${fromPos.y}, ${midX} ${controlY} ` +
+        `T ${toPos.x} ${toPos.y}`;
+    }
+    
+    // Default: bezier curve with scale for screen-space temp line
     const distance = Math.abs(toPos.x - fromPos.x);
     const verticalDistance = Math.abs(toPos.y - fromPos.y);
     const alignmentRatio = distance > 0 ? Math.min(verticalDistance / distance, 2) : 1;
