@@ -2225,7 +2225,7 @@ export default function NodeGraph({
   return (
     <div
       ref={canvasRef}
-      className="relative w-full h-full bg-[#1a1f28] overflow-hidden"
+      className="node-graph-container relative w-full h-full bg-[#1a1f28] overflow-hidden"
       onClick={handleCanvasClick}
       onMouseDown={handleCanvasMouseDown}
       onMouseDownCapture={handleSelectionStart}
@@ -2268,7 +2268,11 @@ export default function NodeGraph({
           transformOrigin: '0 0',
           willChange: 'transform',
           backfaceVisibility: 'hidden',
-        }}
+          // Force crisp rendering at any scale
+          imageRendering: 'auto',
+          textRendering: 'geometricPrecision',
+          WebkitFontSmoothing: 'subpixel-antialiased',
+        } as React.CSSProperties}
       >
         {/* Render nodes first so DOM is ready for connection queries */}
         {nodes.map((node) => {

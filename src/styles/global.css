@@ -5,6 +5,12 @@ html, body, #root {
   height: 100%;
 }
 
+/* Force crisp rendering for scaled elements */
+.node-graph-container * {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 /* Unified surface tokens */
 :root {
   --panel-radius: 12px;
