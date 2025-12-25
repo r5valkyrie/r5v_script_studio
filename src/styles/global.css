@@ -20,6 +20,65 @@ html, body, #root {
   --accent-color-hover: #A78BFA;
   --accent-color-dim: rgba(139, 92, 246, 0.5);
   --accent-color-bg: rgba(139, 92, 246, 0.2);
+  
+  /* Font size scale */
+  --font-scale: 1;
+}
+
+/* Title bar icon uses accent color */
+.title-icon {
+  color: var(--accent-color);
+}
+
+/* Font size settings */
+[data-font-size="small"] {
+  --font-scale: 0.85;
+}
+
+[data-font-size="medium"] {
+  --font-scale: 1;
+}
+
+[data-font-size="large"] {
+  --font-scale: 1.15;
+}
+
+/* Apply font scaling to common text sizes */
+[data-font-size] .text-xs {
+  font-size: calc(0.75rem * var(--font-scale));
+}
+
+[data-font-size] .text-sm {
+  font-size: calc(0.875rem * var(--font-scale));
+}
+
+[data-font-size] .text-base {
+  font-size: calc(1rem * var(--font-scale));
+}
+
+[data-font-size] .text-lg {
+  font-size: calc(1.125rem * var(--font-scale));
+}
+
+/* Apply font scaling to hardcoded pixel sizes used in nodes */
+[data-font-size] .text-\[10px\] {
+  font-size: calc(10px * var(--font-scale));
+}
+
+[data-font-size] .text-\[11px\] {
+  font-size: calc(11px * var(--font-scale));
+}
+
+[data-font-size] .text-\[12px\] {
+  font-size: calc(12px * var(--font-scale));
+}
+
+/* Apply font scaling to form elements in nodes */
+[data-font-size] input,
+[data-font-size] select,
+[data-font-size] textarea,
+[data-font-size] button {
+  font-size: calc(1em * var(--font-scale));
 }
 
 /* Light theme overrides */
@@ -573,4 +632,20 @@ html, body, #root {
 
 .animate-slide-in {
   animation: slide-in 0.3s ease-out forwards;
+}
+
+/* Modal scale-in animation */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.15s ease-out forwards;
 }

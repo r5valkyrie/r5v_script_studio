@@ -8,6 +8,7 @@ interface ProjectSettingsModalProps {
   onClose: () => void;
   modSettings: ModSettings | undefined;
   onSave: (settings: ModSettings) => void;
+  onSaveComplete?: () => void;
   accentColor?: string;
 }
 
@@ -16,6 +17,7 @@ export default function ProjectSettingsModal({
   onClose,
   modSettings,
   onSave,
+  onSaveComplete,
   accentColor = '#8B5CF6',
 }: ProjectSettingsModalProps) {
   const [localSettings, setLocalSettings] = useState<ModSettings>(modSettings || DEFAULT_MOD_SETTINGS);
@@ -31,6 +33,7 @@ export default function ProjectSettingsModal({
 
   const handleSave = () => {
     onSave(localSettings);
+    onSaveComplete?.();
     onClose();
   };
 

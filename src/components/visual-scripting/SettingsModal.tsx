@@ -144,6 +144,7 @@ interface SettingsModalProps {
   onClose: () => void;
   settings: AppSettings;
   onSettingsChange: (settings: AppSettings) => void;
+  onSave?: () => void;
 }
 
 type TabId = 'general' | 'appearance' | 'editor' | 'keybindings';
@@ -153,6 +154,7 @@ export default function SettingsModal({
   onClose,
   settings,
   onSettingsChange,
+  onSave,
 }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<TabId>('general');
   const [localSettings, setLocalSettings] = useState<AppSettings>(settings);
@@ -210,6 +212,7 @@ export default function SettingsModal({
     onSettingsChange(localSettings);
     saveSettings(localSettings);
     setHasChanges(false);
+    onSave?.();
   };
 
   const handleReset = () => {
@@ -274,7 +277,7 @@ export default function SettingsModal({
 
   return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/70">
-      <div className="bg-[#1a1f28] rounded-xl shadow-2xl w-[800px] max-w-[90vw] h-[600px] max-h-[85vh] flex flex-col overflow-hidden">
+      <div className="bg-[#1a1f28] rounded-xl shadow-2xl w-[1000px] max-w-[90vw] h-[800px] max-h-[85vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
           <div className="flex items-center gap-3">

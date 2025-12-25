@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { PanelLeft, PanelRight, GitBranch, Code, Save, FolderOpen, FileDown, FileText, FilePlus, ChevronDown, ChevronLeft, ChevronRight, Folder, X, Settings, Package } from 'lucide-react';
 import SettingsModal, { loadSettings, saveSettings, DEFAULT_SETTINGS } from './visual-scripting/SettingsModal';
 import ProjectSettingsModal from './visual-scripting/ProjectSettingsModal';
-import { NotificationContainer, ExportPathModal, useNotifications } from './visual-scripting/Notification';
+import { NotificationContainer, ExportPathModal, useNotifications, useConfirmModal } from './visual-scripting/Notification';
 import type { AppSettings } from './visual-scripting/SettingsModal';
 import type { ScriptNode, NodeConnection } from '../types/visual-scripting';
 import type { ModSettings } from '../types/project';
@@ -47,7 +47,8 @@ export default function VisualScriptEditor() {
   const fileMenuRef = useRef<HTMLDivElement>(null);
   
   // Notification system
-  const { notifications, dismissNotification, success, error, warning, info } = useNotifications();
+  const { notifications, dismissNotification, success, error, warning } = useNotifications();
+  const { confirm, ConfirmModal } = useConfirmModal();
   const pendingCompileRef = useRef(false);
 
   // Load settings from localStorage after hydration
@@ -317,7 +318,8 @@ export default function VisualScriptEditor() {
     history.future.push(history.present);
     history.present = previous;
     restoreSnapshot(previous);
-  }, [restoreSnapshot]);
+    success('Undo', undefined, 1500);
+  }, [restoreSnapshot, success]);
 
   const handleRedo = useCallback(() => {
     const history = historyRef.current;
@@ -327,7 +329,8 @@ export default function VisualScriptEditor() {
     history.past.push(history.present);
     history.present = next;
     restoreSnapshot(next);
-  }, [restoreSnapshot]);
+    success('Redo', undefined, 1500);
+  }, [restoreSnapshot, success]);
 
   const forceHistorySnapshot = useCallback(() => {
     if (!activeScriptFile || isLoadingRef.current) return;
@@ -412,7 +415,7 @@ export default function VisualScriptEditor() {
     }
   }, [appSettings.general.confirmOnDelete]);
 
-  const handleDeleteSelectedNodes = useCallback((nodeIds: string[]) => {
+  const handleDeleteSelectedNodes = useCallback(async (nodeIds: string[]) => {
     if (nodeIds.length === 0) return;
     
     const doDelete = () => {
@@ -424,13 +427,20 @@ export default function VisualScriptEditor() {
     };
 
     if (appSettings.general.confirmOnDelete) {
-      if (window.confirm(`Are you sure you want to delete ${nodeIds.length} node${nodeIds.length > 1 ? 's' : ''}?`)) {
+      const confirmed = await confirm({
+        title: 'Delete Nodes',
+        message: `Are you sure you want to delete ${nodeIds.length} node${nodeIds.length > 1 ? 's' : ''}? This action cannot be undone.`,
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        variant: 'danger',
+      });
+      if (confirmed) {
         doDelete();
       }
     } else {
       doDelete();
     }
-  }, [appSettings.general.confirmOnDelete]);
+  }, [appSettings.general.confirmOnDelete, confirm]);
 
   const handleConnect = useCallback((newConnection: NodeConnection) => {
     // Prevent duplicate connections
@@ -473,8 +483,11 @@ export default function VisualScriptEditor() {
     const finalCode = embedProjectInCode(codeWithMetadata, projectData);
     
     const fileName = `${projectData.metadata.name.replace(/\s+/g, '_')}.nut`;
-    await saveSquirrelCode(finalCode, fileName);
-  }, [generatedCode, projectData]);
+    const saved = await saveSquirrelCode(finalCode, fileName);
+    if (saved) {
+      success('Exported', fileName, 2000);
+    }
+  }, [generatedCode, projectData, success]);
 
   // Handle export path selection from modal
   const handleExportPathSelect = useCallback(async (selectedPath: string) => {
@@ -500,9 +513,10 @@ export default function VisualScriptEditor() {
       });
 
       if (result.success) {
+        const modName = result.outputPath?.split('/').pop() || 'Mod';
         success(
-          'Project Compiled Successfully!',
-          `Output: ${result.outputPath}\n\nFiles created:\n• ${result.filesCreated?.join('\n• ')}`
+          'Compiled Successfully!',
+          `${modName} • ${result.filesCreated?.length || 0} files`
         );
       } else {
         error('Compilation Failed', result.error);
@@ -532,14 +546,24 @@ export default function VisualScriptEditor() {
     });
 
     if (result.success) {
+      const modName = result.outputPath?.split('/').pop() || 'Mod';
       success(
-        'Project Compiled Successfully!',
-        `Output: ${result.outputPath}\n\nFiles created:\n• ${result.filesCreated?.join('\n• ')}`
+        'Compiled Successfully!',
+        `${modName} • ${result.filesCreated?.length || 0} files`
       );
     } else {
       error('Compilation Failed', result.error);
     }
   }, [projectData, appSettings.general.exportPath, success, error, warning]);
+
+  // Save project with notification
+  const handleSaveProject = useCallback(async () => {
+    const saved = await saveProject();
+    if (saved) {
+      const projectName = projectData?.metadata.name || 'Project';
+      success('Saved', projectName, 2000);
+    }
+  }, [saveProject, projectData?.metadata.name, success]);
 
   // Update mod settings handler
   const handleUpdateModSettings = useCallback((settings: ModSettings) => {
@@ -595,7 +619,7 @@ export default function VisualScriptEditor() {
       // Save shortcuts
       if (matchesKeybind(e, keybinds.save)) {
         e.preventDefault();
-        saveProject();
+        handleSaveProject();
         return;
       }
       
@@ -726,11 +750,7 @@ export default function VisualScriptEditor() {
   }, [isFileMenuOpen]);
 
   // Compute font size class based on settings
-  const fontSizeClass = {
-    small: 'text-xs',
-    medium: 'text-sm',
-    large: 'text-base',
-  }[appSettings.appearance.fontSize];
+  const fontSize = appSettings.appearance.fontSize;
 
   // Compute accent color variants
   const accentColor = appSettings.appearance.accentColor;
@@ -757,14 +777,23 @@ export default function VisualScriptEditor() {
     document.documentElement.setAttribute('data-theme', effectiveTheme);
   }, [effectiveTheme]);
 
+  // Set accent color on document root so it's available to title bar
+  useEffect(() => {
+    document.documentElement.style.setProperty('--accent-color', accentColor);
+    document.documentElement.style.setProperty('--accent-color-hover', accentHover);
+    document.documentElement.style.setProperty('--accent-color-dim', accentDim);
+    document.documentElement.style.setProperty('--accent-color-bg', accentBg);
+  }, [accentColor, accentHover, accentDim, accentBg]);
+
   return (
     <div 
-      className={`w-screen h-screen flex flex-col ${fontSizeClass} ${
+      className={`w-screen h-screen flex flex-col ${
         effectiveTheme === 'light' 
           ? 'bg-gray-100 text-gray-900' 
           : 'bg-[#0f1419] text-white'
       }`}
       data-theme={effectiveTheme}
+      data-font-size={fontSize}
       style={{
         '--accent-color': accentColor,
         '--accent-color-hover': accentHover,
@@ -783,24 +812,24 @@ export default function VisualScriptEditor() {
         />
       ) : (
         <>
-          {/* Tab Bar */}
-          <div className="flex items-center justify-between bg-[#0a0d10] border-b border-white/10 px-2">
-        <div className="flex items-center gap-2">
+          {/* Menu Bar */}
+          <div className="flex items-center justify-between bg-gradient-to-r from-[#0a0d10] via-[#0d1117] to-[#0a0d10] border-b border-white/5 px-3 h-10">
+        <div className="flex items-center gap-1">
           {/* File Menu */}
           <div className="relative" ref={fileMenuRef}>
             <button
               onClick={() => setFileMenuOpen(!isFileMenuOpen)}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-md transition-all duration-200"
             >
-              <FileText size={16} />
-              File
-              {hasUnsavedChanges && <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full" />}
-              <ChevronDown size={14} className={`transition-transform ${isFileMenuOpen ? 'rotate-180' : ''}`} />
+              <FileText size={14} style={{ color: isFileMenuOpen ? accentColor : undefined }} />
+              <span>File</span>
+              {hasUnsavedChanges && <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse" />}
+              <ChevronDown size={12} className={`text-gray-500 transition-transform duration-200 ${isFileMenuOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {/* Dropdown Menu */}
             {isFileMenuOpen && (
-              <div className="absolute top-full left-0 mt-1 w-80 bg-[#1a1f26] border border-white/10 rounded-lg shadow-xl z-50 py-1">
+              <div className="absolute top-full left-0 mt-1.5 w-72 bg-[#1a1f28]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 py-1.5 overflow-hidden">
                 <button
                   onClick={() => {
                     newProject();
@@ -808,9 +837,9 @@ export default function VisualScriptEditor() {
                   }}
                   className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
                 >
-                  <FilePlus size={16} />
+                  <FilePlus size={15} className="text-gray-500" />
                   <span>New Project</span>
-                  <span className="ml-auto text-xs text-gray-500">Ctrl+N</span>
+                  <span className="ml-auto text-[10px] text-gray-600 font-mono">Ctrl+N</span>
                 </button>
                 <button
                   onClick={async () => {
@@ -819,21 +848,21 @@ export default function VisualScriptEditor() {
                   }}
                   className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
                 >
-                  <FolderOpen size={16} />
+                  <FolderOpen size={15} className="text-gray-500" />
                   <span>Open Project...</span>
-                  <span className="ml-auto text-xs text-gray-500">Ctrl+O</span>
+                  <span className="ml-auto text-[10px] text-gray-600 font-mono">Ctrl+O</span>
                 </button>
-                <div className="h-px bg-white/10 my-1" />
+                <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-1.5 mx-2" />
                 <button
                   onClick={() => {
-                    saveProject();
+                    handleSaveProject();
                     setFileMenuOpen(false);
                   }}
                   className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
                 >
-                  <Save size={16} />
+                  <Save size={15} className="text-gray-500" />
                   <span>Save</span>
-                  <span className="ml-auto text-xs text-gray-500">Ctrl+S</span>
+                  <span className="ml-auto text-[10px] text-gray-600 font-mono">Ctrl+S</span>
                 </button>
                 <button
                   onClick={() => {
@@ -842,11 +871,11 @@ export default function VisualScriptEditor() {
                   }}
                   className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
                 >
-                  <Save size={16} />
+                  <Save size={15} className="text-gray-500" />
                   <span>Save As...</span>
-                  <span className="ml-auto text-xs text-gray-500">Ctrl+Shift+S</span>
+                  <span className="ml-auto text-[10px] text-gray-600 font-mono">Ctrl+Shift+S</span>
                 </button>
-                <div className="h-px bg-white/10 my-1" />
+                <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-1.5 mx-2" />
                 <button
                   onClick={() => {
                     handleExportCode();
@@ -854,7 +883,7 @@ export default function VisualScriptEditor() {
                   }}
                   className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
                 >
-                  <FileDown size={16} />
+                  <FileDown size={15} className="text-gray-500" />
                   <span>Export Squirrel Code</span>
                 </button>
                 <button
@@ -864,11 +893,11 @@ export default function VisualScriptEditor() {
                   }}
                   className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
                 >
-                  <Code size={16} />
+                  <Code size={15} className="text-gray-500" />
                   <span>Compile Project</span>
-                  <span className="ml-auto text-xs text-gray-500">Ctrl+B</span>
+                  <span className="ml-auto text-[10px] text-gray-600 font-mono">Ctrl+B</span>
                 </button>
-                <div className="h-px bg-white/10 my-1" />
+                <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-1.5 mx-2" />
                 <button
                   onClick={() => {
                     setProjectSettingsOpen(true);
@@ -876,7 +905,7 @@ export default function VisualScriptEditor() {
                   }}
                   className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
                 >
-                  <Folder size={16} />
+                  <Folder size={15} className="text-gray-500" />
                   <span>Project Settings</span>
                 </button>
                 <button
@@ -886,35 +915,47 @@ export default function VisualScriptEditor() {
                   }}
                   className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
                 >
-                  <Settings size={16} />
+                  <Settings size={15} className="text-gray-500" />
                   <span>Settings</span>
                 </button>
               </div>
             )}
           </div>
 
-          <div className="w-px h-6 bg-white/10" />
-
           <div className="flex-1" />
         </div>
 
-        {/* Node count indicator */}
-        <div className="flex items-center gap-4 px-4 text-xs text-gray-500">
-          <span>{nodes.length} nodes</span>
-          <span>{connections.length} connections</span>
-          {currentFilePath && <span className="truncate max-w-xs" title={currentFilePath}>{currentFilePath.split('/').pop()}</span>}
+        {/* Status Bar */}
+        <div className="flex items-center gap-3 px-4 h-7 bg-[#0a0d10]/80 border-t border-white/5">
+          <div className="flex items-center gap-3 text-[10px] text-gray-500">
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accentColor }} />
+              {nodes.length} nodes
+            </span>
+            <span className="text-gray-600">•</span>
+            <span>{connections.length} connections</span>
+          </div>
+          
+          {currentFilePath && (
+            <>
+              <span className="text-gray-700">|</span>
+              <span className="text-[10px] text-gray-600 truncate max-w-xs font-mono" title={currentFilePath}>
+                {currentFilePath.split('/').pop()}
+              </span>
+            </>
+          )}
           
           <div className="flex-1" />
           
           {/* Compile button */}
           <button
             onClick={handleCompileProject}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-white transition-colors hover:brightness-110"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-white text-[11px] font-medium transition-all duration-200 hover:brightness-110 hover:scale-[1.02] active:scale-[0.98]"
             style={{ backgroundColor: accentColor }}
             title="Compile Project (Ctrl+B)"
           >
-            <Package size={14} />
-            <span className="font-medium">Compile</span>
+            <Package size={12} />
+            <span>Compile</span>
           </button>
         </div>
       </div>
@@ -923,7 +964,7 @@ export default function VisualScriptEditor() {
       <div className="flex-1 flex flex-col overflow-hidden">
           {/* File Tabs - spans full width */}
           {openFileTabs.length > 0 && (
-            <div className="flex-shrink-0 flex items-center bg-[#1a1f26] border-b border-white/10 overflow-x-auto">
+            <div className="flex-shrink-0 flex items-center bg-gradient-to-b from-[#0f1419] to-[#151a21] border-b border-white/5 overflow-x-auto px-1 gap-1 h-9">
               {openFileTabs.map(fileId => {
                 const file = scriptFiles.find(f => f.id === fileId);
                 if (!file) return null;
@@ -932,27 +973,37 @@ export default function VisualScriptEditor() {
                 return (
                   <div
                     key={fileId}
-                    className={`flex items-center gap-2 px-3 py-2 cursor-pointer border-r border-white/10 group ${
+                    className={`relative flex items-center gap-2 px-3 py-1.5 cursor-pointer group rounded-t-lg transition-all duration-200 ${
                       isActive 
-                        ? 'bg-[#2a3341] text-white' 
-                        : 'text-gray-400 hover:bg-[#252b35] hover:text-gray-200'
+                        ? 'bg-[#1a1f28] text-white shadow-lg' 
+                        : 'text-gray-500 hover:bg-[#1a1f28]/50 hover:text-gray-300'
                     }`}
-                    style={isActive ? { borderBottom: `2px solid ${accentColor}` } : undefined}
                     onClick={() => setActiveScriptFile(fileId)}
                   >
-                    <FileText size={14} style={{ color: isActive ? accentColor : undefined }} className={isActive ? '' : 'text-gray-500'} />
-                    <span className="text-sm whitespace-nowrap">{file.name}</span>
+                    {/* Active tab indicator line */}
+                    {isActive && (
+                      <div 
+                        className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full"
+                        style={{ backgroundColor: accentColor }}
+                      />
+                    )}
+                    <FileText 
+                      size={13} 
+                      style={{ color: isActive ? accentColor : undefined }} 
+                      className={`flex-shrink-0 ${isActive ? '' : 'text-gray-600'}`} 
+                    />
+                    <span className="text-xs font-medium whitespace-nowrap">{file.name}</span>
                     <button
                       onClick={(e) => handleCloseTab(fileId, e)}
-                      className={`ml-1 p-0.5 rounded hover:bg-white/10 transition-opacity ${
+                      className={`ml-0.5 p-1 rounded-md hover:bg-white/10 transition-all duration-200 ${
                         isModified ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                       }`}
                       title={isModified ? "Unsaved changes - Close tab" : "Close tab"}
                     >
                       {isModified ? (
-                        <div className="w-3 h-3 rounded-full bg-orange-400 group-hover:hidden" />
+                        <div className="w-2 h-2 rounded-full bg-orange-400 group-hover:hidden" />
                       ) : null}
-                      <X size={12} className={isModified ? 'hidden group-hover:block' : ''} />
+                      <X size={11} className={`text-gray-400 hover:text-white ${isModified ? 'hidden group-hover:block' : ''}`} />
                     </button>
                   </div>
                 );
@@ -1058,30 +1109,43 @@ export default function VisualScriptEditor() {
             {!isSidebarOpen && (
               <div
                 onClick={() => setSidebarOpen(true)}
-                className="flex-shrink-0 h-full w-[28px] bg-gradient-to-r from-[#1a1f26] to-[#1e242c] hover:from-[#1e2430] hover:to-[#252d38] transition-all flex flex-col items-center justify-center gap-3 group cursor-pointer shadow-2xl relative"
-                style={{ borderRight: `1px solid ${accentColor}50` }}
+                className="flex-shrink-0 h-full w-10 bg-gradient-to-r from-[#0f1419] via-[#151a21] to-[#1a1f28] hover:from-[#151a21] hover:via-[#1a1f28] hover:to-[#1e242c] transition-all duration-300 flex flex-col items-center py-4 group cursor-pointer relative overflow-hidden"
+                style={{ borderRight: `2px solid ${accentColor}40` }}
                 title="Show Sidebar"
               >
-                {/* Icon at top */}
-                <div className="absolute top-4 p-1.5 rounded transition-colors" style={{ backgroundColor: `${accentColor}30` }}>
-                  <Folder size={12} style={{ color: accentColor }} />
-                </div>
-                
-                {/* Vertical text in center */}
+                {/* Accent glow on hover */}
                 <div 
-                  className="text-[10px] text-gray-500 group-hover:text-white font-bold tracking-[0.2em] transition-colors"
-                  style={{ writingMode: 'vertical-rl' }}
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{ background: `linear-gradient(to right, ${accentColor}10, transparent)` }}
+                />
+                
+                {/* Icon */}
+                <div 
+                  className="p-2 rounded-lg transition-all duration-300 group-hover:scale-110" 
+                  style={{ backgroundColor: `${accentColor}20` }}
                 >
-                  SIDEBAR
+                  <Folder size={14} style={{ color: accentColor }} />
                 </div>
                 
-                {/* Chevron hint */}
-                <div className="absolute bottom-4 text-gray-600 group-hover:text-white transition-colors">
-                  <ChevronRight size={14} />
+                {/* Vertical text */}
+                <div 
+                  className="flex-1 flex items-center justify-center"
+                >
+                  <div 
+                    className="text-[9px] text-gray-500 group-hover:text-gray-300 font-semibold tracking-[0.25em] transition-colors duration-300 uppercase"
+                    style={{ writingMode: 'vertical-rl' }}
+                  >
+                    Explorer
+                  </div>
                 </div>
                 
-                {/* Side glow line on hover */}
-                <div className="absolute right-0 top-0 bottom-0 w-px transition-colors" style={{ backgroundColor: `${accentColor}00` }} />
+                {/* Chevron indicator */}
+                <div 
+                  className="p-1.5 rounded-full transition-all duration-300 group-hover:translate-x-0.5"
+                  style={{ backgroundColor: `${accentColor}15` }}
+                >
+                  <ChevronRight size={12} className="text-gray-500 group-hover:text-gray-300 transition-colors" />
+                </div>
               </div>
             )}
 
@@ -1130,15 +1194,44 @@ export default function VisualScriptEditor() {
 
             {/* Inspector Toggle Button */}
             {selectedNode && !isInspectorOpen && (
-              <button
+              <div
                   onClick={() => setInspectorOpen(true)}
-                  className="absolute right-0 z-50 px-2 py-4 bg-[#2a3341] hover:bg-[#363f4f] transition-all flex flex-col items-center gap-2 group shadow-xl"
-                  style={{ top: '60px', borderLeft: `2px solid ${accentColor}80` }}
+                  className="absolute right-0 z-50 h-40 w-10 bg-gradient-to-l from-[#0f1419] via-[#151a21] to-[#1a1f28] hover:from-[#151a21] hover:via-[#1a1f28] hover:to-[#1e242c] transition-all duration-300 flex flex-col items-center py-4 group cursor-pointer rounded-l-xl overflow-hidden"
+                  style={{ top: '80px', borderLeft: `2px solid ${accentColor}40`, boxShadow: `-4px 0 20px rgba(0,0,0,0.3)` }}
                   title="Show Inspector"
               >
-                  <PanelLeft size={18} style={{ color: accentColor }} />
-                  <div className="text-[9px] text-gray-400 group-hover:text-white font-semibold tracking-wider" style={{ writingMode: 'vertical-rl' }}>INSPECTOR</div>
-              </button>
+                  {/* Accent glow on hover */}
+                  <div 
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style={{ background: `linear-gradient(to left, ${accentColor}10, transparent)` }}
+                  />
+                  
+                  {/* Icon */}
+                  <div 
+                    className="p-2 rounded-lg transition-all duration-300 group-hover:scale-110" 
+                    style={{ backgroundColor: `${accentColor}20` }}
+                  >
+                    <PanelLeft size={14} style={{ color: accentColor }} />
+                  </div>
+                  
+                  {/* Vertical text */}
+                  <div className="flex-1 flex items-center justify-center">
+                    <div 
+                      className="text-[9px] text-gray-500 group-hover:text-gray-300 font-semibold tracking-[0.2em] transition-colors duration-300" 
+                      style={{ writingMode: 'vertical-rl' }}
+                    >
+                      INSPECT
+                    </div>
+                  </div>
+                  
+                  {/* Chevron indicator */}
+                  <div 
+                    className="p-1.5 rounded-full transition-all duration-300 group-hover:-translate-x-0.5"
+                    style={{ backgroundColor: `${accentColor}15` }}
+                  >
+                    <ChevronLeft size={12} className="text-gray-500 group-hover:text-gray-300 transition-colors" />
+                  </div>
+              </div>
             )}
 
             {/* Node Inspector */}
@@ -1184,33 +1277,44 @@ export default function VisualScriptEditor() {
             {/* Code Panel Toggle Button (when closed) */}
             {!isCodePanelOpen && (
               <div 
-                className="flex-shrink-0 h-full w-[28px] bg-gradient-to-l from-[#1a1f26] to-[#1e242c] hover:from-[#1e2430] hover:to-[#252d38] transition-all flex flex-col items-center justify-center gap-3 group cursor-pointer shadow-2xl relative"
-                style={{ borderLeft: `1px solid ${accentColor}4D` }}
-                onMouseEnter={(e) => e.currentTarget.style.borderLeftColor = `${accentColor}99`}
-                onMouseLeave={(e) => e.currentTarget.style.borderLeftColor = `${accentColor}4D`}
+                className="flex-shrink-0 h-full w-10 bg-gradient-to-l from-[#0f1419] via-[#151a21] to-[#1a1f28] hover:from-[#151a21] hover:via-[#1a1f28] hover:to-[#1e242c] transition-all duration-300 flex flex-col items-center py-4 group cursor-pointer relative overflow-hidden"
+                style={{ borderLeft: `2px solid ${accentColor}40` }}
                 onClick={() => setCodePanelOpen(true)}
                 title="Show Generated Code (Ctrl+Shift+C)"
               >
-                {/* Icon at top */}
-                <div className="absolute top-4 p-1.5 rounded transition-colors" style={{ backgroundColor: `${accentColor}33` }}>
-                  <Code size={12} style={{ color: accentColor }} />
-                </div>
-                
-                {/* Vertical text in center */}
+                {/* Accent glow on hover */}
                 <div 
-                  className="text-[10px] text-gray-500 group-hover:text-gray-300 font-bold tracking-[0.2em] transition-colors"
-                  style={{ writingMode: 'vertical-rl' }}
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{ background: `linear-gradient(to left, ${accentColor}10, transparent)` }}
+                />
+                
+                {/* Icon */}
+                <div 
+                  className="p-2 rounded-lg transition-all duration-300 group-hover:scale-110" 
+                  style={{ backgroundColor: `${accentColor}20` }}
                 >
-                  CODE
+                  <Code size={14} style={{ color: accentColor }} />
                 </div>
                 
-                {/* Chevron hint */}
-                <div className="absolute bottom-4 text-gray-600 transition-colors" style={{ color: undefined }}>
-                  <ChevronLeft size={14} className="group-hover:text-gray-400" />
+                {/* Vertical text */}
+                <div 
+                  className="flex-1 flex items-center justify-center"
+                >
+                  <div 
+                    className="text-[9px] text-gray-500 group-hover:text-gray-300 font-semibold tracking-[0.25em] transition-colors duration-300 uppercase"
+                    style={{ writingMode: 'vertical-rl' }}
+                  >
+                    Code
+                  </div>
                 </div>
                 
-                {/* Side glow line on hover */}
-                <div className="absolute left-0 top-0 bottom-0 w-px transition-colors" style={{ backgroundColor: `${accentColor}00` }} />
+                {/* Chevron indicator */}
+                <div 
+                  className="p-1.5 rounded-full transition-all duration-300 group-hover:-translate-x-0.5"
+                  style={{ backgroundColor: `${accentColor}15` }}
+                >
+                  <ChevronLeft size={12} className="text-gray-500 group-hover:text-gray-300 transition-colors" />
+                </div>
               </div>
             )}
           </div>
@@ -1222,6 +1326,7 @@ export default function VisualScriptEditor() {
         onClose={() => setSettingsOpen(false)}
         settings={appSettings}
         onSettingsChange={setAppSettings}
+        onSave={() => success('Settings Saved', undefined, 2000)}
       />
 
       {/* Project Settings Modal */}
@@ -1230,6 +1335,7 @@ export default function VisualScriptEditor() {
         onClose={() => setProjectSettingsOpen(false)}
         modSettings={projectData?.settings.mod}
         onSave={handleUpdateModSettings}
+        onSaveComplete={() => success('Project Settings Saved', undefined, 2000)}
         accentColor={accentColor}
       />
 
@@ -1249,6 +1355,9 @@ export default function VisualScriptEditor() {
         notifications={notifications}
         onDismiss={dismissNotification}
       />
+
+      {/* Confirm Modal */}
+      <ConfirmModal accentColor={accentColor} />
       </>
       )}
     </div>

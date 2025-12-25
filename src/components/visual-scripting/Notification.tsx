@@ -218,3 +218,167 @@ export function ExportPathModal({ isOpen, onClose, onSelect, accentColor = '#8B5
     </div>
   );
 }
+
+// Confirm Modal
+export interface ConfirmModalProps {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  variant?: 'danger' | 'warning' | 'info';
+  onConfirm: () => void;
+  onCancel: () => void;
+  accentColor?: string;
+}
+
+export function ConfirmModal({
+  isOpen,
+  title,
+  message,
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
+  variant = 'danger',
+  onConfirm,
+  onCancel,
+  accentColor = '#8B5CF6',
+}: ConfirmModalProps) {
+  // Handle escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onCancel();
+      } else if (e.key === 'Enter') {
+        onConfirm();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onConfirm, onCancel]);
+
+  if (!isOpen) return null;
+
+  const variantStyles = {
+    danger: {
+      icon: <XCircle size={24} className="text-red-400" />,
+      buttonBg: 'bg-red-600 hover:bg-red-700',
+      iconBg: 'bg-red-500/20',
+    },
+    warning: {
+      icon: <AlertCircle size={24} className="text-yellow-400" />,
+      buttonBg: 'bg-yellow-600 hover:bg-yellow-700',
+      iconBg: 'bg-yellow-500/20',
+    },
+    info: {
+      icon: <AlertCircle size={24} style={{ color: accentColor }} />,
+      buttonBg: 'hover:brightness-110',
+      iconBg: `bg-purple-500/20`,
+    },
+  };
+
+  const styles = variantStyles[variant];
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onCancel} />
+
+      {/* Modal */}
+      <div className="relative w-full max-w-md bg-[#1a1f28] rounded-xl shadow-2xl border border-white/10 overflow-hidden animate-scale-in">
+        {/* Content */}
+        <div className="p-6">
+          <div className="flex items-start gap-4">
+            <div className={`p-3 rounded-full ${styles.iconBg}`}>
+              {styles.icon}
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-white">{title}</h3>
+              <p className="mt-2 text-sm text-gray-400">{message}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/10 bg-black/20">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+          >
+            {cancelText}
+          </button>
+          <button
+            onClick={onConfirm}
+            className={`px-4 py-2 text-white rounded-lg transition-colors ${styles.buttonBg}`}
+            style={variant === 'info' ? { backgroundColor: accentColor } : undefined}
+          >
+            {confirmText}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Hook for managing confirm dialogs
+export interface ConfirmOptions {
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  variant?: 'danger' | 'warning' | 'info';
+}
+
+export function useConfirmModal() {
+  const [state, setState] = useState<{
+    isOpen: boolean;
+    options: ConfirmOptions;
+    resolve: ((value: boolean) => void) | null;
+  }>({
+    isOpen: false,
+    options: { title: '', message: '' },
+    resolve: null,
+  });
+
+  const confirm = useCallback((options: ConfirmOptions): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setState({
+        isOpen: true,
+        options,
+        resolve,
+      });
+    });
+  }, []);
+
+  const handleConfirm = useCallback(() => {
+    state.resolve?.(true);
+    setState((prev) => ({ ...prev, isOpen: false, resolve: null }));
+  }, [state.resolve]);
+
+  const handleCancel = useCallback(() => {
+    state.resolve?.(false);
+    setState((prev) => ({ ...prev, isOpen: false, resolve: null }));
+  }, [state.resolve]);
+
+  const ConfirmModalComponent = useCallback(
+    ({ accentColor }: { accentColor?: string }) => (
+      <ConfirmModal
+        isOpen={state.isOpen}
+        title={state.options.title}
+        message={state.options.message}
+        confirmText={state.options.confirmText}
+        cancelText={state.options.cancelText}
+        variant={state.options.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+        accentColor={accentColor}
+      />
+    ),
+    [state.isOpen, state.options, handleConfirm, handleCancel]
+  );
+
+  return {
+    confirm,
+    ConfirmModal: ConfirmModalComponent,
+  };
+}
