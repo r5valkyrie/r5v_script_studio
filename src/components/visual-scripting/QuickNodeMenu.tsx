@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, X } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { NODE_DEFINITIONS } from '../../data/node-definitions';
 import type { ScriptNode, NodeDefinition, NodeDataType } from '../../types/visual-scripting';
 import { CATEGORY_INFO } from '../../types/visual-scripting';
@@ -15,6 +15,7 @@ interface QuickNodeMenuProps {
   };
   onSelectNode: (node: ScriptNode, connectToPortIndex: number) => void;
   onClose: () => void;
+  accentColor?: string;
 }
 
 // Check if two data types are compatible
@@ -41,11 +42,14 @@ export default function QuickNodeMenu({
   sourcePort,
   onSelectNode,
   onClose,
+  accentColor = '#8B5CF6',
 }: QuickNodeMenuProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   // Focus search on mount
   useEffect(() => {
@@ -224,10 +228,33 @@ export default function QuickNodeMenu({
     return info?.label || categoryId;
   };
 
+  // Flat list for keyboard navigation
+  const flatNodeList = useMemo(() => {
+    const flat: NodeDefinition[] = [];
+    Object.values(groupedNodes).forEach(nodes => flat.push(...nodes));
+    return flat;
+  }, [groupedNodes]);
+
+  // Reset selected index when search changes
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [searchQuery, selectedCategory]);
+
+  // Scroll selected into view
+  useEffect(() => {
+    if (listRef.current && flatNodeList.length > 0) {
+      const items = listRef.current.querySelectorAll('[data-node-item]');
+      const selected = items[selectedIndex] as HTMLElement;
+      if (selected) {
+        selected.scrollIntoView({ block: 'nearest' });
+      }
+    }
+  }, [selectedIndex, flatNodeList.length]);
+
   // Calculate menu position to keep it on screen
   const menuStyle = useMemo(() => {
-    const menuWidth = 320;
-    const menuHeight = 400;
+    const menuWidth = 360;
+    const menuHeight = 420;
     let x = position.x;
     let y = position.y;
 
@@ -246,120 +273,135 @@ export default function QuickNodeMenu({
     return { left: x, top: y };
   }, [position]);
 
+  // Handle keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex(prev => Math.min(prev + 1, flatNodeList.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex(prev => Math.max(prev - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (flatNodeList[selectedIndex]) {
+        handleNodeClick(flatNodeList[selectedIndex]);
+      }
+    }
+  };
+
   return (
     <div
       ref={menuRef}
       data-quick-node-menu="true"
-      className="fixed z-[1000] bg-[#1a1f28] border border-white/20 rounded-lg shadow-2xl overflow-hidden"
-      style={{
-        ...menuStyle,
-        width: 320,
-        maxHeight: 400,
-      }}
+      className="fixed z-[1000] w-[340px] bg-[#1a1d24] border border-white/10 rounded-xl shadow-2xl overflow-hidden"
+      style={menuStyle}
       onWheel={(e) => e.stopPropagation()}
+      onKeyDown={handleKeyDown}
     >
-      {/* Header */}
-      <div className="bg-[#0f1419] px-3 py-2 border-b border-white/10 flex items-center gap-2">
-        <Search size={14} className="text-gray-500" />
+      {/* Search Input */}
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
+        <Search size={16} className="text-white/40" />
         <input
           ref={searchRef}
           type="text"
           placeholder="Search nodes..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="flex-1 bg-transparent text-sm text-white placeholder-gray-500 outline-none"
+          className="flex-1 bg-transparent text-sm text-white placeholder-white/40 outline-none"
         />
-        <button
-          onClick={onClose}
-          className="p-1 hover:bg-white/10 rounded transition-colors"
-        >
-          <X size={14} className="text-gray-500" />
-        </button>
-      </div>
-
-      {/* Category Tabs */}
-      <div className="flex gap-1 px-2 py-2 bg-[#151a21] border-b border-white/10 overflow-x-auto">
-        <button
-          onClick={() => setSelectedCategory(null)}
-          className={`px-2 py-1 text-xs rounded whitespace-nowrap transition-colors ${
-            selectedCategory === null
-              ? 'text-white'
-              : 'bg-white/5 text-gray-400 hover:bg-white/10'
-          }`}
-          style={selectedCategory === null ? { backgroundColor: 'var(--accent-color)' } : undefined}
-        >
-          All
-        </button>
-        {Object.keys(groupedNodes).map((category) => (
-          <button
-            key={category}
-            onClick={() => setSelectedCategory(category)}
-            className={`px-2 py-1 text-xs rounded whitespace-nowrap transition-colors ${
-              selectedCategory === category
-                ? 'text-white'
-                : 'bg-white/5 text-gray-400 hover:bg-white/10'
-            }`}
-            style={{
-              backgroundColor:
-                selectedCategory === category ? getCategoryColor(category) : undefined,
-            }}
+        {sourcePort && (
+          <div 
+            className="px-2 py-0.5 rounded text-[10px] bg-white/5 text-white/40"
           >
-            {getCategoryLabel(category)}
-          </button>
-        ))}
+            {sourcePort.portType === 'exec' ? 'exec' : sourcePort.dataType || 'data'}
+          </div>
+        )}
       </div>
 
-      {/* Node List */}
-      <div className="overflow-y-auto" style={{ maxHeight: 300 }}>
+      {/* Results List */}
+      <div ref={listRef} className="max-h-[320px] overflow-y-auto">
         {Object.entries(groupedNodes).length === 0 ? (
-          <div className="p-4 text-center text-gray-500 text-sm">
+          <div className="px-4 py-8 text-center text-white/40 text-sm">
             No compatible nodes found
           </div>
         ) : (
-          Object.entries(groupedNodes).map(([category, nodes]) => (
-            <div key={category}>
-              {!selectedCategory && (
+          Object.entries(groupedNodes).map(([category, nodes]) => {
+            // Calculate starting index for this category
+            let startIdx = 0;
+            for (const [cat, catNodes] of Object.entries(groupedNodes)) {
+              if (cat === category) break;
+              startIdx += catNodes.length;
+            }
+            
+            return (
+              <div key={category}>
+                {/* Category Header */}
                 <div
-                  className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider sticky top-0"
-                  style={{
-                    backgroundColor: getCategoryColor(category),
-                    color: 'white',
-                  }}
+                  className="px-4 py-1.5 text-[10px] font-medium uppercase tracking-wider sticky top-0 bg-[#1a1d24] border-b border-white/5"
+                  style={{ color: getCategoryColor(category) }}
                 >
                   {getCategoryLabel(category)}
                 </div>
-              )}
-              {nodes.map((node) => (
-                <button
-                  key={node.type}
-                  onClick={() => handleNodeClick(node)}
-                  className="w-full px-3 py-2 text-left transition-colors flex items-start gap-2 border-b border-white/5"
-                  style={{ ['--tw-bg-opacity' as string]: 0.2 }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-color-bg)'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                >
-                  <div
-                    className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
-                    style={{ backgroundColor: getCategoryColor(node.category) }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm text-white truncate">{node.label}</div>
-                    <div className="text-xs text-gray-500 truncate">{node.description}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          ))
+                
+                {/* Nodes */}
+                {nodes.map((node, nodeIdx) => {
+                  const globalIdx = startIdx + nodeIdx;
+                  const isSelected = globalIdx === selectedIndex;
+                  
+                  return (
+                    <div
+                      key={node.type}
+                      data-node-item
+                      onClick={() => handleNodeClick(node)}
+                      onMouseEnter={() => setSelectedIndex(globalIdx)}
+                      className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${
+                        isSelected ? '' : 'hover:bg-white/5'
+                      }`}
+                      style={isSelected ? { backgroundColor: `${accentColor}20` } : undefined}
+                    >
+                      {/* Node color indicator */}
+                      <div 
+                        className="w-3 h-3 rounded-sm flex-shrink-0"
+                        style={{ backgroundColor: getCategoryColor(node.category) }}
+                      />
+                      
+                      {/* Node info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white text-sm font-medium truncate">
+                          {node.label}
+                        </div>
+                        {node.description && (
+                          <div className="text-white/40 text-xs truncate mt-0.5">
+                            {node.description}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Keyboard hint for selected */}
+                      {isSelected && (
+                        <div className="text-[10px] text-white/30 flex-shrink-0">
+                          Enter ↵
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })
         )}
       </div>
 
       {/* Footer hint */}
-      <div className="px-3 py-2 bg-[#0f1419] border-t border-white/10 text-xs text-gray-600">
-        {!sourcePort 
-          ? 'Showing all nodes' 
-          : sourcePort.portType === 'exec' 
-            ? 'Showing nodes with exec ports' 
-            : `Showing nodes with ${sourcePort.dataType || 'data'} ports`}
+      <div className="px-4 py-2 border-t border-white/10 bg-white/5">
+        <div className="flex items-center justify-between text-[10px] text-white/40">
+          <div className="flex items-center gap-3">
+            <span>↑↓ Navigate</span>
+            <span>Enter Select</span>
+            <span>Esc Close</span>
+          </div>
+          <span>{flatNodeList.length} nodes</span>
+        </div>
       </div>
     </div>
   );

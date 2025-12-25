@@ -80,6 +80,21 @@ export default function NodeSpotlight({ isOpen, onClose, onAddNode, viewState, c
     }
   }, [isOpen]);
 
+  // Global escape key handler
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [isOpen, onClose]);
+
   // Scroll selected item into view
   useEffect(() => {
     if (listRef.current && filteredNodes.length > 0) {
@@ -119,20 +134,20 @@ export default function NodeSpotlight({ isOpen, onClose, onAddNode, viewState, c
     const offsetY = (Math.random() - 0.5) * 50;
 
     const newNode: ScriptNode = {
-      id: `node-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: definition.type,
       category: definition.category,
       label: definition.label,
       position: { x: centerX + offsetX, y: centerY + offsetY },
-      data: { ...(definition.defaultData || {}) },
+      data: { ...definition.defaultData },
       inputs: definition.inputs.map((input, idx) => ({
-        id: `input-${idx}`,
         ...input,
-      })) as NodePort[],
+        id: `input_${idx}`,
+      })),
       outputs: definition.outputs.map((output, idx) => ({
-        id: `output-${idx}`,
         ...output,
-      })) as NodePort[],
+        id: `output_${idx}`,
+      })),
     };
 
     onAddNode(newNode);

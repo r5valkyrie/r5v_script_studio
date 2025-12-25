@@ -596,6 +596,7 @@ export default function VisualScriptEditor() {
     const eventKey = e.key.toLowerCase();
     if (key === 'delete') return eventKey === 'delete';
     if (key === 'backspace') return eventKey === 'backspace';
+    if (key === 'space') return eventKey === ' ' || e.code === 'Space';
     if (key === '\\') return eventKey === '\\' || eventKey === 'backslash';
     if (key === '=') return eventKey === '=' || eventKey === '+';
     if (key === '-') return eventKey === '-' || eventKey === '_';
