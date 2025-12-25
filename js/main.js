@@ -45,6 +45,10 @@ async function createWindow() {
   mainWindow.once('ready-to-show', show);
   mainWindow.webContents.once('did-finish-load', show);
   
+  // Disable Electron's built-in zoom
+  mainWindow.webContents.setZoomLevel(0);
+  mainWindow.webContents.setVisualZoomLevelLimits(1, 1); // Disable pinch-to-zoom
+  
   // Fallback: show window after a short delay if events don't fire
   setTimeout(show, 0);
 }
@@ -294,3 +298,10 @@ ipcMain.on('window:maximize', () => {
   }
 });
 ipcMain.on('window:close', () => mainWindow?.close());
+
+// Reset Electron zoom level
+ipcMain.on('window:resetZoom', () => {
+  if (mainWindow?.webContents) {
+    mainWindow.webContents.setZoomLevel(0);
+  }
+});

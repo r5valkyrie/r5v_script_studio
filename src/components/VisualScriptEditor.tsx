@@ -9,6 +9,7 @@ import type { ModSettings } from '../types/project';
 import NodeGraph from './visual-scripting/NodeGraph';
 import NodePalette from './visual-scripting/NodePalette';
 import NodeInspector from './visual-scripting/NodeInspector';
+import NodeSpotlight from './visual-scripting/NodeSpotlight';
 import CodeView from './visual-scripting/CodeView';
 import ProjectPanel from './visual-scripting/ProjectPanel';
 import WelcomeScreen from './visual-scripting/WelcomeScreen';
@@ -40,6 +41,7 @@ export default function VisualScriptEditor() {
   const [isFileMenuOpen, setFileMenuOpen] = useState(false);
   const [isSettingsOpen, setSettingsOpen] = useState(false);
   const [isProjectSettingsOpen, setProjectSettingsOpen] = useState(false);
+  const [isSpotlightOpen, setSpotlightOpen] = useState(false);
   const [isExportPathModalOpen, setExportPathModalOpen] = useState(false);
   // Initialize with defaults to avoid hydration mismatch, then load from localStorage
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
@@ -594,9 +596,12 @@ export default function VisualScriptEditor() {
     const eventKey = e.key.toLowerCase();
     if (key === 'delete') return eventKey === 'delete';
     if (key === 'backspace') return eventKey === 'backspace';
-    if (key === '\\') return eventKey === '\\';
+    if (key === '\\') return eventKey === '\\' || eventKey === 'backslash';
     if (key === '=') return eventKey === '=' || eventKey === '+';
     if (key === '-') return eventKey === '-' || eventKey === '_';
+    if (key === '0') return eventKey === '0' || e.code === 'Digit0';
+    if (key === '1') return eventKey === '1' || e.code === 'Digit1';
+    if (key === 'a') return eventKey === 'a';
 
     return eventKey === key;
   }, []);
@@ -649,10 +654,24 @@ export default function VisualScriptEditor() {
         return;
       }
 
+      // Node spotlight
+      if (matchesKeybind(e, keybinds.nodeSpotlight)) {
+        e.preventDefault();
+        setSpotlightOpen(true);
+        return;
+      }
+
       // Toggle sidebar
       if (matchesKeybind(e, keybinds.toggleSidebar)) {
         e.preventDefault();
         setSidebarOpen(prev => !prev);
+        return;
+      }
+
+      // Select all nodes
+      if (!inInput && matchesKeybind(e, keybinds.selectAll)) {
+        e.preventDefault();
+        setSelectedNodeIds(nodes.map(n => n.id));
         return;
       }
 
@@ -682,7 +701,7 @@ export default function VisualScriptEditor() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedNodeIds, handleDeleteSelectedNodes, handleUndo, handleRedo, saveProject, saveProjectAs, loadProject, newProject, handleCompileProject, appSettings.keybindings, matchesKeybind]);
+  }, [selectedNodeIds, nodes, handleDeleteSelectedNodes, handleUndo, handleRedo, saveProject, saveProjectAs, loadProject, newProject, handleCompileProject, appSettings.keybindings, matchesKeybind]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -1337,6 +1356,16 @@ export default function VisualScriptEditor() {
         modSettings={projectData?.settings.mod}
         onSave={handleUpdateModSettings}
         onSaveComplete={() => success('Project Settings Saved', undefined, 2000)}
+        accentColor={accentColor}
+      />
+
+      {/* Node Spotlight (Ctrl+Space) */}
+      <NodeSpotlight
+        isOpen={isSpotlightOpen}
+        onClose={() => setSpotlightOpen(false)}
+        onAddNode={handleAddNode}
+        viewState={graphView}
+        canvasSize={canvasSize}
         accentColor={accentColor}
       />
 

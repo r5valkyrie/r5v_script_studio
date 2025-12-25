@@ -18,10 +18,7 @@ const DEFAULT_KEYBINDINGS: Record<string, string> = {
   'search': 'Ctrl+F',
   'toggleCodePanel': 'Ctrl+Shift+C',
   'toggleSidebar': 'Ctrl+\\',
-  'zoomIn': 'Ctrl+=',
-  'zoomOut': 'Ctrl+-',
-  'resetZoom': 'Ctrl+0',
-  'fitToView': 'Ctrl+1',
+  'nodeSpotlight': 'Ctrl+Space',
 };
 
 // Keybinding labels
@@ -41,18 +38,14 @@ const KEYBINDING_LABELS: Record<string, string> = {
   'search': 'Search',
   'toggleCodePanel': 'Toggle Code Panel',
   'toggleSidebar': 'Toggle Sidebar',
-  'zoomIn': 'Zoom In',
-  'zoomOut': 'Zoom Out',
-  'resetZoom': 'Reset Zoom',
-  'fitToView': 'Fit to View',
+  'nodeSpotlight': 'Node Spotlight',
 };
 
 // Group keybindings by category
 const KEYBINDING_CATEGORIES = {
   'File': ['save', 'saveAs', 'open', 'newProject', 'compile'],
   'Edit': ['undo', 'redo', 'delete', 'copy', 'paste', 'cut', 'selectAll'],
-  'View': ['toggleCodePanel', 'toggleSidebar', 'search'],
-  'Navigation': ['zoomIn', 'zoomOut', 'resetZoom', 'fitToView'],
+  'View': ['toggleCodePanel', 'toggleSidebar', 'search', 'nodeSpotlight'],
 };
 
 // Default settings
