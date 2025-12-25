@@ -562,6 +562,11 @@ export default function NodeGraph({
       );
     }
 
+    // Make Global node - no configuration needed, just connect exec to array/table nodes
+    if (node.type === 'global-variable') {
+      return null; // No inline editor - it's just a marker node
+    }
+
     if (node.type === 'call-function') {
       const returnType = typeof node.data.returnType === 'string' ? node.data.returnType : 'none';
       const returnTypes = ['none', 'var', 'entity', 'int', 'float', 'bool', 'string', 'vector', 'array'];
@@ -850,18 +855,20 @@ export default function NodeGraph({
     // Struct Define - inline editor with +/- for fields
     if (node.type === 'struct-define') {
       const structName = typeof node.data.structName === 'string' ? node.data.structName : 'MyStruct';
+      const accessorName = typeof node.data.accessorName === 'string' ? node.data.accessorName : '';
       const isGlobal = typeof node.data.isGlobal === 'boolean' ? node.data.isGlobal : false;
       const fieldCount = typeof node.data.fieldCount === 'number' ? node.data.fieldCount : 2;
       const fieldNames = Array.isArray(node.data.fieldNames) ? node.data.fieldNames : ['field1', 'field2'];
-      const fieldTypes = Array.isArray(node.data.fieldTypes) ? node.data.fieldTypes : ['int', 'string'];
-      const fieldDefaults = Array.isArray(node.data.fieldDefaults) ? node.data.fieldDefaults : [0, '""'];
-      const typeOptions = ['int', 'float', 'bool', 'string', 'vector', 'entity', 'var', 'array', 'table'];
+      const fieldTypes = Array.isArray(node.data.fieldTypes) ? node.data.fieldTypes : ['var', 'var'];
+      const fieldDefaults = Array.isArray(node.data.fieldDefaults) ? node.data.fieldDefaults : ['', ''];
+      // Extended type options including typed containers
+      const typeOptions = ['var', 'int', 'float', 'bool', 'string', 'vector', 'entity', 'array', 'array<var>', 'array<int>', 'array<string>', 'array<entity>', 'table', 'table<string, var>', 'table<var, string>', 'table<string, string>'];
 
       const addField = () => {
         const newCount = fieldCount + 1;
         const newFieldNames = [...fieldNames, `field${newCount}`];
         const newFieldTypes = [...fieldTypes, 'var'];
-        const newFieldDefaults = [...fieldDefaults, 'null'];
+        const newFieldDefaults = [...fieldDefaults, ''];
         onUpdateNodeRef.current(node.id, {
           data: { ...node.data, fieldCount: newCount, fieldNames: newFieldNames, fieldTypes: newFieldTypes, fieldDefaults: newFieldDefaults },
         });
@@ -878,16 +885,37 @@ export default function NodeGraph({
         });
       };
 
+      // Check if a type is a container (table/array) that shouldn't have default values
+      const isContainerType = (type: string) => type.startsWith('table') || type.startsWith('array');
+
       return (
         <div className="flex flex-col gap-1.5">
-          <input
-            type="text"
-            value={structName}
-            onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, structName: e.target.value } })}
-            onMouseDown={(e) => e.stopPropagation()}
-            className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
-            placeholder="StructName"
-          />
+          {/* Struct name (required) */}
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[9px] text-gray-500">Struct Type Name:</span>
+            <input
+              type="text"
+              value={structName}
+              onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, structName: e.target.value } })}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+              placeholder="MyStruct"
+            />
+          </div>
+
+          {/* Accessor name (optional) - used to access fields like file.menu */}
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[9px] text-gray-500">Accessor Name (optional):</span>
+            <input
+              type="text"
+              value={accessorName}
+              onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, accessorName: e.target.value } })}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+              placeholder="(none)"
+            />
+          </div>
+
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
@@ -903,33 +931,58 @@ export default function NodeGraph({
           {fieldCount > 0 && (
             <div className="flex flex-col gap-1 mt-1">
               <span className="text-[9px] text-gray-500">Fields:</span>
-              {Array.from({ length: fieldCount }).map((_, i) => (
-                <div key={i} className="flex gap-1">
-                  <input
-                    type="text"
-                    value={fieldNames[i] || `field${i + 1}`}
-                    onChange={(e) => {
-                      const newNames = [...fieldNames];
-                      newNames[i] = e.target.value;
-                      onUpdateNodeRef.current(node.id, { data: { ...node.data, fieldNames: newNames } });
-                    }}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    placeholder={`field${i + 1}`}
-                    className="flex-1 px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
-                  />
-                  <CustomSelect
-                    value={fieldTypes[i] || 'var'}
-                    options={typeOptions}
-                    onChange={(value) => {
-                      const newTypes = [...fieldTypes];
-                      newTypes[i] = value;
-                      onUpdateNodeRef.current(node.id, { data: { ...node.data, fieldTypes: newTypes } });
-                    }}
-                    className="w-16"
-                    size="sm"
-                  />
-                </div>
-              ))}
+              {Array.from({ length: fieldCount }).map((_, i) => {
+                const currentType = fieldTypes[i] || 'var';
+                const showDefault = !isContainerType(currentType);
+                return (
+                  <div key={i} className="flex flex-col gap-0.5">
+                    <div className="flex gap-1">
+                      <CustomSelect
+                        value={currentType}
+                        options={typeOptions}
+                        onChange={(value) => {
+                          const newTypes = [...fieldTypes];
+                          newTypes[i] = value;
+                          // Clear default value if switching to container type
+                          const newDefaults = [...fieldDefaults];
+                          if (isContainerType(value)) {
+                            newDefaults[i] = '';
+                          }
+                          onUpdateNodeRef.current(node.id, { data: { ...node.data, fieldTypes: newTypes, fieldDefaults: newDefaults } });
+                        }}
+                        className="w-28"
+                        size="sm"
+                      />
+                      <input
+                        type="text"
+                        value={fieldNames[i] || `field${i + 1}`}
+                        onChange={(e) => {
+                          const newNames = [...fieldNames];
+                          newNames[i] = e.target.value;
+                          onUpdateNodeRef.current(node.id, { data: { ...node.data, fieldNames: newNames } });
+                        }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        placeholder={`field${i + 1}`}
+                        className="flex-1 px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+                      />
+                    </div>
+                    {showDefault && (
+                      <input
+                        type="text"
+                        value={fieldDefaults[i] || ''}
+                        onChange={(e) => {
+                          const newDefaults = [...fieldDefaults];
+                          newDefaults[i] = e.target.value;
+                          onUpdateNodeRef.current(node.id, { data: { ...node.data, fieldDefaults: newDefaults } });
+                        }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        placeholder="default value (optional)"
+                        className="w-full px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-400 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -1064,6 +1117,7 @@ export default function NodeGraph({
 
     // Array Create Typed - inline editor with +/- for initial values
     if (node.type === 'array-create-typed') {
+      const varName = typeof node.data.varName === 'string' ? node.data.varName : '';
       const elementType = typeof node.data.elementType === 'string' ? node.data.elementType : 'entity';
       const initialValues = Array.isArray(node.data.initialValues) ? node.data.initialValues : [];
       const typeOptions = ['int', 'float', 'bool', 'string', 'vector', 'entity', 'var'];
@@ -1080,6 +1134,19 @@ export default function NodeGraph({
 
       return (
         <div className="flex flex-col gap-1.5">
+          {/* Variable name (optional, used for global variables) */}
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[9px] text-gray-500">Name (optional):</span>
+            <input
+              type="text"
+              value={varName}
+              onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, varName: e.target.value } })}
+              onMouseDown={(e) => e.stopPropagation()}
+              placeholder="auto"
+              className="w-full px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+            />
+          </div>
+
           <div className="flex items-center gap-2">
             <span className="text-[9px] text-gray-500">Type:</span>
             <CustomSelect
@@ -1139,6 +1206,7 @@ export default function NodeGraph({
 
     // Table Create Typed - inline editor with +/- for initial key-value pairs
     if (node.type === 'table-create-typed') {
+      const varName = typeof node.data.varName === 'string' ? node.data.varName : '';
       const keyType = typeof node.data.keyType === 'string' ? node.data.keyType : 'string';
       const valueType = typeof node.data.valueType === 'string' ? node.data.valueType : 'int';
       const initialKeys = Array.isArray(node.data.initialKeys) ? node.data.initialKeys : [];
@@ -1160,6 +1228,19 @@ export default function NodeGraph({
 
       return (
         <div className="flex flex-col gap-1.5">
+          {/* Variable name (optional, used for global variables) */}
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[9px] text-gray-500">Name (optional):</span>
+            <input
+              type="text"
+              value={varName}
+              onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, varName: e.target.value } })}
+              onMouseDown={(e) => e.stopPropagation()}
+              placeholder="auto"
+              className="w-full px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+            />
+          </div>
+
           <div className="flex items-center gap-2">
             <span className="text-[9px] text-gray-500">Key:</span>
             <CustomSelect
@@ -1459,6 +1540,114 @@ export default function NodeGraph({
               +
             </button>
           </div>
+        </div>
+      );
+    }
+
+    // ==================== GENERIC FALLBACK EDITOR ====================
+    // Render editable fields for any node with data properties
+    const dataKeys = Object.keys(node.data);
+    // Skip internal/computed fields and empty data
+    const editableKeys = dataKeys.filter(key => 
+      !['isExec', 'comment', 'commentColor'].includes(key) &&
+      node.data[key] !== undefined
+    );
+    
+    if (editableKeys.length > 0) {
+      return (
+        <div className="flex flex-col gap-1.5">
+          {editableKeys.map((key) => {
+            const value = node.data[key];
+            const labelText = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).trim();
+            
+            // Boolean field
+            if (typeof value === 'boolean') {
+              return (
+                <label key={key} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={value}
+                    onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, [key]: e.target.checked } })}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    className="w-3 h-3 rounded bg-[#1a1f28] border border-white/10 accent-purple-500"
+                  />
+                  <span className="text-[9px] text-gray-500">{labelText}</span>
+                </label>
+              );
+            }
+            
+            // Number field
+            if (typeof value === 'number') {
+              const isFloat = !Number.isInteger(value) || key.toLowerCase().includes('float') || key.toLowerCase().includes('duration') || key.toLowerCase().includes('time') || key.toLowerCase().includes('scale');
+              return (
+                <div key={key} className="flex flex-col gap-0.5">
+                  <span className="text-[9px] text-gray-500">{labelText}:</span>
+                  <input
+                    type="number"
+                    value={value}
+                    step={isFloat ? '0.1' : '1'}
+                    onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, [key]: parseFloat(e.target.value) || 0 } })}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+                  />
+                </div>
+              );
+            }
+            
+            // String field
+            if (typeof value === 'string') {
+              return (
+                <div key={key} className="flex flex-col gap-0.5">
+                  <span className="text-[9px] text-gray-500">{labelText}:</span>
+                  <input
+                    type="text"
+                    value={value}
+                    onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, [key]: e.target.value } })}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+                    placeholder={labelText}
+                  />
+                </div>
+              );
+            }
+            
+            // Array field - show count and basic editor
+            if (Array.isArray(value)) {
+              return (
+                <div key={key} className="flex flex-col gap-0.5">
+                  <span className="text-[9px] text-gray-500">{labelText} ({value.length}):</span>
+                  {value.map((item, i) => (
+                    <input
+                      key={i}
+                      type="text"
+                      value={String(item)}
+                      onChange={(e) => {
+                        const newArr = [...value];
+                        newArr[i] = e.target.value;
+                        onUpdateNodeRef.current(node.id, { data: { ...node.data, [key]: newArr } });
+                      }}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      className="w-full px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+                    />
+                  ))}
+                </div>
+              );
+            }
+            
+            // Fallback: show as text
+            return (
+              <div key={key} className="flex flex-col gap-0.5">
+                <span className="text-[9px] text-gray-500">{labelText}:</span>
+                <input
+                  type="text"
+                  value={String(value ?? '')}
+                  onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, [key]: e.target.value } })}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+                />
+              </div>
+            );
+          })}
         </div>
       );
     }
@@ -3052,8 +3241,16 @@ export default function NodeGraph({
             if (!el || !snapToGrid) return;
             // Wait for content to render
             requestAnimationFrame(() => {
+              // Temporarily remove height constraint to measure natural content height
+              const originalHeight = el.style.height;
+              el.style.height = 'auto';
+              
               const naturalWidth = el.scrollWidth;
               const naturalHeight = el.scrollHeight;
+              
+              // Restore height
+              el.style.height = originalHeight;
+              
               const snappedWidth = Math.ceil(naturalWidth / gridSize) * gridSize;
               const snappedHeight = Math.ceil(naturalHeight / gridSize) * gridSize;
               // Only update if dimensions changed
@@ -3069,97 +3266,6 @@ export default function NodeGraph({
               }
             });
           };
-
-          // Render simple KV nodes (single input) as compact pill shapes
-          // Multi-input KV nodes like kv-trigger-filter and kv-custom use regular rendering
-          const isKvNode = node.type.startsWith('kv-') && node.inputs.length === 1;
-          if (isKvNode) {
-            const inputPort = node.inputs[0];
-            const outputPort = node.outputs[0];
-            const portSize = 14;
-            const hitSize = 24;
-            const kvKey = typeof node.data.key === 'string' ? node.data.key : node.label.replace('KV: ', '');
-
-            return (
-              <div
-                key={node.id}
-                className="node-root absolute select-none"
-                data-node-id={node.id}
-                style={{
-                  left: node.position.x,
-                  top: node.position.y,
-                  minWidth: gridAlignedMinWidth,
-                  width: nodeWidth,
-                  height: nodeHeight,
-                  cursor: 'grab',
-                  userSelect: 'none',
-                  zIndex: isSelected ? 100 : 1,
-                  opacity: nodeOpacity / 100,
-                }}
-                onMouseDown={(e) => handleNodeMouseDown(e, node)}
-                onContextMenu={(e) => handleNodeContextMenu(e, node.id)}
-                onMouseEnter={() => setHoveredNodeId(node.id)}
-                onMouseLeave={() => setHoveredNodeId(null)}
-              >
-                {/* Pill-shaped body */}
-                <div 
-                  className="flex items-center h-full px-3 rounded-full border-2 transition-colors"
-                  style={{ 
-                    backgroundColor: theme === 'light' ? '#f8f9fa' : '#1a1f28',
-                    borderColor: isSelected ? accentColor : (theme === 'light' ? '#4caf50' : '#16A085'),
-                    boxShadow: isSelected 
-                      ? `0 0 0 2px ${accentColor}, 0 0 0 4px #0f1419` 
-                      : (theme === 'light' ? 'none' : '0 2px 8px rgba(0, 0, 0, 0.3)'),
-                  }}
-                >
-                  {/* Input port on left */}
-                  {inputPort && (
-                    <div
-                      data-node-id={node.id}
-                      data-port-id={inputPort.id}
-                      data-is-input="true"
-                      className="node-port flex items-center cursor-crosshair group -mr-3 ml-1 ml-auto"
-                      style={{ width: hitSize, height: hitSize }}
-                      onMouseDown={(e) => handlePortMouseDown(e, node.id, inputPort.id, true, inputPort.type, inputPort.dataType)}
-                      onContextMenu={(e) => handlePortContextMenu(e, node.id, inputPort.id, true)}
-                      title={`${inputPort.label} (${inputPort.type}${inputPort.dataType ? ': ' + inputPort.dataType : ''})`}
-                    >
-                      <div
-                        className={`border-2 transition-transform group-hover:scale-125 ${getPortClasses(inputPort.type, inputPort.dataType)} ${getPortShapeClass(inputPort.type)}`}
-                        style={{ width: portSize, height: portSize, ...getPortShapeStyle(inputPort.type) }}
-                      />
-                    </div>
-                  )}
-
-                  {/* Key name label */}
-                  <span 
-                    className="text-xs font-medium whitespace-nowrap px-1 justify-center flex-1 text-center"
-                    style={{ color: '#fff' }}
-                  >
-                    {kvKey}
-                  </span>
-
-                  {/* Output port on right */}
-                  {outputPort && (
-                    <div
-                      data-node-id={node.id}
-                      data-port-id={outputPort.id}
-                      data-is-input="false"
-                      className="node-port flex items-center cursor-crosshair group -mr-3 ml-1 ml-auto"
-                      style={{ width: hitSize, height: hitSize }}
-                      onMouseDown={(e) => handlePortMouseDown(e, node.id, outputPort.id, false, outputPort.type, outputPort.dataType)}
-                      title={`${outputPort.label} (${outputPort.type}${outputPort.dataType ? ': ' + outputPort.dataType : ''})`}
-                    >
-                      <div
-                        className={`border-2 transition-transform group-hover:scale-125 ${getPortClasses(outputPort.type, outputPort.dataType)} ${getPortShapeClass(outputPort.type)}`}
-                        style={{ width: portSize, height: portSize, ...getPortShapeStyle(outputPort.type) }}
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          }
 
           return (
             <div

@@ -624,17 +624,18 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     type: 'struct-define',
     category: 'structures',
     label: 'Define Struct',
-    description: 'Define a new struct type with fields. Use +/- to add fields.',
+    description: 'Define a new struct type with fields. Use +/- to add fields. Optionally add an accessor name to access fields like name.field',
     color: '#16A085',
     inputs: [],
     outputs: [],
     defaultData: {
       structName: 'MyStruct',
+      accessorName: '',
       isGlobal: false,
       fieldCount: 2,
       fieldNames: ['field1', 'field2'],
-      fieldTypes: ['int', 'string'],
-      fieldDefaults: [0, '""'],
+      fieldTypes: ['var', 'var'],
+      fieldDefaults: ['', ''],
     },
     tags: ['struct', 'structure', 'type', 'define'],
   },
@@ -5286,6 +5287,32 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     },
     tags: ['const', 'constant', 'global', 'local', 'define'],
   },
+  {
+    type: 'global-variable',
+    category: 'data',
+    label: 'Make Global',
+    description: 'Connect to an array, table, or variable node to make it a global file-level variable (adds "global" prefix)',
+    color: '#2ECC71',
+    inputs: [],
+    outputs: [
+      { label: 'Exec', type: 'exec', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['global', 'variable', 'array', 'table', 'file', 'level'],
+  },
+  {
+    type: 'local-variable',
+    category: 'data',
+    label: 'Make Local',
+    description: 'Connect to an array, table, or variable node to make it a file-level variable (no global prefix)',
+    color: '#3498DB',
+    inputs: [],
+    outputs: [
+      { label: 'Exec', type: 'exec', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['local', 'variable', 'array', 'table', 'file', 'level'],
+  },
 
   // ==================== ARRAYS ====================
   {
@@ -5315,6 +5342,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Array', type: 'data', dataType: 'array', isInput: false },
     ],
     defaultData: { 
+      varName: '',
       elementType: 'entity',
       initialValues: [], // optional inline initialization
     },
@@ -5584,6 +5612,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Table', type: 'data', dataType: 'table', isInput: false },
     ],
     defaultData: { 
+      varName: '',
       keyType: 'string',
       valueType: 'int',
     },

@@ -2416,8 +2416,13 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
 
     // ==================== ARRAYS (EXTENDED) ====================
     case 'array-create-typed': {
+      // Skip if already generated as global variable
+      if ((ctx as any).globalVarNodeIds?.has(node.id)) {
+        followExec('output_0');
+        break;
+      }
       const elementType = node.data.elementType || 'var';
-      const resultVar = getVarName(ctx, 'arr');
+      const resultVar = node.data.varName || getVarName(ctx, 'arr');
       ctx.variables.set(`${node.id}:output_1`, resultVar);
       lines.push(`${ind}array<${elementType}> ${resultVar} = []`);
       followExec('output_0');
@@ -2520,9 +2525,14 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
 
     // ==================== TABLES (EXTENDED) ====================
     case 'table-create-typed': {
+      // Skip if already generated as global variable
+      if ((ctx as any).globalVarNodeIds?.has(node.id)) {
+        followExec('output_0');
+        break;
+      }
       const keyType = node.data.keyType || 'string';
       const valueType = node.data.valueType || 'var';
-      const resultVar = getVarName(ctx, 'tbl');
+      const resultVar = node.data.varName || getVarName(ctx, 'tbl');
       ctx.variables.set(`${node.id}:output_1`, resultVar);
       lines.push(`${ind}table<${keyType}, ${valueType}> ${resultVar} = {}`);
       followExec('output_0');
@@ -2598,6 +2608,18 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       // or inline for locals - handled in generateCode()
       const constName = node.data.constName || 'MY_CONSTANT';
       ctx.variables.set(`${node.id}:output_0`, constName);
+      break;
+    }
+
+    case 'global-variable': {
+      // Make Global node - just a marker, generation is handled at file level in generateCode()
+      // This node doesn't produce any inline code
+      break;
+    }
+
+    case 'local-variable': {
+      // Make Local node - just a marker, generation is handled at file level in generateCode()
+      // This node doesn't produce any inline code
       break;
     }
 
@@ -2772,25 +2794,34 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
   const structDefNodes = nodes.filter(n => n.type === 'struct-define');
   for (const structNode of structDefNodes) {
     const structName = structNode.data.structName || 'MyStruct';
+    const accessorName = structNode.data.accessorName || '';
     const isGlobal = structNode.data.isGlobal || false;
     const fieldCount = typeof structNode.data.fieldCount === 'number' ? structNode.data.fieldCount : 0;
     const fieldNames = Array.isArray(structNode.data.fieldNames) ? structNode.data.fieldNames : [];
     const fieldTypes = Array.isArray(structNode.data.fieldTypes) ? structNode.data.fieldTypes : [];
     const fieldDefaults = Array.isArray(structNode.data.fieldDefaults) ? structNode.data.fieldDefaults : [];
 
+    // Struct header with required name
     output.push(`${isGlobal ? 'global ' : ''}struct ${structName}`);
     output.push('{');
     for (let i = 0; i < fieldCount; i++) {
       const fName = fieldNames[i] || `field${i + 1}`;
       const fType = fieldTypes[i] || 'var';
       const fDefault = fieldDefaults[i];
-      if (fDefault !== undefined && fDefault !== null && fDefault !== '') {
+      // Types like table, array, struct should not have default values in struct definitions
+      const isContainerType = fType.startsWith('table') || fType.startsWith('array') || fType === 'struct';
+      if (!isContainerType && fDefault !== undefined && fDefault !== null && fDefault !== '') {
         output.push(`    ${fType} ${fName} = ${fDefault}`);
       } else {
         output.push(`    ${fType} ${fName}`);
       }
     }
-    output.push('}');
+    // Closing brace with optional accessor name
+    if (accessorName) {
+      output.push(`} ${accessorName}`);
+    } else {
+      output.push('}');
+    }
     output.push('');
   }
 
@@ -2921,6 +2952,100 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
     }
     output.push('');
   }
+
+  // === OUTPUT FILE-LEVEL VARIABLE DECLARATIONS (arrays, tables, etc. connected to make-global/make-local nodes) ===
+  const makeGlobalNodes = nodes.filter(n => n.type === 'global-variable');
+  const makeLocalNodes = nodes.filter(n => n.type === 'local-variable');
+  const fileLevelVarNodeIds = new Set<string>(); // Track which nodes are file-level (skip inline generation)
+  
+  // Helper function to generate variable declaration
+  const generateVarDeclaration = (targetNode: ScriptNode, isGlobal: boolean): string | null => {
+    const prefix = isGlobal ? 'global ' : '';
+    
+    if (targetNode.type === 'array-create-typed') {
+      const elementType = targetNode.data.elementType || 'var';
+      const varName = targetNode.data.varName || `g_arr_${ctx.varCounter++}`;
+      const initialValues = Array.isArray(targetNode.data.initialValues) ? targetNode.data.initialValues : [];
+      ctx.variables.set(`${targetNode.id}:output_1`, varName);
+      
+      if (initialValues.length > 0) {
+        return `${prefix}array<${elementType}> ${varName} = [${initialValues.join(', ')}]`;
+      } else {
+        return `${prefix}array<${elementType}> ${varName} = []`;
+      }
+    } else if (targetNode.type === 'array-create') {
+      const varName = targetNode.data.varName || `g_arr_${ctx.varCounter++}`;
+      ctx.variables.set(`${targetNode.id}:output_0`, varName);
+      return `${prefix}array<var> ${varName} = []`;
+    } else if (targetNode.type === 'table-create-typed') {
+      const keyType = targetNode.data.keyType || 'string';
+      const valueType = targetNode.data.valueType || 'var';
+      const varName = targetNode.data.varName || `g_tbl_${ctx.varCounter++}`;
+      const entryCount = typeof targetNode.data.entryCount === 'number' ? targetNode.data.entryCount : 0;
+      const entryKeys = Array.isArray(targetNode.data.entryKeys) ? targetNode.data.entryKeys : [];
+      const entryValues = Array.isArray(targetNode.data.entryValues) ? targetNode.data.entryValues : [];
+      ctx.variables.set(`${targetNode.id}:output_1`, varName);
+      
+      if (entryCount > 0 && entryKeys.length > 0) {
+        const pairs = [];
+        for (let i = 0; i < entryCount; i++) {
+          const k = entryKeys[i] || `key${i}`;
+          const v = entryValues[i] || 'null';
+          pairs.push(`${k} = ${v}`);
+        }
+        return `${prefix}table<${keyType}, ${valueType}> ${varName} = { ${pairs.join(', ')} }`;
+      } else {
+        return `${prefix}table<${keyType}, ${valueType}> ${varName} = {}`;
+      }
+    } else if (targetNode.type === 'table-create') {
+      const varName = targetNode.data.varName || `g_tbl_${ctx.varCounter++}`;
+      ctx.variables.set(`${targetNode.id}:output_0`, varName);
+      return `${prefix}table ${varName} = {}`;
+    } else if (targetNode.type === 'variable-declare') {
+      const varName = targetNode.data.name || 'myVar';
+      const varType = targetNode.data.varType || 'var';
+      const initialValue = targetNode.data.initialValue;
+      ctx.variables.set(`${targetNode.id}:output_1`, varName);
+      
+      if (initialValue !== undefined && initialValue !== '') {
+        return `${prefix}${varType} ${varName} = ${initialValue}`;
+      } else {
+        return `${prefix}${varType} ${varName}`;
+      }
+    }
+    return null;
+  };
+  
+  // Process Make Global nodes (with "global" prefix)
+  for (const makeGlobalNode of makeGlobalNodes) {
+    const execConns = connections.filter(c => c.from.nodeId === makeGlobalNode.id && c.from.portId === 'output_0');
+    for (const conn of execConns) {
+      const targetNode = ctx.nodeMap.get(conn.to.nodeId);
+      if (!targetNode) continue;
+      fileLevelVarNodeIds.add(targetNode.id);
+      const decl = generateVarDeclaration(targetNode, true);
+      if (decl) output.push(decl);
+    }
+  }
+  
+  // Process Make Local nodes (without "global" prefix)
+  for (const makeLocalNode of makeLocalNodes) {
+    const execConns = connections.filter(c => c.from.nodeId === makeLocalNode.id && c.from.portId === 'output_0');
+    for (const conn of execConns) {
+      const targetNode = ctx.nodeMap.get(conn.to.nodeId);
+      if (!targetNode) continue;
+      fileLevelVarNodeIds.add(targetNode.id);
+      const decl = generateVarDeclaration(targetNode, false);
+      if (decl) output.push(decl);
+    }
+  }
+  
+  if (makeGlobalNodes.length > 0 || makeLocalNodes.length > 0) {
+    output.push('');
+  }
+  
+  // Store file-level var node IDs in context so inline generation can skip them
+  (ctx as any).globalVarNodeIds = fileLevelVarNodeIds;
 
   if (serverInit) {
     output.push('#if SERVER');

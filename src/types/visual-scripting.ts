@@ -433,6 +433,8 @@ export type NodeType =
   | 'const-supported-attachments'
   | 'const-weapon-type'
   | 'define-const'
+  | 'global-variable'
+  | 'local-variable'
   | 'variable-get'
   | 'variable-set'
   | 'variable-declare'

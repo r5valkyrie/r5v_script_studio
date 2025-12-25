@@ -8,7 +8,6 @@ import type { ScriptNode, NodeConnection } from '../types/visual-scripting';
 import type { ModSettings } from '../types/project';
 import NodeGraph from './visual-scripting/NodeGraph';
 import NodePalette from './visual-scripting/NodePalette';
-import NodeInspector from './visual-scripting/NodeInspector';
 import NodeSpotlight from './visual-scripting/NodeSpotlight';
 import CodeView from './visual-scripting/CodeView';
 import ProjectPanel from './visual-scripting/ProjectPanel';
@@ -27,17 +26,14 @@ export default function VisualScriptEditor() {
 
   // Panel widths - will be loaded from appSettings
   const [sidebarWidth, setSidebarWidth] = useState(280);
-  const [inspectorWidth, setInspectorWidth] = useState(320);
   const [codePanelWidth, setCodePanelWidth] = useState(500);
   const sidebarDraggingRef = useRef(false);
-  const inspectorDraggingRef = useRef(false);
   const codePanelDraggingRef = useRef(false);
 
   // Panel visibility - will be loaded from appSettings
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [isProjectSectionExpanded, setProjectSectionExpanded] = useState(true);
   const [isNodesSectionExpanded, setNodesSectionExpanded] = useState(true);
-  const [isInspectorOpen, setInspectorOpen] = useState(true);
   const [isCodePanelOpen, setCodePanelOpen] = useState(false);
   const [isFileMenuOpen, setFileMenuOpen] = useState(false);
   const [isSettingsOpen, setSettingsOpen] = useState(false);
@@ -62,10 +58,8 @@ export default function VisualScriptEditor() {
     setSidebarOpen(settings.ui.isSidebarOpen);
     setProjectSectionExpanded(settings.ui.isProjectSectionExpanded);
     setNodesSectionExpanded(settings.ui.isNodesSectionExpanded);
-    setInspectorOpen(settings.ui.isInspectorOpen);
     setCodePanelOpen(settings.ui.isCodePanelOpen);
     setSidebarWidth(settings.ui.sidebarWidth);
-    setInspectorWidth(settings.ui.inspectorWidth);
     setCodePanelWidth(settings.ui.codePanelWidth);
     setCollapsedCategories(settings.ui.collapsedCategories);
     setIsHydrated(true);
@@ -136,10 +130,10 @@ export default function VisualScriptEditor() {
           isSidebarOpen,
           isProjectSectionExpanded,
           isNodesSectionExpanded,
-          isInspectorOpen,
+          isInspectorOpen: true,
           isCodePanelOpen,
           sidebarWidth,
-          inspectorWidth,
+          inspectorWidth: 320,
           codePanelWidth,
           collapsedCategories,
         },
@@ -158,10 +152,8 @@ export default function VisualScriptEditor() {
     isSidebarOpen,
     isProjectSectionExpanded,
     isNodesSectionExpanded,
-    isInspectorOpen,
     isCodePanelOpen,
     sidebarWidth,
-    inspectorWidth,
     codePanelWidth,
     collapsedCategories,
   ]);
@@ -344,20 +336,13 @@ export default function VisualScriptEditor() {
     historyRef.current.future = [];
   }, [activeScriptFile, getSnapshot]);
 
-  const selectedNode = selectedNodeIds.length > 0
-    ? nodes.find(n => n.id === selectedNodeIds[0]) ?? null
-    : null;
-
   const handleAddNode = useCallback((newNode: ScriptNode) => {
     setNodes(currentNodes => [...currentNodes, newNode]);
   }, []);
 
   const handleSelectNodes = useCallback((nodeIds: string[]) => {
     setSelectedNodeIds(nodeIds);
-    if (nodeIds.length > 0 && !isInspectorOpen) {
-      setInspectorOpen(true);
-    }
-  }, [isInspectorOpen]);
+  }, []);
 
   const handleUpdateNode = useCallback((nodeId: string, updates: Partial<ScriptNode>) => {
     setNodes(currentNodes =>
@@ -704,13 +689,6 @@ export default function VisualScriptEditor() {
         setSidebarWidth(newWidth);
       }
 
-      // Inspector resize
-      if (inspectorDraggingRef.current) {
-        const codeOffset = isCodePanelOpen ? codePanelWidth : 0;
-        const newWidth = Math.min(500, Math.max(250, window.innerWidth - e.clientX - codeOffset));
-        setInspectorWidth(newWidth);
-      }
-
       // Code panel resize
       if (codePanelDraggingRef.current) {
         const newWidth = Math.min(1000, Math.max(500, window.innerWidth - e.clientX));
@@ -720,7 +698,6 @@ export default function VisualScriptEditor() {
 
     const handleMouseUp = () => {
       sidebarDraggingRef.current = false;
-      inspectorDraggingRef.current = false;
       codePanelDraggingRef.current = false;
     };
 
@@ -736,17 +713,16 @@ export default function VisualScriptEditor() {
   useEffect(() => {
     const updateCanvasSize = () => {
       // Approximate main content area size
-      const sidebarWidth = isSidebarOpen ? 280 : 0;
-      const inspectorWidth = isInspectorOpen ? 320 : 0;
+      const sidebarW = isSidebarOpen ? 280 : 0;
       setCanvasSize({
-        width: window.innerWidth - sidebarWidth - inspectorWidth,
+        width: window.innerWidth - sidebarW,
         height: window.innerHeight - 48 // Subtract header height
       });
     };
     updateCanvasSize();
     window.addEventListener('resize', updateCanvasSize);
     return () => window.removeEventListener('resize', updateCanvasSize);
-  }, [isSidebarOpen, isInspectorOpen]);
+  }, [isSidebarOpen]);
   // Close file menu on click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -1205,68 +1181,6 @@ export default function VisualScriptEditor() {
                 )}
               </div>
             </div>
-
-            {/* Inspector Toggle Button */}
-            {selectedNode && !isInspectorOpen && (
-              <div
-                  onClick={() => setInspectorOpen(true)}
-                  className="absolute right-0 z-50 h-40 w-10 bg-gradient-to-l from-[#0f1419] via-[#151a21] to-[#1a1f28] hover:from-[#151a21] hover:via-[#1a1f28] hover:to-[#1e242c] transition-all duration-300 flex flex-col items-center py-4 group cursor-pointer rounded-l-xl overflow-hidden"
-                  style={{ top: '80px', borderLeft: `2px solid ${accentColor}40`, boxShadow: `-4px 0 20px rgba(0,0,0,0.3)` }}
-                  title="Show Inspector"
-              >
-                  {/* Accent glow on hover */}
-                  <div 
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                    style={{ background: `linear-gradient(to left, ${accentColor}10, transparent)` }}
-                  />
-                  
-                  {/* Icon */}
-                  <div 
-                    className="p-2 rounded-lg transition-all duration-300 group-hover:scale-110" 
-                    style={{ backgroundColor: `${accentColor}20` }}
-                  >
-                    <PanelLeft size={14} style={{ color: accentColor }} />
-                  </div>
-                  
-                  {/* Vertical text */}
-                  <div className="flex-1 flex items-center justify-center">
-                    <div 
-                      className="text-[9px] text-gray-500 group-hover:text-gray-300 font-semibold tracking-[0.2em] transition-colors duration-300" 
-                      style={{ writingMode: 'vertical-rl' }}
-                    >
-                      INSPECT
-                    </div>
-                  </div>
-                  
-                  {/* Chevron indicator */}
-                  <div 
-                    className="p-1.5 rounded-full transition-all duration-300 group-hover:-translate-x-0.5"
-                    style={{ backgroundColor: `${accentColor}15` }}
-                  >
-                    <ChevronLeft size={12} className="text-gray-500 group-hover:text-gray-300 transition-colors" />
-                  </div>
-              </div>
-            )}
-
-            {/* Node Inspector */}
-            {isInspectorOpen && selectedNode && (
-              <div className="flex h-full flex-shrink-0" style={{ width: inspectorWidth }}>
-                {/* Resize Handle */}
-                <div
-                  className="w-1 h-full cursor-col-resize transition-colors"
-                  style={{ backgroundColor: `${accentColor}50` }}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    inspectorDraggingRef.current = true;
-                  }}
-                />
-                <NodeInspector
-                  key={selectedNode.id}
-                  node={selectedNode}
-                  onUpdate={(updates) => handleUpdateNode(selectedNode.id, updates)}
-                />
-              </div>
-            )}
 
             {/* Code Panel */}
             {isCodePanelOpen && (
