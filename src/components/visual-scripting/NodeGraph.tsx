@@ -277,16 +277,18 @@ export default function NodeGraph({
     }
     
     // Default: bezier curve
+    // Scale curve parameters to account for zoom level so curves stay consistent
+    const scale = view.scale;
     const distance = Math.abs(toPos.x - fromPos.x);
     const verticalDistance = Math.abs(toPos.y - fromPos.y);
     const alignmentRatio = distance > 0 ? Math.min(verticalDistance / distance, 2) : 1;
     const stackFactor = distance > 0 
-      ? Math.min(1, Math.max(0, (100 - distance) / 100)) * (verticalDistance > distance ? 1 : 0.5)
+      ? Math.min(1, Math.max(0, (100 * scale - distance) / (100 * scale))) * (verticalDistance > distance ? 1 : 0.5)
       : 1;
-    const minLength = 5 + alignmentRatio * 20;
-    const maxLength = 40 + alignmentRatio * 20;
-    const straightSegmentLength = Math.min(80, minLength + (maxLength - minLength) * stackFactor);
-    const baseStrength = Math.min(distance * (0.6 + alignmentRatio * 0.1), 200);
+    const minLength = (5 + alignmentRatio * 20) * scale;
+    const maxLength = (40 + alignmentRatio * 20) * scale;
+    const straightSegmentLength = Math.min(80 * scale, minLength + (maxLength - minLength) * stackFactor);
+    const baseStrength = Math.min(distance * (0.6 + alignmentRatio * 0.1), 200 * scale);
     
     const fromControlX = fromPos.x + straightSegmentLength + baseStrength;
     const fromControlY = fromPos.y;
