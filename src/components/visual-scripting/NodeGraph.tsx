@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { Trash2 } from 'lucide-react';
 import type { ScriptNode, NodeConnection, NodeDataType } from '../../types/visual-scripting';
 import { getNodeDefinition } from '../../data/node-definitions';
@@ -133,6 +133,11 @@ export default function NodeGraph({
   const resizingCommentRef = useRef<ResizingCommentState | null>(null);
   const rewireActiveRef = useRef(false);
 
+  // Cache for port positions - measured from DOM after render, used during pan/zoom
+  const portPositionCacheRef = useRef<Map<string, { x: number; y: number }>>(new Map());
+  const [portCacheVersion, setPortCacheVersion] = useState(0);
+  const viewScaleRef = useRef(1); // Track current scale for port measurements
+
   // Store callbacks in refs so they don't cause re-registration
   const onConnectRef = useRef(onConnect);
   const onUpdateNodeRef = useRef(onUpdateNode);
@@ -168,6 +173,56 @@ export default function NodeGraph({
     prevSnapToGridRef.current = snapToGrid;
   }, [snapToGrid, gridSize, nodes, onUpdateNode]);
 
+  // Measure and cache port positions after nodes render
+  // This runs after DOM updates but cached positions are used during pan/zoom
+  useEffect(() => {
+    const measurePorts = () => {
+      const newCache = new Map<string, { x: number; y: number }>();
+      const scale = viewScaleRef.current;
+      
+      // Find all port elements
+      const portElements = document.querySelectorAll('.node-port[data-node-id][data-port-id]');
+      
+      portElements.forEach((el) => {
+        const portElement = el as HTMLElement;
+        const nodeId = portElement.dataset.nodeId;
+        const portId = portElement.dataset.portId;
+        
+        if (nodeId && portId) {
+          // Find the node to get its position
+          const node = nodes.find(n => n.id === nodeId);
+          if (node) {
+            // Get the port's position relative to the node
+            const nodeEl = portElement.closest('.node-root') as HTMLElement;
+            if (nodeEl) {
+              const nodeRect = nodeEl.getBoundingClientRect();
+              const portRect = portElement.getBoundingClientRect();
+              
+              // Calculate position in canvas space (divide by scale since DOM is scaled)
+              const relativeX = (portRect.left - nodeRect.left + portRect.width / 2) / scale;
+              const relativeY = (portRect.top - nodeRect.top + portRect.height / 2) / scale;
+              
+              newCache.set(`${nodeId}:${portId}`, {
+                x: node.position.x + relativeX,
+                y: node.position.y + relativeY,
+              });
+            }
+          }
+        }
+      });
+      
+      portPositionCacheRef.current = newCache;
+      setPortCacheVersion(v => v + 1);
+    };
+    
+    // Use requestAnimationFrame to ensure DOM is painted
+    const rafId = requestAnimationFrame(() => {
+      measurePorts();
+    });
+    
+    return () => cancelAnimationFrame(rafId);
+  }, [nodes, connections]);
+
   // Quick node menu state
   const [quickMenu, setQuickMenu] = useState<QuickMenuState | null>(null);
   const setQuickMenuRef = useRef(setQuickMenu);
@@ -195,8 +250,9 @@ export default function NodeGraph({
   const [hoveredConnection, setHoveredConnection] = useState<string | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
-  // Notify parent when view changes
+  // Notify parent when view changes and update scale ref
   useEffect(() => {
+    viewScaleRef.current = view.scale;
     onViewChange?.(view);
   }, [view, onViewChange]);
   const [selectionRect, setSelectionRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
@@ -291,7 +347,76 @@ export default function NodeGraph({
     return colorMap[dataType || 'any'] || '#ffffff';
   };
 
-  // Generate connection path based on style setting
+  // Get port position from cache (measured from DOM after render)
+  const getPortPositionFromCache = (nodeId: string, portId: string): { x: number; y: number } | null => {
+    const cached = portPositionCacheRef.current.get(`${nodeId}:${portId}`);
+    if (cached) return cached;
+    
+    // Fallback to estimate if not in cache yet
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return null;
+    
+    // Handle reroute nodes - port is at center
+    if (node.type === 'reroute') {
+      const nodeSize = 36;
+      return {
+        x: node.position.x + nodeSize / 2,
+        y: node.position.y + nodeSize / 2,
+      };
+    }
+    
+    // Handle comment nodes - no ports
+    if (node.type === 'comment') return null;
+    
+    // Simple fallback estimate
+    const nodeWidth = node.size?.width || 180;
+    const isOutput = node.outputs.some(p => p.id === portId);
+    return {
+      x: node.position.x + (isOutput ? nodeWidth - 12 : 12),
+      y: node.position.y + 50, // rough center
+    };
+  };
+
+  // Legacy function kept for backward compatibility (used by temp connection line)
+  const getPortPositionFromState = (nodeId: string, portId: string): { x: number; y: number } | null => {
+    return getPortPositionFromCache(nodeId, portId);
+  };
+
+  // Generate connection path based on style setting (canvas-space, no view.scale dependency)
+  const generateConnectionPathCanvasSpace = (
+    fromPos: { x: number; y: number },
+    toPos: { x: number; y: number }
+  ): string => {
+    if (connectionStyle === 'straight') {
+      return `M ${fromPos.x} ${fromPos.y} L ${toPos.x} ${toPos.y}`;
+    }
+    
+    if (connectionStyle === 'step') {
+      const midX = (fromPos.x + toPos.x) / 2;
+      return `M ${fromPos.x} ${fromPos.y} L ${midX} ${fromPos.y} L ${midX} ${toPos.y} L ${toPos.x} ${toPos.y}`;
+    }
+    
+    // Default: bezier curve (fixed values - no scale dependency for stable canvas-space rendering)
+    const distance = Math.abs(toPos.x - fromPos.x);
+    const verticalDistance = Math.abs(toPos.y - fromPos.y);
+    const alignmentRatio = distance > 0 ? Math.min(verticalDistance / distance, 2) : 1;
+    const stackFactor = distance > 0 
+      ? Math.min(1, Math.max(0, (100 - distance) / 100)) * (verticalDistance > distance ? 1 : 0.5)
+      : 1;
+    const minLength = 5 + alignmentRatio * 20;
+    const maxLength = 40 + alignmentRatio * 20;
+    const straightSegmentLength = Math.min(80, minLength + (maxLength - minLength) * stackFactor);
+    const baseStrength = Math.min(distance * (0.6 + alignmentRatio * 0.1), 200);
+    
+    const fromControlX = fromPos.x + straightSegmentLength + baseStrength;
+    const fromControlY = fromPos.y;
+    const toControlX = toPos.x - straightSegmentLength - baseStrength;
+    const toControlY = toPos.y;
+    
+    return `M ${fromPos.x} ${fromPos.y} C ${fromControlX} ${fromControlY}, ${toControlX} ${toControlY}, ${toPos.x} ${toPos.y}`;
+  };
+
+  // Screen-space version for temporary connection line (still needs view.scale)
   const generateConnectionPath = (
     fromPos: { x: number; y: number },
     toPos: { x: number; y: number }
@@ -305,8 +430,7 @@ export default function NodeGraph({
       return `M ${fromPos.x} ${fromPos.y} L ${midX} ${fromPos.y} L ${midX} ${toPos.y} L ${toPos.x} ${toPos.y}`;
     }
     
-    // Default: bezier curve
-    // Scale curve parameters to account for zoom level so curves stay consistent
+    // Default: bezier curve with scale for screen-space temp line
     const scale = view.scale;
     const distance = Math.abs(toPos.x - fromPos.x);
     const verticalDistance = Math.abs(toPos.y - fromPos.y);
@@ -2830,45 +2954,55 @@ export default function NodeGraph({
     };
   }, [buildNodeFromDefinition, getConnectPortIndex, quickMenu, tempConnectionLine]);
 
-  // Render connection paths
-  const renderConnections = () => {
-    // Calculate scale-compensated stroke widths so lines stay consistent regardless of zoom
-    const baseStroke = 2.5 * view.scale;
-    const hoverStroke = 3.5 * view.scale;
-    const glowStroke = 8 * view.scale;
-    const hitStroke = 12 * view.scale;
-    const flowRadius = 3 * view.scale;
-
+  // Cache connection paths - recalculates when nodes, connections, or port positions change
+  const cachedConnectionPaths = useMemo(() => {
     return connections.map((conn) => {
-      const fromPos = getPortPositionFromDOM(conn.from.nodeId, conn.from.portId);
-      const toPos = getPortPositionFromDOM(conn.to.nodeId, conn.to.portId);
-
-      // Skip only if both positions can't be determined
-      if (!fromPos && !toPos) {
-        return null;
-      }
+      const fromPos = getPortPositionFromCache(conn.from.nodeId, conn.from.portId);
+      const toPos = getPortPositionFromCache(conn.to.nodeId, conn.to.portId);
       
-      // Use available position or skip this connection
-      if (!fromPos || !toPos) {
-        return null;
-      }
-
-      // Generate path based on connection style setting
-      const pathD = generateConnectionPath(fromPos, toPos);
-
+      if (!fromPos || !toPos) return null;
+      
+      const pathD = generateConnectionPathCanvasSpace(fromPos, toPos);
+      
       const fromNode = nodes.find(node => node.id === conn.from.nodeId);
       const fromPort =
         fromNode?.outputs.find(port => port.id === conn.from.portId) ||
         fromNode?.inputs.find(port => port.id === conn.from.portId);
       const stroke = getLineColor(fromPort?.type || 'data', fromPort?.dataType);
-      const isHovered = hoveredConnection === conn.id;
+      
+      return {
+        id: conn.id,
+        pathD,
+        stroke,
+        fromNodeId: conn.from.nodeId,
+        toNodeId: conn.to.nodeId,
+      };
+    }).filter((p): p is NonNullable<typeof p> => p !== null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodes, connections, connectionStyle, portCacheVersion]);
+
+  // Render connection paths using cached data
+  const renderConnections = () => {
+    // Fixed stroke widths since SVG is inside transformed container
+    const baseStroke = 2.5;
+    const hoverStroke = 3.5;
+    const glowStroke = 8;
+    const hitStroke = 12;
+    const flowRadius = 3;
+
+    return cachedConnectionPaths.map((cached) => {
+      const { id, pathD, stroke, fromNodeId, toNodeId } = cached;
+      const conn = connections.find(c => c.id === id);
+      if (!conn) return null;
+      
+      const isHovered = hoveredConnection === id;
       
       // Highlight connections when hovering over connected node
       const isNodeHighlighted = highlightConnections && hoveredNodeId && 
-        (conn.from.nodeId === hoveredNodeId || conn.to.nodeId === hoveredNodeId);
+        (fromNodeId === hoveredNodeId || toNodeId === hoveredNodeId);
 
       return (
-        <g key={conn.id}>
+        <g key={id}>
           {/* Glow effect on hover or node highlight */}
           {(isHovered || isNodeHighlighted) && (
             <path
@@ -2890,9 +3024,9 @@ export default function NodeGraph({
             pointerEvents="stroke"
             style={{ cursor: 'pointer', pointerEvents: 'stroke' }}
             data-connection-hit="true"
-            onMouseEnter={() => setHoveredConnection(conn.id)}
+            onMouseEnter={() => setHoveredConnection(id)}
             onMouseLeave={() => setHoveredConnection(null)}
-            onContextMenu={(e) => handleConnectionContextMenu(e, conn.id)}
+            onContextMenu={(e) => handleConnectionContextMenu(e, id)}
             onMouseDown={(e) => handleConnectionRewireStart(e, conn)}
             onDoubleClick={(e) => handleInsertReroute(e, conn)}
           />
@@ -3415,19 +3549,34 @@ export default function NodeGraph({
             </div>
           );
         })}
+
+        {/* SVG for connections - inside transformed container for lag-free pan/zoom */}
+        <svg
+          ref={svgRef}
+          className="absolute pointer-events-none"
+          style={{ 
+            zIndex: connectionsBehindNodes ? -1 : 100,
+            // Large SVG to cover all possible node positions
+            width: '200000px',
+            height: '200000px',
+            left: '-100000px',
+            top: '-100000px',
+            overflow: 'visible',
+          }}
+          preserveAspectRatio="none"
+        >
+          <g transform="translate(100000, 100000)">
+            {renderConnections()}
+          </g>
+        </svg>
       </div>
 
-      {/* SVG for connections - rendered after nodes so DOM queries work */}
-      <svg
-        ref={svgRef}
-        className="absolute inset-0 pointer-events-none"
-        style={{ zIndex: connectionsBehindNodes ? 0 : 50, width: '100%', height: '100%' }}
-        preserveAspectRatio="none"
-      >
-        {renderConnections()}
-
-        {/* Draw temporary connection line */}
-        {tempConnectionLine && (
+      {/* Temporary connection line - in screen space (outside transformed container) */}
+      {tempConnectionLine && (
+        <svg
+          className="absolute inset-0 pointer-events-none"
+          style={{ zIndex: 200, width: '100%', height: '100%' }}
+        >
           <path
             d={generateConnectionPath(tempConnectionLine.from, tempConnectionLine.to)}
             stroke={getLineColor(tempConnectionRef.current?.portType || 'exec', tempConnectionRef.current?.dataType)}
@@ -3436,8 +3585,8 @@ export default function NodeGraph({
             fill="none"
             strokeLinecap="round"
           />
-        )}
-      </svg>
+        </svg>
+      )}
 
       {/* Empty state */}
       {nodes.length === 0 && (
