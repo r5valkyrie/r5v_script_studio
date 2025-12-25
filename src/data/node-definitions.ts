@@ -2133,7 +2133,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   {
     type: 'create-entity',
     category: 'entity',
-    label: 'CreateEntity',
+    label: 'Create Entity',
     description: `Create a new entity with full setup options. All inputs are optional except ClassName. Connect KV nodes to KeyValues input for .kv.* properties.`,
     color: '#27AE60',
     inputs: [
@@ -2164,7 +2164,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       // NPC-specific
       { label: 'AISettings', type: 'data', dataType: 'string', isInput: true },
       // KeyValues - connect KV nodes here (supports multiple connections)
-      { label: 'KeyValues', type: 'data', dataType: 'array', isInput: true },
+      { label: 'KeyValues', type: 'data', dataType: 'table', isInput: true },
     ],
     outputs: [
       { label: 'Out', type: 'exec', isInput: false },
@@ -4606,22 +4606,6 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
 
   // ==================== MATH ====================
-  {
-    type: 'vector-create',
-    category: 'math',
-    label: 'Vector',
-    description: 'Create vector from components',
-    color: '#95A5A6',
-    inputs: [
-      { label: 'X', type: 'data', dataType: 'number', isInput: true },
-      { label: 'Y', type: 'data', dataType: 'number', isInput: true },
-      { label: 'Z', type: 'data', dataType: 'number', isInput: true },
-    ],
-    outputs: [
-      { label: 'Vector', type: 'data', dataType: 'vector', isInput: false },
-    ],
-    defaultData: { x: 0, y: 0, z: 0 },
-  },
   {
     type: 'vector-add',
     category: 'math',

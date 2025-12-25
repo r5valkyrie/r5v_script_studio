@@ -847,6 +847,399 @@ export default function NodeGraph({
       );
     }
 
+    // Struct Define - inline editor with +/- for fields
+    if (node.type === 'struct-define') {
+      const structName = typeof node.data.structName === 'string' ? node.data.structName : 'MyStruct';
+      const isGlobal = typeof node.data.isGlobal === 'boolean' ? node.data.isGlobal : false;
+      const fieldCount = typeof node.data.fieldCount === 'number' ? node.data.fieldCount : 2;
+      const fieldNames = Array.isArray(node.data.fieldNames) ? node.data.fieldNames : ['field1', 'field2'];
+      const fieldTypes = Array.isArray(node.data.fieldTypes) ? node.data.fieldTypes : ['int', 'string'];
+      const fieldDefaults = Array.isArray(node.data.fieldDefaults) ? node.data.fieldDefaults : [0, '""'];
+      const typeOptions = ['int', 'float', 'bool', 'string', 'vector', 'entity', 'var', 'array', 'table'];
+
+      const addField = () => {
+        const newCount = fieldCount + 1;
+        const newFieldNames = [...fieldNames, `field${newCount}`];
+        const newFieldTypes = [...fieldTypes, 'var'];
+        const newFieldDefaults = [...fieldDefaults, 'null'];
+        onUpdateNodeRef.current(node.id, {
+          data: { ...node.data, fieldCount: newCount, fieldNames: newFieldNames, fieldTypes: newFieldTypes, fieldDefaults: newFieldDefaults },
+        });
+      };
+
+      const removeField = () => {
+        if (fieldCount <= 1) return;
+        const newCount = fieldCount - 1;
+        const newFieldNames = fieldNames.slice(0, newCount);
+        const newFieldTypes = fieldTypes.slice(0, newCount);
+        const newFieldDefaults = fieldDefaults.slice(0, newCount);
+        onUpdateNodeRef.current(node.id, {
+          data: { ...node.data, fieldCount: newCount, fieldNames: newFieldNames, fieldTypes: newFieldTypes, fieldDefaults: newFieldDefaults },
+        });
+      };
+
+      return (
+        <div className="flex flex-col gap-1.5">
+          <input
+            type="text"
+            value={structName}
+            onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, structName: e.target.value } })}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+            placeholder="StructName"
+          />
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isGlobal}
+              onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, isGlobal: e.target.checked } })}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="w-3 h-3 rounded bg-[#1a1f28] border border-white/10 accent-purple-500"
+            />
+            <span className="text-[9px] text-gray-500">Global Struct</span>
+          </label>
+
+          {/* Field list */}
+          {fieldCount > 0 && (
+            <div className="flex flex-col gap-1 mt-1">
+              <span className="text-[9px] text-gray-500">Fields:</span>
+              {Array.from({ length: fieldCount }).map((_, i) => (
+                <div key={i} className="flex gap-1">
+                  <input
+                    type="text"
+                    value={fieldNames[i] || `field${i + 1}`}
+                    onChange={(e) => {
+                      const newNames = [...fieldNames];
+                      newNames[i] = e.target.value;
+                      onUpdateNodeRef.current(node.id, { data: { ...node.data, fieldNames: newNames } });
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    placeholder={`field${i + 1}`}
+                    className="flex-1 px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+                  />
+                  <CustomSelect
+                    value={fieldTypes[i] || 'var'}
+                    options={typeOptions}
+                    onChange={(value) => {
+                      const newTypes = [...fieldTypes];
+                      newTypes[i] = value;
+                      onUpdateNodeRef.current(node.id, { data: { ...node.data, fieldTypes: newTypes } });
+                    }}
+                    className="w-16"
+                    size="sm"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] text-gray-400">{fieldCount} fields</span>
+            <div className="flex gap-1">
+              <button
+                onClick={(e) => { e.stopPropagation(); removeField(); }}
+                onMouseDown={(e) => e.stopPropagation()}
+                disabled={fieldCount <= 1}
+                className="w-5 h-5 flex items-center justify-center rounded bg-red-500/20 hover:bg-red-500/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-red-400 text-xs font-bold"
+              >
+                −
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); addField(); }}
+                onMouseDown={(e) => e.stopPropagation()}
+                className="w-5 h-5 flex items-center justify-center rounded bg-green-500/20 hover:bg-green-500/40 transition-colors text-green-400 text-xs font-bold"
+              >
+                +
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Enum Define - inline editor with +/- for values
+    if (node.type === 'enum-define') {
+      const enumName = typeof node.data.enumName === 'string' ? node.data.enumName : 'MyEnum';
+      const isGlobal = typeof node.data.isGlobal === 'boolean' ? node.data.isGlobal : true;
+      const valueCount = typeof node.data.valueCount === 'number' ? node.data.valueCount : 3;
+      const valueNames = Array.isArray(node.data.valueNames) ? node.data.valueNames : ['VALUE_A', 'VALUE_B', 'VALUE_C'];
+      const explicitValues = Array.isArray(node.data.explicitValues) ? node.data.explicitValues : [null, null, null];
+
+      const addValue = () => {
+        const newCount = valueCount + 1;
+        const newNames = [...valueNames, `VALUE_${String.fromCharCode(65 + newCount - 1)}`];
+        const newExplicit = [...explicitValues, null];
+        onUpdateNodeRef.current(node.id, {
+          data: { ...node.data, valueCount: newCount, valueNames: newNames, explicitValues: newExplicit },
+        });
+      };
+
+      const removeValue = () => {
+        if (valueCount <= 1) return;
+        const newCount = valueCount - 1;
+        onUpdateNodeRef.current(node.id, {
+          data: { ...node.data, valueCount: newCount, valueNames: valueNames.slice(0, newCount), explicitValues: explicitValues.slice(0, newCount) },
+        });
+      };
+
+      return (
+        <div className="flex flex-col gap-1.5">
+          <input
+            type="text"
+            value={enumName}
+            onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, enumName: e.target.value } })}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+            placeholder="EnumName"
+          />
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isGlobal}
+              onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, isGlobal: e.target.checked } })}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="w-3 h-3 rounded bg-[#1a1f28] border border-white/10 accent-purple-500"
+            />
+            <span className="text-[9px] text-gray-500">Global Enum</span>
+          </label>
+
+          {/* Value list */}
+          {valueCount > 0 && (
+            <div className="flex flex-col gap-1 mt-1">
+              <span className="text-[9px] text-gray-500">Values:</span>
+              {Array.from({ length: valueCount }).map((_, i) => (
+                <div key={i} className="flex gap-1">
+                  <input
+                    type="text"
+                    value={valueNames[i] || `VALUE_${i}`}
+                    onChange={(e) => {
+                      const newNames = [...valueNames];
+                      newNames[i] = e.target.value;
+                      onUpdateNodeRef.current(node.id, { data: { ...node.data, valueNames: newNames } });
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    placeholder={`VALUE_${i}`}
+                    className="flex-1 px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+                  />
+                  <input
+                    type="text"
+                    value={explicitValues[i] !== null ? String(explicitValues[i]) : ''}
+                    onChange={(e) => {
+                      const newExplicit = [...explicitValues];
+                      newExplicit[i] = e.target.value === '' ? null : e.target.value;
+                      onUpdateNodeRef.current(node.id, { data: { ...node.data, explicitValues: newExplicit } });
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    placeholder="auto"
+                    className="w-12 px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10 text-center"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] text-gray-400">{valueCount} values</span>
+            <div className="flex gap-1">
+              <button
+                onClick={(e) => { e.stopPropagation(); removeValue(); }}
+                onMouseDown={(e) => e.stopPropagation()}
+                disabled={valueCount <= 1}
+                className="w-5 h-5 flex items-center justify-center rounded bg-red-500/20 hover:bg-red-500/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-red-400 text-xs font-bold"
+              >
+                −
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); addValue(); }}
+                onMouseDown={(e) => e.stopPropagation()}
+                className="w-5 h-5 flex items-center justify-center rounded bg-green-500/20 hover:bg-green-500/40 transition-colors text-green-400 text-xs font-bold"
+              >
+                +
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Array Create Typed - inline editor with +/- for initial values
+    if (node.type === 'array-create-typed') {
+      const elementType = typeof node.data.elementType === 'string' ? node.data.elementType : 'entity';
+      const initialValues = Array.isArray(node.data.initialValues) ? node.data.initialValues : [];
+      const typeOptions = ['int', 'float', 'bool', 'string', 'vector', 'entity', 'var'];
+
+      const addValue = () => {
+        const newValues = [...initialValues, ''];
+        onUpdateNodeRef.current(node.id, { data: { ...node.data, initialValues: newValues } });
+      };
+
+      const removeValue = () => {
+        if (initialValues.length <= 0) return;
+        onUpdateNodeRef.current(node.id, { data: { ...node.data, initialValues: initialValues.slice(0, -1) } });
+      };
+
+      return (
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] text-gray-500">Type:</span>
+            <CustomSelect
+              value={elementType}
+              options={typeOptions}
+              onChange={(value) => onUpdateNodeRef.current(node.id, { data: { ...node.data, elementType: value } })}
+              className="flex-1"
+              size="sm"
+            />
+          </div>
+
+          {/* Initial values list */}
+          {initialValues.length > 0 && (
+            <div className="flex flex-col gap-1 mt-1">
+              <span className="text-[9px] text-gray-500">Initial Values:</span>
+              {initialValues.map((val, i) => (
+                <input
+                  key={i}
+                  type="text"
+                  value={String(val)}
+                  onChange={(e) => {
+                    const newValues = [...initialValues];
+                    newValues[i] = e.target.value;
+                    onUpdateNodeRef.current(node.id, { data: { ...node.data, initialValues: newValues } });
+                  }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  placeholder={`value ${i}`}
+                  className="w-full px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+                />
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] text-gray-400">{initialValues.length} items</span>
+            <div className="flex gap-1">
+              <button
+                onClick={(e) => { e.stopPropagation(); removeValue(); }}
+                onMouseDown={(e) => e.stopPropagation()}
+                disabled={initialValues.length <= 0}
+                className="w-5 h-5 flex items-center justify-center rounded bg-red-500/20 hover:bg-red-500/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-red-400 text-xs font-bold"
+              >
+                −
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); addValue(); }}
+                onMouseDown={(e) => e.stopPropagation()}
+                className="w-5 h-5 flex items-center justify-center rounded bg-green-500/20 hover:bg-green-500/40 transition-colors text-green-400 text-xs font-bold"
+              >
+                +
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Table Create Typed - inline editor with +/- for initial key-value pairs
+    if (node.type === 'table-create-typed') {
+      const keyType = typeof node.data.keyType === 'string' ? node.data.keyType : 'string';
+      const valueType = typeof node.data.valueType === 'string' ? node.data.valueType : 'int';
+      const initialKeys = Array.isArray(node.data.initialKeys) ? node.data.initialKeys : [];
+      const initialVals = Array.isArray(node.data.initialVals) ? node.data.initialVals : [];
+      const typeOptions = ['int', 'float', 'bool', 'string', 'vector', 'entity', 'var'];
+
+      const addPair = () => {
+        const newKeys = [...initialKeys, ''];
+        const newVals = [...initialVals, ''];
+        onUpdateNodeRef.current(node.id, { data: { ...node.data, initialKeys: newKeys, initialVals: newVals } });
+      };
+
+      const removePair = () => {
+        if (initialKeys.length <= 0) return;
+        onUpdateNodeRef.current(node.id, { 
+          data: { ...node.data, initialKeys: initialKeys.slice(0, -1), initialVals: initialVals.slice(0, -1) } 
+        });
+      };
+
+      return (
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] text-gray-500">Key:</span>
+            <CustomSelect
+              value={keyType}
+              options={typeOptions}
+              onChange={(value) => onUpdateNodeRef.current(node.id, { data: { ...node.data, keyType: value } })}
+              className="flex-1"
+              size="sm"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] text-gray-500">Val:</span>
+            <CustomSelect
+              value={valueType}
+              options={typeOptions}
+              onChange={(value) => onUpdateNodeRef.current(node.id, { data: { ...node.data, valueType: value } })}
+              className="flex-1"
+              size="sm"
+            />
+          </div>
+
+          {/* Initial key-value pairs */}
+          {initialKeys.length > 0 && (
+            <div className="flex flex-col gap-1 mt-1">
+              <span className="text-[9px] text-gray-500">Initial Entries:</span>
+              {initialKeys.map((key, i) => (
+                <div key={i} className="flex gap-1">
+                  <input
+                    type="text"
+                    value={String(key)}
+                    onChange={(e) => {
+                      const newKeys = [...initialKeys];
+                      newKeys[i] = e.target.value;
+                      onUpdateNodeRef.current(node.id, { data: { ...node.data, initialKeys: newKeys } });
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    placeholder="key"
+                    className="flex-1 px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+                  />
+                  <input
+                    type="text"
+                    value={String(initialVals[i] || '')}
+                    onChange={(e) => {
+                      const newVals = [...initialVals];
+                      newVals[i] = e.target.value;
+                      onUpdateNodeRef.current(node.id, { data: { ...node.data, initialVals: newVals } });
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    placeholder="value"
+                    className="flex-1 px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] text-gray-400">{initialKeys.length} entries</span>
+            <div className="flex gap-1">
+              <button
+                onClick={(e) => { e.stopPropagation(); removePair(); }}
+                onMouseDown={(e) => e.stopPropagation()}
+                disabled={initialKeys.length <= 0}
+                className="w-5 h-5 flex items-center justify-center rounded bg-red-500/20 hover:bg-red-500/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-red-400 text-xs font-bold"
+              >
+                −
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); addPair(); }}
+                onMouseDown={(e) => e.stopPropagation()}
+                className="w-5 h-5 flex items-center justify-center rounded bg-green-500/20 hover:bg-green-500/40 transition-colors text-green-400 text-xs font-bold"
+              >
+                +
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     if (node.type === 'thread') {
       const value = typeof node.data.functionName === 'string' ? node.data.functionName : 'ThreadFunc';
       return (
@@ -1844,11 +2237,7 @@ export default function NodeGraph({
 
   // Break a connection
   const handleBreakConnection = (connectionId: string) => {
-    const conn = connections.find(c => c.id === connectionId);
-    if (conn) {
-      onBreakInput(conn.to.nodeId, conn.to.portId);
-      onDeleteConnectionRef.current?.(connectionId);
-    }
+    onDeleteConnectionRef.current?.(connectionId);
     setContextMenu(null);
   };
 
@@ -2680,6 +3069,97 @@ export default function NodeGraph({
               }
             });
           };
+
+          // Render simple KV nodes (single input) as compact pill shapes
+          // Multi-input KV nodes like kv-trigger-filter and kv-custom use regular rendering
+          const isKvNode = node.type.startsWith('kv-') && node.inputs.length === 1;
+          if (isKvNode) {
+            const inputPort = node.inputs[0];
+            const outputPort = node.outputs[0];
+            const portSize = 14;
+            const hitSize = 24;
+            const kvKey = typeof node.data.key === 'string' ? node.data.key : node.label.replace('KV: ', '');
+
+            return (
+              <div
+                key={node.id}
+                className="node-root absolute select-none"
+                data-node-id={node.id}
+                style={{
+                  left: node.position.x,
+                  top: node.position.y,
+                  minWidth: gridAlignedMinWidth,
+                  width: nodeWidth,
+                  height: nodeHeight,
+                  cursor: 'grab',
+                  userSelect: 'none',
+                  zIndex: isSelected ? 100 : 1,
+                  opacity: nodeOpacity / 100,
+                }}
+                onMouseDown={(e) => handleNodeMouseDown(e, node)}
+                onContextMenu={(e) => handleNodeContextMenu(e, node.id)}
+                onMouseEnter={() => setHoveredNodeId(node.id)}
+                onMouseLeave={() => setHoveredNodeId(null)}
+              >
+                {/* Pill-shaped body */}
+                <div 
+                  className="flex items-center h-full px-3 rounded-full border-2 transition-colors"
+                  style={{ 
+                    backgroundColor: theme === 'light' ? '#f8f9fa' : '#1a1f28',
+                    borderColor: isSelected ? accentColor : (theme === 'light' ? '#4caf50' : '#16A085'),
+                    boxShadow: isSelected 
+                      ? `0 0 0 2px ${accentColor}, 0 0 0 4px #0f1419` 
+                      : (theme === 'light' ? 'none' : '0 2px 8px rgba(0, 0, 0, 0.3)'),
+                  }}
+                >
+                  {/* Input port on left */}
+                  {inputPort && (
+                    <div
+                      data-node-id={node.id}
+                      data-port-id={inputPort.id}
+                      data-is-input="true"
+                      className="node-port flex items-center cursor-crosshair group -mr-3 ml-1 ml-auto"
+                      style={{ width: hitSize, height: hitSize }}
+                      onMouseDown={(e) => handlePortMouseDown(e, node.id, inputPort.id, true, inputPort.type, inputPort.dataType)}
+                      onContextMenu={(e) => handlePortContextMenu(e, node.id, inputPort.id, true)}
+                      title={`${inputPort.label} (${inputPort.type}${inputPort.dataType ? ': ' + inputPort.dataType : ''})`}
+                    >
+                      <div
+                        className={`border-2 transition-transform group-hover:scale-125 ${getPortClasses(inputPort.type, inputPort.dataType)} ${getPortShapeClass(inputPort.type)}`}
+                        style={{ width: portSize, height: portSize, ...getPortShapeStyle(inputPort.type) }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Key name label */}
+                  <span 
+                    className="text-xs font-medium whitespace-nowrap px-1 justify-center flex-1 text-center"
+                    style={{ color: '#fff' }}
+                  >
+                    {kvKey}
+                  </span>
+
+                  {/* Output port on right */}
+                  {outputPort && (
+                    <div
+                      data-node-id={node.id}
+                      data-port-id={outputPort.id}
+                      data-is-input="false"
+                      className="node-port flex items-center cursor-crosshair group -mr-3 ml-1 ml-auto"
+                      style={{ width: hitSize, height: hitSize }}
+                      onMouseDown={(e) => handlePortMouseDown(e, node.id, outputPort.id, false, outputPort.type, outputPort.dataType)}
+                      title={`${outputPort.label} (${outputPort.type}${outputPort.dataType ? ': ' + outputPort.dataType : ''})`}
+                    >
+                      <div
+                        className={`border-2 transition-transform group-hover:scale-125 ${getPortClasses(outputPort.type, outputPort.dataType)} ${getPortShapeClass(outputPort.type)}`}
+                        style={{ width: portSize, height: portSize, ...getPortShapeStyle(outputPort.type) }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          }
 
           return (
             <div
