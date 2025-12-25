@@ -2307,6 +2307,137 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
+    // ==================== PASSIVES ====================
+    case 'give-passive': {
+      const player = getInputValue(ctx, node, 'input_1');
+      const passive = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}GivePassive(${player}, ${passive})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'take-passive': {
+      const player = getInputValue(ctx, node, 'input_1');
+      const passive = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}TakePassive(${player}, ${passive})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'take-all-passives': {
+      const player = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}TakeAllPassives(${player})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'get-all-passives-for-player': {
+      const player = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'passives');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}array<int> ${resultVar} = GetAllPassivesForPlayer(${player})`);
+      break;
+    }
+
+    case 'player-has-passive': {
+      const player = getInputValue(ctx, node, 'input_0');
+      const passive = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'hasPassive');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}bool ${resultVar} = PlayerHasPassive(${player}, ${passive})`);
+      break;
+    }
+
+    // ==================== CHARACTER ABILITIES ====================
+    case 'character-get-tactical-ability': {
+      const character = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'tacticalAbility');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}ItemFlavor ${resultVar} = CharacterClass_GetTacticalAbility(${character})`);
+      break;
+    }
+
+    case 'character-get-ultimate-ability': {
+      const character = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'ultimateAbility');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}ItemFlavor ${resultVar} = CharacterClass_GetUltimateAbility(${character})`);
+      break;
+    }
+
+    case 'character-get-passive-ability': {
+      const character = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'passiveAbility');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}ItemFlavor ${resultVar} = CharacterClass_GetPassiveAbility(${character})`);
+      break;
+    }
+
+    // ==================== SURVIVAL LOOT ====================
+    case 'survival-get-all-loot': {
+      const resultVar = getVarName(ctx, 'allLoot');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}array<entity> ${resultVar} = SURVIVAL_Loot_GetAllLoot()`);
+      break;
+    }
+
+    case 'survival-pickup-item': {
+      const loot = getInputValue(ctx, node, 'input_1');
+      const player = getInputValue(ctx, node, 'input_2');
+      const resultVar = getVarName(ctx, 'pickupSuccess');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}bool ${resultVar} = Survival_PickupItem(${loot}, ${player})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'survival-add-to-inventory': {
+      const player = getInputValue(ctx, node, 'input_1');
+      const itemRef = getInputValue(ctx, node, 'input_2');
+      const count = getInputValue(ctx, node, 'input_3');
+      const resultVar = getVarName(ctx, 'amountAdded');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}int ${resultVar} = SURVIVAL_AddToPlayerInventory(${player}, ${itemRef}, ${count})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'survival-remove-from-inventory': {
+      const player = getInputValue(ctx, node, 'input_1');
+      const itemRef = getInputValue(ctx, node, 'input_2');
+      const count = getInputValue(ctx, node, 'input_3');
+      lines.push(`${ind}SURVIVAL_RemoveFromPlayerInventory(${player}, ${itemRef}, ${count})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'survival-get-player-inventory': {
+      const player = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'inventory');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}array<ConsumableInventoryItem> ${resultVar} = SURVIVAL_GetPlayerInventory(${player})`);
+      break;
+    }
+
+    case 'survival-count-items-in-inventory': {
+      const player = getInputValue(ctx, node, 'input_0');
+      const itemRef = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'itemCount');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}int ${resultVar} = SURVIVAL_CountItemsInInventory(${player}, ${itemRef})`);
+      break;
+    }
+
+    case 'survival-has-item-in-inventory': {
+      const player = getInputValue(ctx, node, 'input_0');
+      const itemRef = getInputValue(ctx, node, 'input_1');
+      const count = getInputValue(ctx, node, 'input_2');
+      const resultVar = getVarName(ctx, 'hasItem');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}bool ${resultVar} = SURVIVAL_HasSpecificItemInInventory(${player}, ${itemRef}, ${count})`);
+      break;
+    }
+
     // ==================== COMPARISONS ====================
     case 'compare-equal': {
       const a = getInputValue(ctx, node, 'input_0');

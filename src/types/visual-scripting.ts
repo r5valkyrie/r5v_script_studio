@@ -5,6 +5,9 @@ export type NodeCategory =
   | 'npc'            // NPC/AI creation and manipulation
   | 'keyvalues'      // Entity keyvalue properties (.kv.*)
   | 'weapons'        // Weapon-specific operations
+  | 'passives'       // Passive ability system
+  | 'character'      // Character abilities and classes
+  | 'survival'       // Survival loot and inventory system
   | 'status-effects' // Status effect system
   | 'particles'      // Particle and FX
   | 'audio'          // Sound and audio
@@ -36,7 +39,8 @@ export type NodeDataType =
   | 'array'
   | 'table'
   | 'var'
-  | 'any';
+  | 'any'
+  | 'itemflavor';
 
 export type NodeType =
   // ==================== CORE FLOW ====================
@@ -517,7 +521,28 @@ export type NodeType =
   | 'trigger-search-new-touching'
   | 'dispatch-spawn'
   | 'take-primary-weapon'
-  | 'set-active-weapon-by-name';
+  | 'set-active-weapon-by-name'
+
+  // ==================== PASSIVES ====================
+  | 'give-passive'
+  | 'take-passive'
+  | 'take-all-passives'
+  | 'get-all-passives-for-player'
+  | 'player-has-passive'
+
+  // ==================== CHARACTER ABILITIES ====================
+  | 'character-get-tactical-ability'
+  | 'character-get-ultimate-ability'
+  | 'character-get-passive-ability'
+
+  // ==================== SURVIVAL LOOT ====================
+  | 'survival-get-all-loot'
+  | 'survival-pickup-item'
+  | 'survival-add-to-inventory'
+  | 'survival-remove-from-inventory'
+  | 'survival-get-player-inventory'
+  | 'survival-count-items-in-inventory'
+  | 'survival-has-item-in-inventory';
 
 export interface NodePort {
   id: string;
@@ -584,6 +609,9 @@ export const CATEGORY_INFO: CategoryInfo[] = [
   { id: 'npc', label: 'NPC/AI', color: '#E67E22', textClass: 'text-orange-400', description: 'NPC and AI creation, spawning, and behavior' },
   { id: 'keyvalues', label: 'KeyValues', color: '#16A085', textClass: 'text-teal-400', description: 'Entity keyvalue properties (.kv.*)' },
   { id: 'weapons', label: 'Weapons', color: '#E67E22', textClass: 'text-red-400', description: 'Weapon operations and modifications' },
+  { id: 'passives', label: 'Passives', color: '#9B59B6', textClass: 'text-purple-400', description: 'Passive ability system' },
+  { id: 'character', label: 'Character', color: '#3498DB', textClass: 'text-blue-400', description: 'Character abilities and classes' },
+  { id: 'survival', label: 'Survival/Loot', color: '#27AE60', textClass: 'text-green-400', description: 'Survival loot and inventory system' },
   { id: 'status-effects', label: 'Status Effects', color: '#9B59B6', textClass: 'text-green-400', description: 'Status effects and buffs/debuffs' },
   { id: 'particles', label: 'Particles', color: '#F39C12', textClass: 'text-pink-400', description: 'Particle effects and FX' },
   { id: 'audio', label: 'Audio', color: '#1ABC9C', textClass: 'text-cyan-400', description: 'Sound effects and audio' },

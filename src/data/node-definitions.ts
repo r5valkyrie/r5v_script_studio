@@ -6244,6 +6244,246 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     defaultData: { slot: 0, weaponName: 'mp_weapon_r97' },
     serverOnly: true,
   },
+
+  // ==================== PASSIVES ====================
+  {
+    type: 'give-passive',
+    category: 'passives',
+    label: 'GivePassive',
+    description: 'Give passive ability to player',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Passive', type: 'data', dataType: 'int', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { passive: 'ePassives.PAS_FAST_HEAL' },
+    serverOnly: true,
+  },
+  {
+    type: 'take-passive',
+    category: 'passives',
+    label: 'TakePassive',
+    description: 'Remove passive ability from player',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Passive', type: 'data', dataType: 'int', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { passive: 'ePassives.PAS_FAST_HEAL' },
+    serverOnly: true,
+  },
+  {
+    type: 'take-all-passives',
+    category: 'passives',
+    label: 'TakeAllPassives',
+    description: 'Remove all passive abilities from player',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: {},
+    serverOnly: true,
+  },
+  {
+    type: 'get-all-passives-for-player',
+    category: 'passives',
+    label: 'GetAllPassivesForPlayer',
+    description: 'Get array of all passive ability indices for player',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+    ],
+    outputs: [
+      { label: 'Passives', type: 'data', dataType: 'array', isInput: false },
+    ],
+    defaultData: {},
+    serverOnly: true,
+  },
+  {
+    type: 'player-has-passive',
+    category: 'passives',
+    label: 'PlayerHasPassive',
+    description: 'Check if player has a specific passive ability',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Passive', type: 'data', dataType: 'int', isInput: true },
+    ],
+    outputs: [
+      { label: 'HasPassive', type: 'data', dataType: 'boolean', isInput: false },
+    ],
+    defaultData: { passive: 'ePassives.PAS_FAST_HEAL' },
+  },
+
+  // ==================== CHARACTER ABILITIES ====================
+  {
+    type: 'character-get-tactical-ability',
+    category: 'character',
+    label: 'CharacterClass_GetTacticalAbility',
+    description: 'Get tactical ability ItemFlavor for a character',
+    color: '#3498DB',
+    inputs: [
+      { label: 'Character', type: 'data', dataType: 'itemflavor', isInput: true },
+    ],
+    outputs: [
+      { label: 'Ability', type: 'data', dataType: 'itemflavor', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'character-get-ultimate-ability',
+    category: 'character',
+    label: 'CharacterClass_GetUltimateAbility',
+    description: 'Get ultimate ability ItemFlavor for a character',
+    color: '#3498DB',
+    inputs: [
+      { label: 'Character', type: 'data', dataType: 'itemflavor', isInput: true },
+    ],
+    outputs: [
+      { label: 'Ability', type: 'data', dataType: 'itemflavor', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'character-get-passive-ability',
+    category: 'character',
+    label: 'CharacterClass_GetPassiveAbility',
+    description: 'Get passive ability ItemFlavor for a character',
+    color: '#3498DB',
+    inputs: [
+      { label: 'Character', type: 'data', dataType: 'itemflavor', isInput: true },
+    ],
+    outputs: [
+      { label: 'Ability', type: 'data', dataType: 'itemflavor', isInput: false },
+    ],
+    defaultData: {},
+  },
+
+  // ==================== SURVIVAL LOOT ====================
+  {
+    type: 'survival-get-all-loot',
+    category: 'survival',
+    label: 'SURVIVAL_Loot_GetAllLoot',
+    description: 'Get array of all loot entities in the level',
+    color: '#27AE60',
+    inputs: [],
+    outputs: [
+      { label: 'LootArray', type: 'data', dataType: 'array', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'survival-pickup-item',
+    category: 'survival',
+    label: 'Survival_PickupItem',
+    description: 'Attempt to pick up a loot item for a player',
+    color: '#27AE60',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Loot', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'Success', type: 'data', dataType: 'boolean', isInput: false },
+    ],
+    defaultData: {},
+    serverOnly: true,
+  },
+  {
+    type: 'survival-add-to-inventory',
+    category: 'survival',
+    label: 'SURVIVAL_AddToPlayerInventory',
+    description: 'Add item to player inventory by reference',
+    color: '#27AE60',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'ItemRef', type: 'data', dataType: 'string', isInput: true },
+      { label: 'Count', type: 'data', dataType: 'int', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'AmountAdded', type: 'data', dataType: 'int', isInput: false },
+    ],
+    defaultData: { itemRef: '', count: 1 },
+    serverOnly: true,
+  },
+  {
+    type: 'survival-remove-from-inventory',
+    category: 'survival',
+    label: 'SURVIVAL_RemoveFromPlayerInventory',
+    description: 'Remove item from player inventory by reference',
+    color: '#27AE60',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'ItemRef', type: 'data', dataType: 'string', isInput: true },
+      { label: 'Count', type: 'data', dataType: 'int', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { itemRef: '', count: 1 },
+    serverOnly: true,
+  },
+  {
+    type: 'survival-get-player-inventory',
+    category: 'survival',
+    label: 'SURVIVAL_GetPlayerInventory',
+    description: 'Get player inventory as array of ConsumableInventoryItem',
+    color: '#27AE60',
+    inputs: [
+      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+    ],
+    outputs: [
+      { label: 'Inventory', type: 'data', dataType: 'array', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'survival-count-items-in-inventory',
+    category: 'survival',
+    label: 'SURVIVAL_CountItemsInInventory',
+    description: 'Count how many of a specific item player has in inventory',
+    color: '#27AE60',
+    inputs: [
+      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'ItemRef', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Count', type: 'data', dataType: 'int', isInput: false },
+    ],
+    defaultData: { itemRef: '' },
+  },
+  {
+    type: 'survival-has-item-in-inventory',
+    category: 'survival',
+    label: 'SURVIVAL_HasSpecificItemInInventory',
+    description: 'Check if player has at least a certain count of an item',
+    color: '#27AE60',
+    inputs: [
+      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'ItemRef', type: 'data', dataType: 'string', isInput: true },
+      { label: 'Count', type: 'data', dataType: 'int', isInput: true },
+    ],
+    outputs: [
+      { label: 'HasItem', type: 'data', dataType: 'boolean', isInput: false },
+    ],
+    defaultData: { itemRef: '', count: 1 },
+  },
 ];
 
 export function getNodeDefinition(type: string): NodeDefinition | undefined {
