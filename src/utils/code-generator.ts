@@ -1073,6 +1073,211 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
+    // ==================== ENTITY STRUCT PROPERTIES ====================
+    // player.p.* (ServerPlayerStruct / ClientPlayerStruct)
+    case 'player-get-property-server': {
+      const player = getInputValue(ctx, node, 'input_0');
+      const property = node.data?.property || 'isSkydiving';
+      const resultVar = getVarName(ctx, `player_${property}`);
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = ${player}.p.${property}`);
+      break;
+    }
+
+    case 'player-get-property-client': {
+      const player = getInputValue(ctx, node, 'input_0');
+      const property = node.data?.property || 'isSkydiving';
+      const resultVar = getVarName(ctx, `player_${property}`);
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = ${player}.p.${property}`);
+      break;
+    }
+
+    case 'player-set-property-server': {
+      const player = getInputValue(ctx, node, 'input_0');
+      const value = getInputValue(ctx, node, 'input_1');
+      const property = node.data?.property || 'isAdmin';
+      lines.push(`${ind}${player}.p.${property} = ${value}`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'player-set-property-client': {
+      const player = getInputValue(ctx, node, 'input_0');
+      const value = getInputValue(ctx, node, 'input_1');
+      const property = node.data?.property || 'isAdmin';
+      lines.push(`${ind}${player}.p.${property} = ${value}`);
+      followExec('output_0');
+      break;
+    }
+
+    // entity.e.* (ServerEntityStruct / ClientEntityStruct)
+    case 'entity-get-property-server': {
+      const entity = getInputValue(ctx, node, 'input_0');
+      const property = node.data?.property || 'spawnTime';
+      const resultVar = getVarName(ctx, `ent_${property}`);
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = ${entity}.e.${property}`);
+      break;
+    }
+
+    case 'entity-get-property-client': {
+      const entity = getInputValue(ctx, node, 'input_0');
+      const property = node.data?.property || 'spawnTime';
+      const resultVar = getVarName(ctx, `ent_${property}`);
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = ${entity}.e.${property}`);
+      break;
+    }
+
+    case 'entity-set-property-server': {
+      const entity = getInputValue(ctx, node, 'input_0');
+      const value = getInputValue(ctx, node, 'input_1');
+      const property = node.data?.property || 'canBeMeleed';
+      lines.push(`${ind}${entity}.e.${property} = ${value}`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'entity-set-property-client': {
+      const entity = getInputValue(ctx, node, 'input_0');
+      const value = getInputValue(ctx, node, 'input_1');
+      const property = node.data?.property || 'canBeMeleed';
+      lines.push(`${ind}${entity}.e.${property} = ${value}`);
+      followExec('output_0');
+      break;
+    }
+
+    // npc.ai.* (ServerAIStruct) - Server only
+    case 'npc-get-property-server': {
+      const npc = getInputValue(ctx, node, 'input_0');
+      const property = node.data?.property || 'killCount';
+      const resultVar = getVarName(ctx, `ai_${property}`);
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = ${npc}.ai.${property}`);
+      break;
+    }
+
+    case 'npc-set-property-server': {
+      const npc = getInputValue(ctx, node, 'input_0');
+      const value = getInputValue(ctx, node, 'input_1');
+      const property = node.data?.property || 'buddhaMode';
+      lines.push(`${ind}${npc}.ai.${property} = ${value}`);
+      followExec('output_0');
+      break;
+    }
+
+    // weapon.w.* (ServerWeaponStruct / ClientWeaponStruct)
+    case 'weapon-get-struct-property-server': {
+      const weapon = getInputValue(ctx, node, 'input_0');
+      const property = node.data?.property || 'lastFireTime';
+      const resultVar = getVarName(ctx, `wpn_${property}`);
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = ${weapon}.w.${property}`);
+      break;
+    }
+
+    case 'weapon-get-struct-property-client': {
+      const weapon = getInputValue(ctx, node, 'input_0');
+      const property = node.data?.property || 'lastFireTime';
+      const resultVar = getVarName(ctx, `wpn_${property}`);
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = ${weapon}.w.${property}`);
+      break;
+    }
+
+    case 'weapon-set-struct-property-server': {
+      const weapon = getInputValue(ctx, node, 'input_0');
+      const value = getInputValue(ctx, node, 'input_1');
+      const property = node.data?.property || 'wasCharged';
+      lines.push(`${ind}${weapon}.w.${property} = ${value}`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'weapon-set-struct-property-client': {
+      const weapon = getInputValue(ctx, node, 'input_0');
+      const value = getInputValue(ctx, node, 'input_1');
+      const property = node.data?.property || 'wasCharged';
+      lines.push(`${ind}${weapon}.w.${property} = ${value}`);
+      followExec('output_0');
+      break;
+    }
+
+    // projectile.proj.* (ServerProjectileStruct / ClientProjectileStruct)
+    case 'projectile-get-property-server': {
+      const projectile = getInputValue(ctx, node, 'input_0');
+      const property = node.data?.property || 'damageScale';
+      const resultVar = getVarName(ctx, `proj_${property}`);
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = ${projectile}.proj.${property}`);
+      break;
+    }
+
+    case 'projectile-get-property-client': {
+      const projectile = getInputValue(ctx, node, 'input_0');
+      const property = node.data?.property || 'damageScale';
+      const resultVar = getVarName(ctx, `proj_${property}`);
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = ${projectile}.proj.${property}`);
+      break;
+    }
+
+    case 'projectile-set-property-server': {
+      const projectile = getInputValue(ctx, node, 'input_0');
+      const value = getInputValue(ctx, node, 'input_1');
+      const property = node.data?.property || 'damageScale';
+      lines.push(`${ind}${projectile}.proj.${property} = ${value}`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'projectile-set-property-client': {
+      const projectile = getInputValue(ctx, node, 'input_0');
+      const value = getInputValue(ctx, node, 'input_1');
+      const property = node.data?.property || 'damageScale';
+      lines.push(`${ind}${projectile}.proj.${property} = ${value}`);
+      followExec('output_0');
+      break;
+    }
+
+    // soul.soul.* (ServerTitanSoulStruct / ClientTitanSoulStruct)
+    case 'soul-get-property-server': {
+      const soul = getInputValue(ctx, node, 'input_0');
+      const property = node.data?.property || 'upgradeCount';
+      const resultVar = getVarName(ctx, `soul_${property}`);
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = ${soul}.soul.${property}`);
+      break;
+    }
+
+    case 'soul-get-property-client': {
+      const soul = getInputValue(ctx, node, 'input_0');
+      const property = node.data?.property || 'upgradeCount';
+      const resultVar = getVarName(ctx, `soul_${property}`);
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = ${soul}.soul.${property}`);
+      break;
+    }
+
+    case 'soul-set-property-server': {
+      const soul = getInputValue(ctx, node, 'input_0');
+      const value = getInputValue(ctx, node, 'input_1');
+      const property = node.data?.property || 'regensHealth';
+      lines.push(`${ind}${soul}.soul.${property} = ${value}`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'soul-set-property-client': {
+      const soul = getInputValue(ctx, node, 'input_0');
+      const value = getInputValue(ctx, node, 'input_1');
+      const property = node.data?.property || 'regensHealth';
+      lines.push(`${ind}${soul}.soul.${property} = ${value}`);
+      followExec('output_0');
+      break;
+    }
+
     // ==================== WEAPONS ====================
     case 'get-active-weapon': {
       const player = getInputValue(ctx, node, 'input_0');
@@ -1303,6 +1508,12 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
+    case 'entity-classname': {
+      const className = node.data.className || 'prop_dynamic';
+      ctx.variables.set(`${node.id}:output_0`, `"${className}"`);
+      break;
+    }
+
     case 'const-float':
     case 'const-int': {
       const value = node.data.value ?? 0;
@@ -1356,6 +1567,31 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       const resultVar = getVarName(ctx, 'len');
       ctx.variables.set(`${node.id}:output_0`, resultVar);
       lines.push(`${ind}int ${resultVar} = ${array}.len()`);
+      break;
+    }
+
+    case 'table-create': {
+      const resultVar = getVarName(ctx, 'tbl');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}table ${resultVar} = {}`);
+      break;
+    }
+
+    case 'table-get': {
+      const table = getInputValue(ctx, node, 'input_0');
+      const key = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'val');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = ${table}[${key}]`);
+      break;
+    }
+
+    case 'table-set': {
+      const table = getInputValue(ctx, node, 'input_1');
+      const key = getInputValue(ctx, node, 'input_2');
+      const value = getInputValue(ctx, node, 'input_3');
+      lines.push(`${ind}${table}[${key}] = ${value}`);
+      followExec('output_0');
       break;
     }
 
@@ -1566,6 +1802,488 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
+    // ==================== ENTITY CREATION ====================
+    case 'create-entity': {
+      const className = getInputValue(ctx, node, 'input_1');
+      const origin = getInputValue(ctx, node, 'input_2');
+      const angles = getInputValue(ctx, node, 'input_3');
+      const parent = getInputValue(ctx, node, 'input_4');
+      const parentAttach = getInputValue(ctx, node, 'input_5');
+      const owner = getInputValue(ctx, node, 'input_6');
+      const radius = getInputValue(ctx, node, 'input_7');
+      const aboveHeight = getInputValue(ctx, node, 'input_8');
+      const belowHeight = getInputValue(ctx, node, 'input_9');
+      const model = getInputValue(ctx, node, 'input_10');
+      const effect = getInputValue(ctx, node, 'input_11');
+      const health = getInputValue(ctx, node, 'input_12');
+      const maxHealth = getInputValue(ctx, node, 'input_13');
+      const team = getInputValue(ctx, node, 'input_14');
+      const scriptName = getInputValue(ctx, node, 'input_15');
+      const visible = getInputValue(ctx, node, 'input_16');
+      const solid = getInputValue(ctx, node, 'input_17');
+      const aiSettings = getInputValue(ctx, node, 'input_18');
+      
+      const resultVar = getVarName(ctx, 'ent');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      
+      lines.push(`${ind}entity ${resultVar} = CreateEntity(${className})`);
+      
+      // Optional setters - only add if input is connected (not null/undefined placeholder)
+      if (origin && origin !== 'null') {
+        lines.push(`${ind}${resultVar}.SetOrigin(${origin})`);
+      }
+      if (angles && angles !== 'null') {
+        lines.push(`${ind}${resultVar}.SetAngles(${angles})`);
+      }
+      if (owner && owner !== 'null') {
+        lines.push(`${ind}${resultVar}.SetOwner(${owner})`);
+      }
+      if (model && model !== 'null' && model !== '""') {
+        lines.push(`${ind}${resultVar}.SetValueForModelKey(${model})`);
+      }
+      if (effect && effect !== 'null' && effect !== '""') {
+        lines.push(`${ind}${resultVar}.SetValueForEffectNameKey(${effect})`);
+      }
+      if (radius && radius !== 'null' && radius !== '0') {
+        lines.push(`${ind}${resultVar}.SetRadius(${radius})`);
+      }
+      if (aboveHeight && aboveHeight !== 'null') {
+        lines.push(`${ind}${resultVar}.SetAboveHeight(${aboveHeight})`);
+      }
+      if (belowHeight && belowHeight !== 'null') {
+        lines.push(`${ind}${resultVar}.SetBelowHeight(${belowHeight})`);
+      }
+      if (maxHealth && maxHealth !== 'null') {
+        lines.push(`${ind}${resultVar}.SetMaxHealth(${maxHealth})`);
+      }
+      if (health && health !== 'null') {
+        lines.push(`${ind}${resultVar}.SetHealth(${health})`);
+      }
+      if (team && team !== 'null') {
+        lines.push(`${ind}SetTeam(${resultVar}, ${team})`);
+      }
+      if (scriptName && scriptName !== 'null' && scriptName !== '""') {
+        lines.push(`${ind}${resultVar}.SetScriptName(${scriptName})`);
+      }
+      if (aiSettings && aiSettings !== 'null' && aiSettings !== '""') {
+        lines.push(`${ind}SetSpawnOption_AISettings(${resultVar}, ${aiSettings})`);
+      }
+      if (visible === 'false') {
+        lines.push(`${ind}${resultVar}.Hide()`);
+      }
+      if (solid === 'false') {
+        lines.push(`${ind}${resultVar}.NotSolid()`);
+      } else if (solid === 'true') {
+        lines.push(`${ind}${resultVar}.Solid()`);
+      }
+      
+      // KeyValues from connected KV nodes - collect all connections to input_19
+      const kvConnections = ctx.connections.filter(c => 
+        c.to.nodeId === node.id && c.to.portId === 'input_19'
+      );
+      
+      for (const conn of kvConnections) {
+        const kvNode = ctx.nodes.find(n => n.id === conn.from.nodeId);
+        if (kvNode) {
+          const kvType = kvNode.data.type || kvNode.type;
+          
+          // Helper to get value from input or fall back to node data
+          const getKvValue = (inputId: string, dataKey: string, defaultVal: any) => {
+            const inputVal = getInputValue(ctx, kvNode, inputId);
+            if (inputVal && inputVal !== 'null') return inputVal;
+            if (kvNode.data[dataKey] !== undefined) return formatLiteral(kvNode.data[dataKey]);
+            return formatLiteral(defaultVal);
+          };
+          
+          switch (kvType) {
+            case 'kv-solid': {
+              const val = getKvValue('input_0', 'value', 0);
+              lines.push(`${ind}${resultVar}.kv.solid = ${val}`);
+              break;
+            }
+            case 'kv-rendercolor': {
+              const val = getKvValue('input_0', 'value', '255,255,255');
+              lines.push(`${ind}${resultVar}.kv.rendercolor = ${val}`);
+              break;
+            }
+            case 'kv-renderamt': {
+              const val = getKvValue('input_0', 'value', 255);
+              lines.push(`${ind}${resultVar}.kv.renderamt = ${val}`);
+              break;
+            }
+            case 'kv-rendermode': {
+              const val = getKvValue('input_0', 'value', 0);
+              lines.push(`${ind}${resultVar}.kv.rendermode = ${val}`);
+              break;
+            }
+            case 'kv-visibility-flags': {
+              const val = getKvValue('input_0', 'value', 7);
+              lines.push(`${ind}${resultVar}.kv.VisibilityFlags = ${val}`);
+              break;
+            }
+            case 'kv-spawnflags': {
+              const val = getKvValue('input_0', 'value', 0);
+              lines.push(`${ind}${resultVar}.kv.spawnflags = ${val}`);
+              break;
+            }
+            case 'kv-collision-group': {
+              const val = getKvValue('input_0', 'value', 0);
+              lines.push(`${ind}${resultVar}.kv.CollisionGroup = ${val}`);
+              break;
+            }
+            case 'kv-start-active': {
+              const val = getKvValue('input_0', 'value', 1);
+              lines.push(`${ind}${resultVar}.kv.start_active = ${val}`);
+              break;
+            }
+            case 'kv-fadedist': {
+              const val = getKvValue('input_0', 'value', -1);
+              lines.push(`${ind}${resultVar}.kv.fadedist = ${val}`);
+              break;
+            }
+            case 'kv-modelscale': {
+              const val = getKvValue('input_0', 'value', 1.0);
+              lines.push(`${ind}${resultVar}.kv.modelscale = ${val}`);
+              break;
+            }
+            case 'kv-trigger-filter': {
+              const filterNonChar = getKvValue('input_0', 'filterNonCharacter', '0');
+              const filterPlayer = getKvValue('input_1', 'filterPlayer', '1');
+              const filterNpc = getKvValue('input_2', 'filterNpc', '1');
+              lines.push(`${ind}${resultVar}.kv.triggerFilterNonCharacter = ${filterNonChar}`);
+              lines.push(`${ind}${resultVar}.kv.triggerFilterPlayer = ${filterPlayer}`);
+              lines.push(`${ind}${resultVar}.kv.triggerFilterNpc = ${filterNpc}`);
+              break;
+            }
+            case 'kv-custom': {
+              const key = getKvValue('input_0', 'key', 'enabled');
+              const val = getKvValue('input_1', 'value', '1');
+              // Remove quotes from key if present
+              const keyClean = String(key).replace(/^"|"$/g, '');
+              lines.push(`${ind}${resultVar}.kv.${keyClean} = ${val}`);
+              break;
+            }
+          }
+        }
+      }
+      
+      // DispatchSpawn before parenting
+      lines.push(`${ind}DispatchSpawn(${resultVar})`);
+      
+      // Parent after spawn
+      if (parent && parent !== 'null') {
+        if (parentAttach && parentAttach !== 'null' && parentAttach !== '""') {
+          lines.push(`${ind}${resultVar}.SetParent(${parent}, ${parentAttach}, true, 0.0)`);
+        } else {
+          lines.push(`${ind}${resultVar}.SetParent(${parent}, "", true, 0.0)`);
+        }
+      }
+      
+      followExec('output_0');
+      break;
+    }
+
+    case 'create-script-mover': {
+      const origin = getInputValue(ctx, node, 'input_1');
+      const angles = getInputValue(ctx, node, 'input_2');
+      const resultVar = getVarName(ctx, 'mover');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}entity ${resultVar} = CreateEntity("script_mover")`);
+      lines.push(`${ind}${resultVar}.SetOrigin(${origin})`);
+      lines.push(`${ind}${resultVar}.SetAngles(${angles})`);
+      lines.push(`${ind}DispatchSpawn(${resultVar})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'create-prop-dynamic': {
+      const model = getInputValue(ctx, node, 'input_1');
+      const origin = getInputValue(ctx, node, 'input_2');
+      const angles = getInputValue(ctx, node, 'input_3');
+      const resultVar = getVarName(ctx, 'prop');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}entity ${resultVar} = CreateEntity("prop_dynamic")`);
+      lines.push(`${ind}${resultVar}.SetValueForModelKey(${model})`);
+      lines.push(`${ind}${resultVar}.SetOrigin(${origin})`);
+      lines.push(`${ind}${resultVar}.SetAngles(${angles})`);
+      lines.push(`${ind}DispatchSpawn(${resultVar})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'create-prop-physics': {
+      const model = getInputValue(ctx, node, 'input_1');
+      const origin = getInputValue(ctx, node, 'input_2');
+      const angles = getInputValue(ctx, node, 'input_3');
+      const resultVar = getVarName(ctx, 'physProp');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}entity ${resultVar} = CreateEntity("prop_physics")`);
+      lines.push(`${ind}${resultVar}.SetValueForModelKey(${model})`);
+      lines.push(`${ind}${resultVar}.SetOrigin(${origin})`);
+      lines.push(`${ind}${resultVar}.SetAngles(${angles})`);
+      lines.push(`${ind}${resultVar}.kv.solid = SOLID_VPHYSICS`);
+      lines.push(`${ind}DispatchSpawn(${resultVar})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'create-info-target': {
+      const origin = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'infoTarget');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}entity ${resultVar} = CreateEntity("info_target")`);
+      lines.push(`${ind}${resultVar}.SetOrigin(${origin})`);
+      lines.push(`${ind}DispatchSpawn(${resultVar})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'create-particle-system': {
+      const effect = getInputValue(ctx, node, 'input_1');
+      const origin = getInputValue(ctx, node, 'input_2');
+      const startActive = getInputValue(ctx, node, 'input_3');
+      const resultVar = getVarName(ctx, 'particleSys');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}entity ${resultVar} = CreateEntity("info_particle_system")`);
+      lines.push(`${ind}${resultVar}.SetValueForEffectNameKey(${effect})`);
+      lines.push(`${ind}${resultVar}.kv.start_active = ${startActive} ? 1 : 0`);
+      lines.push(`${ind}${resultVar}.SetOrigin(${origin})`);
+      lines.push(`${ind}DispatchSpawn(${resultVar})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'create-control-point': {
+      const origin = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'cpoint');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}entity ${resultVar} = CreateEntity("info_placement_helper")`);
+      lines.push(`${ind}${resultVar}.SetOrigin(${origin})`);
+      lines.push(`${ind}DispatchSpawn(${resultVar})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'create-ambient-generic': {
+      const sound = getInputValue(ctx, node, 'input_1');
+      const origin = getInputValue(ctx, node, 'input_2');
+      const resultVar = getVarName(ctx, 'ambSound');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}entity ${resultVar} = CreateEntity("ambient_generic")`);
+      lines.push(`${ind}${resultVar}.SetOrigin(${origin})`);
+      lines.push(`${ind}DispatchSpawn(${resultVar})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'create-vortex-sphere': {
+      const origin = getInputValue(ctx, node, 'input_1');
+      const radius = getInputValue(ctx, node, 'input_2');
+      const height = getInputValue(ctx, node, 'input_3');
+      const resultVar = getVarName(ctx, 'vortex');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}entity ${resultVar} = CreateEntity("vortex_sphere")`);
+      lines.push(`${ind}${resultVar}.SetOrigin(${origin})`);
+      lines.push(`${ind}${resultVar}.SetRadius(${radius})`);
+      lines.push(`${ind}${resultVar}.SetAboveHeight(${height})`);
+      lines.push(`${ind}${resultVar}.SetBelowHeight(${height})`);
+      lines.push(`${ind}DispatchSpawn(${resultVar})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'create-zipline': {
+      const startPos = getInputValue(ctx, node, 'input_1');
+      const endPos = getInputValue(ctx, node, 'input_2');
+      const startVar = getVarName(ctx, 'zipStart');
+      const endVar = getVarName(ctx, 'zipEnd');
+      ctx.variables.set(`${node.id}:output_1`, startVar);
+      ctx.variables.set(`${node.id}:output_2`, endVar);
+      lines.push(`${ind}entity ${startVar} = CreateEntity("zipline")`);
+      lines.push(`${ind}entity ${endVar} = CreateEntity("zipline_end")`);
+      lines.push(`${ind}${startVar}.SetOrigin(${startPos})`);
+      lines.push(`${ind}${endVar}.SetOrigin(${endPos})`);
+      lines.push(`${ind}${startVar}.kv.ZiplineAutoDetachDistance = 160`);
+      lines.push(`${ind}${endVar}.kv.ZiplineAutoDetachDistance = 160`);
+      lines.push(`${ind}${startVar}.kv.Material = "cable/zipline.vmt"`);
+      lines.push(`${ind}${startVar}.LinkToEnt(${endVar})`);
+      lines.push(`${ind}DispatchSpawn(${startVar})`);
+      lines.push(`${ind}DispatchSpawn(${endVar})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'create-point-viewcontrol': {
+      const origin = getInputValue(ctx, node, 'input_1');
+      const angles = getInputValue(ctx, node, 'input_2');
+      const resultVar = getVarName(ctx, 'camera');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}entity ${resultVar} = CreateEntity("point_viewcontrol")`);
+      lines.push(`${ind}${resultVar}.SetOrigin(${origin})`);
+      lines.push(`${ind}${resultVar}.SetAngles(${angles})`);
+      lines.push(`${ind}DispatchSpawn(${resultVar})`);
+      followExec('output_0');
+      break;
+    }
+
+    // ==================== NPC CREATION ====================
+    case 'create-npc-dummie': {
+      const origin = getInputValue(ctx, node, 'input_1');
+      const angles = getInputValue(ctx, node, 'input_2');
+      const team = getInputValue(ctx, node, 'input_3');
+      const resultVar = getVarName(ctx, 'dummy');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}entity ${resultVar} = CreateEntity("npc_dummie")`);
+      lines.push(`${ind}SetSpawnOption_AISettings(${resultVar}, "npc_training_dummy")`);
+      lines.push(`${ind}${resultVar}.SetOrigin(${origin})`);
+      lines.push(`${ind}${resultVar}.SetAngles(${angles})`);
+      lines.push(`${ind}SetTeam(${resultVar}, ${team})`);
+      lines.push(`${ind}DispatchSpawn(${resultVar})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'create-npc-prowler': {
+      const origin = getInputValue(ctx, node, 'input_1');
+      const angles = getInputValue(ctx, node, 'input_2');
+      const team = getInputValue(ctx, node, 'input_3');
+      const resultVar = getVarName(ctx, 'prowler');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}entity ${resultVar} = CreateEntity("npc_prowler")`);
+      lines.push(`${ind}SetSpawnOption_AISettings(${resultVar}, "npc_prowler")`);
+      lines.push(`${ind}${resultVar}.SetOrigin(${origin})`);
+      lines.push(`${ind}${resultVar}.SetAngles(${angles})`);
+      lines.push(`${ind}SetTeam(${resultVar}, ${team})`);
+      lines.push(`${ind}DispatchSpawn(${resultVar})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'create-npc-spectre': {
+      const origin = getInputValue(ctx, node, 'input_1');
+      const angles = getInputValue(ctx, node, 'input_2');
+      const team = getInputValue(ctx, node, 'input_3');
+      const resultVar = getVarName(ctx, 'spectre');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}entity ${resultVar} = CreateEntity("npc_spectre")`);
+      lines.push(`${ind}SetSpawnOption_AISettings(${resultVar}, "npc_spectre")`);
+      lines.push(`${ind}${resultVar}.SetOrigin(${origin})`);
+      lines.push(`${ind}${resultVar}.SetAngles(${angles})`);
+      lines.push(`${ind}SetTeam(${resultVar}, ${team})`);
+      lines.push(`${ind}DispatchSpawn(${resultVar})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'create-npc-marvin': {
+      const origin = getInputValue(ctx, node, 'input_1');
+      const angles = getInputValue(ctx, node, 'input_2');
+      const resultVar = getVarName(ctx, 'marvin');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}entity ${resultVar} = CreateEntity("npc_marvin")`);
+      lines.push(`${ind}SetSpawnOption_AISettings(${resultVar}, "npc_marvin")`);
+      lines.push(`${ind}${resultVar}.SetOrigin(${origin})`);
+      lines.push(`${ind}${resultVar}.SetAngles(${angles})`);
+      lines.push(`${ind}DispatchSpawn(${resultVar})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'create-npc-drone': {
+      const origin = getInputValue(ctx, node, 'input_1');
+      const angles = getInputValue(ctx, node, 'input_2');
+      const team = getInputValue(ctx, node, 'input_3');
+      const resultVar = getVarName(ctx, 'drone');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}entity ${resultVar} = CreateEntity("npc_drone")`);
+      lines.push(`${ind}${resultVar}.SetOrigin(${origin})`);
+      lines.push(`${ind}${resultVar}.SetAngles(${angles})`);
+      lines.push(`${ind}SetTeam(${resultVar}, ${team})`);
+      lines.push(`${ind}DispatchSpawn(${resultVar})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'create-npc-dropship': {
+      const origin = getInputValue(ctx, node, 'input_1');
+      const angles = getInputValue(ctx, node, 'input_2');
+      const team = getInputValue(ctx, node, 'input_3');
+      const resultVar = getVarName(ctx, 'dropship');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}entity ${resultVar} = CreateEntity("npc_dropship")`);
+      lines.push(`${ind}${resultVar}.SetOrigin(${origin})`);
+      lines.push(`${ind}${resultVar}.SetAngles(${angles})`);
+      lines.push(`${ind}SetTeam(${resultVar}, ${team})`);
+      lines.push(`${ind}DispatchSpawn(${resultVar})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'create-npc-turret': {
+      const origin = getInputValue(ctx, node, 'input_1');
+      const angles = getInputValue(ctx, node, 'input_2');
+      const team = getInputValue(ctx, node, 'input_3');
+      const resultVar = getVarName(ctx, 'turret');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}entity ${resultVar} = CreateEntity("npc_turret_sentry")`);
+      lines.push(`${ind}${resultVar}.SetOrigin(${origin})`);
+      lines.push(`${ind}${resultVar}.SetAngles(${angles})`);
+      lines.push(`${ind}SetTeam(${resultVar}, ${team})`);
+      lines.push(`${ind}DispatchSpawn(${resultVar})`);
+      followExec('output_0');
+      break;
+    }
+
+    // ==================== ENTITY SETUP ====================
+    case 'set-model': {
+      const entity = getInputValue(ctx, node, 'input_1');
+      const model = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}${entity}.SetValueForModelKey(${model})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'set-effect-name': {
+      const entity = getInputValue(ctx, node, 'input_1');
+      const effect = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}${entity}.SetValueForEffectNameKey(${effect})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'set-entity-kv': {
+      const entity = getInputValue(ctx, node, 'input_1');
+      const value = getInputValue(ctx, node, 'input_2');
+      const property = node.data?.property || 'solid';
+      lines.push(`${ind}${entity}.kv.${property} = ${value}`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'set-spawn-option-ai': {
+      const npc = getInputValue(ctx, node, 'input_1');
+      const aiSettings = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}SetSpawnOption_AISettings(${npc}, ${aiSettings})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'set-behavior-selector': {
+      const npc = getInputValue(ctx, node, 'input_1');
+      const behavior = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}${npc}.SetBehaviorSelector(${behavior})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'enable-npc-flag': {
+      const npc = getInputValue(ctx, node, 'input_1');
+      const flags = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}${npc}.EnableNPCFlag(${flags})`);
+      followExec('output_0');
+      break;
+    }
+
     case 'dispatch-spawn': {
       const entity = getInputValue(ctx, node, 'input_1');
       lines.push(`${ind}DispatchSpawn(${entity})`);
@@ -1608,6 +2326,278 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       const a = getInputValue(ctx, node, 'input_0');
       const b = getInputValue(ctx, node, 'input_1');
       ctx.variables.set(`${node.id}:output_0`, `${a} < ${b}`);
+      break;
+    }
+
+    // ==================== SWITCH ====================
+    case 'switch': {
+      const value = getInputValue(ctx, node, 'input_1');
+      // Flush pending lines
+      if (ctx.pendingLines.length > 0) {
+        lines.push(...ctx.pendingLines);
+        ctx.pendingLines = [];
+      }
+      lines.push(`${ind}switch (${value})`);
+      lines.push(`${ind}{`);
+      ctx.indentLevel++;
+      // Cases are connected to the switch node via the switch-case nodes
+      // Default case
+      followExec('output_0');
+      ctx.indentLevel--;
+      lines.push(`${ind}}`);
+      break;
+    }
+
+    case 'switch-case': {
+      const matchValue = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}case ${matchValue}:`);
+      ctx.indentLevel++;
+      followExec('output_0');
+      ctx.indentLevel--;
+      break;
+    }
+
+    case 'break': {
+      lines.push(`${ind}break`);
+      break;
+    }
+
+    case 'continue': {
+      lines.push(`${ind}continue`);
+      break;
+    }
+
+    // ==================== STRUCTS & ENUMS ====================
+    case 'struct-define': {
+      // Struct definitions are generated at file level, not inline
+      // This is handled separately in generateCode()
+      break;
+    }
+
+    case 'struct-create': {
+      const structName = node.data.structName || 'MyStruct';
+      const resultVar = getVarName(ctx, 'instance');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}${structName} ${resultVar}`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'struct-get-field': {
+      const structVar = getInputValue(ctx, node, 'input_0');
+      const fieldName = node.data.fieldName || 'field1';
+      const resultVar = getVarName(ctx, 'val');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = ${structVar}.${fieldName}`);
+      break;
+    }
+
+    case 'struct-set-field': {
+      const structVar = getInputValue(ctx, node, 'input_1');
+      const value = getInputValue(ctx, node, 'input_2');
+      const fieldName = node.data.fieldName || 'field1';
+      lines.push(`${ind}${structVar}.${fieldName} = ${value}`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'enum-define': {
+      // Enum definitions are generated at file level, not inline
+      // This is handled separately in generateCode()
+      break;
+    }
+
+    case 'enum-value': {
+      const enumName = node.data.enumName || 'eGameState';
+      const valueName = node.data.valueName || 'Playing';
+      ctx.variables.set(`${node.id}:output_0`, `${enumName}.${valueName}`);
+      break;
+    }
+
+    // ==================== ARRAYS (EXTENDED) ====================
+    case 'array-create-typed': {
+      const elementType = node.data.elementType || 'var';
+      const resultVar = getVarName(ctx, 'arr');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}array<${elementType}> ${resultVar} = []`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'array-extend': {
+      const array = getInputValue(ctx, node, 'input_1');
+      const other = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}${array}.extend(${other})`);
+      ctx.variables.set(`${node.id}:output_1`, array);
+      followExec('output_0');
+      break;
+    }
+
+    case 'array-remove': {
+      const array = getInputValue(ctx, node, 'input_1');
+      const element = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}${array}.removebyvalue(${element})`);
+      ctx.variables.set(`${node.id}:output_1`, array);
+      followExec('output_0');
+      break;
+    }
+
+    case 'array-remove-by-index': {
+      const array = getInputValue(ctx, node, 'input_1');
+      const index = getInputValue(ctx, node, 'input_2');
+      const resultVar = getVarName(ctx, 'removed');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}var ${resultVar} = ${array}.remove(${index})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'array-set': {
+      const array = getInputValue(ctx, node, 'input_1');
+      const index = getInputValue(ctx, node, 'input_2');
+      const value = getInputValue(ctx, node, 'input_3');
+      lines.push(`${ind}${array}[${index}] = ${value}`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'array-contains': {
+      const array = getInputValue(ctx, node, 'input_0');
+      const element = getInputValue(ctx, node, 'input_1');
+      ctx.variables.set(`${node.id}:output_0`, `${array}.contains(${element})`);
+      break;
+    }
+
+    case 'array-find': {
+      const array = getInputValue(ctx, node, 'input_0');
+      const element = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'idx');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}int ${resultVar} = ${array}.find(${element})`);
+      break;
+    }
+
+    case 'array-clear': {
+      const array = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}${array}.clear()`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'array-resize': {
+      const array = getInputValue(ctx, node, 'input_1');
+      const size = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}${array}.resize(${size})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'array-randomize': {
+      const array = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}${array}.randomize()`);
+      ctx.variables.set(`${node.id}:output_1`, array);
+      followExec('output_0');
+      break;
+    }
+
+    case 'array-getrandom': {
+      const array = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'elem');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = ${array}.getrandom()`);
+      break;
+    }
+
+    case 'array-slice': {
+      const array = getInputValue(ctx, node, 'input_0');
+      const start = getInputValue(ctx, node, 'input_1');
+      const end = getInputValue(ctx, node, 'input_2');
+      const resultVar = getVarName(ctx, 'slice');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = ${array}.slice(${start}, ${end})`);
+      break;
+    }
+
+    // ==================== TABLES (EXTENDED) ====================
+    case 'table-create-typed': {
+      const keyType = node.data.keyType || 'string';
+      const valueType = node.data.valueType || 'var';
+      const resultVar = getVarName(ctx, 'tbl');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}table<${keyType}, ${valueType}> ${resultVar} = {}`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'table-add-slot': {
+      const table = getInputValue(ctx, node, 'input_1');
+      const key = getInputValue(ctx, node, 'input_2');
+      const value = getInputValue(ctx, node, 'input_3');
+      lines.push(`${ind}${table}[${key}] <- ${value}`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'table-delete': {
+      const table = getInputValue(ctx, node, 'input_1');
+      const key = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}delete ${table}[${key}]`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'table-keys': {
+      const table = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'keys');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      // Squirrel doesn't have a built-in keys() method, generate a workaround
+      lines.push(`${ind}array ${resultVar} = []`);
+      lines.push(`${ind}foreach (key, val in ${table})`);
+      lines.push(`${ind}    ${resultVar}.append(key)`);
+      break;
+    }
+
+    case 'table-values': {
+      const table = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'values');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      // Generate foreach loop to extract values
+      lines.push(`${ind}array ${resultVar} = []`);
+      lines.push(`${ind}foreach (key, val in ${table})`);
+      lines.push(`${ind}    ${resultVar}.append(val)`);
+      break;
+    }
+
+    case 'table-clear': {
+      const table = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}${table}.clear()`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'table-has-key': {
+      const table = getInputValue(ctx, node, 'input_0');
+      const key = getInputValue(ctx, node, 'input_1');
+      ctx.variables.set(`${node.id}:output_0`, `(${key} in ${table})`);
+      break;
+    }
+
+    // ==================== DATA (EXTENDED) ====================
+    case 'variable-declare': {
+      const varName = node.data.name || 'myVar';
+      const varType = node.data.varType || 'var';
+      const initialValue = getInputValue(ctx, node, 'input_1');
+      ctx.variables.set(`${node.id}:output_1`, varName);
+      lines.push(`${ind}${varType} ${varName} = ${initialValue}`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'define-const': {
+      // Const definitions are generated at file level for globals,
+      // or inline for locals - handled in generateCode()
+      const constName = node.data.constName || 'MY_CONSTANT';
+      ctx.variables.set(`${node.id}:output_0`, constName);
       break;
     }
 
@@ -1777,6 +2767,107 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
   const formatContextDirective = (contexts: string[]): string => {
     return contexts.join(' || ');
   };
+
+  // === OUTPUT STRUCT DEFINITIONS AT TOP OF FILE ===
+  const structDefNodes = nodes.filter(n => n.type === 'struct-define');
+  for (const structNode of structDefNodes) {
+    const structName = structNode.data.structName || 'MyStruct';
+    const isGlobal = structNode.data.isGlobal || false;
+    const fieldCount = typeof structNode.data.fieldCount === 'number' ? structNode.data.fieldCount : 0;
+    const fieldNames = Array.isArray(structNode.data.fieldNames) ? structNode.data.fieldNames : [];
+    const fieldTypes = Array.isArray(structNode.data.fieldTypes) ? structNode.data.fieldTypes : [];
+    const fieldDefaults = Array.isArray(structNode.data.fieldDefaults) ? structNode.data.fieldDefaults : [];
+
+    output.push(`${isGlobal ? 'global ' : ''}struct ${structName}`);
+    output.push('{');
+    for (let i = 0; i < fieldCount; i++) {
+      const fName = fieldNames[i] || `field${i + 1}`;
+      const fType = fieldTypes[i] || 'var';
+      const fDefault = fieldDefaults[i];
+      if (fDefault !== undefined && fDefault !== null && fDefault !== '') {
+        output.push(`    ${fType} ${fName} = ${fDefault}`);
+      } else {
+        output.push(`    ${fType} ${fName}`);
+      }
+    }
+    output.push('}');
+    output.push('');
+  }
+
+  // === OUTPUT ENUM DEFINITIONS AT TOP OF FILE ===
+  const enumDefNodes = nodes.filter(n => n.type === 'enum-define');
+  for (const enumNode of enumDefNodes) {
+    const enumName = enumNode.data.enumName || 'MyEnum';
+    const isGlobal = enumNode.data.isGlobal !== false; // default to global
+    const valueCount = typeof enumNode.data.valueCount === 'number' ? enumNode.data.valueCount : 0;
+    const valueNames = Array.isArray(enumNode.data.valueNames) ? enumNode.data.valueNames : [];
+    const explicitValues = Array.isArray(enumNode.data.explicitValues) ? enumNode.data.explicitValues : [];
+
+    output.push(`${isGlobal ? 'global ' : ''}enum ${enumName}`);
+    output.push('{');
+    for (let i = 0; i < valueCount; i++) {
+      const vName = valueNames[i] || `VALUE_${i}`;
+      const vExplicit = explicitValues[i];
+      if (vExplicit !== undefined && vExplicit !== null) {
+        output.push(`    ${vName} = ${vExplicit},`);
+      } else {
+        output.push(`    ${vName},`);
+      }
+    }
+    output.push('}');
+    output.push('');
+  }
+
+  // === OUTPUT GLOBAL CONST DEFINITIONS AT TOP OF FILE ===
+  const globalConstNodes = nodes.filter(n => n.type === 'define-const' && n.data.isGlobal !== false);
+  for (const constNode of globalConstNodes) {
+    const constName = constNode.data.constName || 'MY_CONSTANT';
+    const constType = constNode.data.constType || 'int';
+    const constValue = constNode.data.constValue ?? '0';
+    
+    // Format: global const [type] NAME = value
+    if (constType === 'int' || constType === 'float' || constType === 'bool') {
+      output.push(`global const ${constType} ${constName} = ${constValue}`);
+    } else if (constType === 'string') {
+      // Ensure string is quoted
+      const quotedValue = constValue.startsWith('"') ? constValue : `"${constValue}"`;
+      output.push(`global const ${constName} = ${quotedValue}`);
+    } else if (constType === 'vector') {
+      output.push(`global const ${constName} = ${constValue}`);
+    } else if (constType === 'asset') {
+      // Assets use $"path" format
+      const assetValue = constValue.startsWith('$') ? constValue : `$"${constValue}"`;
+      output.push(`global const ${constName} = ${assetValue}`);
+    } else {
+      output.push(`global const ${constName} = ${constValue}`);
+    }
+  }
+  
+  // === OUTPUT LOCAL CONST DEFINITIONS ===
+  const localConstNodes = nodes.filter(n => n.type === 'define-const' && n.data.isGlobal === false);
+  for (const constNode of localConstNodes) {
+    const constName = constNode.data.constName || 'MY_CONSTANT';
+    const constType = constNode.data.constType || 'int';
+    const constValue = constNode.data.constValue ?? '0';
+    
+    // Format: const [type] NAME = value (no global prefix)
+    if (constType === 'int' || constType === 'float' || constType === 'bool') {
+      output.push(`const ${constType} ${constName} = ${constValue}`);
+    } else if (constType === 'string') {
+      const quotedValue = constValue.startsWith('"') ? constValue : `"${constValue}"`;
+      output.push(`const ${constName} = ${quotedValue}`);
+    } else if (constType === 'vector') {
+      output.push(`const ${constName} = ${constValue}`);
+    } else if (constType === 'asset') {
+      const assetValue = constValue.startsWith('$') ? constValue : `$"${constValue}"`;
+      output.push(`const ${constName} = ${assetValue}`);
+    } else {
+      output.push(`const ${constName} = ${constValue}`);
+    }
+  }
+  if (globalConstNodes.length > 0 || localConstNodes.length > 0) {
+    output.push('');
+  }
 
   // === OUTPUT ALL GLOBAL DECLARATIONS AT TOP OF FILE ===
   
@@ -1975,7 +3066,7 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
             ctx.variables.set(`${nodeId}:output_2`, 'attackParams');
           }
         };
-      case 'on-projectile-collide':
+      case 'on-projectile-collision':
         return { 
           params: 'entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical', 
           setupVars: (nodeId: string) => {

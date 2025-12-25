@@ -66,6 +66,7 @@ export interface AppSettings {
     gridSize: number;
     nodeOpacity: number;
     connectionStyle: 'bezier' | 'straight' | 'step';
+    connectionsBehindNodes: boolean;
   };
   editor: {
     snapToGrid: boolean;
@@ -94,6 +95,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     gridSize: 20,
     nodeOpacity: 100,
     connectionStyle: 'bezier',
+    connectionsBehindNodes: false,
   },
   editor: {
     snapToGrid: false,
@@ -588,9 +590,21 @@ export default function SettingsModal({
                         >
                           {style}
                         </button>
-                      ))}
-                    </div>
+                      ))}n                    </div>
                   </div>
+
+                  <label className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm text-white">Connections Behind Nodes</div>
+                      <div className="text-xs text-gray-500">Render connection lines behind nodes instead of in front</div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={localSettings.appearance.connectionsBehindNodes}
+                      onChange={(e) => updateSettings('appearance', 'connectionsBehindNodes', e.target.checked)}
+                      className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-purple-500"
+                    />
+                  </label>
                 </div>
               </div>
             )}

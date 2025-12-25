@@ -65,6 +65,42 @@ export default function NodeInspector({ node, onUpdate }: NodeInspectorProps) {
     );
   };
 
+  const renderEntityClassnameSelect = (key: string, value: string) => {
+    const options = [
+      // Props
+      'prop_dynamic', 'prop_physics', 'prop_script', 'prop_door',
+      // Triggers
+      'trigger_cylinder', 'trigger_cylinder_heavy', 'trigger_point_gravity', 'trigger_updraft',
+      // NPCs
+      'npc_dummie', 'npc_prowler', 'npc_marvin', 'npc_spectre', 'npc_drone', 'npc_frag_drone',
+      'npc_dropship', 'npc_gunship', 'npc_titan', 'npc_stalker', 'npc_super_spectre',
+      'npc_soldier', 'npc_turret_mega', 'npc_turret_sentry', 'npc_turret_floor',
+      // Particles & FX
+      'info_particle_system', 'info_placement_helper', 'info_target', 'ambient_generic',
+      // Movers
+      'script_mover', 'script_mover_lightweight',
+      // Ziplines
+      'zipline', 'zipline_end',
+      // Control & Logic
+      'point_viewcontrol', 'assault_assaultpoint', 'info_node',
+      // Physics
+      'vortex_sphere', 'gravity_grenade_dvrt', 'phys_bone_follower',
+      // Environment
+      'env_fog_controller', 'env_wind', 'env_explosion', 'env_shake',
+      // Titans
+      'npc_titan_atlas', 'npc_titan_stryder', 'npc_titan_ogre', 'npc_titan_buddy',
+      // Other
+      'item_health', 'item_ammo', 'waypoint', 'control_point', 'func_brush', 'player_start'
+    ];
+    return (
+      <CustomSelect
+        value={value}
+        options={options}
+        onChange={(val) => handleDataChange(key, val)}
+      />
+    );
+  };
+
   return (
     <div className="w-full h-full bg-[#151a21] flex flex-col">
       {/* Header */}
@@ -115,6 +151,8 @@ export default function NodeInspector({ node, onUpdate }: NodeInspectorProps) {
                     renderWeaponTypeSelect(key, value as string)
                   ) : node.type === 'const-supported-attachments' && key === 'attachments' ? (
                     renderAttachmentsMultiSelect(key, value as string[])
+                  ) : node.type === 'entity-classname' && key === 'className' ? (
+                    renderEntityClassnameSelect(key, value as string)
                   ) : typeof value === 'boolean' ? (
                     <label className="flex items-center cursor-pointer">
                       <input

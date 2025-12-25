@@ -559,6 +559,164 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     defaultData: { portalName: 'MyPortal' },
   },
 
+  // ==================== SWITCH ====================
+  {
+    type: 'switch',
+    category: 'core-flow',
+    label: 'Switch',
+    description: 'Multi-way branch based on value. Add cases with switch-case nodes.',
+    color: '#4A90E2',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Default', type: 'exec', isInput: false },
+    ],
+    defaultData: { caseCount: 2 },
+    tags: ['switch', 'case', 'branch', 'select'],
+  },
+  {
+    type: 'switch-case',
+    category: 'core-flow',
+    label: 'Case',
+    description: 'A case branch for a switch statement',
+    color: '#4A90E2',
+    inputs: [
+      { label: 'Switch', type: 'exec', isInput: true },
+      { label: 'Match', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Exec', type: 'exec', isInput: false },
+    ],
+    defaultData: { caseValue: 0 },
+    tags: ['switch', 'case'],
+  },
+  {
+    type: 'break',
+    category: 'core-flow',
+    label: 'Break',
+    description: 'Break out of a loop or switch statement',
+    color: '#4A90E2',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+    ],
+    outputs: [],
+    defaultData: {},
+    tags: ['break', 'loop', 'switch'],
+  },
+  {
+    type: 'continue',
+    category: 'core-flow',
+    label: 'Continue',
+    description: 'Skip to next iteration of a loop',
+    color: '#4A90E2',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+    ],
+    outputs: [],
+    defaultData: {},
+    tags: ['continue', 'loop'],
+  },
+
+  // ==================== STRUCTS & ENUMS ====================
+  {
+    type: 'struct-define',
+    category: 'structures',
+    label: 'Define Struct',
+    description: 'Define a new struct type with fields. Use +/- to add fields.',
+    color: '#16A085',
+    inputs: [],
+    outputs: [],
+    defaultData: {
+      structName: 'MyStruct',
+      isGlobal: false,
+      fieldCount: 2,
+      fieldNames: ['field1', 'field2'],
+      fieldTypes: ['int', 'string'],
+      fieldDefaults: [0, '""'],
+    },
+    tags: ['struct', 'structure', 'type', 'define'],
+  },
+  {
+    type: 'struct-create',
+    category: 'structures',
+    label: 'Create Struct',
+    description: 'Create an instance of a struct type',
+    color: '#16A085',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'Instance', type: 'data', dataType: 'struct', isInput: false },
+    ],
+    defaultData: { structName: 'MyStruct' },
+    tags: ['struct', 'create', 'instance', 'new'],
+  },
+  {
+    type: 'struct-get-field',
+    category: 'structures',
+    label: 'Get Struct Field',
+    description: 'Get a field value from a struct instance',
+    color: '#16A085',
+    inputs: [
+      { label: 'Struct', type: 'data', dataType: 'struct', isInput: true },
+    ],
+    outputs: [
+      { label: 'Value', type: 'data', dataType: 'any', isInput: false },
+    ],
+    defaultData: { fieldName: 'field1' },
+    tags: ['struct', 'get', 'field', 'property'],
+  },
+  {
+    type: 'struct-set-field',
+    category: 'structures',
+    label: 'Set Struct Field',
+    description: 'Set a field value on a struct instance',
+    color: '#16A085',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Struct', type: 'data', dataType: 'struct', isInput: true },
+      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { fieldName: 'field1' },
+    tags: ['struct', 'set', 'field', 'property'],
+  },
+  {
+    type: 'enum-define',
+    category: 'structures',
+    label: 'Define Enum',
+    description: 'Define an enumeration type. Use +/- to add values. Values auto-increment from 0 or can use explicit values/bit flags.',
+    color: '#16A085',
+    inputs: [],
+    outputs: [],
+    defaultData: {
+      enumName: 'MyEnum',
+      isGlobal: true,
+      valueCount: 3,
+      valueNames: ['VALUE_A', 'VALUE_B', 'VALUE_C'],
+      explicitValues: [null, null, null], // null = auto-increment, number = explicit, string = expression like "(1 << 0)"
+    },
+    tags: ['enum', 'enumeration', 'type', 'define', 'flags'],
+  },
+  {
+    type: 'enum-value',
+    category: 'structures',
+    label: 'Enum Value',
+    description: 'Get a value from an enum',
+    color: '#16A085',
+    inputs: [],
+    outputs: [
+      { label: 'Value', type: 'data', dataType: 'int', isInput: false },
+    ],
+    defaultData: { enumName: 'eGameState', valueName: 'Playing' },
+    tags: ['enum', 'value', 'constant'],
+  },
+
   // ==================== EVENTS ====================
   // Weapon Events
   {
@@ -1976,25 +2134,251 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     type: 'create-entity',
     category: 'entity',
     label: 'CreateEntity',
-    description: 'Create a new entity',
+    description: `Create a new entity with full setup options. All inputs are optional except ClassName. Connect KV nodes to KeyValues input for .kv.* properties.`,
     color: '#27AE60',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'ClassName', type: 'data', dataType: 'string', isInput: true },
+      // Core positioning
       { label: 'Origin', type: 'data', dataType: 'vector', isInput: true },
       { label: 'Angles', type: 'data', dataType: 'vector', isInput: true },
+      // Hierarchy
+      { label: 'Parent', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'ParentAttach', type: 'data', dataType: 'string', isInput: true },
+      { label: 'Owner', type: 'data', dataType: 'entity', isInput: true },
+      // Trigger-specific
+      { label: 'Radius', type: 'data', dataType: 'number', isInput: true },
+      { label: 'AboveHeight', type: 'data', dataType: 'number', isInput: true },
+      { label: 'BelowHeight', type: 'data', dataType: 'number', isInput: true },
+      // Model/Asset
+      { label: 'Model', type: 'data', dataType: 'asset', isInput: true },
+      { label: 'Effect', type: 'data', dataType: 'asset', isInput: true },
+      // Health/Team
+      { label: 'Health', type: 'data', dataType: 'number', isInput: true },
+      { label: 'MaxHealth', type: 'data', dataType: 'number', isInput: true },
+      { label: 'Team', type: 'data', dataType: 'number', isInput: true },
+      // Display
+      { label: 'ScriptName', type: 'data', dataType: 'string', isInput: true },
+      { label: 'Visible', type: 'data', dataType: 'boolean', isInput: true },
+      { label: 'Solid', type: 'data', dataType: 'boolean', isInput: true },
+      // NPC-specific
+      { label: 'AISettings', type: 'data', dataType: 'string', isInput: true },
+      // KeyValues - connect KV nodes here (supports multiple connections)
+      { label: 'KeyValues', type: 'data', dataType: 'array', isInput: true },
     ],
     outputs: [
       { label: 'Out', type: 'exec', isInput: false },
       { label: 'Entity', type: 'data', dataType: 'entity', isInput: false },
     ],
     defaultData: { className: 'prop_dynamic' },
+    serverOnly: true,
+    tags: ['CreateEntity', 'spawn', 'create', 'entity', 'prop', 'trigger', 'npc', 'particle', 'mover', 'zipline', 'SetRadius', 'SetParent', 'SetOwner', 'kv', 'keyvalue'],
   },
+  {
+    type: 'entity-classname',
+    category: 'entity',
+    label: 'Entity ClassName',
+    description: 'Select an entity class name from a dropdown list of all available entity types.',
+    color: '#27AE60',
+    inputs: [],
+    outputs: [
+      { label: 'ClassName', type: 'data', dataType: 'string', isInput: false },
+    ],
+    defaultData: { className: 'prop_dynamic' },
+    tags: ['entity', 'classname', 'type', 'prop', 'npc', 'trigger', 'particle', 'dropdown', 'select'],
+  },
+
+  // ==================== KEYVALUE NODES ====================
+  // These output {key, value} pairs to connect to CreateEntity's KeyValues input
+  {
+    type: 'kv-solid',
+    category: 'keyvalues',
+    label: 'KV: Solid',
+    description: 'Set entity solid type. 0=not solid, 6=SOLID_VPHYSICS',
+    color: '#16A085',
+    inputs: [
+      { label: 'Value', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'KV', type: 'data', dataType: 'table', isInput: false },
+    ],
+    defaultData: { key: 'solid', value: 0 },
+    tags: ['kv', 'keyvalue', 'solid', 'collision'],
+  },
+  {
+    type: 'kv-rendercolor',
+    category: 'keyvalues',
+    label: 'KV: RenderColor',
+    description: 'Set entity render color as "R,G,B" string (0-255)',
+    color: '#16A085',
+    inputs: [
+      { label: 'Color', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'KV', type: 'data', dataType: 'table', isInput: false },
+    ],
+    defaultData: { key: 'rendercolor', value: '255,255,255' },
+    tags: ['kv', 'keyvalue', 'render', 'color'],
+  },
+  {
+    type: 'kv-renderamt',
+    category: 'keyvalues',
+    label: 'KV: RenderAmt',
+    description: 'Set entity render alpha (0-255)',
+    color: '#16A085',
+    inputs: [
+      { label: 'Alpha', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'KV', type: 'data', dataType: 'table', isInput: false },
+    ],
+    defaultData: { key: 'renderamt', value: 255 },
+    tags: ['kv', 'keyvalue', 'render', 'alpha', 'transparency'],
+  },
+  {
+    type: 'kv-rendermode',
+    category: 'keyvalues',
+    label: 'KV: RenderMode',
+    description: 'Set render mode. 0=normal, 1=color, 5=additive, 10=glow',
+    color: '#16A085',
+    inputs: [
+      { label: 'Mode', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'KV', type: 'data', dataType: 'table', isInput: false },
+    ],
+    defaultData: { key: 'rendermode', value: 0 },
+    tags: ['kv', 'keyvalue', 'render', 'mode'],
+  },
+  {
+    type: 'kv-visibility-flags',
+    category: 'keyvalues',
+    label: 'KV: VisibilityFlags',
+    description: 'Set visibility flags. ENTITY_VISIBLE_TO_OWNER=1, FRIENDLY=2, ENEMY=4',
+    color: '#16A085',
+    inputs: [
+      { label: 'Flags', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'KV', type: 'data', dataType: 'table', isInput: false },
+    ],
+    defaultData: { key: 'VisibilityFlags', value: 7 },
+    tags: ['kv', 'keyvalue', 'visibility', 'flags'],
+  },
+  {
+    type: 'kv-spawnflags',
+    category: 'keyvalues',
+    label: 'KV: SpawnFlags',
+    description: 'Set entity spawn flags (bitfield)',
+    color: '#16A085',
+    inputs: [
+      { label: 'Flags', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'KV', type: 'data', dataType: 'table', isInput: false },
+    ],
+    defaultData: { key: 'spawnflags', value: 0 },
+    tags: ['kv', 'keyvalue', 'spawn', 'flags'],
+  },
+  {
+    type: 'kv-collision-group',
+    category: 'keyvalues',
+    label: 'KV: CollisionGroup',
+    description: 'Set collision group',
+    color: '#16A085',
+    inputs: [
+      { label: 'Group', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'KV', type: 'data', dataType: 'table', isInput: false },
+    ],
+    defaultData: { key: 'CollisionGroup', value: 0 },
+    tags: ['kv', 'keyvalue', 'collision', 'group'],
+  },
+  {
+    type: 'kv-start-active',
+    category: 'keyvalues',
+    label: 'KV: StartActive',
+    description: 'Set whether entity starts active (for particles, triggers)',
+    color: '#16A085',
+    inputs: [
+      { label: 'Active', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'KV', type: 'data', dataType: 'table', isInput: false },
+    ],
+    defaultData: { key: 'start_active', value: 1 },
+    tags: ['kv', 'keyvalue', 'start', 'active', 'particle'],
+  },
+  {
+    type: 'kv-fadedist',
+    category: 'keyvalues',
+    label: 'KV: FadeDist',
+    description: 'Set fade distance. -1 = never fade',
+    color: '#16A085',
+    inputs: [
+      { label: 'Distance', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'KV', type: 'data', dataType: 'table', isInput: false },
+    ],
+    defaultData: { key: 'fadedist', value: -1 },
+    tags: ['kv', 'keyvalue', 'fade', 'distance'],
+  },
+  {
+    type: 'kv-modelscale',
+    category: 'keyvalues',
+    label: 'KV: ModelScale',
+    description: 'Set model scale multiplier',
+    color: '#16A085',
+    inputs: [
+      { label: 'Scale', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'KV', type: 'data', dataType: 'table', isInput: false },
+    ],
+    defaultData: { key: 'modelscale', value: 1.0 },
+    tags: ['kv', 'keyvalue', 'model', 'scale'],
+  },
+  {
+    type: 'kv-trigger-filter',
+    category: 'keyvalues',
+    label: 'KV: TriggerFilter',
+    description: 'Set trigger filter flags for characters/players/NPCs',
+    color: '#16A085',
+    inputs: [
+      { label: 'FilterNonCharacter', type: 'data', dataType: 'string', isInput: true },
+      { label: 'FilterPlayer', type: 'data', dataType: 'string', isInput: true },
+      { label: 'FilterNpc', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'KV', type: 'data', dataType: 'table', isInput: false },
+    ],
+    defaultData: { filterNonCharacter: '0', filterPlayer: '1', filterNpc: '1' },
+    tags: ['kv', 'keyvalue', 'trigger', 'filter', 'player', 'npc'],
+  },
+  {
+    type: 'kv-custom',
+    category: 'keyvalues',
+    label: 'KV: Custom',
+    description: 'Set any custom keyvalue property',
+    color: '#16A085',
+    inputs: [
+      { label: 'Key', type: 'data', dataType: 'string', isInput: true },
+      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'KV', type: 'data', dataType: 'table', isInput: false },
+    ],
+    defaultData: { key: 'enabled', value: '1' },
+    tags: ['kv', 'keyvalue', 'custom', 'property'],
+  },
+
   {
     type: 'create-script-mover',
     category: 'entity',
     label: 'CreateScriptMover',
-    description: 'Create a script mover entity',
+    description: 'Create a script mover entity. Movers can move smoothly along paths and can parent other entities.',
     color: '#27AE60',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
@@ -2006,6 +2390,485 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Mover', type: 'data', dataType: 'entity', isInput: false },
     ],
     defaultData: {},
+    serverOnly: true,
+    tags: ['create', 'mover', 'script_mover', 'movement', 'path'],
+  },
+
+  // ==================== SPECIALIZED ENTITY CREATION ====================
+  {
+    type: 'create-prop-dynamic',
+    category: 'entity',
+    label: 'Create Prop Dynamic',
+    description: 'Create a prop_dynamic entity with a model. Can be animated and have skins.',
+    color: '#27AE60',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Model', type: 'data', dataType: 'asset', isInput: true },
+      { label: 'Origin', type: 'data', dataType: 'vector', isInput: true },
+      { label: 'Angles', type: 'data', dataType: 'vector', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'Prop', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { model: '$"mdl/dev/empty_model.rmdl"', solid: true },
+    serverOnly: true,
+    tags: ['create', 'prop', 'prop_dynamic', 'model', 'spawn'],
+  },
+  {
+    type: 'create-prop-physics',
+    category: 'entity',
+    label: 'Create Prop Physics',
+    description: 'Create a prop_physics entity with physics simulation. Will fall and collide.',
+    color: '#27AE60',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Model', type: 'data', dataType: 'asset', isInput: true },
+      { label: 'Origin', type: 'data', dataType: 'vector', isInput: true },
+      { label: 'Angles', type: 'data', dataType: 'vector', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'Prop', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { model: '$"mdl/dev/empty_model.rmdl"' },
+    serverOnly: true,
+    tags: ['create', 'prop', 'prop_physics', 'physics', 'model', 'spawn'],
+  },
+  {
+    type: 'create-info-target',
+    category: 'entity',
+    label: 'Create Info Target',
+    description: 'Create an info_target entity. Useful as a reference point, damage inflictor, or attachment point.',
+    color: '#27AE60',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Origin', type: 'data', dataType: 'vector', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'Target', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: {},
+    serverOnly: true,
+    tags: ['create', 'info_target', 'reference', 'point', 'inflictor'],
+  },
+  {
+    type: 'create-particle-system',
+    category: 'entity',
+    label: 'Create Particle System',
+    description: 'Create an info_particle_system entity for persistent particle effects. Set effect with SetValueForEffectNameKey().',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Effect', type: 'data', dataType: 'asset', isInput: true },
+      { label: 'Origin', type: 'data', dataType: 'vector', isInput: true },
+      { label: 'StartActive', type: 'data', dataType: 'boolean', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'ParticleEnt', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { effect: '$""', startActive: true },
+    serverOnly: true,
+    tags: ['create', 'particle', 'info_particle_system', 'fx', 'effect', 'vfx'],
+  },
+  {
+    type: 'create-control-point',
+    category: 'entity',
+    label: 'Create Control Point',
+    description: 'Create an info_placement_helper for particle control points. Use SetOrigin to position, link via kv.cpoint1.',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Origin', type: 'data', dataType: 'vector', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'ControlPoint', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: {},
+    serverOnly: true,
+    tags: ['create', 'control point', 'info_placement_helper', 'cpoint', 'particle'],
+  },
+  {
+    type: 'create-ambient-generic',
+    category: 'entity',
+    label: 'Create Ambient Sound',
+    description: 'Create an ambient_generic entity for playing sounds at a location.',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Sound', type: 'data', dataType: 'string', isInput: true },
+      { label: 'Origin', type: 'data', dataType: 'vector', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'SoundEnt', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { sound: '' },
+    serverOnly: true,
+    tags: ['create', 'ambient_generic', 'sound', 'audio'],
+  },
+  {
+    type: 'create-vortex-sphere',
+    category: 'entity',
+    label: 'Create Vortex Sphere',
+    description: 'Create a vortex_sphere entity for absorbing projectiles (like Vortex Shield).',
+    color: '#3498DB',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Origin', type: 'data', dataType: 'vector', isInput: true },
+      { label: 'Radius', type: 'data', dataType: 'number', isInput: true },
+      { label: 'Height', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'VortexSphere', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { radius: 128, height: 64 },
+    serverOnly: true,
+    tags: ['create', 'vortex_sphere', 'vortex', 'shield', 'absorb'],
+  },
+  {
+    type: 'create-zipline',
+    category: 'entity',
+    label: 'Create Zipline',
+    description: 'Create a zipline between two points. Creates both zipline and zipline_end entities.',
+    color: '#F39C12',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'StartPos', type: 'data', dataType: 'vector', isInput: true },
+      { label: 'EndPos', type: 'data', dataType: 'vector', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'ZiplineStart', type: 'data', dataType: 'entity', isInput: false },
+      { label: 'ZiplineEnd', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { autoDetachDistance: 160, material: 'cable/zipline.vmt' },
+    serverOnly: true,
+    tags: ['create', 'zipline', 'zipline_end', 'movement', 'travel'],
+  },
+  {
+    type: 'create-point-viewcontrol',
+    category: 'entity',
+    label: 'Create Camera',
+    description: 'Create a point_viewcontrol for controlling player camera/view.',
+    color: '#8E44AD',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Origin', type: 'data', dataType: 'vector', isInput: true },
+      { label: 'Angles', type: 'data', dataType: 'vector', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'Camera', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: {},
+    serverOnly: true,
+    tags: ['create', 'point_viewcontrol', 'camera', 'view', 'cutscene'],
+  },
+
+  // ==================== NPC CREATION ====================
+  {
+    type: 'create-npc-dummie',
+    category: 'npc',
+    label: 'Create Dummy',
+    description: 'Create a training dummy NPC. Configure with SetSpawnOption_AISettings, SetHealth, SetBehaviorSelector.',
+    color: '#E67E22',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Origin', type: 'data', dataType: 'vector', isInput: true },
+      { label: 'Angles', type: 'data', dataType: 'vector', isInput: true },
+      { label: 'Team', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'Dummy', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { aiSettings: 'npc_training_dummy', team: 99 },
+    serverOnly: true,
+    tags: ['create', 'npc_dummie', 'dummy', 'training', 'npc', 'ai'],
+  },
+  {
+    type: 'create-npc-prowler',
+    category: 'npc',
+    label: 'Create Prowler',
+    description: 'Create a prowler NPC. Can also be used for flyers with SetSpawnOption_AISettings("npc_flyer").',
+    color: '#E67E22',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Origin', type: 'data', dataType: 'vector', isInput: true },
+      { label: 'Angles', type: 'data', dataType: 'vector', isInput: true },
+      { label: 'Team', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'Prowler', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { aiSettings: 'npc_prowler', team: 99 },
+    serverOnly: true,
+    tags: ['create', 'npc_prowler', 'prowler', 'flyer', 'wildlife', 'npc', 'ai'],
+  },
+  {
+    type: 'create-npc-spectre',
+    category: 'npc',
+    label: 'Create Spectre',
+    description: 'Create a spectre NPC (robot soldier).',
+    color: '#E67E22',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Origin', type: 'data', dataType: 'vector', isInput: true },
+      { label: 'Angles', type: 'data', dataType: 'vector', isInput: true },
+      { label: 'Team', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'Spectre', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { aiSettings: 'npc_spectre', team: 99 },
+    serverOnly: true,
+    tags: ['create', 'npc_spectre', 'spectre', 'robot', 'soldier', 'npc', 'ai'],
+  },
+  {
+    type: 'create-npc-marvin',
+    category: 'npc',
+    label: 'Create Marvin',
+    description: 'Create a MRVN (Marvin) robot NPC.',
+    color: '#E67E22',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Origin', type: 'data', dataType: 'vector', isInput: true },
+      { label: 'Angles', type: 'data', dataType: 'vector', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'Marvin', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { aiSettings: 'npc_marvin' },
+    serverOnly: true,
+    tags: ['create', 'npc_marvin', 'marvin', 'mrvn', 'robot', 'npc', 'ai'],
+  },
+  {
+    type: 'create-npc-drone',
+    category: 'npc',
+    label: 'Create Drone',
+    description: 'Create a drone NPC (flying unit).',
+    color: '#E67E22',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Origin', type: 'data', dataType: 'vector', isInput: true },
+      { label: 'Angles', type: 'data', dataType: 'vector', isInput: true },
+      { label: 'Team', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'Drone', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { team: 99 },
+    serverOnly: true,
+    tags: ['create', 'npc_drone', 'drone', 'flying', 'npc', 'ai'],
+  },
+  {
+    type: 'create-npc-dropship',
+    category: 'npc',
+    label: 'Create Dropship',
+    description: 'Create a dropship NPC for transporting players/NPCs.',
+    color: '#E67E22',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Origin', type: 'data', dataType: 'vector', isInput: true },
+      { label: 'Angles', type: 'data', dataType: 'vector', isInput: true },
+      { label: 'Team', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'Dropship', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { team: 99 },
+    serverOnly: true,
+    tags: ['create', 'npc_dropship', 'dropship', 'vehicle', 'transport', 'npc', 'ai'],
+  },
+  {
+    type: 'create-npc-turret',
+    category: 'npc',
+    label: 'Create Sentry Turret',
+    description: 'Create an npc_turret_sentry. Automated defense turret.',
+    color: '#E67E22',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Origin', type: 'data', dataType: 'vector', isInput: true },
+      { label: 'Angles', type: 'data', dataType: 'vector', isInput: true },
+      { label: 'Team', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'Turret', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: { team: 99 },
+    serverOnly: true,
+    tags: ['create', 'npc_turret_sentry', 'turret', 'sentry', 'defense', 'npc', 'ai'],
+  },
+
+  // ==================== ENTITY SETUP HELPERS ====================
+  {
+    type: 'dispatch-spawn',
+    category: 'entity',
+    label: 'DispatchSpawn',
+    description: 'Finalize entity creation by calling DispatchSpawn. Required after CreateEntity and setting initial properties.',
+    color: '#27AE60',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: {},
+    serverOnly: true,
+    tags: ['DispatchSpawn', 'spawn', 'finalize', 'create'],
+  },
+  {
+    type: 'set-model',
+    category: 'entity',
+    label: 'SetValueForModelKey',
+    description: 'Set the model for a prop entity using SetValueForModelKey().',
+    color: '#27AE60',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Model', type: 'data', dataType: 'asset', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { model: '$"mdl/dev/empty_model.rmdl"' },
+    serverOnly: true,
+    tags: ['SetValueForModelKey', 'model', 'prop', 'asset'],
+  },
+  {
+    type: 'set-effect-name',
+    category: 'entity',
+    label: 'SetValueForEffectNameKey',
+    description: 'Set the particle effect for an info_particle_system entity.',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Effect', type: 'data', dataType: 'asset', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { effect: '$""' },
+    serverOnly: true,
+    tags: ['SetValueForEffectNameKey', 'effect', 'particle', 'fx'],
+  },
+  {
+    type: 'set-script-name',
+    category: 'entity',
+    label: 'SetScriptName',
+    description: 'Set the script name for an entity. Used for GetEntByScriptName() lookups.',
+    color: '#27AE60',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Name', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { name: '' },
+    tags: ['SetScriptName', 'name', 'identifier', 'lookup'],
+  },
+  {
+    type: 'set-entity-kv',
+    category: 'entity',
+    label: 'Set KeyValue',
+    description: `Set a keyvalue property on an entity via entity.kv.property. Common properties:
+• solid (0=not solid, 6=SOLID_VPHYSICS)
+• rendercolor ("255,255,255")
+• renderamt (0-255 alpha)
+• rendermode (0=normal, 1=color, 5=additive)
+• fadedist (-1=never fade)
+• spawnflags
+• VisibilityFlags
+• triggerFilterNonCharacter/triggerFilterPlayer/triggerFilterNpc`,
+    color: '#27AE60',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { 
+      property: 'solid',
+      commonProperties: [
+        'solid', 'rendercolor', 'renderamt', 'rendermode', 'fadedist', 'spawnflags', 'VisibilityFlags',
+        'CollisionGroup', 'contents', 'enabled', 'targetname', 'teamnumber', 'origin', 'angles',
+        'triggerFilterNonCharacter', 'triggerFilterPlayer', 'triggerFilterNpc', 'triggerFilterTeamOther',
+        'start_active', 'cpoint1', 'Material', 'Width', 'modelscale', 'gravity',
+        'ZiplineAutoDetachDistance', 'ZiplineVertical', 'ZiplineSpeedScale', 'ZiplinePreserveVelocity'
+      ]
+    },
+    tags: ['kv', 'keyvalue', 'property', 'solid', 'render', 'visibility'],
+  },
+  {
+    type: 'set-spawn-option-ai',
+    category: 'npc',
+    label: 'SetSpawnOption_AISettings',
+    description: 'Set AI settings for an NPC before DispatchSpawn. Common values: npc_training_dummy, npc_prowler, npc_flyer, npc_soldier_infected, npc_spectre, npc_marvin.',
+    color: '#E67E22',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'NPC', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'AISettings', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { aiSettings: 'npc_training_dummy' },
+    serverOnly: true,
+    tags: ['SetSpawnOption_AISettings', 'ai', 'npc', 'behavior', 'spawn option'],
+  },
+  {
+    type: 'set-behavior-selector',
+    category: 'npc',
+    label: 'SetBehaviorSelector',
+    description: 'Set the behavior tree for an NPC after DispatchSpawn. Common: behavior_dummy_empty, behavior_prowler, behavior_soldier.',
+    color: '#E67E22',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'NPC', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Behavior', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { behavior: 'behavior_dummy_empty' },
+    serverOnly: true,
+    tags: ['SetBehaviorSelector', 'behavior', 'ai', 'npc', 'behavior tree'],
+  },
+  {
+    type: 'enable-npc-flag',
+    category: 'npc',
+    label: 'EnableNPCFlag',
+    description: 'Enable NPC flags. Common: NPC_DISABLE_SENSING, NPC_IGNORE_ALL (combine with |).',
+    color: '#E67E22',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'NPC', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Flags', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { flags: 'NPC_DISABLE_SENSING | NPC_IGNORE_ALL' },
+    serverOnly: true,
+    tags: ['EnableNPCFlag', 'npc', 'flag', 'sensing', 'ignore'],
   },
   {
     type: 'set-visible',
@@ -2123,6 +2986,393 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'EyeAngles', type: 'data', dataType: 'vector', isInput: false },
     ],
     defaultData: {},
+  },
+
+  // ==================== ENTITY STRUCT PROPERTIES ====================
+  // player.p.* (ServerPlayerStruct / ClientPlayerStruct)
+  {
+    type: 'player-get-property-server',
+    category: 'entity',
+    label: 'Player: Get Property (Server)',
+    description: 'Get a property from player.p (ServerPlayerStruct). Access server-side player data like isAdmin, lastRespawnTime, storedWeapons, etc.',
+    color: '#16A085',
+    inputs: [
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
+    ],
+    outputs: [
+      { label: 'Value', type: 'data', dataType: 'any', isInput: false },
+    ],
+    defaultData: { property: 'isAdmin' },
+    serverOnly: true,
+    tags: ['player.p', 'ServerPlayerStruct', 'player property', 'server', 'script struct'],
+  },
+  {
+    type: 'player-set-property-server',
+    category: 'entity',
+    label: 'Player: Set Property (Server)',
+    description: 'Set a property on player.p (ServerPlayerStruct). Modify server-side player data.',
+    color: '#16A085',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { property: 'isAdmin' },
+    serverOnly: true,
+    tags: ['player.p', 'ServerPlayerStruct', 'player property', 'server', 'script struct'],
+  },
+  {
+    type: 'player-get-property-client',
+    category: 'entity',
+    label: 'Player: Get Property (Client)',
+    description: 'Get a property from player.p (ClientPlayerStruct). Access client-side player data like isSkydiving, skydiveFreelookEnabled, etc.',
+    color: '#3498DB',
+    inputs: [
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
+    ],
+    outputs: [
+      { label: 'Value', type: 'data', dataType: 'any', isInput: false },
+    ],
+    defaultData: { property: 'isSkydiving' },
+    clientOnly: true,
+    tags: ['player.p', 'ClientPlayerStruct', 'player property', 'client', 'script struct'],
+  },
+  {
+    type: 'player-set-property-client',
+    category: 'entity',
+    label: 'Player: Set Property (Client)',
+    description: 'Set a property on player.p (ClientPlayerStruct). Modify client-side player data.',
+    color: '#3498DB',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { property: 'isSkydiving' },
+    clientOnly: true,
+    tags: ['player.p', 'ClientPlayerStruct', 'player property', 'client', 'script struct'],
+  },
+
+  // entity.e.* (ServerEntityStruct / ClientEntityStruct)
+  {
+    type: 'entity-get-property-server',
+    category: 'entity',
+    label: 'Entity: Get Property (Server)',
+    description: 'Get a property from entity.e (ServerEntityStruct). Access server-side entity data like spawnTime, lastAttacker, fxArray, etc.',
+    color: '#1ABC9C',
+    inputs: [
+      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
+    ],
+    outputs: [
+      { label: 'Value', type: 'data', dataType: 'any', isInput: false },
+    ],
+    defaultData: { property: 'spawnTime' },
+    serverOnly: true,
+    tags: ['entity.e', 'ServerEntityStruct', 'entity property', 'server', 'script struct'],
+  },
+  {
+    type: 'entity-set-property-server',
+    category: 'entity',
+    label: 'Entity: Set Property (Server)',
+    description: 'Set a property on entity.e (ServerEntityStruct). Modify server-side entity data.',
+    color: '#1ABC9C',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { property: 'canBeMeleed' },
+    serverOnly: true,
+    tags: ['entity.e', 'ServerEntityStruct', 'entity property', 'server', 'script struct'],
+  },
+  {
+    type: 'entity-get-property-client',
+    category: 'entity',
+    label: 'Entity: Get Property (Client)',
+    description: 'Get a property from entity.e (ClientEntityStruct). Access client-side entity data.',
+    color: '#5DADE2',
+    inputs: [
+      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
+    ],
+    outputs: [
+      { label: 'Value', type: 'data', dataType: 'any', isInput: false },
+    ],
+    defaultData: { property: 'fxArray' },
+    clientOnly: true,
+    tags: ['entity.e', 'ClientEntityStruct', 'entity property', 'client', 'script struct'],
+  },
+  {
+    type: 'entity-set-property-client',
+    category: 'entity',
+    label: 'Entity: Set Property (Client)',
+    description: 'Set a property on entity.e (ClientEntityStruct). Modify client-side entity data.',
+    color: '#5DADE2',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { property: 'fxArray' },
+    clientOnly: true,
+    tags: ['entity.e', 'ClientEntityStruct', 'entity property', 'client', 'script struct'],
+  },
+
+  // npc.ai.* (ServerAIStruct) - Server only, no client equivalent
+  {
+    type: 'npc-get-property-server',
+    category: 'entity',
+    label: 'NPC: Get AI Property',
+    description: 'Get a property from npc.ai (ServerAIStruct). Access AI/NPC script data like titanSettings, crawling, killCount, etc. Server only.',
+    color: '#2ECC71',
+    inputs: [
+      { label: 'NPC', type: 'data', dataType: 'entity', isInput: true },
+    ],
+    outputs: [
+      { label: 'Value', type: 'data', dataType: 'any', isInput: false },
+    ],
+    defaultData: { property: 'killCount' },
+    serverOnly: true,
+    tags: ['npc.ai', 'ServerAIStruct', 'ai property', 'npc data', 'server', 'script struct'],
+  },
+  {
+    type: 'npc-set-property-server',
+    category: 'entity',
+    label: 'NPC: Set AI Property',
+    description: 'Set a property on npc.ai (ServerAIStruct). Modify AI/NPC script data. Server only.',
+    color: '#2ECC71',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'NPC', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { property: 'buddhaMode' },
+    serverOnly: true,
+    tags: ['npc.ai', 'ServerAIStruct', 'ai property', 'npc data', 'server', 'script struct'],
+  },
+
+  // weapon.w.* (ServerWeaponStruct / ClientWeaponStruct)
+  {
+    type: 'weapon-get-struct-property-server',
+    category: 'weapons',
+    label: 'Weapon: Get Property (Server)',
+    description: 'Get a property from weapon.w (ServerWeaponStruct). Access server-side weapon data like lastFireTime, bubbleShield, statusEffects, etc.',
+    color: '#E67E22',
+    inputs: [
+      { label: 'Weapon', type: 'data', dataType: 'entity', isInput: true },
+    ],
+    outputs: [
+      { label: 'Value', type: 'data', dataType: 'any', isInput: false },
+    ],
+    defaultData: { property: 'lastFireTime' },
+    serverOnly: true,
+    tags: ['weapon.w', 'ServerWeaponStruct', 'weapon property', 'server', 'script struct'],
+  },
+  {
+    type: 'weapon-set-struct-property-server',
+    category: 'weapons',
+    label: 'Weapon: Set Property (Server)',
+    description: 'Set a property on weapon.w (ServerWeaponStruct). Modify server-side weapon data.',
+    color: '#E67E22',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Weapon', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { property: 'wasCharged' },
+    serverOnly: true,
+    tags: ['weapon.w', 'ServerWeaponStruct', 'weapon property', 'server', 'script struct'],
+  },
+  {
+    type: 'weapon-get-struct-property-client',
+    category: 'weapons',
+    label: 'Weapon: Get Property (Client)',
+    description: 'Get a property from weapon.w (ClientWeaponStruct). Access client-side weapon data.',
+    color: '#F39C12',
+    inputs: [
+      { label: 'Weapon', type: 'data', dataType: 'entity', isInput: true },
+    ],
+    outputs: [
+      { label: 'Value', type: 'data', dataType: 'any', isInput: false },
+    ],
+    defaultData: { property: 'fxHandles' },
+    clientOnly: true,
+    tags: ['weapon.w', 'ClientWeaponStruct', 'weapon property', 'client', 'script struct'],
+  },
+  {
+    type: 'weapon-set-struct-property-client',
+    category: 'weapons',
+    label: 'Weapon: Set Property (Client)',
+    description: 'Set a property on weapon.w (ClientWeaponStruct). Modify client-side weapon data.',
+    color: '#F39C12',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Weapon', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { property: 'fxHandles' },
+    clientOnly: true,
+    tags: ['weapon.w', 'ClientWeaponStruct', 'weapon property', 'client', 'script struct'],
+  },
+
+  // projectile.proj.* (ServerProjectileStruct / ClientProjectileStruct)
+  {
+    type: 'projectile-get-property-server',
+    category: 'entity',
+    label: 'Projectile: Get Property (Server)',
+    description: 'Get a property from projectile.proj (ServerProjectileStruct). Access server-side projectile data like isChargedShot, damageScale, etc.',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'Projectile', type: 'data', dataType: 'entity', isInput: true },
+    ],
+    outputs: [
+      { label: 'Value', type: 'data', dataType: 'any', isInput: false },
+    ],
+    defaultData: { property: 'damageScale' },
+    serverOnly: true,
+    tags: ['projectile.proj', 'ServerProjectileStruct', 'projectile property', 'server', 'script struct'],
+  },
+  {
+    type: 'projectile-set-property-server',
+    category: 'entity',
+    label: 'Projectile: Set Property (Server)',
+    description: 'Set a property on projectile.proj (ServerProjectileStruct). Modify server-side projectile data.',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Projectile', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { property: 'damageScale' },
+    serverOnly: true,
+    tags: ['projectile.proj', 'ServerProjectileStruct', 'projectile property', 'server', 'script struct'],
+  },
+  {
+    type: 'projectile-get-property-client',
+    category: 'entity',
+    label: 'Projectile: Get Property (Client)',
+    description: 'Get a property from projectile.proj (ClientProjectileStruct). Access client-side projectile data.',
+    color: '#BB8FCE',
+    inputs: [
+      { label: 'Projectile', type: 'data', dataType: 'entity', isInput: true },
+    ],
+    outputs: [
+      { label: 'Value', type: 'data', dataType: 'any', isInput: false },
+    ],
+    defaultData: { property: 'fxHandles' },
+    clientOnly: true,
+    tags: ['projectile.proj', 'ClientProjectileStruct', 'projectile property', 'client', 'script struct'],
+  },
+  {
+    type: 'projectile-set-property-client',
+    category: 'entity',
+    label: 'Projectile: Set Property (Client)',
+    description: 'Set a property on projectile.proj (ClientProjectileStruct). Modify client-side projectile data.',
+    color: '#BB8FCE',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Projectile', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { property: 'fxHandles' },
+    clientOnly: true,
+    tags: ['projectile.proj', 'ClientProjectileStruct', 'projectile property', 'client', 'script struct'],
+  },
+
+  // soul.soul.* (ServerTitanSoulStruct / ClientTitanSoulStruct)
+  {
+    type: 'soul-get-property-server',
+    category: 'entity',
+    label: 'Soul: Get Property (Server)',
+    description: 'Get a property from soul.soul (ServerTitanSoulStruct). Access server-side titan soul data like batteryTime, upgradeCount, titanLoadout, etc.',
+    color: '#8E44AD',
+    inputs: [
+      { label: 'Soul', type: 'data', dataType: 'entity', isInput: true },
+    ],
+    outputs: [
+      { label: 'Value', type: 'data', dataType: 'any', isInput: false },
+    ],
+    defaultData: { property: 'upgradeCount' },
+    serverOnly: true,
+    tags: ['soul.soul', 'ServerTitanSoulStruct', 'soul property', 'titan soul', 'server', 'script struct'],
+  },
+  {
+    type: 'soul-set-property-server',
+    category: 'entity',
+    label: 'Soul: Set Property (Server)',
+    description: 'Set a property on soul.soul (ServerTitanSoulStruct). Modify server-side titan soul data.',
+    color: '#8E44AD',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Soul', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { property: 'regensHealth' },
+    serverOnly: true,
+    tags: ['soul.soul', 'ServerTitanSoulStruct', 'soul property', 'titan soul', 'server', 'script struct'],
+  },
+  {
+    type: 'soul-get-property-client',
+    category: 'entity',
+    label: 'Soul: Get Property (Client)',
+    description: 'Get a property from soul.soul (ClientTitanSoulStruct). Access client-side titan soul data.',
+    color: '#A569BD',
+    inputs: [
+      { label: 'Soul', type: 'data', dataType: 'entity', isInput: true },
+    ],
+    outputs: [
+      { label: 'Value', type: 'data', dataType: 'any', isInput: false },
+    ],
+    defaultData: { property: 'titanLoadout' },
+    clientOnly: true,
+    tags: ['soul.soul', 'ClientTitanSoulStruct', 'soul property', 'titan soul', 'client', 'script struct'],
+  },
+  {
+    type: 'soul-set-property-client',
+    category: 'entity',
+    label: 'Soul: Set Property (Client)',
+    description: 'Set a property on soul.soul (ClientTitanSoulStruct). Modify client-side titan soul data.',
+    color: '#A569BD',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Soul', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { property: 'titanLoadout' },
+    clientOnly: true,
+    tags: ['soul.soul', 'ClientTitanSoulStruct', 'soul property', 'titan soul', 'client', 'script struct'],
   },
 
   // ==================== WEAPONS ====================
@@ -3883,7 +5133,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     type: 'const-string',
     category: 'data',
     label: 'String',
-    description: 'String constant',
+    description: 'String',
     color: '#2ECC71',
     inputs: [],
     outputs: [
@@ -3895,7 +5145,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     type: 'const-float',
     category: 'data',
     label: 'Float',
-    description: 'Float constant',
+    description: 'Float',
     color: '#2ECC71',
     inputs: [],
     outputs: [
@@ -3907,7 +5157,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     type: 'const-int',
     category: 'data',
     label: 'Int',
-    description: 'Integer constant',
+    description: 'Integer',
     color: '#2ECC71',
     inputs: [],
     outputs: [
@@ -3919,7 +5169,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     type: 'const-bool',
     category: 'data',
     label: 'Bool',
-    description: 'Boolean constant',
+    description: 'Boolean',
     color: '#2ECC71',
     inputs: [],
     outputs: [
@@ -3930,8 +5180,8 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   {
     type: 'const-vector',
     category: 'data',
-    label: 'Vector Const',
-    description: 'Vector constant',
+    label: 'Vector',
+    description: 'Vector',
     color: '#2ECC71',
     inputs: [],
     outputs: [
@@ -4018,23 +5268,80 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     defaultData: { name: 'myVar' },
   },
   {
+    type: 'variable-declare',
+    category: 'data',
+    label: 'Declare Variable',
+    description: 'Declare a typed local variable',
+    color: '#2ECC71',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Initial Value', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'Variable', type: 'data', dataType: 'any', isInput: false },
+    ],
+    defaultData: { name: 'myVar', varType: 'var' },
+    tags: ['variable', 'declare', 'local', 'let'],
+  },
+  {
+    type: 'define-const',
+    category: 'data',
+    label: 'Define Const',
+    description: 'Define a constant value. Can be global or local. Generates: [global] const [type] NAME = value',
+    color: '#2ECC71',
+    inputs: [],
+    outputs: [
+      { label: 'Value', type: 'data', dataType: 'any', isInput: false },
+    ],
+    defaultData: { 
+      constName: 'MY_CONSTANT', 
+      constType: 'int', // int, float, bool, string, vector, asset
+      constValue: '100',
+      isGlobal: true,
+    },
+    tags: ['const', 'constant', 'global', 'local', 'define'],
+  },
+
+  // ==================== ARRAYS ====================
+  {
     type: 'array-create',
     category: 'data',
     label: 'Create Array',
-    description: 'Create empty array',
-    color: '#2ECC71',
+    description: 'Create an empty untyped array: array<var>',
+    color: '#a855f7',
     inputs: [],
     outputs: [
       { label: 'Array', type: 'data', dataType: 'array', isInput: false },
     ],
     defaultData: {},
+    tags: ['array', 'create', 'new', 'list'],
+  },
+  {
+    type: 'array-create-typed',
+    category: 'data',
+    label: 'Create Typed Array',
+    description: 'Create a typed array: array<Type>. Optionally initialize with values.',
+    color: '#a855f7',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'Array', type: 'data', dataType: 'array', isInput: false },
+    ],
+    defaultData: { 
+      elementType: 'entity',
+      initialValues: [], // optional inline initialization
+    },
+    tags: ['array', 'create', 'typed', 'list'],
   },
   {
     type: 'array-append',
     category: 'data',
     label: 'Array Append',
-    description: 'Append element to array',
-    color: '#2ECC71',
+    description: 'Append element to end of array (.append)',
+    color: '#a855f7',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Array', type: 'data', dataType: 'array', isInput: true },
@@ -4045,79 +5352,389 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Array', type: 'data', dataType: 'array', isInput: false },
     ],
     defaultData: {},
+    tags: ['array', 'append', 'add', 'push'],
+  },
+  {
+    type: 'array-extend',
+    category: 'data',
+    label: 'Array Extend',
+    description: 'Extend array with elements from another array (.extend)',
+    color: '#a855f7',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Array', type: 'data', dataType: 'array', isInput: true },
+      { label: 'Other', type: 'data', dataType: 'array', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'Array', type: 'data', dataType: 'array', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['array', 'extend', 'concat', 'merge'],
+  },
+  {
+    type: 'array-remove',
+    category: 'data',
+    label: 'Array Remove',
+    description: 'Remove first occurrence of element from array (.remove)',
+    color: '#a855f7',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Array', type: 'data', dataType: 'array', isInput: true },
+      { label: 'Element', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'Array', type: 'data', dataType: 'array', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['array', 'remove', 'delete'],
+  },
+  {
+    type: 'array-remove-by-index',
+    category: 'data',
+    label: 'Array Remove By Index',
+    description: 'Remove element at specific index (.remove)',
+    color: '#a855f7',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Array', type: 'data', dataType: 'array', isInput: true },
+      { label: 'Index', type: 'data', dataType: 'int', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'Removed', type: 'data', dataType: 'any', isInput: false },
+    ],
+    defaultData: { index: 0 },
+    tags: ['array', 'remove', 'index', 'delete'],
   },
   {
     type: 'array-get',
     category: 'data',
     label: 'Array Get',
-    description: 'Get array element by index',
-    color: '#2ECC71',
+    description: 'Get array element by index (array[index])',
+    color: '#a855f7',
     inputs: [
       { label: 'Array', type: 'data', dataType: 'array', isInput: true },
-      { label: 'Index', type: 'data', dataType: 'number', isInput: true },
+      { label: 'Index', type: 'data', dataType: 'int', isInput: true },
     ],
     outputs: [
       { label: 'Element', type: 'data', dataType: 'any', isInput: false },
     ],
     defaultData: { index: 0 },
+    tags: ['array', 'get', 'index', 'access'],
+  },
+  {
+    type: 'array-set',
+    category: 'data',
+    label: 'Array Set',
+    description: 'Set array element at index (array[index] = value)',
+    color: '#a855f7',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Array', type: 'data', dataType: 'array', isInput: true },
+      { label: 'Index', type: 'data', dataType: 'int', isInput: true },
+      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { index: 0 },
+    tags: ['array', 'set', 'index', 'assign'],
   },
   {
     type: 'array-length',
     category: 'data',
     label: 'Array Length',
-    description: 'Get array length',
-    color: '#2ECC71',
+    description: 'Get number of elements in array (.len())',
+    color: '#a855f7',
     inputs: [
       { label: 'Array', type: 'data', dataType: 'array', isInput: true },
     ],
     outputs: [
-      { label: 'Length', type: 'data', dataType: 'number', isInput: false },
+      { label: 'Length', type: 'data', dataType: 'int', isInput: false },
     ],
     defaultData: {},
+    tags: ['array', 'length', 'size', 'count'],
   },
+  {
+    type: 'array-contains',
+    category: 'data',
+    label: 'Array Contains',
+    description: 'Check if array contains element (.contains)',
+    color: '#a855f7',
+    inputs: [
+      { label: 'Array', type: 'data', dataType: 'array', isInput: true },
+      { label: 'Element', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Contains', type: 'data', dataType: 'boolean', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['array', 'contains', 'has', 'includes'],
+  },
+  {
+    type: 'array-find',
+    category: 'data',
+    label: 'Array Find',
+    description: 'Find index of element in array (.find). Returns -1 if not found.',
+    color: '#a855f7',
+    inputs: [
+      { label: 'Array', type: 'data', dataType: 'array', isInput: true },
+      { label: 'Element', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Index', type: 'data', dataType: 'int', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['array', 'find', 'index', 'search'],
+  },
+  {
+    type: 'array-clear',
+    category: 'data',
+    label: 'Array Clear',
+    description: 'Remove all elements from array (.clear())',
+    color: '#a855f7',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Array', type: 'data', dataType: 'array', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['array', 'clear', 'empty', 'reset'],
+  },
+  {
+    type: 'array-resize',
+    category: 'data',
+    label: 'Array Resize',
+    description: 'Resize array to specified length (.resize)',
+    color: '#a855f7',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Array', type: 'data', dataType: 'array', isInput: true },
+      { label: 'Size', type: 'data', dataType: 'int', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { size: 10 },
+    tags: ['array', 'resize', 'size'],
+  },
+  {
+    type: 'array-randomize',
+    category: 'data',
+    label: 'Array Randomize',
+    description: 'Shuffle array elements randomly (.randomize)',
+    color: '#a855f7',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Array', type: 'data', dataType: 'array', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'Array', type: 'data', dataType: 'array', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['array', 'randomize', 'shuffle', 'random'],
+  },
+  {
+    type: 'array-getrandom',
+    category: 'data',
+    label: 'Array Get Random',
+    description: 'Get random element from array (.getrandom)',
+    color: '#a855f7',
+    inputs: [
+      { label: 'Array', type: 'data', dataType: 'array', isInput: true },
+    ],
+    outputs: [
+      { label: 'Element', type: 'data', dataType: 'any', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['array', 'random', 'getrandom'],
+  },
+  {
+    type: 'array-slice',
+    category: 'data',
+    label: 'Array Slice',
+    description: 'Get a portion of array (.slice)',
+    color: '#a855f7',
+    inputs: [
+      { label: 'Array', type: 'data', dataType: 'array', isInput: true },
+      { label: 'Start', type: 'data', dataType: 'int', isInput: true },
+      { label: 'End', type: 'data', dataType: 'int', isInput: true },
+    ],
+    outputs: [
+      { label: 'Slice', type: 'data', dataType: 'array', isInput: false },
+    ],
+    defaultData: { start: 0, end: -1 },
+    tags: ['array', 'slice', 'sub', 'portion'],
+  },
+
+  // ==================== TABLES ====================
   {
     type: 'table-create',
     category: 'data',
     label: 'Create Table',
-    description: 'Create empty table',
-    color: '#2ECC71',
+    description: 'Create an empty untyped table: table',
+    color: '#6366f1',
     inputs: [],
     outputs: [
       { label: 'Table', type: 'data', dataType: 'table', isInput: false },
     ],
     defaultData: {},
+    tags: ['table', 'create', 'new', 'dict', 'map'],
+  },
+  {
+    type: 'table-create-typed',
+    category: 'data',
+    label: 'Create Typed Table',
+    description: 'Create a typed table: table<KeyType, ValueType>',
+    color: '#6366f1',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'Table', type: 'data', dataType: 'table', isInput: false },
+    ],
+    defaultData: { 
+      keyType: 'string',
+      valueType: 'int',
+    },
+    tags: ['table', 'create', 'typed', 'dict', 'map'],
   },
   {
     type: 'table-get',
     category: 'data',
     label: 'Table Get',
-    description: 'Get table value by key',
-    color: '#2ECC71',
+    description: 'Get table value by key (table[key])',
+    color: '#6366f1',
     inputs: [
       { label: 'Table', type: 'data', dataType: 'table', isInput: true },
-      { label: 'Key', type: 'data', dataType: 'string', isInput: true },
+      { label: 'Key', type: 'data', dataType: 'any', isInput: true },
     ],
     outputs: [
       { label: 'Value', type: 'data', dataType: 'any', isInput: false },
     ],
     defaultData: { key: 'key' },
+    tags: ['table', 'get', 'access', 'lookup'],
   },
   {
     type: 'table-set',
     category: 'data',
     label: 'Table Set',
-    description: 'Set table value',
-    color: '#2ECC71',
+    description: 'Set existing table slot value (table[key] = value). Key must exist.',
+    color: '#6366f1',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Table', type: 'data', dataType: 'table', isInput: true },
-      { label: 'Key', type: 'data', dataType: 'string', isInput: true },
+      { label: 'Key', type: 'data', dataType: 'any', isInput: true },
       { label: 'Value', type: 'data', dataType: 'any', isInput: true },
     ],
     outputs: [
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { key: 'key' },
+    tags: ['table', 'set', 'assign', 'update'],
+  },
+  {
+    type: 'table-add-slot',
+    category: 'data',
+    label: 'Table Add Slot',
+    description: 'Add new key-value pair to table (table[key] <- value)',
+    color: '#6366f1',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Table', type: 'data', dataType: 'table', isInput: true },
+      { label: 'Key', type: 'data', dataType: 'any', isInput: true },
+      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['table', 'add', 'slot', 'insert', 'new'],
+  },
+  {
+    type: 'table-has-key',
+    category: 'data',
+    label: 'Table Has Key',
+    description: 'Check if table contains key (key in table)',
+    color: '#6366f1',
+    inputs: [
+      { label: 'Table', type: 'data', dataType: 'table', isInput: true },
+      { label: 'Key', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Has Key', type: 'data', dataType: 'boolean', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['table', 'has', 'key', 'contains', 'in'],
+  },
+  {
+    type: 'table-delete',
+    category: 'data',
+    label: 'Table Delete',
+    description: 'Remove key-value pair from table (delete table[key])',
+    color: '#6366f1',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Table', type: 'data', dataType: 'table', isInput: true },
+      { label: 'Key', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['table', 'delete', 'remove', 'key'],
+  },
+  {
+    type: 'table-keys',
+    category: 'data',
+    label: 'Table Keys',
+    description: 'Get array of all keys in table',
+    color: '#6366f1',
+    inputs: [
+      { label: 'Table', type: 'data', dataType: 'table', isInput: true },
+    ],
+    outputs: [
+      { label: 'Keys', type: 'data', dataType: 'array', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['table', 'keys', 'list'],
+  },
+  {
+    type: 'table-values',
+    category: 'data',
+    label: 'Table Values',
+    description: 'Get array of all values in table',
+    color: '#6366f1',
+    inputs: [
+      { label: 'Table', type: 'data', dataType: 'table', isInput: true },
+    ],
+    outputs: [
+      { label: 'Values', type: 'data', dataType: 'array', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['table', 'values', 'list'],
+  },
+  {
+    type: 'table-clear',
+    category: 'data',
+    label: 'Table Clear',
+    description: 'Remove all entries from table (.clear())',
+    color: '#6366f1',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Table', type: 'data', dataType: 'table', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['table', 'clear', 'empty', 'reset'],
   },
 
   // ==================== UTILITIES ====================
@@ -4573,22 +6190,6 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Trigger', type: 'data', dataType: 'entity', isInput: true },
-    ],
-    outputs: [
-      { label: 'Out', type: 'exec', isInput: false },
-    ],
-    defaultData: {},
-    serverOnly: true,
-  },
-  {
-    type: 'dispatch-spawn',
-    category: 'entity',
-    label: 'DispatchSpawn',
-    description: 'Spawn/activate an entity into the world',
-    color: '#27AE60',
-    inputs: [
-      { label: 'In', type: 'exec', isInput: true },
-      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
     ],
     outputs: [
       { label: 'Out', type: 'exec', isInput: false },

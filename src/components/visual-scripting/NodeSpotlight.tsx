@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, Command } from 'lucide-react';
 import { NODE_DEFINITIONS } from '../../data/node-definitions';
+import { CATEGORY_INFO } from '../../types/visual-scripting';
 import type { ScriptNode, NodePort, NodeDefinition } from '../../types/visual-scripting';
 
 interface NodeSpotlightProps {
@@ -12,40 +13,9 @@ interface NodeSpotlightProps {
   accentColor?: string;
 }
 
-// Category display names
-const CATEGORY_NAMES: Record<string, string> = {
-  'core-flow': 'Core Flow',
-  'gamemodes': 'Gamemodes',
-  'events': 'Events',
-  'entity': 'Entity',
-  'weapons': 'Weapons',
-  'status-effects': 'Status Effects',
-  'particles': 'Particles',
-  'audio': 'Audio',
-  'damage': 'Damage',
-  'ui': 'UI',
-  'math': 'Math',
-  'callbacks': 'Callbacks',
-  'data': 'Data',
-  'utilities': 'Utilities',
-};
-
-// Category colors for visual distinction
-const CATEGORY_COLORS: Record<string, string> = {
-  'core-flow': 'text-purple-400',
-  'gamemodes': 'text-red-400',
-  'events': 'text-yellow-400',
-  'entity': 'text-blue-400',
-  'weapons': 'text-red-400',
-  'status-effects': 'text-green-400',
-  'particles': 'text-pink-400',
-  'audio': 'text-cyan-400',
-  'damage': 'text-orange-400',
-  'ui': 'text-indigo-400',
-  'math': 'text-emerald-400',
-  'callbacks': 'text-amber-400',
-  'data': 'text-violet-400',
-  'utilities': 'text-slate-400',
+// Helper to get category info
+const getCategoryInfo = (categoryId: string) => {
+  return CATEGORY_INFO.find(c => c.id === categoryId);
 };
 
 export default function NodeSpotlight({ isOpen, onClose, onAddNode, viewState, canvasSize, accentColor = '#ef4444' }: NodeSpotlightProps) {
@@ -223,8 +193,8 @@ export default function NodeSpotlight({ isOpen, onClose, onAddNode, viewState, c
                     <span className="text-white text-sm font-medium truncate">
                       {node.label}
                     </span>
-                    <span className={`text-[10px] ${CATEGORY_COLORS[node.category] || 'text-white/40'}`}>
-                      {CATEGORY_NAMES[node.category] || node.category}
+                    <span className={`text-[10px] ${getCategoryInfo(node.category)?.textClass || 'text-white/40'}`}>
+                      {getCategoryInfo(node.category)?.label || node.category}
                     </span>
                   </div>
                   {node.description && (

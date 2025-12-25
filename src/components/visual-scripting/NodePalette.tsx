@@ -17,10 +17,13 @@ import {
   RotateCcw,
   Database,
   Wrench,
-  GripVertical
+  GripVertical,
+  Gamepad2,
+  Boxes
 } from 'lucide-react';
 import { NODE_DEFINITIONS, getNodesByCategory } from '../../data/node-definitions';
-import type { ScriptNode, NodePort } from '../../types/visual-scripting';
+import { CATEGORY_INFO } from '../../types/visual-scripting';
+import type { ScriptNode, NodePort, NodeCategory } from '../../types/visual-scripting';
 
 interface NodePaletteProps {
   onAddNode: (node: ScriptNode) => void;
@@ -46,20 +49,50 @@ interface CategorySectionProps {
   searchTerm?: string;
 }
 
-const CATEGORY_CONFIG: Record<string, { icon: React.ReactNode; color: string }> = {
-  'core-flow': { icon: <Workflow size={14} />, color: 'purple' },
-  'events': { icon: <Zap size={14} />, color: 'yellow' },
-  'entity': { icon: <User size={14} />, color: 'blue' },
-  'weapons': { icon: <Sword size={14} />, color: 'red' },
-  'status-effects': { icon: <Shield size={14} />, color: 'green' },
-  'particles': { icon: <Sparkles size={14} />, color: 'pink' },
-  'audio': { icon: <Volume2 size={14} />, color: 'cyan' },
-  'damage': { icon: <Crosshair size={14} />, color: 'orange' },
-  'ui': { icon: <Monitor size={14} />, color: 'indigo' },
-  'math': { icon: <Calculator size={14} />, color: 'emerald' },
-  'callbacks': { icon: <RotateCcw size={14} />, color: 'amber' },
-  'data': { icon: <Database size={14} />, color: 'violet' },
-  'utilities': { icon: <Wrench size={14} />, color: 'slate' },
+// Icons for each category (React components can't be in the type file)
+const CATEGORY_ICONS: Record<string, React.ReactNode> = {
+  'core-flow': <Workflow size={14} />,
+  'events': <Zap size={14} />,
+  'entity': <User size={14} />,
+  'weapons': <Sword size={14} />,
+  'status-effects': <Shield size={14} />,
+  'particles': <Sparkles size={14} />,
+  'audio': <Volume2 size={14} />,
+  'damage': <Crosshair size={14} />,
+  'ui': <Monitor size={14} />,
+  'math': <Calculator size={14} />,
+  'callbacks': <RotateCcw size={14} />,
+  'data': <Database size={14} />,
+  'structures': <Boxes size={14} />,
+  'utilities': <Wrench size={14} />,
+  'gamemodes': <Gamepad2 size={14} />,
+};
+
+// Map hex colors to Tailwind color names for dynamic class generation
+const hexToTailwindColor = (hex: string): string => {
+  const colorMap: Record<string, string> = {
+    '#4A90E2': 'purple',
+    '#E8A838': 'yellow',
+    '#27AE60': 'blue',
+    '#E67E22': 'red',
+    '#9B59B6': 'green',
+    '#F39C12': 'pink',
+    '#1ABC9C': 'cyan',
+    '#E74C3C': 'orange',
+    '#3498DB': 'indigo',
+    '#95A5A6': 'emerald',
+    '#8E44AD': 'amber',
+    '#2ECC71': 'violet',
+    '#16A085': 'teal',
+    '#34495E': 'slate',
+    '#C0392B': 'red',
+  };
+  return colorMap[hex] || 'slate';
+};
+
+// Helper to get category info
+const getCategoryInfo = (categoryId: string) => {
+  return CATEGORY_INFO.find(c => c.id === categoryId);
 };
 
 const COLOR_CLASSES: Record<string, { bg: string; border: string; text: string; hover: string }> = {
@@ -75,6 +108,7 @@ const COLOR_CLASSES: Record<string, { bg: string; border: string; text: string; 
   emerald: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/50', text: 'text-emerald-400', hover: 'hover:bg-emerald-500/20 hover:border-emerald-500' },
   amber: { bg: 'bg-amber-500/10', border: 'border-amber-500/50', text: 'text-amber-400', hover: 'hover:bg-amber-500/20 hover:border-amber-500' },
   violet: { bg: 'bg-violet-500/10', border: 'border-violet-500/50', text: 'text-violet-400', hover: 'hover:bg-violet-500/20 hover:border-violet-500' },
+  teal: { bg: 'bg-teal-500/10', border: 'border-teal-500/50', text: 'text-teal-400', hover: 'hover:bg-teal-500/20 hover:border-teal-500' },
   slate: { bg: 'bg-slate-500/10', border: 'border-slate-500/50', text: 'text-slate-400', hover: 'hover:bg-slate-500/20 hover:border-slate-500' },
 };
 
@@ -200,22 +234,15 @@ function CategorySection({ title, category, icon, color, onAddNode, defaultOpen 
 export default function NodePalette({ onAddNode, onClose, collapsedCategories = [], onToggleCategory, isExpanded = true, onToggleExpanded, isEmbedded = false, viewState, canvasSize }: NodePaletteProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const categories = [
-    { title: 'Core Flow', category: 'core-flow', defaultOpen: true },
-    { title: 'Events', category: 'events' },
-    { title: 'Entity', category: 'entity' },
-    { title: 'Weapons', category: 'weapons' },
-    { title: 'Status Effects', category: 'status-effects' },
-    { title: 'Particles', category: 'particles' },
-    { title: 'Audio', category: 'audio' },
-    { title: 'Damage', category: 'damage' },
-    { title: 'UI', category: 'ui' },
-    { title: 'Math', category: 'math' },
-    { title: 'Callbacks', category: 'callbacks' },
-    { title: 'Data', category: 'data' },
-    { title: 'Utilities', category: 'utilities' },
-    { title: 'String', category: 'string' }
-  ];
+  // Derive categories from centralized CATEGORY_INFO
+  const categories = useMemo(() => 
+    CATEGORY_INFO.map((info, index) => ({
+      title: info.label,
+      category: info.id,
+      defaultOpen: index === 0, // First category is open by default
+    })),
+    []
+  );
 
   // Count total nodes
   const totalNodes = categories.reduce((acc, cat) => acc + getNodesByCategory(cat.category).length, 0);
@@ -290,15 +317,17 @@ export default function NodePalette({ onAddNode, onClose, collapsedCategories = 
           {/* Categories */}
           <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
             {categories.map(cat => {
-              const config = CATEGORY_CONFIG[cat.category] || CATEGORY_CONFIG['core-flow'];
+              const info = getCategoryInfo(cat.category);
+              const icon = CATEGORY_ICONS[cat.category] || <Database size={14} />;
+              const color = info ? hexToTailwindColor(info.color) : 'purple';
               const isCollapsed = collapsedCategories.includes(cat.category);
               return (
                 <CategorySection
                   key={cat.category}
                   title={cat.title}
                   category={cat.category}
-                  icon={config.icon}
-                  color={config.color}
+                  icon={icon}
+                  color={color}
                   onAddNode={onAddNode}
                   defaultOpen={cat.defaultOpen}
                   searchTerm={searchTerm}

@@ -1,7 +1,9 @@
 export type NodeCategory =
-  | 'core-flow'      // Init, sequence, branch, loops
+  | 'core-flow'      // Init, sequence, branch, loops, switch
   | 'events'         // Weapon callbacks, animation events, entity events
   | 'entity'         // Entity manipulation (get/set properties)
+  | 'npc'            // NPC/AI creation and manipulation
+  | 'keyvalues'      // Entity keyvalue properties (.kv.*)
   | 'weapons'        // Weapon-specific operations
   | 'status-effects' // Status effect system
   | 'particles'      // Particle and FX
@@ -11,7 +13,8 @@ export type NodeCategory =
   | 'math'           // Vector, angles, math operations
   | 'string'         // String manipulation and formatting
   | 'callbacks'      // Register callbacks
-  | 'data'           // Constants, variables
+  | 'data'           // Constants, variables, arrays, tables
+  | 'structures'     // Structs, enums, typedefs
   | 'utilities'      // Validation, debugging, utilities
   | 'gamemodes';     // Gamemode registration and config
 
@@ -28,6 +31,8 @@ export type NodeDataType =
   | 'rotation'
   | 'asset'
   | 'function'
+  | 'struct'
+  | 'enum'
   | 'array'
   | 'table'
   | 'var'
@@ -55,8 +60,23 @@ export type NodeType =
   | 'reroute'
   | 'custom-function'
   | 'call-function'
+  | 'custom-code'
+  | 'thread'
   | 'set-portal'
   | 'get-portal'
+  | 'switch'
+  | 'switch-case'
+  | 'switch-default'
+  | 'break'
+  | 'continue'
+
+  // ==================== STRUCTS & ENUMS ====================
+  | 'struct-define'
+  | 'struct-create'
+  | 'struct-get-field'
+  | 'struct-set-field'
+  | 'enum-define'
+  | 'enum-value'
 
   // ==================== GAMEMODES ====================
   | 'gamemode-create'
@@ -173,7 +193,43 @@ export type NodeType =
   | 'set-script-name'
   | 'kill-entity'
   | 'create-entity'
+  | 'entity-classname'
+  | 'kv-solid'
+  | 'kv-rendercolor'
+  | 'kv-renderamt'
+  | 'kv-rendermode'
+  | 'kv-visibility-flags'
+  | 'kv-spawnflags'
+  | 'kv-collision-group'
+  | 'kv-start-active'
+  | 'kv-fadedist'
+  | 'kv-modelscale'
+  | 'kv-trigger-filter'
+  | 'kv-custom'
   | 'create-script-mover'
+  | 'create-prop-dynamic'
+  | 'create-prop-physics'
+  | 'create-info-target'
+  | 'create-particle-system'
+  | 'create-control-point'
+  | 'create-ambient-generic'
+  | 'create-vortex-sphere'
+  | 'create-zipline'
+  | 'create-point-viewcontrol'
+  | 'create-npc-dummie'
+  | 'create-npc-prowler'
+  | 'create-npc-spectre'
+  | 'create-npc-marvin'
+  | 'create-npc-drone'
+  | 'create-npc-dropship'
+  | 'create-npc-turret'
+  | 'dispatch-spawn'
+  | 'set-model'
+  | 'set-effect-name'
+  | 'set-entity-kv'
+  | 'set-spawn-option-ai'
+  | 'set-behavior-selector'
+  | 'enable-npc-flag'
   | 'set-visible'
   | 'set-solid'
   | 'make-invisible'
@@ -184,6 +240,36 @@ export type NodeType =
   | 'get-eye-angles'
   | 'get-view-vector'
   | 'get-player-name'
+
+  // ==================== ENTITY STRUCT PROPERTIES ====================
+  // player.p.* (ServerPlayerStruct / ClientPlayerStruct)
+  | 'player-get-property-server'
+  | 'player-set-property-server'
+  | 'player-get-property-client'
+  | 'player-set-property-client'
+  // entity.e.* (ServerEntityStruct / ClientEntityStruct)
+  | 'entity-get-property-server'
+  | 'entity-set-property-server'
+  | 'entity-get-property-client'
+  | 'entity-set-property-client'
+  // npc.ai.* (ServerAIStruct) - Server only
+  | 'npc-get-property-server'
+  | 'npc-set-property-server'
+  // weapon.w.* (ServerWeaponStruct / ClientWeaponStruct)
+  | 'weapon-get-struct-property-server'
+  | 'weapon-set-struct-property-server'
+  | 'weapon-get-struct-property-client'
+  | 'weapon-set-struct-property-client'
+  // projectile.proj.* (ServerProjectileStruct / ClientProjectileStruct)
+  | 'projectile-get-property-server'
+  | 'projectile-set-property-server'
+  | 'projectile-get-property-client'
+  | 'projectile-set-property-client'
+  // soul.soul.* (ServerTitanSoulStruct / ClientTitanSoulStruct)
+  | 'soul-get-property-server'
+  | 'soul-set-property-server'
+  | 'soul-get-property-client'
+  | 'soul-set-property-client'
 
   // ==================== WEAPONS ====================
   | 'get-active-weapon'
@@ -346,17 +432,38 @@ export type NodeType =
   | 'const-loot-tier'
   | 'const-supported-attachments'
   | 'const-weapon-type'
+  | 'define-const'
   | 'variable-get'
   | 'variable-set'
+  | 'variable-declare'
+  // Arrays
   | 'array-create'
+  | 'array-create-typed'
   | 'array-append'
+  | 'array-extend'
   | 'array-remove'
+  | 'array-remove-by-index'
   | 'array-get'
+  | 'array-set'
   | 'array-length'
+  | 'array-contains'
+  | 'array-find'
+  | 'array-clear'
+  | 'array-resize'
+  | 'array-randomize'
+  | 'array-getrandom'
+  | 'array-slice'
+  // Tables
   | 'table-create'
+  | 'table-create-typed'
   | 'table-get'
   | 'table-set'
+  | 'table-add-slot'
   | 'table-has-key'
+  | 'table-delete'
+  | 'table-keys'
+  | 'table-values'
+  | 'table-clear'
 
   // ==================== UTILITIES ====================
   | 'print'
@@ -463,23 +570,28 @@ export interface NodeDefinition {
 export interface CategoryInfo {
   id: NodeCategory;
   label: string;
-  color: string;
+  color: string;        // Hex color for node indicators
+  textClass: string;    // Tailwind text color class
   description: string;
 }
 
 export const CATEGORY_INFO: CategoryInfo[] = [
-  { id: 'core-flow', label: 'Core Flow', color: '#4A90E2', description: 'Program flow control, threading, and signals' },
-  { id: 'events', label: 'Events', color: '#E8A838', description: 'Weapon, ability, and entity event callbacks' },
-  { id: 'entity', label: 'Entity', color: '#27AE60', description: 'Entity manipulation and properties' },
-  { id: 'weapons', label: 'Weapons', color: '#E67E22', description: 'Weapon operations and modifications' },
-  { id: 'status-effects', label: 'Status Effects', color: '#9B59B6', description: 'Status effects and buffs/debuffs' },
-  { id: 'particles', label: 'Particles', color: '#F39C12', description: 'Particle effects and FX' },
-  { id: 'audio', label: 'Audio', color: '#1ABC9C', description: 'Sound effects and audio' },
-  { id: 'damage', label: 'Damage', color: '#E74C3C', description: 'Damage system and traces' },
-  { id: 'ui', label: 'UI/RUI', color: '#3498DB', description: 'UI elements and RUI system' },
-  { id: 'math', label: 'Math', color: '#95A5A6', description: 'Math and vector operations' },
-  { id: 'callbacks', label: 'Callbacks', color: '#8E44AD', description: 'Register event callbacks' },
-  { id: 'data', label: 'Data', color: '#2ECC71', description: 'Constants, variables, and data structures' },
-  { id: 'utilities', label: 'Utilities', color: '#34495E', description: 'Debugging, precaching, and utilities' },
-  { id: 'gamemodes', label: 'Gamemodes', color: '#C0392B', description: 'Register and configure gamemodes' },
+  { id: 'core-flow', label: 'Core Flow', color: '#4A90E2', textClass: 'text-purple-400', description: 'Program flow control, switch, threading, and signals' },
+  { id: 'events', label: 'Events', color: '#E8A838', textClass: 'text-yellow-400', description: 'Weapon, ability, and entity event callbacks' },
+  { id: 'entity', label: 'Entity', color: '#27AE60', textClass: 'text-blue-400', description: 'Entity manipulation and properties' },
+  { id: 'npc', label: 'NPC/AI', color: '#E67E22', textClass: 'text-orange-400', description: 'NPC and AI creation, spawning, and behavior' },
+  { id: 'keyvalues', label: 'KeyValues', color: '#16A085', textClass: 'text-teal-400', description: 'Entity keyvalue properties (.kv.*)' },
+  { id: 'weapons', label: 'Weapons', color: '#E67E22', textClass: 'text-red-400', description: 'Weapon operations and modifications' },
+  { id: 'status-effects', label: 'Status Effects', color: '#9B59B6', textClass: 'text-green-400', description: 'Status effects and buffs/debuffs' },
+  { id: 'particles', label: 'Particles', color: '#F39C12', textClass: 'text-pink-400', description: 'Particle effects and FX' },
+  { id: 'audio', label: 'Audio', color: '#1ABC9C', textClass: 'text-cyan-400', description: 'Sound effects and audio' },
+  { id: 'damage', label: 'Damage', color: '#E74C3C', textClass: 'text-orange-400', description: 'Damage system and traces' },
+  { id: 'ui', label: 'UI/RUI', color: '#3498DB', textClass: 'text-indigo-400', description: 'UI elements and RUI system' },
+  { id: 'math', label: 'Math', color: '#95A5A6', textClass: 'text-emerald-400', description: 'Math and vector operations' },
+  { id: 'callbacks', label: 'Callbacks', color: '#8E44AD', textClass: 'text-amber-400', description: 'Register event callbacks' },
+  { id: 'data', label: 'Data', color: '#2ECC71', textClass: 'text-violet-400', description: 'Constants, variables, arrays, and tables' },
+  { id: 'structures', label: 'Structures', color: '#16A085', textClass: 'text-teal-400', description: 'Structs, enums, and type definitions' },
+  { id: 'utilities', label: 'Utilities', color: '#34495E', textClass: 'text-slate-400', description: 'Debugging, precaching, and utilities' },
+  { id: 'gamemodes', label: 'Gamemodes', color: '#C0392B', textClass: 'text-red-400', description: 'Register and configure gamemodes' },
+  { id: 'string', label: 'String', color: '#F39C12', textClass: 'text-yellow-400', description: 'String manipulation and formatting' },
 ];

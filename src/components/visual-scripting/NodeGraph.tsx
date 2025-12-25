@@ -23,6 +23,7 @@ interface NodeGraphProps {
   gridSize?: number;
   nodeOpacity?: number;
   connectionStyle?: 'bezier' | 'straight' | 'step';
+  connectionsBehindNodes?: boolean;
   accentColor?: string;
   theme?: 'light' | 'dark';
   gridStyle?: 'dots' | 'lines' | 'crosshatch';
@@ -104,6 +105,7 @@ export default function NodeGraph({
   gridSize = 20,
   nodeOpacity = 100,
   connectionStyle = 'bezier',
+  connectionsBehindNodes = false,
   accentColor = '#8B5CF6',
   theme = 'dark',
   // Editor settings with defaults
@@ -447,6 +449,91 @@ export default function NodeGraph({
           options={options}
           onChange={(val) => onUpdateNodeRef.current(node.id, { data: { ...node.data, weaponType: val } })}
         />
+      );
+    }
+
+    if (node.type === 'entity-classname') {
+      const value = typeof node.data.className === 'string' ? node.data.className : 'prop_dynamic';
+      const options = [
+        // Props
+        'prop_dynamic', 'prop_physics', 'prop_script', 'prop_door',
+        // Triggers
+        'trigger_cylinder', 'trigger_cylinder_heavy', 'trigger_point_gravity', 'trigger_updraft',
+        // NPCs
+        'npc_dummie', 'npc_prowler', 'npc_marvin', 'npc_spectre', 'npc_drone', 'npc_frag_drone',
+        'npc_dropship', 'npc_gunship', 'npc_titan', 'npc_stalker', 'npc_super_spectre',
+        'npc_soldier', 'npc_turret_mega', 'npc_turret_sentry', 'npc_turret_floor',
+        // Particles & FX
+        'info_particle_system', 'info_placement_helper', 'info_target', 'ambient_generic',
+        // Movers
+        'script_mover', 'script_mover_lightweight',
+        // Ziplines
+        'zipline', 'zipline_end',
+        // Control & Logic
+        'point_viewcontrol', 'assault_assaultpoint', 'info_node',
+        // Physics
+        'vortex_sphere', 'gravity_grenade_dvrt', 'phys_bone_follower',
+        // Environment
+        'env_fog_controller', 'env_wind', 'env_explosion', 'env_shake',
+        // Titans
+        'npc_titan_atlas', 'npc_titan_stryder', 'npc_titan_ogre', 'npc_titan_buddy',
+        // Other
+        'item_health', 'item_ammo', 'waypoint', 'control_point', 'func_brush', 'player_start'
+      ];
+      return (
+        <CustomSelect
+          value={value}
+          options={options}
+          onChange={(val) => onUpdateNodeRef.current(node.id, { data: { ...node.data, className: val } })}
+        />
+      );
+    }
+
+    if (node.type === 'define-const') {
+      const constName = typeof node.data.constName === 'string' ? node.data.constName : 'MY_CONSTANT';
+      const constType = typeof node.data.constType === 'string' ? node.data.constType : 'int';
+      const constValue = node.data.constValue ?? '100';
+      const isGlobal = node.data.isGlobal !== false;
+      const typeOptions = ['int', 'float', 'bool', 'string', 'vector', 'asset'];
+      
+      return (
+        <div className="space-y-2" style={{ width: '180px' }}>
+          {/* Global checkbox */}
+          <label className="flex items-center gap-2 text-[10px] text-gray-400">
+            <input
+              type="checkbox"
+              checked={isGlobal}
+              onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, isGlobal: e.target.checked } })}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="w-3 h-3 rounded border-white/10 bg-black/30 text-purple-600 focus:ring-purple-500 focus:ring-offset-0"
+            />
+            Global
+          </label>
+          {/* Type dropdown */}
+          <CustomSelect
+            value={constType}
+            options={typeOptions}
+            onChange={(val) => onUpdateNodeRef.current(node.id, { data: { ...node.data, constType: val } })}
+          />
+          {/* Name input */}
+          <input
+            type="text"
+            value={constName}
+            placeholder="Name"
+            onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, constName: e.target.value } })}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="w-full px-2 py-1 bg-black/30 border border-white/10 rounded text-[11px] text-gray-200 focus:outline-none focus:border-purple-500"
+          />
+          {/* Value input */}
+          <input
+            type="text"
+            value={constValue}
+            placeholder="Value"
+            onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, constValue: e.target.value } })}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="w-full px-2 py-1 bg-black/30 border border-white/10 rounded text-[11px] text-gray-200 focus:outline-none focus:border-purple-500"
+          />
+        </div>
       );
     }
 
@@ -2283,6 +2370,7 @@ export default function NodeGraph({
           transformOrigin: '0 0',
           willChange: 'transform',
           backfaceVisibility: 'hidden',
+          zIndex: connectionsBehindNodes ? 10 : 1,
           // Force crisp rendering at any scale
           imageRendering: 'auto',
           textRendering: 'geometricPrecision',
@@ -2620,7 +2708,7 @@ export default function NodeGraph({
       <svg
         ref={svgRef}
         className="absolute inset-0 pointer-events-none"
-        style={{ zIndex: 50, width: '100%', height: '100%' }}
+        style={{ zIndex: connectionsBehindNodes ? 0 : 50, width: '100%', height: '100%' }}
         preserveAspectRatio="none"
       >
         {renderConnections()}
