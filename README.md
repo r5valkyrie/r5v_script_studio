@@ -198,8 +198,6 @@ r5v_script_studio/
 
 Contributions are welcome! Please feel free to submit issues and pull requests.
 
-See [MISSING_NODES.md](MISSING_NODES.md) for a list of planned node implementations.
-
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
