@@ -90,6 +90,28 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
   // Only use the explicit activeFileId, don't fall back to first file
   const activeScriptFile = activeFileId ? (scriptFiles.find(f => f.id === activeFileId) || null) : null;
 
+  // Helper to save project data (used for auto-save after structural changes)
+  const saveProjectData = useCallback(async (data: ProjectData, filePath: string | null): Promise<boolean> => {
+    if (!data || !filePath) return false;
+    
+    try {
+      const jsonContent = serializeProject(
+        data.scriptFiles,
+        data.metadata,
+        data.settings
+      );
+      
+      if (window.electron) {
+        await window.electron.writeFile(filePath, jsonContent);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Failed to auto-save project:', error);
+      return false;
+    }
+  }, []);
+
   // Create new project
   const newProject = useCallback(() => {
     const project = createNewProject();
@@ -314,7 +336,7 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
       const newActiveId = prev.settings.activeScriptFile === fileId 
         ? filtered[0].id 
         : prev.settings.activeScriptFile;
-      return {
+      const newData: ProjectData = {
         ...prev,
         scriptFiles: filtered,
         settings: {
@@ -322,15 +344,30 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
           activeScriptFile: newActiveId,
         },
       };
+      
+      // Auto-save after structural change (use setTimeout to ensure state is committed)
+      if (currentFilePath) {
+        setTimeout(() => {
+          saveProjectData(newData, currentFilePath).then(saved => {
+            if (saved) {
+              setHasUnsavedChanges(false);
+              setModifiedFileIds(new Set());
+            }
+          });
+        }, 0);
+      } else {
+        setHasUnsavedChanges(true);
+      }
+      
+      return newData;
     });
-    setHasUnsavedChanges(true);
-  }, []);
+  }, [currentFilePath, saveProjectData]);
 
   // Rename script file
   const renameScriptFile = useCallback((fileId: string, newName: string) => {
     setProjectData(prev => {
       if (!prev) return prev;
-      return {
+      const newData: ProjectData = {
         ...prev,
         scriptFiles: prev.scriptFiles.map(f => 
           f.id === fileId 
@@ -338,9 +375,24 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
             : f
         ),
       };
+      
+      // Auto-save after structural change
+      if (currentFilePath) {
+        setTimeout(() => {
+          saveProjectData(newData, currentFilePath).then(saved => {
+            if (saved) {
+              setHasUnsavedChanges(false);
+              setModifiedFileIds(new Set());
+            }
+          });
+        }, 0);
+      } else {
+        setHasUnsavedChanges(true);
+      }
+      
+      return newData;
     });
-    setHasUnsavedChanges(true);
-  }, []);
+  }, [currentFilePath, saveProjectData]);
 
   // Set active script file
   const setActiveScriptFile = useCallback((fileId: string | null) => {
@@ -419,16 +471,31 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
       if (!prev) return prev;
       const currentFolders = prev.settings.folders || [];
       if (currentFolders.includes(folderPath)) return prev; // Already exists
-      return {
+      const newData: ProjectData = {
         ...prev,
         settings: {
           ...prev.settings,
           folders: [...currentFolders, folderPath],
         },
       };
+      
+      // Auto-save after structural change
+      if (currentFilePath) {
+        setTimeout(() => {
+          saveProjectData(newData, currentFilePath).then(saved => {
+            if (saved) {
+              setHasUnsavedChanges(false);
+              setModifiedFileIds(new Set());
+            }
+          });
+        }, 0);
+      } else {
+        setHasUnsavedChanges(true);
+      }
+      
+      return newData;
     });
-    setHasUnsavedChanges(true);
-  }, []);
+  }, [currentFilePath, saveProjectData]);
 
   // Delete folder
   const deleteFolder = useCallback((folderPath: string) => {
@@ -436,7 +503,7 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
       if (!prev) return prev;
       // Also delete all files in this folder
       const filtered = prev.scriptFiles.filter(f => !f.name.startsWith(`${folderPath}/`));
-      return {
+      const newData: ProjectData = {
         ...prev,
         scriptFiles: filtered,
         settings: {
@@ -444,9 +511,24 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
           folders: (prev.settings.folders || []).filter(f => f !== folderPath && !f.startsWith(`${folderPath}/`)),
         },
       };
+      
+      // Auto-save after structural change
+      if (currentFilePath) {
+        setTimeout(() => {
+          saveProjectData(newData, currentFilePath).then(saved => {
+            if (saved) {
+              setHasUnsavedChanges(false);
+              setModifiedFileIds(new Set());
+            }
+          });
+        }, 0);
+      } else {
+        setHasUnsavedChanges(true);
+      }
+      
+      return newData;
     });
-    setHasUnsavedChanges(true);
-  }, []);
+  }, [currentFilePath, saveProjectData]);
 
   // Rename folder
   const renameFolder = useCallback((oldPath: string, newPath: string) => {
@@ -463,7 +545,7 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
         }
         return f;
       });
-      return {
+      const newData: ProjectData = {
         ...prev,
         scriptFiles: updatedFiles,
         settings: {
@@ -471,9 +553,24 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
           folders: updatedFolders,
         },
       };
+      
+      // Auto-save after structural change
+      if (currentFilePath) {
+        setTimeout(() => {
+          saveProjectData(newData, currentFilePath).then(saved => {
+            if (saved) {
+              setHasUnsavedChanges(false);
+              setModifiedFileIds(new Set());
+            }
+          });
+        }, 0);
+      } else {
+        setHasUnsavedChanges(true);
+      }
+      
+      return newData;
     });
-    setHasUnsavedChanges(true);
-  }, []);
+  }, [currentFilePath, saveProjectData]);
 
   // Initialize with new project
   useEffect(() => {
