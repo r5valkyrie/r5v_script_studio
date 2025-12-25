@@ -62,7 +62,7 @@ export interface AppSettings {
     accentColor: string;
     fontSize: 'small' | 'medium' | 'large';
     showGridLines: boolean;
-    gridStyle: 'dots' | 'lines' | 'crosshatch' | 'hexagons' | 'isometric' | 'blueprint';
+    gridStyle: 'dots' | 'lines' | 'crosshatch' | 'hexagons' | 'isometric' | 'blueprint' | 'diamonds' | 'triangles' | 'graph' | 'waves';
     gridSize: number;
     nodeOpacity: number;
     connectionStyle: 'bezier' | 'straight' | 'step';
@@ -513,12 +513,12 @@ export default function SettingsModal({
                   {localSettings.appearance.showGridLines && (
                     <div>
                       <label className="text-sm text-white mb-2 block">Grid Style</label>
-                      <div className="flex flex-wrap gap-2">
-                        {(['dots', 'lines', 'crosshatch', 'hexagons', 'isometric', 'blueprint'] as const).map((style) => (
+                      <div className="grid grid-cols-5 gap-2">
+                        {(['dots', 'lines', 'crosshatch', 'hexagons', 'isometric', 'blueprint', 'diamonds', 'triangles', 'graph', 'waves'] as const).map((style) => (
                           <button
                             key={style}
                             onClick={() => updateSettings('appearance', 'gridStyle', style)}
-                            className={`flex-1 px-3 py-2 rounded-lg text-xs capitalize transition-all duration-200 flex flex-col items-center gap-1.5 ${
+                            className={`px-2 py-2 rounded-lg text-xs capitalize transition-all duration-200 flex flex-col items-center gap-1 ${
                               localSettings.appearance.gridStyle === style
                                 ? 'text-white'
                                 : 'bg-black/30 text-gray-400 hover:bg-black/40 hover:text-white'
@@ -529,7 +529,7 @@ export default function SettingsModal({
                             } : undefined}
                           >
                             {/* Grid style preview */}
-                            <div className="w-8 h-8 rounded border border-white/20 bg-[#1a1f28] overflow-hidden">
+                            <div className="w-7 h-7 rounded border border-white/20 bg-[#1a1f28] overflow-hidden">
                               {style === 'dots' && (
                                 <svg viewBox="0 0 24 24" className="w-full h-full">
                                   {[4, 12, 20].map(x => [4, 12, 20].map(y => (
@@ -588,8 +588,39 @@ export default function SettingsModal({
                                   <line x1="0" y1="12" x2="24" y2="12" stroke="#3182ce" strokeWidth="0.8" />
                                 </svg>
                               )}
+                              {style === 'diamonds' && (
+                                <svg viewBox="0 0 24 24" className="w-full h-full">
+                                  <path d="M12 0 L24 12 L12 24 L0 12 Z" fill="none" stroke="#4b5563" strokeWidth="0.5" />
+                                  <path d="M6 6 L18 6 L18 18 L6 18 Z" fill="none" stroke="#374151" strokeWidth="0.3" transform="rotate(45 12 12)" />
+                                </svg>
+                              )}
+                              {style === 'triangles' && (
+                                <svg viewBox="0 0 24 24" className="w-full h-full">
+                                  <path d="M12 2 L22 20 L2 20 Z" fill="none" stroke="#4b5563" strokeWidth="0.5" />
+                                  <path d="M12 20 L2 4 L22 4 Z" fill="none" stroke="#374151" strokeWidth="0.3" />
+                                </svg>
+                              )}
+                              {style === 'graph' && (
+                                <svg viewBox="0 0 24 24" className="w-full h-full">
+                                  {[4, 8, 12, 16, 20].map(pos => (
+                                    <g key={pos}>
+                                      <line x1={pos} y1="0" x2={pos} y2="24" stroke="#374151" strokeWidth="0.3" />
+                                      <line x1="0" y1={pos} x2="24" y2={pos} stroke="#374151" strokeWidth="0.3" />
+                                    </g>
+                                  ))}
+                                  <line x1="12" y1="0" x2="12" y2="24" stroke="#4b5563" strokeWidth="0.6" />
+                                  <line x1="0" y1="12" x2="24" y2="12" stroke="#4b5563" strokeWidth="0.6" />
+                                </svg>
+                              )}
+                              {style === 'waves' && (
+                                <svg viewBox="0 0 24 24" className="w-full h-full">
+                                  <path d="M0 6 Q6 2, 12 6 T24 6" fill="none" stroke="#4b5563" strokeWidth="0.5" />
+                                  <path d="M0 12 Q6 8, 12 12 T24 12" fill="none" stroke="#4b5563" strokeWidth="0.5" />
+                                  <path d="M0 18 Q6 14, 12 18 T24 18" fill="none" stroke="#4b5563" strokeWidth="0.5" />
+                                </svg>
+                              )}
                             </div>
-                            {style}
+                            <span className="text-[10px] leading-tight">{style}</span>
                           </button>
                         ))}
                       </div>

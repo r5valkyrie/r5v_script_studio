@@ -26,7 +26,7 @@ interface NodeGraphProps {
   connectionsBehindNodes?: boolean;
   accentColor?: string;
   theme?: 'light' | 'dark';
-  gridStyle?: 'dots' | 'lines' | 'crosshatch' | 'hexagons' | 'isometric' | 'blueprint';
+  gridStyle?: 'dots' | 'lines' | 'crosshatch' | 'hexagons' | 'isometric' | 'blueprint' | 'diamonds' | 'triangles' | 'graph' | 'waves';
   // Editor settings
   snapToGrid?: boolean;
   autoConnect?: boolean;
@@ -2962,7 +2962,7 @@ export default function NodeGraph({
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundColor: gridStyle === 'blueprint' ? (theme === 'light' ? '#e8f4fc' : '#0d1f33') : undefined,
+            backgroundColor: gridStyle === 'blueprint' ? (theme === 'light' ? `${accentColor}10` : `${accentColor}15`) : undefined,
             backgroundImage: gridStyle === 'dots' 
               ? `radial-gradient(circle, ${theme === 'light' ? 'rgba(0,0,0,0.15)' : '#2a2e38'} 1px, transparent 1px)`
               : gridStyle === 'lines'
@@ -2974,16 +2974,28 @@ export default function NodeGraph({
                  repeating-linear-gradient(45deg, transparent, transparent 10px, ${theme === 'light' ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.02)'} 10px, ${theme === 'light' ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.02)'} 11px),
                  repeating-linear-gradient(-45deg, transparent, transparent 10px, ${theme === 'light' ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.02)'} 10px, ${theme === 'light' ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.02)'} 11px)`
               : gridStyle === 'hexagons'
-              ? `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cpath fill='none' stroke='${theme === 'light' ? '%23000' : '%23333'}' stroke-width='0.5' stroke-opacity='${theme === 'light' ? '0.15' : '0.4'}' d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM14 0L0 8.25v16.5L14 33l14-8.25V8.25L14 0z'/%3E%3C/svg%3E")`
+              ? `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='50' height='86.6' viewBox='0 0 50 86.6'><polygon fill='none' stroke='${theme === 'light' ? '#000' : '#555'}' stroke-width='1' stroke-opacity='${theme === 'light' ? '0.1' : '0.25'}' points='25,0 50,14.43 50,43.3 25,57.74 0,43.3 0,14.43'/><polygon fill='none' stroke='${theme === 'light' ? '#000' : '#555'}' stroke-width='1' stroke-opacity='${theme === 'light' ? '0.1' : '0.25'}' points='50,43.3 75,57.74 75,86.6 50,101.04 25,86.6 25,57.74'/><polygon fill='none' stroke='${theme === 'light' ? '#000' : '#555'}' stroke-width='1' stroke-opacity='${theme === 'light' ? '0.1' : '0.25'}' points='0,43.3 25,57.74 25,86.6 0,101.04 -25,86.6 -25,57.74'/></svg>`)}")`
               : gridStyle === 'isometric'
               ? `repeating-linear-gradient(30deg, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)'} 0px, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)'} 1px, transparent 1px, transparent 20px),
                  repeating-linear-gradient(150deg, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)'} 0px, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)'} 1px, transparent 1px, transparent 20px),
                  repeating-linear-gradient(90deg, ${theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.03)'} 0px, ${theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.03)'} 1px, transparent 1px, transparent 20px)`
-              : // blueprint
-                `linear-gradient(to right, ${theme === 'light' ? 'rgba(49,130,206,0.2)' : 'rgba(49,130,206,0.15)'} 1px, transparent 1px),
-                 linear-gradient(to bottom, ${theme === 'light' ? 'rgba(49,130,206,0.2)' : 'rgba(49,130,206,0.15)'} 1px, transparent 1px),
-                 linear-gradient(to right, ${theme === 'light' ? 'rgba(49,130,206,0.4)' : 'rgba(49,130,206,0.3)'} 1px, transparent 1px),
-                 linear-gradient(to bottom, ${theme === 'light' ? 'rgba(49,130,206,0.4)' : 'rgba(49,130,206,0.3)'} 1px, transparent 1px)`,
+              : gridStyle === 'blueprint'
+              ? `linear-gradient(to right, ${accentColor}30 1px, transparent 1px),
+                 linear-gradient(to bottom, ${accentColor}30 1px, transparent 1px),
+                 linear-gradient(to right, ${accentColor}60 1px, transparent 1px),
+                 linear-gradient(to bottom, ${accentColor}60 1px, transparent 1px)`
+              : gridStyle === 'diamonds'
+              ? `repeating-linear-gradient(45deg, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)'} 0px, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)'} 1px, transparent 1px, transparent 14px),
+                 repeating-linear-gradient(-45deg, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)'} 0px, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)'} 1px, transparent 1px, transparent 14px)`
+              : gridStyle === 'triangles'
+              ? `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='35' viewBox='0 0 40 35'%3E%3Cpath fill='none' stroke='${theme === 'light' ? '%23000' : '%23444'}' stroke-width='0.5' stroke-opacity='${theme === 'light' ? '0.12' : '0.35'}' d='M20 0 L40 35 L0 35 Z M0 0 L20 35 L40 0'/%3E%3C/svg%3E")`
+              : gridStyle === 'graph'
+              ? `linear-gradient(to right, ${theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.03)'} 1px, transparent 1px),
+                 linear-gradient(to bottom, ${theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.03)'} 1px, transparent 1px),
+                 linear-gradient(to right, ${theme === 'light' ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.08)'} 1px, transparent 1px),
+                 linear-gradient(to bottom, ${theme === 'light' ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.08)'} 1px, transparent 1px)`
+              : // waves
+                `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='20' viewBox='0 0 40 20'%3E%3Cpath fill='none' stroke='${theme === 'light' ? '%23000' : '%23444'}' stroke-width='0.5' stroke-opacity='${theme === 'light' ? '0.1' : '0.3'}' d='M0 10 Q10 0, 20 10 T40 10'/%3E%3C/svg%3E")`,
             backgroundSize: gridStyle === 'dots'
               ? `${gridSize * view.scale}px ${gridSize * view.scale}px`
               : gridStyle === 'lines'
@@ -2991,11 +3003,19 @@ export default function NodeGraph({
               : gridStyle === 'crosshatch'
               ? `${gridSize * view.scale}px ${gridSize * view.scale}px, ${gridSize * view.scale}px ${gridSize * view.scale}px, auto, auto`
               : gridStyle === 'hexagons'
-              ? `${28 * view.scale}px ${49 * view.scale}px`
+              ? `${50 * view.scale}px ${86.6 * view.scale}px`
               : gridStyle === 'isometric'
               ? 'auto'
-              : // blueprint - small grid + large grid (5x size)
-                `${gridSize * view.scale}px ${gridSize * view.scale}px, ${gridSize * view.scale}px ${gridSize * view.scale}px, ${gridSize * 5 * view.scale}px ${gridSize * 5 * view.scale}px, ${gridSize * 5 * view.scale}px ${gridSize * 5 * view.scale}px`,
+              : gridStyle === 'blueprint'
+              ? `${gridSize * view.scale}px ${gridSize * view.scale}px, ${gridSize * view.scale}px ${gridSize * view.scale}px, ${gridSize * 5 * view.scale}px ${gridSize * 5 * view.scale}px, ${gridSize * 5 * view.scale}px ${gridSize * 5 * view.scale}px`
+              : gridStyle === 'diamonds'
+              ? 'auto'
+              : gridStyle === 'triangles'
+              ? `${40 * view.scale}px ${35 * view.scale}px`
+              : gridStyle === 'graph'
+              ? `${gridSize * view.scale}px ${gridSize * view.scale}px, ${gridSize * view.scale}px ${gridSize * view.scale}px, ${gridSize * 5 * view.scale}px ${gridSize * 5 * view.scale}px, ${gridSize * 5 * view.scale}px ${gridSize * 5 * view.scale}px`
+              : // waves
+                `${40 * view.scale}px ${20 * view.scale}px`,
             backgroundPosition: `${view.x}px ${view.y}px`,
             willChange: 'background-position, background-size',
             contain: 'strict',
