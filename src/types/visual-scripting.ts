@@ -1,25 +1,26 @@
 export type NodeCategory =
-  | 'core-flow'      // Init, sequence, branch, loops, switch
-  | 'events'         // Weapon callbacks, animation events, entity events
-  | 'entity'         // Entity manipulation (get/set properties)
-  | 'npc'            // NPC/AI creation and manipulation
-  | 'keyvalues'      // Entity keyvalue properties (.kv.*)
-  | 'weapons'        // Weapon-specific operations
-  | 'passives'       // Passive ability system
-  | 'character'      // Character abilities and classes
-  | 'survival'       // Survival loot and inventory system
-  | 'status-effects' // Status effect system
-  | 'particles'      // Particle and FX
-  | 'audio'          // Sound and audio
-  | 'damage'         // Damage system, traces
-  | 'ui'             // RUI system
-  | 'math'           // Vector, angles, math operations
-  | 'string'         // String manipulation and formatting
-  | 'callbacks'      // Register callbacks
-  | 'data'           // Constants, variables, arrays, tables
-  | 'structures'     // Structs, enums, typedefs
-  | 'utilities'      // Validation, debugging, utilities
-  | 'gamemodes';     // Gamemode registration and config
+  | 'init'            // Init nodes (Server/Client/UI)
+  | 'flow'            // Sequence, branch, loops, switch, delay, wait, return, signals
+  | 'gamemodes'       // Gamemode registration and config
+  | 'callbacks'       // Register callbacks (AddDamageCallback, AddSpawnCallback, etc.)
+  | 'entity'          // Entity manipulation (get/set properties)
+  | 'entity-creation' // Create Entity, Props, Triggers
+  | 'entity-props'    // Script structs (.p, .e, .ai, .w, .proj, .soul)
+  | 'npc'             // NPC/AI creation and manipulation
+  | 'weapons'         // Weapon-specific operations
+  | 'passives'        // Passive ability system
+  | 'character'       // Character abilities and classes
+  | 'survival'        // Survival loot and inventory system
+  | 'status-effects'  // Status effect system
+  | 'vfx'             // Particle and FX
+  | 'audio'           // Sound and audio
+  | 'damage'          // Damage system, traces
+  | 'ui'              // RUI system
+  | 'math'            // Math operations
+  | 'string'          // String manipulation
+  | 'structures'      // Structs, enums, typedefs
+  | 'data'            // Constants, variables
+  | 'collections';    // Arrays, Tables
 
 export type NodeDataType =
   | 'int'
@@ -43,10 +44,12 @@ export type NodeDataType =
   | 'itemflavor';
 
 export type NodeType =
-  // ==================== CORE FLOW ====================
+  // ==================== INIT ====================
   | 'init-server'
   | 'init-client'
   | 'init-ui'
+
+  // ==================== FLOW CONTROL ====================
   | 'sequence'
   | 'exec-sequence'
   | 'branch'
@@ -124,7 +127,7 @@ export type NodeType =
   | 'on-ability-charge-begin'
   | 'on-ability-execute'
 
-  // ==================== CALLBACKS ====================
+  // ==================== SERVER CALLBACKS ====================
   | 'on-entities-did-load'
   | 'on-client-connected'
   | 'on-client-disconnected'
@@ -165,7 +168,7 @@ export type NodeType =
   | 'on-grappled'
   | 'on-grapple-detached'
 
-  // ==================== ENTITY ====================
+  // ==================== ENTITY OPERATIONS ====================
   | 'get-origin'
   | 'set-origin'
   | 'get-angles'
@@ -196,8 +199,45 @@ export type NodeType =
   | 'get-script-name'
   | 'set-script-name'
   | 'kill-entity'
+  | 'set-visible'
+  | 'set-solid'
+  | 'make-invisible'
+  | 'get-forward-vector'
+  | 'get-right-vector'
+  | 'get-up-vector'
+  | 'get-eye-position'
+  | 'get-eye-angles'
+  | 'get-view-vector'
+  | 'get-player-name'
+
+  // ==================== ENTITY CREATION ====================
   | 'create-entity'
   | 'entity-classname'
+  | 'create-script-mover'
+  | 'create-prop-dynamic'
+  | 'create-prop-physics'
+  | 'create-info-target'
+  | 'create-particle-system'
+  | 'create-control-point'
+  | 'create-ambient-generic'
+  | 'create-vortex-sphere'
+  | 'create-zipline'
+  | 'create-point-viewcontrol'
+  | 'dispatch-spawn'
+  | 'set-model'
+  | 'set-effect-name'
+  | 'set-entity-kv'
+  | 'create-trigger-cylinder'
+  | 'create-trigger-radius-multiple'
+  | 'trigger-set-enabled'
+  | 'trigger-set-radius'
+  | 'trigger-set-above-height'
+  | 'trigger-set-below-height'
+  | 'trigger-set-enter-callback'
+  | 'trigger-set-leave-callback'
+  | 'trigger-search-new-touching'
+
+  // ==================== KEYVALUES (merged with entity creation) ====================
   | 'kv-solid'
   | 'kv-rendercolor'
   | 'kv-renderamt'
@@ -210,42 +250,8 @@ export type NodeType =
   | 'kv-modelscale'
   | 'kv-trigger-filter'
   | 'kv-custom'
-  | 'create-script-mover'
-  | 'create-prop-dynamic'
-  | 'create-prop-physics'
-  | 'create-info-target'
-  | 'create-particle-system'
-  | 'create-control-point'
-  | 'create-ambient-generic'
-  | 'create-vortex-sphere'
-  | 'create-zipline'
-  | 'create-point-viewcontrol'
-  | 'create-npc-dummie'
-  | 'create-npc-prowler'
-  | 'create-npc-spectre'
-  | 'create-npc-marvin'
-  | 'create-npc-drone'
-  | 'create-npc-dropship'
-  | 'create-npc-turret'
-  | 'dispatch-spawn'
-  | 'set-model'
-  | 'set-effect-name'
-  | 'set-entity-kv'
-  | 'set-spawn-option-ai'
-  | 'set-behavior-selector'
-  | 'enable-npc-flag'
-  | 'set-visible'
-  | 'set-solid'
-  | 'make-invisible'
-  | 'get-forward-vector'
-  | 'get-right-vector'
-  | 'get-up-vector'
-  | 'get-eye-position'
-  | 'get-eye-angles'
-  | 'get-view-vector'
-  | 'get-player-name'
 
-  // ==================== ENTITY STRUCT PROPERTIES ====================
+  // ==================== ENTITY PROPERTIES (Script Structs) ====================
   // player.p.* (ServerPlayerStruct / ClientPlayerStruct)
   | 'player-get-property-server'
   | 'player-set-property-server'
@@ -275,6 +281,18 @@ export type NodeType =
   | 'soul-get-property-client'
   | 'soul-set-property-client'
 
+  // ==================== NPC ====================
+  | 'create-npc-dummie'
+  | 'create-npc-prowler'
+  | 'create-npc-spectre'
+  | 'create-npc-marvin'
+  | 'create-npc-drone'
+  | 'create-npc-dropship'
+  | 'create-npc-turret'
+  | 'set-spawn-option-ai'
+  | 'set-behavior-selector'
+  | 'enable-npc-flag'
+
   // ==================== WEAPONS ====================
   | 'get-active-weapon'
   | 'get-weapon-owner'
@@ -301,6 +319,12 @@ export type NodeType =
   | 'fire-weapon-bullet'
   | 'fire-weapon-bolt'
   | 'fire-weapon-grenade'
+  | 'get-offhand-weapon'
+  | 'get-weapon-primary-clip-count'
+  | 'get-weapon-ammo-pool-type'
+  | 'ammo-type-get-ref-from-index'
+  | 'take-primary-weapon'
+  | 'set-active-weapon-by-name'
 
   // ==================== STATUS EFFECTS ====================
   | 'status-effect-add'
@@ -319,7 +343,7 @@ export type NodeType =
   | 'status-effect-slow'
   | 'status-effect-speed-boost'
 
-  // ==================== PARTICLES ====================
+  // ==================== VFX/PARTICLES ====================
   | 'precache-particle'
   | 'start-particle-on-entity'
   | 'start-particle-on-entity-with-pos'
@@ -414,6 +438,15 @@ export type NodeType =
   | 'math-random-float'
   | 'math-lerp'
   | 'graph-capped'
+  | 'compare-equal'
+  | 'compare-not-equal'
+  | 'compare-greater'
+  | 'compare-less'
+  | 'compare-greater-equal'
+  | 'compare-less-equal'
+  | 'logic-and'
+  | 'logic-or'
+  | 'logic-not'
 
   // ==================== CALLBACKS ====================
   | 'add-callback'
@@ -442,6 +475,8 @@ export type NodeType =
   | 'variable-get'
   | 'variable-set'
   | 'variable-declare'
+
+  // ==================== COLLECTIONS ====================
   // Arrays
   | 'array-create'
   | 'array-create-typed'
@@ -490,15 +525,6 @@ export type NodeType =
   | 'precache-scriptdata'
   | 'globalize-function'
   | 'function-ref'
-  | 'compare-equal'
-  | 'compare-not-equal'
-  | 'compare-greater'
-  | 'compare-less'
-  | 'compare-greater-equal'
-  | 'compare-less-equal'
-  | 'logic-and'
-  | 'logic-or'
-  | 'logic-not'
   | 'get-players-on-team'
   | 'get-living-players'
   | 'get-living-players-on-team'
@@ -506,22 +532,6 @@ export type NodeType =
   | 'get-local-view-player'
   | 'get-ent-by-index'
   | 'get-player-by-index'
-  | 'get-offhand-weapon'
-  | 'get-weapon-primary-clip-count'
-  | 'get-weapon-ammo-pool-type'
-  | 'ammo-type-get-ref-from-index'
-  | 'create-trigger-cylinder'
-  | 'create-trigger-radius-multiple'
-  | 'trigger-set-enabled'
-  | 'trigger-set-radius'
-  | 'trigger-set-above-height'
-  | 'trigger-set-below-height'
-  | 'trigger-set-enter-callback'
-  | 'trigger-set-leave-callback'
-  | 'trigger-search-new-touching'
-  | 'dispatch-spawn'
-  | 'take-primary-weapon'
-  | 'set-active-weapon-by-name'
 
   // ==================== PASSIVES ====================
   | 'give-passive'
@@ -603,25 +613,26 @@ export interface CategoryInfo {
 }
 
 export const CATEGORY_INFO: CategoryInfo[] = [
-  { id: 'core-flow', label: 'Core Flow', color: '#4A90E2', textClass: 'text-purple-400', description: 'Program flow control, switch, threading, and signals' },
-  { id: 'events', label: 'Events', color: '#E8A838', textClass: 'text-yellow-400', description: 'Weapon, ability, and entity event callbacks' },
-  { id: 'entity', label: 'Entity', color: '#27AE60', textClass: 'text-blue-400', description: 'Entity manipulation and properties' },
-  { id: 'npc', label: 'NPC/AI', color: '#E67E22', textClass: 'text-orange-400', description: 'NPC and AI creation, spawning, and behavior' },
-  { id: 'keyvalues', label: 'KeyValues', color: '#16A085', textClass: 'text-teal-400', description: 'Entity keyvalue properties (.kv.*)' },
-  { id: 'weapons', label: 'Weapons', color: '#E67E22', textClass: 'text-red-400', description: 'Weapon operations and modifications' },
+  { id: 'init', label: 'Init', color: '#4A90E2', textClass: 'text-blue-400', description: 'Script initialization for Server, Client, and UI contexts' },
+  { id: 'flow', label: 'Flow', color: '#4A90E2', textClass: 'text-purple-400', description: 'Program flow control: sequence, branch, loops, switch, delay, wait' },
+  { id: 'gamemodes', label: 'Gamemodes', color: '#C0392B', textClass: 'text-red-400', description: 'Register and configure gamemodes' },
+  { id: 'callbacks', label: 'Callbacks', color: '#8E44AD', textClass: 'text-amber-400', description: 'Register event callbacks' },
+  { id: 'entity', label: 'Entity', color: '#27AE60', textClass: 'text-blue-400', description: 'Entity manipulation: get/set origin, health, team, etc.' },
+  { id: 'entity-creation', label: 'Entity Creation', color: '#27AE60', textClass: 'text-green-400', description: 'Create entities, props, triggers, and special objects' },
+  { id: 'entity-props', label: 'Entity Props', color: '#27AE60', textClass: 'text-teal-400', description: 'Script struct properties: player.p, entity.e, npc.ai, weapon.w, etc.' },
+  { id: 'npc', label: 'NPC/AI', color: '#E67E22', textClass: 'text-orange-400', description: 'NPC creation, AI settings, and behavior' },
+  { id: 'weapons', label: 'Weapons', color: '#E67E22', textClass: 'text-red-400', description: 'Weapon operations, modifications, and settings' },
+  { id: 'status-effects', label: 'Status Effects', color: '#9B59B6', textClass: 'text-green-400', description: 'Status effects, buffs, and debuffs' },
+  { id: 'vfx', label: 'VFX', color: '#F39C12', textClass: 'text-pink-400', description: 'Particle effects and visual FX' },
+  { id: 'audio', label: 'Audio', color: '#1ABC9C', textClass: 'text-cyan-400', description: 'Sound effects and audio' },
+  { id: 'damage', label: 'Damage', color: '#E74C3C', textClass: 'text-orange-400', description: 'Damage system, traces, and hit detection' },
+  { id: 'ui', label: 'UI', color: '#3498DB', textClass: 'text-indigo-400', description: 'UI elements and RUI system' },
+  { id: 'math', label: 'Math', color: '#95A5A6', textClass: 'text-emerald-400', description: 'Math, vector, and logic operations' },
+  { id: 'string', label: 'String', color: '#F39C12', textClass: 'text-yellow-400', description: 'String manipulation and formatting' },
+  { id: 'structures', label: 'Structures', color: '#16A085', textClass: 'text-teal-400', description: 'Structs, enums, and type definitions' },
+  { id: 'data', label: 'Data', color: '#2ECC71', textClass: 'text-violet-400', description: 'Constants and variables' },
+  { id: 'collections', label: 'Collections', color: '#2ECC71', textClass: 'text-purple-400', description: 'Arrays and tables' },
+  { id: 'survival', label: 'Survival', color: '#27AE60', textClass: 'text-green-400', description: 'Survival mode loot and inventory' },
   { id: 'passives', label: 'Passives', color: '#9B59B6', textClass: 'text-purple-400', description: 'Passive ability system' },
   { id: 'character', label: 'Character', color: '#3498DB', textClass: 'text-blue-400', description: 'Character abilities and classes' },
-  { id: 'survival', label: 'Survival/Loot', color: '#27AE60', textClass: 'text-green-400', description: 'Survival loot and inventory system' },
-  { id: 'status-effects', label: 'Status Effects', color: '#9B59B6', textClass: 'text-green-400', description: 'Status effects and buffs/debuffs' },
-  { id: 'particles', label: 'Particles', color: '#F39C12', textClass: 'text-pink-400', description: 'Particle effects and FX' },
-  { id: 'audio', label: 'Audio', color: '#1ABC9C', textClass: 'text-cyan-400', description: 'Sound effects and audio' },
-  { id: 'damage', label: 'Damage', color: '#E74C3C', textClass: 'text-orange-400', description: 'Damage system and traces' },
-  { id: 'ui', label: 'UI/RUI', color: '#3498DB', textClass: 'text-indigo-400', description: 'UI elements and RUI system' },
-  { id: 'math', label: 'Math', color: '#95A5A6', textClass: 'text-emerald-400', description: 'Math and vector operations' },
-  { id: 'callbacks', label: 'Callbacks', color: '#8E44AD', textClass: 'text-amber-400', description: 'Register event callbacks' },
-  { id: 'data', label: 'Data', color: '#2ECC71', textClass: 'text-violet-400', description: 'Constants, variables, arrays, and tables' },
-  { id: 'structures', label: 'Structures', color: '#16A085', textClass: 'text-teal-400', description: 'Structs, enums, and type definitions' },
-  { id: 'utilities', label: 'Utilities', color: '#34495E', textClass: 'text-slate-400', description: 'Debugging, precaching, and utilities' },
-  { id: 'gamemodes', label: 'Gamemodes', color: '#C0392B', textClass: 'text-red-400', description: 'Register and configure gamemodes' },
-  { id: 'string', label: 'String', color: '#F39C12', textClass: 'text-yellow-400', description: 'String manipulation and formatting' },
 ];

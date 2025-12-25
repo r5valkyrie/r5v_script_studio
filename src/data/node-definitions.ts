@@ -4,7 +4,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   // Init Nodes
   {
     type: 'init-server',
-    category: 'core-flow',
+    category: 'init',
     label: 'Init: Server',
     description: 'Server initialization (#if SERVER)',
     color: '#E67E22',
@@ -16,7 +16,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'init-client',
-    category: 'core-flow',
+    category: 'init',
     label: 'Init: Client',
     description: 'Client initialization (#if CLIENT)',
     color: '#3498DB',
@@ -28,7 +28,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'init-ui',
-    category: 'core-flow',
+    category: 'init',
     label: 'Init: UI',
     description: 'UI initialization (#if UI)',
     color: '#9B59B6',
@@ -258,7 +258,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   // Core Flow Nodes
   {
     type: 'sequence',
-    category: 'core-flow',
+    category: 'flow',
     label: 'Sequence',
     description: 'Execute actions in sequence',
     color: '#4A90E2',
@@ -274,7 +274,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'exec-sequence',
-    category: 'core-flow',
+    category: 'flow',
     label: 'Exec Sequence',
     description: 'Split execution into multiple outputs that fire in order. Click + to add outputs, - to remove.',
     color: '#6B5B95',
@@ -291,7 +291,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'branch',
-    category: 'core-flow',
+    category: 'flow',
     label: 'Branch',
     description: 'Conditional branch based on boolean',
     color: '#4A90E2',
@@ -307,7 +307,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'delay',
-    category: 'core-flow',
+    category: 'flow',
     label: 'Delay',
     description: 'Wait for specified duration (wait)',
     color: '#4A90E2',
@@ -322,7 +322,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'loop-for',
-    category: 'core-flow',
+    category: 'flow',
     label: 'For Loop',
     description: 'Loop from start to end with step',
     color: '#4A90E2',
@@ -341,7 +341,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'loop-foreach',
-    category: 'core-flow',
+    category: 'flow',
     label: 'For Each',
     description: 'Iterate over array elements',
     color: '#4A90E2',
@@ -359,7 +359,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'loop-while',
-    category: 'core-flow',
+    category: 'flow',
     label: 'While Loop',
     description: 'Loop while condition is true',
     color: '#4A90E2',
@@ -375,7 +375,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'wait',
-    category: 'core-flow',
+    category: 'flow',
     label: 'Wait',
     description: 'Wait for duration in thread',
     color: '#4A90E2',
@@ -390,7 +390,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'signal',
-    category: 'core-flow',
+    category: 'flow',
     label: 'Signal',
     description: 'Send signal to entity (Signal)',
     color: '#4A90E2',
@@ -406,7 +406,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'end-signal',
-    category: 'core-flow',
+    category: 'flow',
     label: 'End Signal',
     description: 'End signal on entity (EndSignal)',
     color: '#4A90E2',
@@ -422,7 +422,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'wait-signal',
-    category: 'core-flow',
+    category: 'flow',
     label: 'Wait Signal',
     description: 'Wait for signal on entity (WaitSignal)',
     color: '#4A90E2',
@@ -438,7 +438,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'register-signal',
-    category: 'core-flow',
+    category: 'flow',
     label: 'Register Signal',
     description: 'Register signal on entity',
     color: '#4A90E2',
@@ -454,7 +454,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'reroute',
-    category: 'utilities',
+    category: 'data',
     label: 'Reroute',
     description: 'Reroute connections for cleaner wire organization',
     color: '#6B7280',
@@ -468,7 +468,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'return',
-    category: 'core-flow',
+    category: 'flow',
     label: 'Return',
     description: 'Return value from function',
     color: '#4A90E2',
@@ -481,7 +481,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'call-function',
-    category: 'core-flow',
+    category: 'flow',
     label: 'Call Function',
     description: 'Call a function by name with optional arguments and return value. Use +/- to add arguments.',
     color: '#4A90E2',
@@ -497,7 +497,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'custom-function',
-    category: 'core-flow',
+    category: 'flow',
     label: 'Custom Function',
     description: 'User-defined function entry point. Use +/- to add parameters.',
     color: '#4A90E2',
@@ -509,7 +509,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'comment',
-    category: 'utilities',
+    category: 'data',
     label: 'Comment',
     description: 'Add a resizable comment box to organize nodes (stays behind other nodes)',
     color: '#6C7A89',
@@ -519,7 +519,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'custom-code',
-    category: 'core-flow',
+    category: 'flow',
     label: 'Custom Code',
     description: 'Write custom Squirrel code directly',
     color: '#2ECC71',
@@ -533,7 +533,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'set-portal',
-    category: 'utilities',
+    category: 'data',
     label: 'Set Portal',
     description: 'Store a value in a named portal for use elsewhere without wires',
     color: '#9B59B6',
@@ -548,7 +548,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-portal',
-    category: 'utilities',
+    category: 'data',
     label: 'Get Portal',
     description: 'Retrieve a value from a named portal',
     color: '#9B59B6',
@@ -562,7 +562,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   // ==================== SWITCH ====================
   {
     type: 'switch',
-    category: 'core-flow',
+    category: 'flow',
     label: 'Switch',
     description: 'Multi-way branch based on value. Add cases with switch-case nodes.',
     color: '#4A90E2',
@@ -578,7 +578,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'switch-case',
-    category: 'core-flow',
+    category: 'flow',
     label: 'Case',
     description: 'A case branch for a switch statement',
     color: '#4A90E2',
@@ -594,7 +594,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'break',
-    category: 'core-flow',
+    category: 'flow',
     label: 'Break',
     description: 'Break out of a loop or switch statement',
     color: '#4A90E2',
@@ -607,7 +607,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'continue',
-    category: 'core-flow',
+    category: 'flow',
     label: 'Continue',
     description: 'Skip to next iteration of a loop',
     color: '#4A90E2',
@@ -721,49 +721,9 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   // ==================== EVENTS ====================
   // Weapon Events
   {
-    type: 'on-weapon-activate',
-    category: 'events',
-    label: 'OnWeaponActivate',
-    description: 'Called when weapon is activated/equipped',
-    color: '#E8A838',
-    inputs: [],
-    outputs: [
-      { label: 'Exec', type: 'exec', isInput: false },
-      { label: 'Weapon', type: 'data', dataType: 'weapon', isInput: false },
-    ],
-    defaultData: { functionName: 'OnWeaponActivate' },
-  },
-  {
-    type: 'on-weapon-deactivate',
-    category: 'events',
-    label: 'OnWeaponDeactivate',
-    description: 'Called when weapon is deactivated/holstered',
-    color: '#E8A838',
-    inputs: [],
-    outputs: [
-      { label: 'Exec', type: 'exec', isInput: false },
-      { label: 'Weapon', type: 'data', dataType: 'weapon', isInput: false },
-    ],
-    defaultData: { functionName: 'OnWeaponDeactivate' },
-  },
-  {
-    type: 'on-weapon-primary-attack',
-    category: 'events',
-    label: 'OnWeaponPrimaryAttack',
-    description: 'Called when weapon fires primary attack',
-    color: '#E8A838',
-    inputs: [],
-    outputs: [
-      { label: 'Exec', type: 'exec', isInput: false },
-      { label: 'Weapon', type: 'data', dataType: 'weapon', isInput: false },
-      { label: 'AttackParams', type: 'data', dataType: 'table', isInput: false },
-    ],
-    defaultData: { functionName: 'OnWeaponPrimaryAttack' },
-  },
-  {
     type: 'on-weapon-charge-begin',
-    category: 'events',
-    label: 'OnWeaponChargeBegin',
+    category: 'callbacks',
+    label: 'EnergyChargeWeapon_OnWeaponChargeBegin',
     description: 'Called when weapon starts charging',
     color: '#E8A838',
     inputs: [],
@@ -771,12 +731,12 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Exec', type: 'exec', isInput: false },
       { label: 'Weapon', type: 'data', dataType: 'weapon', isInput: false },
     ],
-    defaultData: { functionName: 'OnWeaponChargeBegin' },
+    defaultData: { functionName: 'EnergyChargeWeapon_OnWeaponChargeBegin' },
   },
   {
     type: 'on-weapon-charge-end',
-    category: 'events',
-    label: 'OnWeaponChargeEnd',
+    category: 'callbacks',
+    label: 'EnergyChargeWeapon_OnWeaponChargeEnd',
     description: 'Called when weapon finishes charging',
     color: '#E8A838',
     inputs: [],
@@ -784,12 +744,12 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Exec', type: 'exec', isInput: false },
       { label: 'Weapon', type: 'data', dataType: 'weapon', isInput: false },
     ],
-    defaultData: { functionName: 'OnWeaponChargeEnd' },
+    defaultData: { functionName: 'EnergyChargeWeapon_OnWeaponChargeEnd' },
   },
   {
     type: 'on-weapon-reload',
-    category: 'events',
-    label: 'OnWeaponReload',
+    category: 'callbacks',
+    label: 'CodeCallback_OnWeaponReload',
     description: 'Called when weapon reloads',
     color: '#E8A838',
     inputs: [],
@@ -797,13 +757,13 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Exec', type: 'exec', isInput: false },
       { label: 'Weapon', type: 'data', dataType: 'weapon', isInput: false },
     ],
-    defaultData: { functionName: 'OnWeaponReload' },
+    defaultData: { functionName: 'CodeCallback_OnWeaponReload' },
   },
   {
     type: 'on-weapon-zoom-fov',
-    category: 'events',
-    label: 'OnWeaponZoomFOV',
-    description: 'Called when weapon zooms (ADS)',
+    category: 'weapons',
+    label: 'GetWeaponZoomFOV',
+    description: 'Called to get weapon zoom FOV',
     color: '#E8A838',
     inputs: [],
     outputs: [
@@ -812,111 +772,11 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     ],
     defaultData: { functionName: 'GetWeaponZoomFOV' },
   },
-  {
-    type: 'on-weapon-sustained-discharge-begin',
-    category: 'events',
-    label: 'OnSustainedDischargeBegin',
-    description: 'Called when sustained fire begins',
-    color: '#E8A838',
-    inputs: [],
-    outputs: [
-      { label: 'Exec', type: 'exec', isInput: false },
-      { label: 'Weapon', type: 'data', dataType: 'weapon', isInput: false },
-    ],
-    defaultData: { functionName: 'OnWeaponSustainedDischargeBegin' },
-  },
-  {
-    type: 'on-weapon-sustained-discharge-end',
-    category: 'events',
-    label: 'OnSustainedDischargeEnd',
-    description: 'Called when sustained fire ends',
-    color: '#E8A838',
-    inputs: [],
-    outputs: [
-      { label: 'Exec', type: 'exec', isInput: false },
-      { label: 'Weapon', type: 'data', dataType: 'weapon', isInput: false },
-    ],
-    defaultData: { functionName: 'OnWeaponSustainedDischargeEnd' },
-  },
-  {
-    type: 'on-weapon-toss-release-animvent',
-    category: 'events',
-    label: 'OnWeaponTossReleaseAnimEvent',
-    description: 'Called on grenade toss release animation event',
-    color: '#E8A838',
-    inputs: [],
-    outputs: [
-      { label: 'Exec', type: 'exec', isInput: false },
-      { label: 'Weapon', type: 'data', dataType: 'weapon', isInput: false },
-    ],
-    defaultData: { functionName: 'OnWeaponTossReleaseAnimEvent' },
-  },
-  {
-    type: 'on-weapon-owner-changed',
-    category: 'events',
-    label: 'OnWeaponOwnerChanged',
-    description: 'Called when weapon owner changes',
-    color: '#E8A838',
-    inputs: [],
-    outputs: [
-      { label: 'Exec', type: 'exec', isInput: false },
-      { label: 'Weapon', type: 'data', dataType: 'weapon', isInput: false },
-      { label: 'OldOwner', type: 'data', dataType: 'entity', isInput: false },
-      { label: 'NewOwner', type: 'data', dataType: 'entity', isInput: false },
-    ],
-    defaultData: { functionName: 'OnWeaponOwnerChanged' },
-  },
-  {
-    type: 'on-projectile-collision',
-    category: 'events',
-    label: 'OnProjectileCollision',
-    description: 'Called when projectile hits something',
-    color: '#E8A838',
-    inputs: [],
-    outputs: [
-      { label: 'Exec', type: 'exec', isInput: false },
-      { label: 'Projectile', type: 'data', dataType: 'entity', isInput: false },
-      { label: 'Position', type: 'data', dataType: 'vector', isInput: false },
-      { label: 'Normal', type: 'data', dataType: 'vector', isInput: false },
-      { label: 'HitEnt', type: 'data', dataType: 'entity', isInput: false },
-    ],
-    defaultData: { functionName: 'OnProjectileCollision' },
-  },
-  {
-    type: 'on-projectile-explode',
-    category: 'events',
-    label: 'OnProjectileExplode',
-    description: 'Called when projectile explodes',
-    color: '#E8A838',
-    inputs: [],
-    outputs: [
-      { label: 'Exec', type: 'exec', isInput: false },
-      { label: 'Projectile', type: 'data', dataType: 'entity', isInput: false },
-      { label: 'Position', type: 'data', dataType: 'vector', isInput: false },
-      { label: 'Normal', type: 'data', dataType: 'vector', isInput: false },
-    ],
-    defaultData: { functionName: 'OnProjectileExplode' },
-  },
-  // Animation Events
-  {
-    type: 'on-anim-event',
-    category: 'events',
-    label: 'OnAnimEvent',
-    description: 'Called on animation event',
-    color: '#E8A838',
-    inputs: [],
-    outputs: [
-      { label: 'Exec', type: 'exec', isInput: false },
-      { label: 'Entity', type: 'data', dataType: 'entity', isInput: false },
-      { label: 'EventName', type: 'data', dataType: 'string', isInput: false },
-    ],
-    defaultData: { eventName: 'anim_event' },
-  },
   // Entity Events
   {
     type: 'on-spawn',
-    category: 'events',
-    label: 'OnSpawn',
+    category: 'callbacks',
+    label: 'CodeCallback_OnSpawned',
     description: 'Called when entity spawns',
     color: '#E8A838',
     inputs: [],
@@ -924,12 +784,12 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Exec', type: 'exec', isInput: false },
       { label: 'Entity', type: 'data', dataType: 'entity', isInput: false },
     ],
-    defaultData: { functionName: 'OnSpawn' },
+    defaultData: { functionName: 'CodeCallback_OnSpawned' },
   },
   {
     type: 'on-death',
-    category: 'events',
-    label: 'OnDeath',
+    category: 'callbacks',
+    label: 'ClientCodeCallback_OnDeath',
     description: 'Called when entity dies',
     color: '#E8A838',
     inputs: [],
@@ -939,12 +799,12 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Attacker', type: 'data', dataType: 'entity', isInput: false },
       { label: 'DamageInfo', type: 'data', dataType: 'table', isInput: false },
     ],
-    defaultData: { functionName: 'OnDeath' },
+    defaultData: { functionName: 'ClientCodeCallback_OnDeath' },
   },
   {
     type: 'on-damage',
-    category: 'events',
-    label: 'OnDamage',
+    category: 'callbacks',
+    label: 'AddEntityCallback_OnDamaged',
     description: 'Called when entity takes damage',
     color: '#E8A838',
     inputs: [],
@@ -953,12 +813,12 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Entity', type: 'data', dataType: 'entity', isInput: false },
       { label: 'DamageInfo', type: 'data', dataType: 'table', isInput: false },
     ],
-    defaultData: { functionName: 'OnDamage' },
+    defaultData: { functionName: 'AddEntityCallback_OnDamaged' },
   },
   {
     type: 'on-killed',
-    category: 'events',
-    label: 'OnKilled',
+    category: 'callbacks',
+    label: 'AddEntityCallback_OnKilled',
     description: 'Called when entity is killed',
     color: '#E8A838',
     inputs: [],
@@ -968,60 +828,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Attacker', type: 'data', dataType: 'entity', isInput: false },
       { label: 'DamageInfo', type: 'data', dataType: 'table', isInput: false },
     ],
-    defaultData: { functionName: 'OnKilled' },
-  },
-  // Ability Events
-  {
-    type: 'on-ability-start',
-    category: 'events',
-    label: 'OnAbilityStart',
-    description: 'Called when ability starts',
-    color: '#E8A838',
-    inputs: [],
-    outputs: [
-      { label: 'Exec', type: 'exec', isInput: false },
-      { label: 'Weapon', type: 'data', dataType: 'weapon', isInput: false },
-    ],
-    defaultData: { functionName: 'OnAbilityStart' },
-  },
-  {
-    type: 'on-ability-end',
-    category: 'events',
-    label: 'OnAbilityEnd',
-    description: 'Called when ability ends',
-    color: '#E8A838',
-    inputs: [],
-    outputs: [
-      { label: 'Exec', type: 'exec', isInput: false },
-      { label: 'Weapon', type: 'data', dataType: 'weapon', isInput: false },
-    ],
-    defaultData: { functionName: 'OnAbilityEnd' },
-  },
-  {
-    type: 'on-ability-charge-begin',
-    category: 'events',
-    label: 'OnAbilityChargeBegin',
-    description: 'Called when ability starts charging',
-    color: '#E8A838',
-    inputs: [],
-    outputs: [
-      { label: 'Exec', type: 'exec', isInput: false },
-      { label: 'Weapon', type: 'data', dataType: 'weapon', isInput: false },
-    ],
-    defaultData: { functionName: 'OnAbilityChargeBegin' },
-  },
-  {
-    type: 'on-ability-execute',
-    category: 'events',
-    label: 'OnAbilityExecute',
-    description: 'Called when ability executes/fires',
-    color: '#E8A838',
-    inputs: [],
-    outputs: [
-      { label: 'Exec', type: 'exec', isInput: false },
-      { label: 'Weapon', type: 'data', dataType: 'weapon', isInput: false },
-    ],
-    defaultData: { functionName: 'OnAbilityExecute' },
+    defaultData: { functionName: 'AddEntityCallback_OnKilled' },
   },
   // Server Callback Events (with exec input to register in init flow)
   {
@@ -1289,7 +1096,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   {
     type: 'on-use-button-pressed',
     category: 'callbacks',
-    label: 'AddCallback_OnUseButtonPressed',
+    label: 'CodeCallback_OnUseButtonPressed',
     description: 'Callback for when use button is pressed',
     color: '#E8A838',
     inputs: [
@@ -1300,12 +1107,12 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Exec', type: 'exec', isInput: false },
       { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
     ],
-    defaultData: { functionName: 'OnUseButtonPressed' },
+    defaultData: { functionName: 'CodeCallback_OnUseButtonPressed' },
   },
   {
     type: 'on-use-button-released',
     category: 'callbacks',
-    label: 'AddCallback_OnUseButtonReleased',
+    label: 'CodeCallback_OnUseButtonReleased',
     description: 'Callback for when use button is released',
     color: '#E8A838',
     inputs: [
@@ -1316,12 +1123,12 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Exec', type: 'exec', isInput: false },
       { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
     ],
-    defaultData: { functionName: 'OnUseButtonReleased' },
+    defaultData: { functionName: 'CodeCallback_OnUseButtonReleased' },
   },
   {
     type: 'on-player-class-changed',
     category: 'callbacks',
-    label: 'AddCallback_PlayerClassChanged',
+    label: 'CodeCallback_PlayerClassChanged',
     description: 'Callback for when player class changes',
     color: '#E8A838',
     inputs: [
@@ -1332,12 +1139,12 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Exec', type: 'exec', isInput: false },
       { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
     ],
-    defaultData: { functionName: 'OnPlayerClassChanged' },
+    defaultData: { functionName: 'CodeCallback_PlayerClassChanged' },
   },
   {
     type: 'on-vehicle-launch',
     category: 'callbacks',
-    label: 'AddCallback_OnVehicleLaunch',
+    label: 'CodeCallback_OnVehicleLaunch',
     description: 'Callback for when vehicle launches',
     color: '#E8A838',
     inputs: [
@@ -1348,12 +1155,12 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Exec', type: 'exec', isInput: false },
       { label: 'Vehicle', type: 'data', dataType: 'entity', isInput: false },
     ],
-    defaultData: { functionName: 'OnVehicleLaunch' },
+    defaultData: { functionName: 'CodeCallback_OnVehicleLaunch' },
   },
   {
     type: 'on-vehicle-collide',
     category: 'callbacks',
-    label: 'AddCallback_OnVehicleCollide',
+    label: 'CodeCallback_OnVehicleCollide',
     description: 'Callback for when vehicle collides',
     color: '#E8A838',
     inputs: [
@@ -1364,7 +1171,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Exec', type: 'exec', isInput: false },
       { label: 'Vehicle', type: 'data', dataType: 'entity', isInput: false },
     ],
-    defaultData: { functionName: 'OnVehicleCollide' },
+    defaultData: { functionName: 'CodeCallback_OnVehicleCollide' },
   },
   {
     type: 'on-player-changed-team',
@@ -1385,7 +1192,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   {
     type: 'on-player-zoom-in',
     category: 'callbacks',
-    label: 'AddCallback_OnPlayerZoomIn',
+    label: 'CodeCallback_OnPlayerStartZoomIn',
     description: 'Callback for when player zooms in (ADS)',
     color: '#E8A838',
     inputs: [
@@ -1396,12 +1203,12 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Exec', type: 'exec', isInput: false },
       { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
     ],
-    defaultData: { functionName: 'OnPlayerZoomIn' },
+    defaultData: { functionName: 'CodeCallback_OnPlayerStartZoomIn' },
   },
   {
     type: 'on-player-zoom-out',
     category: 'callbacks',
-    label: 'AddCallback_OnPlayerZoomOut',
+    label: 'CodeCallback_OnPlayerStartZoomOut',
     description: 'Callback for when player zooms out',
     color: '#E8A838',
     inputs: [
@@ -1412,7 +1219,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Exec', type: 'exec', isInput: false },
       { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
     ],
-    defaultData: { functionName: 'OnPlayerZoomOut' },
+    defaultData: { functionName: 'CodeCallback_OnPlayerStartZoomOut' },
   },
   {
     type: 'on-passive-changed',
@@ -2133,7 +1940,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'create-entity',
-    category: 'entity',
+    category: 'entity-creation',
     label: 'Create Entity',
     description: `Create a new entity with full setup options. All inputs are optional except ClassName. Connect KV nodes to KeyValues input for .kv.* properties.`,
     color: '#27AE60',
@@ -2193,7 +2000,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   // These output {key, value} pairs to connect to CreateEntity's KeyValues input
   {
     type: 'kv-solid',
-    category: 'keyvalues',
+    category: 'entity-creation',
     label: 'KV: Solid',
     description: 'Set entity solid type. 0=not solid, 6=SOLID_VPHYSICS',
     color: '#16A085',
@@ -2208,7 +2015,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'kv-rendercolor',
-    category: 'keyvalues',
+    category: 'entity-creation',
     label: 'KV: RenderColor',
     description: 'Set entity render color as "R,G,B" string (0-255)',
     color: '#16A085',
@@ -2223,7 +2030,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'kv-renderamt',
-    category: 'keyvalues',
+    category: 'entity-creation',
     label: 'KV: RenderAmt',
     description: 'Set entity render alpha (0-255)',
     color: '#16A085',
@@ -2238,7 +2045,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'kv-rendermode',
-    category: 'keyvalues',
+    category: 'entity-creation',
     label: 'KV: RenderMode',
     description: 'Set render mode. 0=normal, 1=color, 5=additive, 10=glow',
     color: '#16A085',
@@ -2253,7 +2060,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'kv-visibility-flags',
-    category: 'keyvalues',
+    category: 'entity-creation',
     label: 'KV: VisibilityFlags',
     description: 'Set visibility flags. ENTITY_VISIBLE_TO_OWNER=1, FRIENDLY=2, ENEMY=4',
     color: '#16A085',
@@ -2268,7 +2075,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'kv-spawnflags',
-    category: 'keyvalues',
+    category: 'entity-creation',
     label: 'KV: SpawnFlags',
     description: 'Set entity spawn flags (bitfield)',
     color: '#16A085',
@@ -2283,7 +2090,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'kv-collision-group',
-    category: 'keyvalues',
+    category: 'entity-creation',
     label: 'KV: CollisionGroup',
     description: 'Set collision group',
     color: '#16A085',
@@ -2298,7 +2105,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'kv-start-active',
-    category: 'keyvalues',
+    category: 'entity-creation',
     label: 'KV: StartActive',
     description: 'Set whether entity starts active (for particles, triggers)',
     color: '#16A085',
@@ -2313,7 +2120,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'kv-fadedist',
-    category: 'keyvalues',
+    category: 'entity-creation',
     label: 'KV: FadeDist',
     description: 'Set fade distance. -1 = never fade',
     color: '#16A085',
@@ -2328,7 +2135,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'kv-modelscale',
-    category: 'keyvalues',
+    category: 'entity-creation',
     label: 'KV: ModelScale',
     description: 'Set model scale multiplier',
     color: '#16A085',
@@ -2343,7 +2150,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'kv-trigger-filter',
-    category: 'keyvalues',
+    category: 'entity-creation',
     label: 'KV: TriggerFilter',
     description: 'Set trigger filter flags for characters/players/NPCs',
     color: '#16A085',
@@ -2360,7 +2167,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'kv-custom',
-    category: 'keyvalues',
+    category: 'entity-creation',
     label: 'KV: Custom',
     description: 'Set any custom keyvalue property',
     color: '#16A085',
@@ -4036,7 +3843,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   // ==================== PARTICLES ====================
   {
     type: 'precache-particle',
-    category: 'particles',
+    category: 'vfx',
     label: 'PrecacheParticleSystem',
     description: 'Precache particle system',
     color: '#F39C12',
@@ -4051,7 +3858,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'start-particle-on-entity',
-    category: 'particles',
+    category: 'vfx',
     label: 'StartParticleEffectOnEntity',
     description: 'Start particle on entity',
     color: '#F39C12',
@@ -4069,7 +3876,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'start-particle-effect-in-world',
-    category: 'particles',
+    category: 'vfx',
     label: 'StartParticleEffectInWorld',
     description: 'Start particle at world position',
     color: '#F39C12',
@@ -4087,7 +3894,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'stop-particle',
-    category: 'particles',
+    category: 'vfx',
     label: 'EffectStop',
     description: 'Stop particle effect',
     color: '#F39C12',
@@ -4103,7 +3910,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'effect-stop-all-on-entity',
-    category: 'particles',
+    category: 'vfx',
     label: 'EffectStopAllOnEntity',
     description: 'Stop all effects on entity',
     color: '#F39C12',
@@ -4118,7 +3925,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'set-particle-control-point',
-    category: 'particles',
+    category: 'vfx',
     label: 'SetControlPoint',
     description: 'Set particle control point',
     color: '#F39C12',
@@ -4135,7 +3942,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'play-fx-on-entity',
-    category: 'particles',
+    category: 'vfx',
     label: 'PlayFXOnEntity',
     description: 'Play FX on entity',
     color: '#F39C12',
@@ -5753,7 +5560,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   // ==================== UTILITIES ====================
   {
     type: 'print',
-    category: 'utilities',
+    category: 'data',
     label: 'Print',
     description: 'Print message to console (auto-concatenates all parts)',
     color: '#34495E',
@@ -5769,7 +5576,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'print-warning',
-    category: 'utilities',
+    category: 'data',
     label: 'PrintWarning',
     description: 'Print warning to console',
     color: '#34495E',
@@ -5784,7 +5591,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-game-time',
-    category: 'utilities',
+    category: 'data',
     label: 'Time',
     description: 'Get current game time',
     color: '#34495E',
@@ -5796,7 +5603,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-frame-time',
-    category: 'utilities',
+    category: 'data',
     label: 'FrameTime',
     description: 'Get frame delta time',
     color: '#34495E',
@@ -5808,7 +5615,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-map-name',
-    category: 'utilities',
+    category: 'data',
     label: 'GetMapName',
     description: 'Get current map name',
     color: '#34495E',
@@ -5820,7 +5627,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-all-players',
-    category: 'utilities',
+    category: 'data',
     label: 'GetPlayerArray',
     description: 'Get all players',
     color: '#34495E',
@@ -5832,7 +5639,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-players-on-team',
-    category: 'utilities',
+    category: 'data',
     label: 'GetPlayersOnTeam',
     description: 'Get all players on a team',
     color: '#34495E',
@@ -5846,7 +5653,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-living-players',
-    category: 'utilities',
+    category: 'data',
     label: 'GetLivingPlayers',
     description: 'Get all living players',
     color: '#34495E',
@@ -5858,7 +5665,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-living-players-on-team',
-    category: 'utilities',
+    category: 'data',
     label: 'GetLivingPlayersOnTeam',
     description: 'Get living players on a team',
     color: '#34495E',
@@ -5872,7 +5679,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-local-player',
-    category: 'utilities',
+    category: 'data',
     label: 'GetLocalPlayer',
     description: 'Get the local client player (#if CLIENT)',
     color: '#34495E',
@@ -5885,7 +5692,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-local-view-player',
-    category: 'utilities',
+    category: 'data',
     label: 'GetLocalViewPlayer',
     description: 'Get the local view player (#if CLIENT)',
     color: '#34495E',
@@ -5898,7 +5705,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-entity-by-script-name',
-    category: 'utilities',
+    category: 'data',
     label: 'GetEntByScriptName',
     description: 'Get entity by script name',
     color: '#34495E',
@@ -5912,7 +5719,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'precache-model',
-    category: 'utilities',
+    category: 'data',
     label: 'PrecacheModel',
     description: 'Precache model asset',
     color: '#34495E',
@@ -5927,7 +5734,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'precache-weapon',
-    category: 'utilities',
+    category: 'data',
     label: 'PrecacheWeapon',
     description: 'Precache weapon',
     color: '#34495E',
@@ -5942,7 +5749,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'globalize-function',
-    category: 'utilities',
+    category: 'data',
     label: 'GlobalizeFunction',
     description: 'Make function globally accessible',
     color: '#34495E',
@@ -5957,7 +5764,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'function-ref',
-    category: 'utilities',
+    category: 'data',
     label: 'Function Reference',
     description: 'Reference to function',
     color: '#34495E',
@@ -5969,7 +5776,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-ent-by-index',
-    category: 'utilities',
+    category: 'data',
     label: 'GetEntByIndex',
     description: 'Get entity by index',
     color: '#34495E',
@@ -5983,7 +5790,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-player-by-index',
-    category: 'utilities',
+    category: 'data',
     label: 'GetPlayerByIndex',
     description: 'Get player entity by index (gp()[index])',
     color: '#34495E',

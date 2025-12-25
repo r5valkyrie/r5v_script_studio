@@ -376,7 +376,7 @@ export default function VisualScriptEditor() {
     }
   }, []);
 
-  const handleDeleteNode = useCallback((nodeId: string) => {
+  const handleDeleteNode = useCallback(async (nodeId: string) => {
     const doDelete = () => {
       setNodes(currentNodes => currentNodes.filter(n => n.id !== nodeId));
       setConnections(currentConnections =>
@@ -386,13 +386,20 @@ export default function VisualScriptEditor() {
     };
 
     if (appSettings.general.confirmOnDelete) {
-      if (window.confirm('Are you sure you want to delete this node?')) {
+      const confirmed = await confirm({
+        title: 'Delete Node',
+        message: 'Are you sure you want to delete this node? This action cannot be undone.',
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        variant: 'danger',
+      });
+      if (confirmed) {
         doDelete();
       }
     } else {
       doDelete();
     }
-  }, [appSettings.general.confirmOnDelete]);
+  }, [appSettings.general.confirmOnDelete, confirm]);
 
   const handleDeleteSelectedNodes = useCallback(async (nodeIds: string[]) => {
     if (nodeIds.length === 0) return;
@@ -1295,10 +1302,11 @@ export default function VisualScriptEditor() {
         onDismiss={dismissNotification}
       />
 
-      {/* Confirm Modal */}
-      <ConfirmModal accentColor={accentColor} />
       </>
       )}
+
+      {/* Confirm Modal - always rendered so it works on welcome screen too */}
+      <ConfirmModal accentColor={accentColor} />
     </div>
   );
 }

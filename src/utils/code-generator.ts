@@ -3269,7 +3269,7 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
   // Handle standalone event and custom function nodes
   // For server callback events, always include them (they may have been visited via Register but still need function generated)
   const eventNodes = nodes.filter(n =>
-    (n.category === 'events' || n.category === 'callbacks' || n.type === 'custom-function') &&
+    (n.category === 'callbacks' || n.type === 'custom-function') &&
     (serverCallbackTypes.includes(n.type) || !ctx.visitedNodes.has(n.id))
   );
 

@@ -19,7 +19,31 @@ import {
   Wrench,
   GripVertical,
   Gamepad2,
-  Boxes
+  Boxes,
+  Play,
+  GitBranch,
+  Repeat,
+  Timer,
+  MessageSquare,
+  Target,
+  Hexagon,
+  Box,
+  Tags,
+  Type,
+  Layers,
+  Package,
+  Flag,
+  Heart,
+  Cpu,
+  Eye,
+  Music,
+  Palette,
+  FileText,
+  Hash,
+  Map,
+  ShieldAlert,
+  Users,
+  Scroll
 } from 'lucide-react';
 import { NODE_DEFINITIONS, getNodesByCategory } from '../../data/node-definitions';
 import { CATEGORY_INFO } from '../../types/visual-scripting';
@@ -49,36 +73,48 @@ interface CategorySectionProps {
   searchTerm?: string;
 }
 
-// Icons for each category (React components can't be in the type file)
+// Icons for each category
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-  'core-flow': <Workflow size={14} />,
-  'events': <Zap size={14} />,
+  'init': <Play size={14} />,
+  'flow': <Workflow size={14} />,
+  'gamemodes': <Gamepad2 size={14} />,
+  'callbacks': <RotateCcw size={14} />,
   'entity': <User size={14} />,
+  'entity-creation': <Box size={14} />,
+  'entity-props': <Cpu size={14} />,
+  'npc': <Target size={14} />,
   'weapons': <Sword size={14} />,
   'status-effects': <Shield size={14} />,
-  'particles': <Sparkles size={14} />,
+  'vfx': <Sparkles size={14} />,
   'audio': <Volume2 size={14} />,
   'damage': <Crosshair size={14} />,
   'ui': <Monitor size={14} />,
   'math': <Calculator size={14} />,
-  'callbacks': <RotateCcw size={14} />,
-  'data': <Database size={14} />,
+  'string': <Type size={14} />,
   'structures': <Boxes size={14} />,
+  'data': <Database size={14} />,
+  'collections': <Layers size={14} />,
+  'survival': <Map size={14} />,
+  'passives': <Heart size={14} />,
+  'character': <Users size={14} />,
+  // Legacy categories for backward compatibility
+  'core-flow': <Workflow size={14} />,
+  'particles': <Sparkles size={14} />,
   'utilities': <Wrench size={14} />,
-  'gamemodes': <Gamepad2 size={14} />,
+  'keyvalues': <Tags size={14} />,
 };
 
 // Map hex colors to Tailwind color names for dynamic class generation
 const hexToTailwindColor = (hex: string): string => {
   const colorMap: Record<string, string> = {
-    '#4A90E2': 'purple',
+    '#4A90E2': 'blue',
     '#E8A838': 'yellow',
-    '#27AE60': 'blue',
-    '#E67E22': 'red',
-    '#9B59B6': 'green',
+    '#27AE60': 'green',
+    '#E67E22': 'orange',
+    '#9B59B6': 'purple',
     '#F39C12': 'pink',
     '#1ABC9C': 'cyan',
-    '#E74C3C': 'orange',
+    '#E74C3C': 'red',
     '#3498DB': 'indigo',
     '#95A5A6': 'emerald',
     '#8E44AD': 'amber',
