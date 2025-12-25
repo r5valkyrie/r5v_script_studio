@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { Trash2 } from 'lucide-react';
 import type { ScriptNode, NodeConnection, NodeDataType } from '../../types/visual-scripting';
 import { getNodeDefinition } from '../../data/node-definitions';
@@ -27,6 +27,7 @@ interface NodeGraphProps {
   accentColor?: string;
   theme?: 'light' | 'dark';
   gridStyle?: 'dots' | 'lines' | 'crosshatch' | 'hexagons' | 'isometric' | 'blueprint' | 'diamonds' | 'triangles' | 'graph' | 'waves';
+  coloredGrid?: boolean;
   // Editor settings
   snapToGrid?: boolean;
   autoConnect?: boolean;
@@ -102,6 +103,7 @@ export default function NodeGraph({
   // Appearance settings with defaults
   showGridLines = true,
   gridStyle = 'dots',
+  coloredGrid = false,
   gridSize = 20,
   nodeOpacity = 100,
   connectionStyle = 'bezier',
@@ -3132,8 +3134,13 @@ export default function NodeGraph({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, connections, connectionStyle, portCacheVersion]);
 
-  // Render connection paths using cached data
-  const renderConnections = () => {
+  // Memoize node positions for stable rendering
+  const nodePositions = useMemo(() => {
+    return new Map(nodes.map(n => [n.id, n.position]));
+  }, [nodes]);
+
+  // Render connection paths using cached data - memoized to prevent recreation
+  const renderConnections = useCallback(() => {
     // Fixed stroke widths since SVG is inside transformed container
     const baseStroke = 2.5;
     const hoverStroke = 3.5;
@@ -3214,7 +3221,7 @@ export default function NodeGraph({
         </g>
       );
     });
-  };
+  }, [cachedConnectionPaths, connections, hoveredConnection, highlightConnections, hoveredNodeId, animateConnections, handleConnectionContextMenu, handleConnectionRewireStart, handleInsertReroute]);
 
   return (
     <div
@@ -3240,47 +3247,79 @@ export default function NodeGraph({
       }}
       style={{
         cursor: isDragging || panningRef.current ? 'grabbing' : 'default',
+        contain: 'layout style paint',
+        isolation: 'isolate',
       }}
     >
       {/* Separate background layer for GPU compositing */}
-      {showGridLines && (
+      {showGridLines && (() => {
+        // Grid color helpers - use accent color when coloredGrid is enabled
+        const gridColor = coloredGrid 
+          ? `${accentColor}${theme === 'light' ? '25' : '35'}` 
+          : (theme === 'light' ? 'rgba(0,0,0,0.08)' : '#2a2e38');
+        const gridColorLight = coloredGrid 
+          ? `${accentColor}${theme === 'light' ? '15' : '20'}` 
+          : (theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.03)');
+        const gridColorStrong = coloredGrid 
+          ? `${accentColor}${theme === 'light' ? '40' : '50'}` 
+          : (theme === 'light' ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.08)');
+        const dotColor = coloredGrid 
+          ? `${accentColor}${theme === 'light' ? '40' : '60'}` 
+          : (theme === 'light' ? 'rgba(0,0,0,0.15)' : '#2a2e38');
+        const svgStrokeColor = coloredGrid 
+          ? accentColor.replace('#', '%23') 
+          : (theme === 'light' ? '%23000' : '%23444');
+        const svgStrokeOpacity = coloredGrid 
+          ? (theme === 'light' ? '0.25' : '0.4') 
+          : (theme === 'light' ? '0.12' : '0.35');
+        const hexStrokeColor = coloredGrid 
+          ? accentColor 
+          : (theme === 'light' ? '#000' : '#555');
+        const hexStrokeOpacity = coloredGrid 
+          ? (theme === 'light' ? '0.3' : '0.5') 
+          : (theme === 'light' ? '0.1' : '0.25');
+        const bgTint = coloredGrid || gridStyle === 'blueprint' 
+          ? (theme === 'light' ? `${accentColor}10` : `${accentColor}15`) 
+          : undefined;
+        
+        return (
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundColor: gridStyle === 'blueprint' ? (theme === 'light' ? `${accentColor}10` : `${accentColor}15`) : undefined,
+            backgroundColor: bgTint,
             backgroundImage: gridStyle === 'dots' 
-              ? `radial-gradient(circle, ${theme === 'light' ? 'rgba(0,0,0,0.15)' : '#2a2e38'} 1px, transparent 1px)`
+              ? `radial-gradient(circle, ${dotColor} 1px, transparent 1px)`
               : gridStyle === 'lines'
-              ? `linear-gradient(to right, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : '#252a33'} 1px, transparent 1px),
-                 linear-gradient(to bottom, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : '#252a33'} 1px, transparent 1px)`
+              ? `linear-gradient(to right, ${gridColor} 1px, transparent 1px),
+                 linear-gradient(to bottom, ${gridColor} 1px, transparent 1px)`
               : gridStyle === 'crosshatch'
-              ? `linear-gradient(to right, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : '#2a2e38'} 1px, transparent 1px),
-                 linear-gradient(to bottom, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : '#2a2e38'} 1px, transparent 1px),
-                 repeating-linear-gradient(45deg, transparent, transparent 10px, ${theme === 'light' ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.02)'} 10px, ${theme === 'light' ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.02)'} 11px),
-                 repeating-linear-gradient(-45deg, transparent, transparent 10px, ${theme === 'light' ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.02)'} 10px, ${theme === 'light' ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.02)'} 11px)`
+              ? `linear-gradient(to right, ${gridColor} 1px, transparent 1px),
+                 linear-gradient(to bottom, ${gridColor} 1px, transparent 1px),
+                 repeating-linear-gradient(45deg, transparent, transparent 10px, ${gridColorLight} 10px, ${gridColorLight} 11px),
+                 repeating-linear-gradient(-45deg, transparent, transparent 10px, ${gridColorLight} 10px, ${gridColorLight} 11px)`
               : gridStyle === 'hexagons'
-              ? `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='50' height='86.6' viewBox='0 0 50 86.6'><polygon fill='none' stroke='${theme === 'light' ? '#000' : '#555'}' stroke-width='1' stroke-opacity='${theme === 'light' ? '0.1' : '0.25'}' points='25,0 50,14.43 50,43.3 25,57.74 0,43.3 0,14.43'/><polygon fill='none' stroke='${theme === 'light' ? '#000' : '#555'}' stroke-width='1' stroke-opacity='${theme === 'light' ? '0.1' : '0.25'}' points='50,43.3 75,57.74 75,86.6 50,101.04 25,86.6 25,57.74'/><polygon fill='none' stroke='${theme === 'light' ? '#000' : '#555'}' stroke-width='1' stroke-opacity='${theme === 'light' ? '0.1' : '0.25'}' points='0,43.3 25,57.74 25,86.6 0,101.04 -25,86.6 -25,57.74'/></svg>`)}")`
+              ? `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='50' height='86.6' viewBox='0 0 50 86.6'><polygon fill='none' stroke='${hexStrokeColor}' stroke-width='1' stroke-opacity='${hexStrokeOpacity}' points='25,0 50,14.43 50,43.3 25,57.74 0,43.3 0,14.43'/><polygon fill='none' stroke='${hexStrokeColor}' stroke-width='1' stroke-opacity='${hexStrokeOpacity}' points='50,43.3 75,57.74 75,86.6 50,101.04 25,86.6 25,57.74'/><polygon fill='none' stroke='${hexStrokeColor}' stroke-width='1' stroke-opacity='${hexStrokeOpacity}' points='0,43.3 25,57.74 25,86.6 0,101.04 -25,86.6 -25,57.74'/></svg>`)}")`
               : gridStyle === 'isometric'
-              ? `repeating-linear-gradient(30deg, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)'} 0px, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)'} 1px, transparent 1px, transparent 20px),
-                 repeating-linear-gradient(150deg, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)'} 0px, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)'} 1px, transparent 1px, transparent 20px),
-                 repeating-linear-gradient(90deg, ${theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.03)'} 0px, ${theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.03)'} 1px, transparent 1px, transparent 20px)`
+              ? `repeating-linear-gradient(30deg, ${gridColor} 0px, ${gridColor} 1px, transparent 1px, transparent 20px),
+                 repeating-linear-gradient(150deg, ${gridColor} 0px, ${gridColor} 1px, transparent 1px, transparent 20px),
+                 repeating-linear-gradient(90deg, ${gridColorLight} 0px, ${gridColorLight} 1px, transparent 1px, transparent 20px)`
               : gridStyle === 'blueprint'
               ? `linear-gradient(to right, ${accentColor}30 1px, transparent 1px),
                  linear-gradient(to bottom, ${accentColor}30 1px, transparent 1px),
                  linear-gradient(to right, ${accentColor}60 1px, transparent 1px),
                  linear-gradient(to bottom, ${accentColor}60 1px, transparent 1px)`
               : gridStyle === 'diamonds'
-              ? `repeating-linear-gradient(45deg, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)'} 0px, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)'} 1px, transparent 1px, transparent 14px),
-                 repeating-linear-gradient(-45deg, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)'} 0px, ${theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)'} 1px, transparent 1px, transparent 14px)`
+              ? `repeating-linear-gradient(45deg, ${gridColor} 0px, ${gridColor} 1px, transparent 1px, transparent 14px),
+                 repeating-linear-gradient(-45deg, ${gridColor} 0px, ${gridColor} 1px, transparent 1px, transparent 14px)`
               : gridStyle === 'triangles'
-              ? `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='35' viewBox='0 0 40 35'%3E%3Cpath fill='none' stroke='${theme === 'light' ? '%23000' : '%23444'}' stroke-width='0.5' stroke-opacity='${theme === 'light' ? '0.12' : '0.35'}' d='M20 0 L40 35 L0 35 Z M0 0 L20 35 L40 0'/%3E%3C/svg%3E")`
+              ? `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='35' viewBox='0 0 40 35'%3E%3Cpath fill='none' stroke='${svgStrokeColor}' stroke-width='0.5' stroke-opacity='${svgStrokeOpacity}' d='M20 0 L40 35 L0 35 Z M0 0 L20 35 L40 0'/%3E%3C/svg%3E")`
               : gridStyle === 'graph'
-              ? `linear-gradient(to right, ${theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.03)'} 1px, transparent 1px),
-                 linear-gradient(to bottom, ${theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.03)'} 1px, transparent 1px),
-                 linear-gradient(to right, ${theme === 'light' ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.08)'} 1px, transparent 1px),
-                 linear-gradient(to bottom, ${theme === 'light' ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.08)'} 1px, transparent 1px)`
+              ? `linear-gradient(to right, ${gridColorLight} 1px, transparent 1px),
+                 linear-gradient(to bottom, ${gridColorLight} 1px, transparent 1px),
+                 linear-gradient(to right, ${gridColorStrong} 1px, transparent 1px),
+                 linear-gradient(to bottom, ${gridColorStrong} 1px, transparent 1px)`
               : // waves
-                `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='20' viewBox='0 0 40 20'%3E%3Cpath fill='none' stroke='${theme === 'light' ? '%23000' : '%23444'}' stroke-width='0.5' stroke-opacity='${theme === 'light' ? '0.1' : '0.3'}' d='M0 10 Q10 0, 20 10 T40 10'/%3E%3C/svg%3E")`,
+                `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='20' viewBox='0 0 40 20'%3E%3Cpath fill='none' stroke='${svgStrokeColor}' stroke-width='0.5' stroke-opacity='${coloredGrid ? (theme === 'light' ? '0.25' : '0.4') : (theme === 'light' ? '0.1' : '0.3')}' d='M0 10 Q10 0, 20 10 T40 10'/%3E%3C/svg%3E")`,
             backgroundSize: gridStyle === 'dots'
               ? `${gridSize * view.scale}px ${gridSize * view.scale}px`
               : gridStyle === 'lines'
@@ -3306,7 +3345,8 @@ export default function NodeGraph({
             contain: 'strict',
           }}
         />
-      )}
+        );
+      })()}
       <div
         className="absolute inset-0"
         style={{
@@ -3713,6 +3753,9 @@ export default function NodeGraph({
             left: '-100000px',
             top: '-100000px',
             overflow: 'visible',
+            // GPU acceleration for SVG
+            willChange: 'contents',
+            contain: 'layout style',
           }}
           preserveAspectRatio="none"
         >

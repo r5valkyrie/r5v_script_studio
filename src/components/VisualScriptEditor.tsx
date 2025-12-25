@@ -1167,11 +1167,11 @@ export default function VisualScriptEditor() {
                     onRequestHistorySnapshot={forceHistorySnapshot}
                     showGridLines={appSettings.appearance.showGridLines}
                     gridStyle={appSettings.appearance.gridStyle}
+                    coloredGrid={appSettings.appearance.coloredGrid}
                     gridSize={appSettings.appearance.gridSize}
                     nodeOpacity={appSettings.appearance.nodeOpacity}
                     connectionStyle={appSettings.appearance.connectionStyle}
                     connectionsBehindNodes={appSettings.editor.connectionsBehindNodes}
-                    avoidNodes={appSettings.editor.avoidNodes}
                     accentColor={appSettings.appearance.accentColor}
                     theme={effectiveTheme}
                     snapToGrid={appSettings.editor.snapToGrid}

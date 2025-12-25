@@ -63,6 +63,7 @@ export interface AppSettings {
     fontSize: 'small' | 'medium' | 'large';
     showGridLines: boolean;
     gridStyle: 'dots' | 'lines' | 'crosshatch' | 'hexagons' | 'isometric' | 'blueprint' | 'diamonds' | 'triangles' | 'graph' | 'waves';
+    coloredGrid: boolean;
     gridSize: number;
     nodeOpacity: number;
     connectionStyle: 'bezier' | 'straight' | 'step' | 'smooth-step' | 'metro' | 'quadratic';
@@ -103,6 +104,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     fontSize: 'medium',
     showGridLines: true,
     gridStyle: 'dots',
+    coloredGrid: false,
     gridSize: 20,
     nodeOpacity: 100,
     connectionStyle: 'bezier',
@@ -625,6 +627,21 @@ export default function SettingsModal({
                         ))}
                       </div>
                     </div>
+                  )}
+
+                  {localSettings.appearance.showGridLines && (
+                    <label className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm text-white">Colored Grid</div>
+                        <div className="text-xs text-gray-500">Tint the grid with your accent color</div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={localSettings.appearance.coloredGrid}
+                        onChange={(e) => updateSettings('appearance', 'coloredGrid', e.target.checked)}
+                        className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-purple-500"
+                      />
+                    </label>
                   )}
 
                   <label className="flex items-center justify-between">
