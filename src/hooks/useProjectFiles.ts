@@ -27,7 +27,6 @@ export interface UseProjectFilesReturn {
   loadProject: () => Promise<boolean>;
   loadProjectFromPath: (path: string) => Promise<boolean>;
   updateMetadata: (metadata: Partial<ProjectMetadata>) => void;
-  updateUISettings: (ui: NonNullable<ProjectData['settings']['ui']>) => void;
   updateModSettings: (mod: ModSettings) => void;
   
   // Script file actions
@@ -272,24 +271,6 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
       };
     });
     setHasUnsavedChanges(true);
-  }, []);
-
-  // Update UI settings (panel states, widths, etc.)
-  const updateUISettings = useCallback((ui: NonNullable<ProjectData['settings']['ui']>) => {
-    setProjectData(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        settings: {
-          ...prev.settings,
-          ui: {
-            ...prev.settings.ui,
-            ...ui,
-          },
-        },
-      };
-    });
-    // Don't mark as unsaved for UI changes - they're saved on next save
   }, []);
 
   // Update mod settings
@@ -595,7 +576,6 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
     loadProject,
     loadProjectFromPath,
     updateMetadata,
-    updateUISettings,
     updateModSettings,
     createNewScriptFile,
     deleteScriptFile,

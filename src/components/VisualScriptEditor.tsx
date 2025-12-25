@@ -25,14 +25,15 @@ export default function VisualScriptEditor() {
   const [connections, setConnections] = useState<NodeConnection[]>([]);
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
 
-  // Panel widths
-  const [sidebarWidth, setSidebarWidth] = useState(280); // Unified sidebar width
+  // Panel widths - will be loaded from appSettings
+  const [sidebarWidth, setSidebarWidth] = useState(280);
   const [inspectorWidth, setInspectorWidth] = useState(320);
-  const [codePanelWidth, setCodePanelWidth] = useState(500); // min size is 500
+  const [codePanelWidth, setCodePanelWidth] = useState(500);
   const sidebarDraggingRef = useRef(false);
   const inspectorDraggingRef = useRef(false);
   const codePanelDraggingRef = useRef(false);
 
+  // Panel visibility - will be loaded from appSettings
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [isProjectSectionExpanded, setProjectSectionExpanded] = useState(true);
   const [isNodesSectionExpanded, setNodesSectionExpanded] = useState(true);
@@ -53,9 +54,20 @@ export default function VisualScriptEditor() {
   const { confirm, ConfirmModal } = useConfirmModal();
   const pendingCompileRef = useRef(false);
 
-  // Load settings from localStorage after hydration
+  // Load settings from localStorage after hydration (includes UI state)
   useEffect(() => {
-    setAppSettings(loadSettings());
+    const settings = loadSettings();
+    setAppSettings(settings);
+    // Load UI state from settings
+    setSidebarOpen(settings.ui.isSidebarOpen);
+    setProjectSectionExpanded(settings.ui.isProjectSectionExpanded);
+    setNodesSectionExpanded(settings.ui.isNodesSectionExpanded);
+    setInspectorOpen(settings.ui.isInspectorOpen);
+    setCodePanelOpen(settings.ui.isCodePanelOpen);
+    setSidebarWidth(settings.ui.sidebarWidth);
+    setInspectorWidth(settings.ui.inspectorWidth);
+    setCodePanelWidth(settings.ui.codePanelWidth);
+    setCollapsedCategories(settings.ui.collapsedCategories);
     setIsHydrated(true);
   }, []);
 
@@ -87,7 +99,6 @@ export default function VisualScriptEditor() {
     renameScriptFile,
     setActiveScriptFile,
     updateActiveScriptContent,
-    updateUISettings,
     updateModSettings,
     createFolder,
     deleteFolder,
@@ -108,31 +119,10 @@ export default function VisualScriptEditor() {
     return () => clearInterval(intervalId);
   }, [appSettings.general.autoSave, appSettings.general.autoSaveInterval, projectData, currentFilePath, hasUnsavedChanges, saveProject]);
 
-  // Load UI settings from project when it changes
-  const hasLoadedUIRef = useRef<string | null>(null);
-  useEffect(() => {
-    // Only load UI once per project (use createdAt + filePath as unique key)
-    const projectKey = projectData ? `${projectData.metadata.createdAt}-${currentFilePath}` : null;
-    if (projectKey && hasLoadedUIRef.current !== projectKey && projectData?.settings.ui) {
-      hasLoadedUIRef.current = projectKey;
-      const ui = projectData.settings.ui;
-      if (ui.isSidebarOpen !== undefined) setSidebarOpen(ui.isSidebarOpen);
-      if (ui.isProjectSectionExpanded !== undefined) setProjectSectionExpanded(ui.isProjectSectionExpanded);
-      if (ui.isNodesSectionExpanded !== undefined) setNodesSectionExpanded(ui.isNodesSectionExpanded);
-      if (ui.isInspectorOpen !== undefined) setInspectorOpen(ui.isInspectorOpen);
-      if (ui.isCodePanelOpen !== undefined) setCodePanelOpen(ui.isCodePanelOpen);
-      if (ui.sidebarWidth !== undefined) setSidebarWidth(ui.sidebarWidth);
-      if (ui.inspectorWidth !== undefined) setInspectorWidth(ui.inspectorWidth);
-      if (ui.codePanelWidth !== undefined) setCodePanelWidth(ui.codePanelWidth);
-      if (ui.openFileTabs !== undefined) setOpenFileTabs(ui.openFileTabs);
-      if (ui.collapsedCategories !== undefined) setCollapsedCategories(ui.collapsedCategories);
-    }
-  }, [projectData, currentFilePath]);
-
-  // Save UI settings when they change (debounced)
+  // Save UI settings to localStorage when they change (debounced)
   const uiSettingsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
-    if (!projectData) return;
+    if (!isHydrated) return;
     
     // Debounce UI settings saves
     if (uiSettingsTimeoutRef.current) {
@@ -140,18 +130,22 @@ export default function VisualScriptEditor() {
     }
     
     uiSettingsTimeoutRef.current = setTimeout(() => {
-      updateUISettings({
-        isSidebarOpen,
-        isProjectSectionExpanded,
-        isNodesSectionExpanded,
-        isInspectorOpen,
-        isCodePanelOpen,
-        sidebarWidth,
-        inspectorWidth,
-        codePanelWidth,
-        openFileTabs,
-        collapsedCategories,
-      });
+      const newSettings = {
+        ...appSettings,
+        ui: {
+          isSidebarOpen,
+          isProjectSectionExpanded,
+          isNodesSectionExpanded,
+          isInspectorOpen,
+          isCodePanelOpen,
+          sidebarWidth,
+          inspectorWidth,
+          codePanelWidth,
+          collapsedCategories,
+        },
+      };
+      saveSettings(newSettings);
+      setAppSettings(newSettings);
     }, 500); // Save after 500ms of no changes
     
     return () => {
@@ -160,7 +154,7 @@ export default function VisualScriptEditor() {
       }
     };
   }, [
-    projectData,
+    isHydrated,
     isSidebarOpen,
     isProjectSectionExpanded,
     isNodesSectionExpanded,
@@ -169,9 +163,7 @@ export default function VisualScriptEditor() {
     sidebarWidth,
     inspectorWidth,
     codePanelWidth,
-    openFileTabs,
     collapsedCategories,
-    updateUISettings,
   ]);
 
   // Track if we're loading to prevent marking as modified on initial load

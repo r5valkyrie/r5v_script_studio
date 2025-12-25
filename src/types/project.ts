@@ -35,27 +35,6 @@ export interface ProjectSettings {
   
   // Mod export settings
   mod?: ModSettings;
-  
-  // UI State persistence
-  ui?: {
-    // Panel visibility
-    isSidebarOpen?: boolean;
-    isProjectSectionExpanded?: boolean;
-    isNodesSectionExpanded?: boolean;
-    isInspectorOpen?: boolean;
-    isCodePanelOpen?: boolean;
-    
-    // Panel widths
-    sidebarWidth?: number;
-    inspectorWidth?: number;
-    codePanelWidth?: number;
-    
-    // Open file tabs
-    openFileTabs?: string[];
-    
-    // Collapsed categories in node palette
-    collapsedCategories?: string[];
-  };
 }
 
 export interface ScriptFile {

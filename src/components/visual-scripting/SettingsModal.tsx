@@ -75,6 +75,17 @@ export interface AppSettings {
     highlightConnections: boolean;
     animateConnections: boolean;
   };
+  ui: {
+    isSidebarOpen: boolean;
+    isProjectSectionExpanded: boolean;
+    isNodesSectionExpanded: boolean;
+    isInspectorOpen: boolean;
+    isCodePanelOpen: boolean;
+    sidebarWidth: number;
+    inspectorWidth: number;
+    codePanelWidth: number;
+    collapsedCategories: string[];
+  };
   keybindings: Record<string, string>;
 }
 
@@ -104,6 +115,17 @@ export const DEFAULT_SETTINGS: AppSettings = {
     highlightConnections: true,
     animateConnections: false,
   },
+  ui: {
+    isSidebarOpen: true,
+    isProjectSectionExpanded: true,
+    isNodesSectionExpanded: true,
+    isInspectorOpen: true,
+    isCodePanelOpen: false,
+    sidebarWidth: 280,
+    inspectorWidth: 320,
+    codePanelWidth: 500,
+    collapsedCategories: [],
+  },
   keybindings: { ...DEFAULT_KEYBINDINGS },
 };
 
@@ -118,6 +140,7 @@ export function loadSettings(): AppSettings {
         general: { ...DEFAULT_SETTINGS.general, ...parsed.general },
         appearance: { ...DEFAULT_SETTINGS.appearance, ...parsed.appearance },
         editor: { ...DEFAULT_SETTINGS.editor, ...parsed.editor },
+        ui: { ...DEFAULT_SETTINGS.ui, ...parsed.ui },
         keybindings: { ...DEFAULT_SETTINGS.keybindings, ...parsed.keybindings },
       };
     }
