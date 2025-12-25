@@ -1865,19 +1865,32 @@ export default function NodeGraph({
     if (e.target instanceof Element && e.target.closest('[data-quick-node-menu="true"]')) return;
     e.preventDefault();
 
+    // Cancel any pending RAF pan updates to avoid conflicts
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+
     const rect = canvasRef.current.getBoundingClientRect();
     const cursor = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
-    const newScale = Math.min(2.5, Math.max(0.3, view.scale * zoomFactor));
 
-    if (newScale === view.scale) return;
+    setView(current => {
+      // Use pending view position if available (from in-flight pan updates)
+      const currentX = pendingViewRef.current?.x ?? current.x;
+      const currentY = pendingViewRef.current?.y ?? current.y;
+      pendingViewRef.current = null;
 
-    const scaleRatio = newScale / view.scale;
-    setView(current => ({
-      scale: newScale,
-      x: cursor.x - (cursor.x - current.x) * scaleRatio,
-      y: cursor.y - (cursor.y - current.y) * scaleRatio,
-    }));
+      const newScale = Math.min(2.5, Math.max(0.3, current.scale * zoomFactor));
+      if (newScale === current.scale) return current;
+
+      const scaleRatio = newScale / current.scale;
+      return {
+        scale: newScale,
+        x: cursor.x - (cursor.x - currentX) * scaleRatio,
+        y: cursor.y - (cursor.y - currentY) * scaleRatio,
+      };
+    });
   };
 
   // Attach wheel listener with { passive: false } to allow preventDefault
