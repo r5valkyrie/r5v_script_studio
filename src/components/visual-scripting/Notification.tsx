@@ -163,7 +163,7 @@ export function ExportPathModal({ isOpen, onClose, onSelect, accentColor = '#8B5
           <FolderOpen size={24} style={{ color: accentColor }} />
           <div>
             <h2 className="text-lg font-semibold text-white">Set Export Path</h2>
-            <p className="text-sm text-gray-400">Select your R5Reloaded mods folder</p>
+            <p className="text-sm text-gray-400">Select your R5Valkyrie mods folder</p>
           </div>
         </div>
 

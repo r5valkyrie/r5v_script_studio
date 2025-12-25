@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  A visual scripting and modding tool for <a href="https://r5reloaded.com/">R5Reloaded</a> (Apex Legends)
+  A visual scripting and modding tool for <a href="https://playvalkyrie.org/">R5Valkyrie</a> (Apex Legends)
 </p>
 
 <p align="center">
@@ -23,7 +23,7 @@
 - **Visual Scripting** - Create Squirrel scripts using a node-based visual editor
 - **Multi-File Projects** - Organize your mod with multiple script files and folders
 - **Live Code Preview** - See generated code in real-time as you build
-- **Mod Compilation** - Export directly to R5Reloaded mod format with `mod.vdf` and `scripts.rson`
+- **Mod Compilation** - Export directly to R5Valkyrie mod format with `mod.vdf` and `scripts.rson`
 - **Context Detection** - Automatically detects SERVER/CLIENT/UI contexts from your nodes
 - **Customizable** - Themes, accent colors, grid settings, and keybindings
 - **Project Persistence** - Auto-save, recent projects, and UI state restoration
@@ -140,8 +140,3 @@ r5v_mod_studio/
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
-
-## Links
-
-- [R5Reloaded](https://r5reloaded.com/) - The Apex Legends mod
-- [R5Valkyrie](https://github.com/r5valkyrie) - Project organization
