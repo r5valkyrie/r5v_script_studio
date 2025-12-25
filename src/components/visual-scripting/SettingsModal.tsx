@@ -60,6 +60,7 @@ export interface AppSettings {
     autoSaveInterval: number; // minutes
     confirmOnDelete: boolean;
     maxRecentProjects: number;
+    exportPath: string; // Default mods folder path
   };
   appearance: {
     theme: 'dark' | 'light' | 'system';
@@ -72,7 +73,6 @@ export interface AppSettings {
   };
   editor: {
     snapToGrid: boolean;
-    showMinimap: boolean;
     showNodeLabels: boolean;
     autoConnect: boolean;
     highlightConnections: boolean;
@@ -87,6 +87,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     autoSaveInterval: 5,
     confirmOnDelete: true,
     maxRecentProjects: 10,
+    exportPath: '',
   },
   appearance: {
     theme: 'dark',
@@ -99,7 +100,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   },
   editor: {
     snapToGrid: false,
-    showMinimap: false,
     showNodeLabels: true,
     autoConnect: true,
     highlightConnections: true,
@@ -371,6 +371,35 @@ export default function SettingsModal({
                       className="w-20 px-3 py-1.5 bg-black/30 border border-white/10 rounded text-sm text-white focus:outline-none focus:border-purple-500"
                     />
                   </label>
+
+                  <div className="pt-4 border-t border-white/10">
+                    <label className="block">
+                      <span className="text-sm text-white mb-2 block">Default Export Path</span>
+                      <p className="text-xs text-gray-500 mb-2">Folder where compiled mods will be exported (e.g., R5VLibrary/LIVE/mods/)</p>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={localSettings.general.exportPath}
+                          placeholder="e.g., /path/to/R5VLibrary/LIVE/mods/"
+                          className="flex-1 px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 text-sm"
+                          readOnly
+                        />
+                        <button
+                          onClick={async () => {
+                            if (window.electronAPI) {
+                              const dir = await window.electronAPI.selectDirectory();
+                              if (dir) {
+                                updateSettings('general', 'exportPath', dir);
+                              }
+                            }
+                          }}
+                          className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center gap-2 text-sm"
+                        >
+                          Browse
+                        </button>
+                      </div>
+                    </label>
+                  </div>
                 </div>
               </div>
             )}
@@ -523,19 +552,6 @@ export default function SettingsModal({
                       type="checkbox"
                       checked={localSettings.editor.snapToGrid}
                       onChange={(e) => updateSettings('editor', 'snapToGrid', e.target.checked)}
-                      className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-purple-500"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm text-white">Show Minimap</div>
-                      <div className="text-xs text-gray-500">Display a minimap overview of the canvas</div>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={localSettings.editor.showMinimap}
-                      onChange={(e) => updateSettings('editor', 'showMinimap', e.target.checked)}
                       className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-purple-500"
                     />
                   </label>

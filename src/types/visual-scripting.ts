@@ -454,6 +454,8 @@ export interface NodeDefinition {
   deprecated?: boolean;
   serverOnly?: boolean;
   clientOnly?: boolean;
+  uiOnly?: boolean;
+  context?: ('SERVER' | 'CLIENT' | 'UI')[];  // Which contexts this node requires
   tags?: string[];
 }
 

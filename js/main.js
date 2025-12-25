@@ -44,10 +44,9 @@ async function createWindow() {
   };
   mainWindow.once('ready-to-show', show);
   mainWindow.webContents.once('did-finish-load', show);
-
-  if (process.env.NODE_ENV === 'development' || !!process.env.VITE_DEV_SERVER_URL) {
-    mainWindow.webContents.openDevTools({ mode: 'detach' });
-  }
+  
+  // Fallback: show window after a short delay if events don't fire
+  setTimeout(show, 0);
 }
 
 app.on('window-all-closed', () => {
@@ -155,6 +154,24 @@ ipcMain.handle('list-directory', async (event, { dirPath }) => {
       path: path.join(dirPath, entry.name)
     }));
     return { success: true, items };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('create-directory', async (event, { dirPath }) => {
+  try {
+    await fs.mkdir(dirPath, { recursive: true });
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('delete-directory', async (event, { dirPath }) => {
+  try {
+    await fs.rm(dirPath, { recursive: true, force: true });
+    return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
   }

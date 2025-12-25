@@ -7,6 +7,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   readFile: (filePath) => ipcRenderer.invoke('read-file', { filePath }),
   writeFile: (filePath, content) => ipcRenderer.invoke('write-file', { filePath, content }),
   listDirectory: (dirPath) => ipcRenderer.invoke('list-directory', { dirPath }),
+  createDirectory: (dirPath) => ipcRenderer.invoke('create-directory', { dirPath }),
+  deleteDirectory: (dirPath) => ipcRenderer.invoke('delete-directory', { dirPath }),
   
   // Mod operations
   createMod: (modData) => ipcRenderer.invoke('create-mod', modData),

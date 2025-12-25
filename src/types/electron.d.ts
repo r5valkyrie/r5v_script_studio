@@ -42,6 +42,8 @@ export interface ElectronAPI {
     items?: Array<{ name: string; isDirectory: boolean; path: string }>; 
     error?: string 
   }>;
+  createDirectory: (dirPath: string) => Promise<{ success: boolean; error?: string }>;
+  deleteDirectory: (dirPath: string) => Promise<{ success: boolean; error?: string }>;
   
   // Mod operations
   createMod: (modData: ModData) => Promise<{ success: boolean; path?: string; error?: string }>;

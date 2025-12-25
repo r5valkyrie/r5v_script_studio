@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { ScriptNode, NodeConnection } from '../types/visual-scripting';
-import type { ProjectData, ProjectMetadata, ScriptFile } from '../types/project';
+import type { ProjectData, ProjectMetadata, ScriptFile, ModSettings } from '../types/project';
 import { 
   serializeProject, 
   deserializeProject, 
@@ -28,6 +28,7 @@ export interface UseProjectFilesReturn {
   loadProjectFromPath: (path: string) => Promise<boolean>;
   updateMetadata: (metadata: Partial<ProjectMetadata>) => void;
   updateUISettings: (ui: NonNullable<ProjectData['settings']['ui']>) => void;
+  updateModSettings: (mod: ModSettings) => void;
   
   // Script file actions
   createNewScriptFile: (name: string) => void;
@@ -269,6 +270,21 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
     // Don't mark as unsaved for UI changes - they're saved on next save
   }, []);
 
+  // Update mod settings
+  const updateModSettings = useCallback((mod: ModSettings) => {
+    setProjectData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        settings: {
+          ...prev.settings,
+          mod,
+        },
+      };
+    });
+    setHasUnsavedChanges(true);
+  }, []);
+
   // Create new script file
   const createNewScriptFile = useCallback((name: string) => {
     setProjectData(prev => {
@@ -483,6 +499,7 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
     loadProjectFromPath,
     updateMetadata,
     updateUISettings,
+    updateModSettings,
     createNewScriptFile,
     deleteScriptFile,
     renameScriptFile,

@@ -1,0 +1,280 @@
+/**
+ * Project compilation utilities
+ * Compiles a project into a mod folder structure
+ */
+
+import type { ProjectData, ModSettings, ScriptFile } from '../types/project';
+import { DEFAULT_MOD_SETTINGS } from '../types/project';
+import { generateCode } from './code-generator';
+import { generateCodeMetadata, embedProjectInCode } from './project-manager';
+
+export interface CompileResult {
+  success: boolean;
+  outputPath?: string;
+  error?: string;
+  filesCreated?: string[];
+}
+
+export interface CompileOptions {
+  outputDir: string;
+  includeProjectData?: boolean;  // Embed project data in script files for later editing
+}
+
+/**
+ * Generates the mod.vdf file content
+ */
+export function generateModVdf(settings: ModSettings): string {
+  const lines = [
+    '"mod"',
+    '{',
+    `        "name" "${settings.modName}"`,
+    `        "id" "${settings.modId}"`,
+    `        "description" "${settings.modDescription}"`,
+    `        "version" "${settings.modVersion}"`,
+    `        "author" "${settings.modAuthor}"`,
+  ];
+
+  const enabledLocFiles = settings.localizationFiles.filter(f => f.enabled);
+  if (enabledLocFiles.length > 0) {
+    lines.push('');
+    lines.push('        "LocalizationFiles"');
+    lines.push('        {');
+    for (const file of enabledLocFiles) {
+      lines.push(`                "${file.path}" "1"`);
+    }
+    lines.push('        }');
+  }
+
+  lines.push('}');
+  return lines.join('\n');
+}
+
+import { getNodeDefinition } from '../data/node-definitions';
+
+/**
+ * Analyzes nodes in a script file to determine required contexts
+ */
+function analyzeScriptContext(nodes: any[]): { server: boolean; client: boolean; ui: boolean } {
+  let server = false;
+  let client = false;
+  let ui = false;
+  
+  for (const node of nodes) {
+    const def = getNodeDefinition(node.type);
+    
+    if (!def) continue;
+    
+    // Check explicit context from node definition
+    if (def.context) {
+      if (def.context.includes('SERVER')) server = true;
+      if (def.context.includes('CLIENT')) client = true;
+      if (def.context.includes('UI')) ui = true;
+    }
+    
+    // Check legacy flags
+    if (def.serverOnly) server = true;
+    if (def.clientOnly) client = true;
+    if (def.uiOnly) ui = true;
+    
+    // Detect from node type patterns
+    const nodeType = node.type.toLowerCase();
+    
+    // Init nodes explicitly set context
+    if (nodeType === 'init-server') server = true;
+    if (nodeType === 'init-client') client = true;
+    if (nodeType === 'init-ui') ui = true;
+    
+    // UI category nodes
+    if (def.category === 'ui') ui = true;
+    
+    // Server-specific patterns
+    if (nodeType.includes('spawn') || nodeType.includes('gamemode')) {
+      server = true;
+    }
+    
+    // Client-specific patterns (particles, sounds on client, etc.)
+    if (nodeType.includes('localplayer') || nodeType === 'get-local-client-player') {
+      client = true;
+    }
+  }
+  
+  return { server, client, ui };
+}
+
+/**
+ * Converts context flags to RSON When clause
+ */
+function contextToWhenClause(ctx: { server: boolean; client: boolean; ui: boolean }): string {
+  const parts: string[] = [];
+  if (ctx.server) parts.push('SERVER');
+  if (ctx.client) parts.push('CLIENT');
+  if (ctx.ui) parts.push('UI');
+  
+  // If nothing detected, default to SERVER || CLIENT
+  if (parts.length === 0) {
+    return 'SERVER || CLIENT';
+  }
+  
+  return parts.join(' || ');
+}
+
+/**
+ * Generates the scripts.rson file content
+ */
+export function generateScriptsRson(scriptFiles: ScriptFile[]): string {
+  // Group scripts by context
+  const scriptsByContext: Record<string, string[]> = {};
+  
+  for (const file of scriptFiles) {
+    // Analyze nodes to determine context
+    const ctx = analyzeScriptContext(file.nodes || []);
+    const context = contextToWhenClause(ctx);
+    
+    if (!scriptsByContext[context]) {
+      scriptsByContext[context] = [];
+    }
+    
+    // Convert script name to path
+    const scriptPath = file.name.endsWith('.nut') || file.name.endsWith('.gnut') 
+      ? file.name 
+      : `${file.name}.nut`;
+    
+    scriptsByContext[context].push(scriptPath);
+  }
+  
+  // Generate RSON content
+  const sections: string[] = [];
+  
+  // Sort contexts for consistent output
+  const contextOrder = ['SERVER || CLIENT || UI', 'SERVER || CLIENT', 'SERVER', 'CLIENT', 'UI'];
+  const sortedContexts = Object.keys(scriptsByContext).sort((a, b) => {
+    const aIdx = contextOrder.indexOf(a);
+    const bIdx = contextOrder.indexOf(b);
+    return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+  });
+  
+  for (const context of sortedContexts) {
+    const scripts = scriptsByContext[context];
+    if (scripts.length === 0) continue;
+    
+    sections.push(`When: "${context}"`);
+    sections.push('Scripts:');
+    sections.push('[');
+    for (const script of scripts) {
+      sections.push(`\t${script}`);
+    }
+    sections.push(']');
+    sections.push('');
+  }
+  
+  return sections.join('\n');
+}
+
+/**
+ * Compiles a project into a mod folder structure
+ */
+export async function compileProject(
+  project: ProjectData,
+  options: CompileOptions
+): Promise<CompileResult> {
+  const filesCreated: string[] = [];
+  
+  try {
+    // Get mod settings or use defaults
+    const modSettings = project.settings.mod || DEFAULT_MOD_SETTINGS;
+    
+    // Determine output path - use Author-Name format like existing mods
+    const folderName = `${modSettings.modAuthor}-${modSettings.modName}`.replace(/\s+/g, '');
+    const modDir = `${options.outputDir}/${folderName}`;
+    const scriptsDir = `${modDir}/scripts`;
+    const vscriptsDir = `${scriptsDir}/vscripts`;
+    
+    // Check if electron API is available
+    if (!window.electronAPI) {
+      return { 
+        success: false, 
+        error: 'Electron API not available. Compile is only supported in the desktop app.' 
+      };
+    }
+    
+    // Delete existing mod folder if it exists
+    await window.electronAPI.deleteDirectory(modDir);
+    
+    // Create directory structure
+    await window.electronAPI.createDirectory(modDir);
+    await window.electronAPI.createDirectory(scriptsDir);
+    await window.electronAPI.createDirectory(vscriptsDir);
+    
+    // Create mod.vdf
+    const vdfContent = generateModVdf(modSettings);
+    const vdfResult = await window.electronAPI.writeFile(`${modDir}/mod.vdf`, vdfContent);
+    if (!vdfResult.success) {
+      return { success: false, error: `Failed to write mod.vdf: ${vdfResult.error}` };
+    }
+    filesCreated.push(`${modDir}/mod.vdf`);
+    
+    // Generate and write script files
+    for (const scriptFile of project.scriptFiles) {
+      // Generate code for this script file
+      const code = generateCode(scriptFile.nodes, scriptFile.connections);
+      const codeWithMetadata = generateCodeMetadata(project.metadata) + code;
+      
+      // Optionally embed project data
+      const finalCode = options.includeProjectData 
+        ? embedProjectInCode(codeWithMetadata, project)
+        : codeWithMetadata;
+      
+      // Determine file extension
+      const fileName = scriptFile.name.endsWith('.nut') || scriptFile.name.endsWith('.gnut')
+        ? scriptFile.name
+        : `${scriptFile.name}.nut`;
+      
+      // Handle nested paths
+      const filePath = `${vscriptsDir}/${fileName}`;
+      
+      // Create parent directories if needed
+      const parentDir = filePath.substring(0, filePath.lastIndexOf('/'));
+      if (parentDir !== vscriptsDir) {
+        await window.electronAPI.createDirectory(parentDir);
+      }
+      
+      // Write script file
+      const writeResult = await window.electronAPI.writeFile(filePath, finalCode);
+      if (!writeResult.success) {
+        return { success: false, error: `Failed to write ${fileName}: ${writeResult.error}` };
+      }
+      filesCreated.push(filePath);
+    }
+    
+    // Create scripts.rson
+    const rsonContent = generateScriptsRson(project.scriptFiles);
+    const rsonResult = await window.electronAPI.writeFile(`${vscriptsDir}/scripts.rson`, rsonContent);
+    if (!rsonResult.success) {
+      return { success: false, error: `Failed to write scripts.rson: ${rsonResult.error}` };
+    }
+    filesCreated.push(`${vscriptsDir}/scripts.rson`);
+    
+    return {
+      success: true,
+      outputPath: modDir,
+      filesCreated,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error during compilation',
+    };
+  }
+}
+
+/**
+ * Opens a directory picker for selecting output folder
+ */
+export async function selectOutputDirectory(): Promise<string | null> {
+  if (!window.electronAPI) {
+    console.error('Electron API not available');
+    return null;
+  }
+  
+  return await window.electronAPI.selectDirectory();
+}

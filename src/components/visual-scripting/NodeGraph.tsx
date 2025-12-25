@@ -27,7 +27,6 @@ interface NodeGraphProps {
   theme?: 'light' | 'dark';
   // Editor settings
   snapToGrid?: boolean;
-  showMinimap?: boolean;
   autoConnect?: boolean;
   highlightConnections?: boolean;
   animateConnections?: boolean;
@@ -107,7 +106,6 @@ export default function NodeGraph({
   theme = 'dark',
   // Editor settings with defaults
   snapToGrid = false,
-  showMinimap = false,
   autoConnect = true,
   highlightConnections = true,
   animateConnections = false,
@@ -2737,73 +2735,6 @@ export default function NodeGraph({
               Break Input
             </button>
           )}
-        </div>
-      )}
-
-      {/* Minimap */}
-      {showMinimap && nodes.length > 0 && (
-        <div 
-          className="absolute bottom-4 right-4 border rounded-lg overflow-hidden pointer-events-auto"
-          style={{
-            width: 200,
-            height: 150,
-            backgroundColor: theme === 'light' ? 'rgba(255,255,255,0.95)' : 'rgba(26, 31, 40, 0.95)',
-            borderColor: theme === 'light' ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.1)',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-          }}
-        >
-          {(() => {
-            // Calculate bounds of all nodes
-            const padding = 50;
-            const minX = Math.min(...nodes.map(n => n.position.x)) - padding;
-            const maxX = Math.max(...nodes.map(n => n.position.x + (n.size?.width || 180))) + padding;
-            const minY = Math.min(...nodes.map(n => n.position.y)) - padding;
-            const maxY = Math.max(...nodes.map(n => n.position.y + (n.size?.height || 100))) + padding;
-            const boundsWidth = maxX - minX || 1;
-            const boundsHeight = maxY - minY || 1;
-            const scale = Math.min(200 / boundsWidth, 150 / boundsHeight);
-            
-            // Calculate viewport rect in minimap space
-            const canvasRect = canvasRef.current?.getBoundingClientRect();
-            const viewportWidth = (canvasRect?.width || 800) / view.scale;
-            const viewportHeight = (canvasRect?.height || 600) / view.scale;
-            const viewportX = -view.x / view.scale;
-            const viewportY = -view.y / view.scale;
-            
-            return (
-              <svg width="200" height="150" className="pointer-events-auto">
-                {/* Nodes */}
-                {nodes.map((node) => {
-                  const nodeColor = getNodeDefinitionColor(node.type);
-                  const nodeWidth = (node.size?.width || 180) * scale;
-                  const nodeHeight = (node.size?.height || 40) * scale;
-                  return (
-                    <rect
-                      key={node.id}
-                      x={(node.position.x - minX) * scale}
-                      y={(node.position.y - minY) * scale}
-                      width={Math.max(nodeWidth, 4)}
-                      height={Math.max(nodeHeight, 3)}
-                      fill={nodeColor}
-                      opacity={0.8}
-                      rx={1}
-                    />
-                  );
-                })}
-                {/* Viewport indicator */}
-                <rect
-                  x={(viewportX - minX) * scale}
-                  y={(viewportY - minY) * scale}
-                  width={viewportWidth * scale}
-                  height={viewportHeight * scale}
-                  fill="none"
-                  stroke={accentColor}
-                  strokeWidth={2}
-                  opacity={0.8}
-                />
-              </svg>
-            );
-          })()}
         </div>
       )}
 

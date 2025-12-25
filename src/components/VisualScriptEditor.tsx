@@ -1,8 +1,11 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { PanelLeft, PanelRight, GitBranch, Code, Save, FolderOpen, FileDown, FileText, FilePlus, ChevronDown, ChevronLeft, ChevronRight, Folder, X, Settings } from 'lucide-react';
 import SettingsModal, { loadSettings, saveSettings, DEFAULT_SETTINGS } from './visual-scripting/SettingsModal';
+import ProjectSettingsModal from './visual-scripting/ProjectSettingsModal';
+import { NotificationContainer, ExportPathModal, useNotifications } from './visual-scripting/Notification';
 import type { AppSettings } from './visual-scripting/SettingsModal';
 import type { ScriptNode, NodeConnection } from '../types/visual-scripting';
+import type { ModSettings } from '../types/project';
 import NodeGraph from './visual-scripting/NodeGraph';
 import NodePalette from './visual-scripting/NodePalette';
 import NodeInspector from './visual-scripting/NodeInspector';
@@ -14,6 +17,7 @@ import { getNodeDefinition } from '../data/node-definitions';
 import { useProjectFiles } from '../hooks/useProjectFiles';
 import { saveSquirrelCode } from '../utils/file-system';
 import { generateCodeMetadata, embedProjectInCode } from '../utils/project-manager';
+import { compileProject, selectOutputDirectory } from '../utils/mod-compiler';
 
 export default function VisualScriptEditor() {
   const [nodes, setNodes] = useState<ScriptNode[]>([]);
@@ -35,10 +39,16 @@ export default function VisualScriptEditor() {
   const [isCodePanelOpen, setCodePanelOpen] = useState(false);
   const [isFileMenuOpen, setFileMenuOpen] = useState(false);
   const [isSettingsOpen, setSettingsOpen] = useState(false);
+  const [isProjectSettingsOpen, setProjectSettingsOpen] = useState(false);
+  const [isExportPathModalOpen, setExportPathModalOpen] = useState(false);
   // Initialize with defaults to avoid hydration mismatch, then load from localStorage
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [isHydrated, setIsHydrated] = useState(false);
   const fileMenuRef = useRef<HTMLDivElement>(null);
+  
+  // Notification system
+  const { notifications, dismissNotification, success, error, warning, info } = useNotifications();
+  const pendingCompileRef = useRef(false);
 
   // Load settings from localStorage after hydration
   useEffect(() => {
@@ -75,6 +85,7 @@ export default function VisualScriptEditor() {
     setActiveScriptFile,
     updateActiveScriptContent,
     updateUISettings,
+    updateModSettings,
     createFolder,
     deleteFolder,
     renameFolder,
@@ -421,61 +432,6 @@ export default function VisualScriptEditor() {
     }
   }, [appSettings.general.confirmOnDelete]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // New project
-      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-        e.preventDefault();
-        newProject();
-        return;
-      }
-      
-      // Save shortcuts
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        saveProject();
-        return;
-      }
-      
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'S') {
-        e.preventDefault();
-        saveProjectAs();
-        return;
-      }
-      
-      if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
-        e.preventDefault();
-        loadProject();
-        return;
-      }
-
-      // Undo/redo
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
-        if (e.target && (e.target as HTMLElement).closest('input, textarea')) return;
-        e.preventDefault();
-        if (e.shiftKey) {
-          handleRedo();
-        } else {
-          handleUndo();
-        }
-        return;
-      }
-      
-      // Delete nodes
-      if (selectedNodeIds.length === 0) return;
-      if (e.target && (e.target as HTMLElement).closest('input, textarea')) return;
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        e.preventDefault();
-        handleDeleteSelectedNodes(selectedNodeIds);
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [selectedNodeIds, handleDeleteSelectedNodes, handleUndo, handleRedo, saveProject, saveProjectAs, loadProject, newProject]);
-
   const handleConnect = useCallback((newConnection: NodeConnection) => {
     // Prevent duplicate connections
     setConnections(currentConnections => {
@@ -519,6 +475,140 @@ export default function VisualScriptEditor() {
     const fileName = `${projectData.metadata.name.replace(/\s+/g, '_')}.nut`;
     await saveSquirrelCode(finalCode, fileName);
   }, [generatedCode, projectData]);
+
+  // Handle export path selection from modal
+  const handleExportPathSelect = useCallback(async (selectedPath: string) => {
+    // Save the selected path to app settings
+    const newSettings = {
+      ...appSettings,
+      general: {
+        ...appSettings.general,
+        exportPath: selectedPath,
+      },
+    };
+    setAppSettings(newSettings);
+    saveSettings(newSettings);
+    
+    // If we were trying to compile, continue now
+    if (pendingCompileRef.current && projectData) {
+      pendingCompileRef.current = false;
+      
+      // Compile the project
+      const result = await compileProject(projectData, {
+        outputDir: selectedPath,
+        includeProjectData: true,
+      });
+
+      if (result.success) {
+        success(
+          'Project Compiled Successfully!',
+          `Output: ${result.outputPath}\n\nFiles created:\n• ${result.filesCreated?.join('\n• ')}`
+        );
+      } else {
+        error('Compilation Failed', result.error);
+      }
+    }
+  }, [appSettings, projectData, success, error]);
+
+  // Compile project handler
+  const handleCompileProject = useCallback(async () => {
+    if (!projectData) {
+      warning('No Project', 'Please create or open a project first.');
+      return;
+    }
+
+    // Use app settings export path or show modal to select one
+    const outputDir = appSettings.general.exportPath;
+    if (!outputDir) {
+      pendingCompileRef.current = true;
+      setExportPathModalOpen(true);
+      return;
+    }
+
+    // Compile the project
+    const result = await compileProject(projectData, {
+      outputDir,
+      includeProjectData: true,
+    });
+
+    if (result.success) {
+      success(
+        'Project Compiled Successfully!',
+        `Output: ${result.outputPath}\n\nFiles created:\n• ${result.filesCreated?.join('\n• ')}`
+      );
+    } else {
+      error('Compilation Failed', result.error);
+    }
+  }, [projectData, appSettings.general.exportPath, success, error, warning]);
+
+  // Update mod settings handler
+  const handleUpdateModSettings = useCallback((settings: ModSettings) => {
+    if (!projectData) return;
+    updateModSettings(settings);
+  }, [projectData, updateModSettings]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // New project
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        newProject();
+        return;
+      }
+      
+      // Save shortcuts
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        saveProject();
+        return;
+      }
+      
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'S') {
+        e.preventDefault();
+        saveProjectAs();
+        return;
+      }
+      
+      if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+        e.preventDefault();
+        loadProject();
+        return;
+      }
+
+      // Compile project
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+        e.preventDefault();
+        handleCompileProject();
+        return;
+      }
+
+      // Undo/redo
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
+        if (e.target && (e.target as HTMLElement).closest('input, textarea')) return;
+        e.preventDefault();
+        if (e.shiftKey) {
+          handleRedo();
+        } else {
+          handleUndo();
+        }
+        return;
+      }
+      
+      // Delete nodes
+      if (selectedNodeIds.length === 0) return;
+      if (e.target && (e.target as HTMLElement).closest('input, textarea')) return;
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        handleDeleteSelectedNodes(selectedNodeIds);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedNodeIds, handleDeleteSelectedNodes, handleUndo, handleRedo, saveProject, saveProjectAs, loadProject, newProject, handleCompileProject]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -717,21 +807,43 @@ export default function VisualScriptEditor() {
                   <FileDown size={16} />
                   <span>Export Squirrel Code</span>
                 </button>
+                <button
+                  onClick={() => {
+                    handleCompileProject();
+                    setFileMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  <Code size={16} />
+                  <span>Compile Project</span>
+                  <span className="ml-auto text-xs text-gray-500">Ctrl+B</span>
+                </button>
+                <div className="h-px bg-white/10 my-1" />
+                <button
+                  onClick={() => {
+                    setProjectSettingsOpen(true);
+                    setFileMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  <Folder size={16} />
+                  <span>Project Settings</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setSettingsOpen(true);
+                    setFileMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  <Settings size={16} />
+                  <span>Settings</span>
+                </button>
               </div>
             )}
           </div>
 
           <div className="w-px h-6 bg-white/10" />
-
-          {/* Settings Button */}
-          <button
-            onClick={() => setSettingsOpen(true)}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition-colors"
-            title="Settings"
-          >
-            <Settings size={16} />
-            Settings
-          </button>
 
           <div className="flex-1" />
         </div>
@@ -945,7 +1057,6 @@ export default function VisualScriptEditor() {
                     accentColor={appSettings.appearance.accentColor}
                     theme={effectiveTheme}
                     snapToGrid={appSettings.editor.snapToGrid}
-                    showMinimap={appSettings.editor.showMinimap}
                     autoConnect={appSettings.editor.autoConnect}
                     highlightConnections={appSettings.editor.highlightConnections}
                     animateConnections={appSettings.editor.animateConnections}
@@ -1048,6 +1159,32 @@ export default function VisualScriptEditor() {
         onClose={() => setSettingsOpen(false)}
         settings={appSettings}
         onSettingsChange={setAppSettings}
+      />
+
+      {/* Project Settings Modal */}
+      <ProjectSettingsModal
+        isOpen={isProjectSettingsOpen}
+        onClose={() => setProjectSettingsOpen(false)}
+        modSettings={projectData?.settings.mod}
+        onSave={handleUpdateModSettings}
+        accentColor={accentColor}
+      />
+
+      {/* Export Path Modal */}
+      <ExportPathModal
+        isOpen={isExportPathModalOpen}
+        onClose={() => {
+          setExportPathModalOpen(false);
+          pendingCompileRef.current = false;
+        }}
+        onSelect={handleExportPathSelect}
+        accentColor={accentColor}
+      />
+
+      {/* Notifications */}
+      <NotificationContainer
+        notifications={notifications}
+        onDismiss={dismissNotification}
       />
       </>
       )}
