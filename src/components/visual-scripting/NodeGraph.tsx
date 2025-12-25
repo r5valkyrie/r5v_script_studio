@@ -142,6 +142,7 @@ export default function NodeGraph({
   // Store settings in refs for use in event handlers
   const snapToGridRef = useRef(snapToGrid);
   const gridSizeRef = useRef(gridSize);
+  const prevSnapToGridRef = useRef(snapToGrid);
 
   useEffect(() => {
     onConnectRef.current = onConnect;
@@ -151,6 +152,21 @@ export default function NodeGraph({
     snapToGridRef.current = snapToGrid;
     gridSizeRef.current = gridSize;
   }, [onConnect, onUpdateNode, onAddNode, onDeleteConnection, snapToGrid, gridSize]);
+
+  // Snap all existing nodes to grid when snapToGrid is enabled
+  useEffect(() => {
+    if (snapToGrid && !prevSnapToGridRef.current && nodes.length > 0) {
+      // snapToGrid just turned on - snap all existing nodes
+      nodes.forEach(node => {
+        const snappedX = Math.round(node.position.x / gridSize) * gridSize;
+        const snappedY = Math.round(node.position.y / gridSize) * gridSize;
+        if (snappedX !== node.position.x || snappedY !== node.position.y) {
+          onUpdateNode(node.id, { position: { x: snappedX, y: snappedY } });
+        }
+      });
+    }
+    prevSnapToGridRef.current = snapToGrid;
+  }, [snapToGrid, gridSize, nodes, onUpdateNode]);
 
   // Quick node menu state
   const [quickMenu, setQuickMenu] = useState<QuickMenuState | null>(null);
@@ -184,6 +200,15 @@ export default function NodeGraph({
     onViewChange?.(view);
   }, [view, onViewChange]);
   const [selectionRect, setSelectionRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+
+  // Helper to snap a position to the grid if snap is enabled
+  const snapPosition = (pos: { x: number; y: number }): { x: number; y: number } => {
+    if (!snapToGridRef.current) return pos;
+    return {
+      x: Math.round(pos.x / gridSizeRef.current) * gridSizeRef.current,
+      y: Math.round(pos.y / gridSizeRef.current) * gridSizeRef.current,
+    };
+  };
 
   const getNodeDefinitionColor = (type: string) => {
     const definition = getNodeDefinition(type);
@@ -1194,9 +1219,17 @@ export default function NodeGraph({
 
         if (edge === 'right' || edge === 'corner') {
           newWidth = Math.max(minWidth, startWidth + dx);
+          // Snap width to grid if enabled
+          if (snapToGridRef.current) {
+            newWidth = Math.round(newWidth / gridSizeRef.current) * gridSizeRef.current;
+          }
         }
         if (edge === 'bottom' || edge === 'corner') {
           newHeight = Math.max(minHeight, startHeight + dy);
+          // Snap height to grid if enabled
+          if (snapToGridRef.current) {
+            newHeight = Math.round(newHeight / gridSizeRef.current) * gridSizeRef.current;
+          }
         }
 
         onUpdateNodeRef.current(nodeId, {
@@ -1421,10 +1454,11 @@ export default function NodeGraph({
     const header = 28 / view.scale;
 
     const definition = getNodeDefinition('comment');
-    const commentNode = buildNodeFromDefinition(definition, {
+    const snappedPos = snapPosition({
       x: topLeft.x - pad,
       y: topLeft.y - pad - header,
     });
+    const commentNode = buildNodeFromDefinition(definition, snappedPos);
     if (!commentNode) return;
 
     commentNode.size = {
@@ -1753,24 +1787,29 @@ export default function NodeGraph({
     const minX = Math.min(...clipboard.nodes.map(n => n.position.x));
     const minY = Math.min(...clipboard.nodes.map(n => n.position.y));
     
-    const pasteX = position?.x ?? minX + 50;
-    const pasteY = position?.y ?? minY + 50;
+    // Snap the base paste position if grid is enabled
+    const basePastePos = snapPosition({
+      x: position?.x ?? minX + 50,
+      y: position?.y ?? minY + 50,
+    });
     
-    const offsetX = pasteX - minX;
-    const offsetY = pasteY - minY;
+    const offsetX = basePastePos.x - minX;
+    const offsetY = basePastePos.y - minY;
     
     // Create new nodes with new IDs
     const idMap = new Map<string, string>();
     const newNodes: ScriptNode[] = clipboard.nodes.map(n => {
       const newId = `${n.type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       idMap.set(n.id, newId);
+      // Snap each node's new position to maintain relative alignment on grid
+      const newPos = snapPosition({
+        x: n.position.x + offsetX,
+        y: n.position.y + offsetY,
+      });
       return {
         ...n,
         id: newId,
-        position: {
-          x: n.position.x + offsetX,
-          y: n.position.y + offsetY,
-        },
+        position: newPos,
       };
     });
     
@@ -1863,10 +1902,11 @@ export default function NodeGraph({
     const screenPos = { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
     const worldPos = screenToWorld(screenPos);
     const definition = getNodeDefinition('reroute');
-    const newNode = buildNodeFromDefinition(definition, {
+    const snappedPos = snapPosition({
       x: worldPos.x - 18,
       y: worldPos.y - 18,
     });
+    const newNode = buildNodeFromDefinition(definition, snappedPos);
     if (!newNode) return;
 
     // Set port types based on the connection being rerouted
@@ -2015,10 +2055,11 @@ export default function NodeGraph({
     const screenPos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     const worldPos = screenToWorld(screenPos);
     const definition = getNodeDefinition(nodeType);
-    const newNode = buildNodeFromDefinition(definition, {
+    const snappedPos = snapPosition({
       x: worldPos.x - 90,
       y: worldPos.y - 30,
     });
+    const newNode = buildNodeFromDefinition(definition, snappedPos);
 
     if (newNode) {
       onAddNodeRef.current(newNode);
@@ -2084,11 +2125,11 @@ export default function NodeGraph({
   const handleQuickNodeSelect = useCallback((newNode: ScriptNode, connectToPortIndex: number) => {
     if (!quickMenu) return;
 
-    // Use the pre-computed canvas position directly
-    newNode.position = {
+    // Use the pre-computed canvas position directly, with grid snap
+    newNode.position = snapPosition({
       x: quickMenu.canvasPosition.x - 90,
       y: quickMenu.canvasPosition.y - 30,
-    };
+    });
 
     // Add the new node
     onAddNode(newNode);
@@ -2156,10 +2197,11 @@ export default function NodeGraph({
       const fallbackPos = tempConnectionLine?.to || tempConn.to;
       const cursorPos = lastMousePosRef.current || fallbackPos;
       const worldPos = screenToWorld(cursorPos);
-      const newNode = buildNodeFromDefinition(definition, {
+      const snappedPos = snapPosition({
         x: worldPos.x - (nodeType === 'reroute' ? 18 : 90),
         y: worldPos.y - (nodeType === 'reroute' ? 18 : 30),
       });
+      const newNode = buildNodeFromDefinition(definition, snappedPos);
 
       if (newNode) {
         // Configure reroute node port types based on the connection type
@@ -2414,17 +2456,21 @@ export default function NodeGraph({
               >
                 {/* Comment background */}
                 <div
-                  className="absolute inset-0 rounded-lg border-2"
+                  className="absolute inset-0 rounded-xl border-2"
                   style={{
-                    backgroundColor: `${commentColor}20`,
-                    borderColor: `${commentColor}60`,
+                    backgroundColor: `${commentColor}15`,
+                    borderColor: `${commentColor}50`,
+                    boxShadow: `inset 0 0 0 1px ${commentColor}10`,
                   }}
                 />
 
                 {/* Comment header/title bar */}
                 <div
-                  className="absolute top-0 left-0 right-0 px-3 py-1.5 rounded-t-lg flex items-center justify-between"
-                  style={{ backgroundColor: commentColor }}
+                  className="absolute top-0 left-0 right-0 px-3 py-2 rounded-t-xl flex items-center justify-between border-b"
+                  style={{ 
+                    background: `linear-gradient(135deg, ${commentColor} 0%, ${commentColor}dd 100%)`,
+                    borderColor: `${commentColor}80`,
+                  }}
                 >
                   <input
                     type="text"
@@ -2533,12 +2579,13 @@ export default function NodeGraph({
             >
               {/* Central diamond/circle shape */}
               <div 
-                className={`absolute inset-1 ${isExec ? 'rotate-45' : 'rounded-full'} border-2 transition-colors ${isSelected ? '' : 'border-white/40 hover:border-white/60'}`}
+                className={`absolute inset-1 ${isExec ? 'rotate-45' : 'rounded-full'} border-2 transition-colors ${isSelected ? '' : 'border-white/30 hover:border-white/50'}`}
                 style={{ 
                   backgroundColor: theme === 'light' 
                     ? (isExec ? '#e9ecef' : '#f8f9fa') 
-                    : (isExec ? '#3a3f4a' : '#2a2e38'),
-                  borderColor: isSelected ? accentColor : (theme === 'light' ? 'rgba(0,0,0,0.3)' : undefined),
+                    : (isExec ? '#2a303c' : '#1a1f28'),
+                  borderColor: isSelected ? accentColor : (theme === 'light' ? 'rgba(0,0,0,0.2)' : undefined),
+                  boxShadow: theme === 'light' ? 'none' : '0 2px 8px rgba(0, 0, 0, 0.3)',
                 }}
               />
 
@@ -2598,22 +2645,61 @@ export default function NodeGraph({
             );
           }
 
+          // Calculate grid-aligned dimensions - use stored size or min values
+          const baseMinWidth = 200;
+          const gridAlignedMinWidth = snapToGrid 
+            ? Math.ceil(baseMinWidth / gridSize) * gridSize 
+            : baseMinWidth;
+          // Use stored node dimensions if available
+          const nodeWidth = snapToGrid && node.size?.width 
+            ? node.size.width 
+            : undefined;
+          const nodeHeight = snapToGrid && node.size?.height 
+            ? node.size.height 
+            : undefined;
+
+          // Ref callback to measure and snap node dimensions
+          const measureNodeSize = (el: HTMLDivElement | null) => {
+            if (!el || !snapToGrid) return;
+            // Wait for content to render
+            requestAnimationFrame(() => {
+              const naturalWidth = el.scrollWidth;
+              const naturalHeight = el.scrollHeight;
+              const snappedWidth = Math.ceil(naturalWidth / gridSize) * gridSize;
+              const snappedHeight = Math.ceil(naturalHeight / gridSize) * gridSize;
+              // Only update if dimensions changed
+              const widthChanged = snappedWidth !== node.size?.width && snappedWidth >= gridAlignedMinWidth;
+              const heightChanged = snappedHeight !== node.size?.height;
+              if (widthChanged || heightChanged) {
+                onUpdateNodeRef.current(node.id, { 
+                  size: { 
+                    width: widthChanged ? snappedWidth : (node.size?.width || gridAlignedMinWidth),
+                    height: heightChanged ? snappedHeight : node.size?.height,
+                  } 
+                });
+              }
+            });
+          };
+
           return (
             <div
               key={node.id}
-              className="node-root absolute bg-[#2a2e38] rounded-lg select-none"
+              ref={measureNodeSize}
+              className="node-root absolute bg-[#1a1f28] rounded-xl select-none border border-white/10"
               data-node-id={node.id}
               style={{
                 left: node.position.x,
                 top: node.position.y,
-                minWidth: 180,
+                minWidth: gridAlignedMinWidth,
+                width: nodeWidth,
+                height: nodeHeight,
                 cursor: 'grab',
                 userSelect: 'none',
                 zIndex: isSelected ? 100 : 1,
                 opacity: nodeOpacity / 100,
                 boxShadow: isSelected 
-                  ? `0 0 0 2px ${accentColor}, 0 0 0 4px #0f1419, 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)` 
-                  : '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+                  ? `0 0 0 2px ${accentColor}, 0 0 0 4px #0f1419, 0 8px 24px rgba(0, 0, 0, 0.4)` 
+                  : '0 4px 16px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2)',
               }}
               onMouseDown={(e) => handleNodeMouseDown(e, node)}
               onContextMenu={(e) => handleNodeContextMenu(e, node.id)}
@@ -2622,10 +2708,12 @@ export default function NodeGraph({
             >
               {/* Node Header */}
               <div
-                className="px-3 py-2 rounded-t-lg flex items-center justify-between"
-                style={{ backgroundColor: nodeColor }}
+                className="px-3 py-2.5 rounded-t-xl flex items-center justify-between border-b border-black/20"
+                style={{ 
+                  background: `linear-gradient(135deg, ${nodeColor} 0%, ${nodeColor}dd 100%)`,
+                }}
               >
-                <span className="text-xs font-semibold text-white truncate">
+                <span className="text-xs font-semibold text-white truncate drop-shadow-sm">
                   {node.label.replace(/^(Event|Flow|Mod|Data|Action):\s*/, '')}
                 </span>
                 {isSelected && (
@@ -2634,15 +2722,15 @@ export default function NodeGraph({
                       e.stopPropagation();
                       onDeleteNode(node.id);
                     }}
-                    className="p-0.5 hover:bg-black/20 rounded transition-colors"
+                    className="p-0.5 hover:bg-white/20 rounded transition-colors"
                   >
-                    <Trash2 size={12} className="text-white" />
+                    <Trash2 size={12} className="text-white/90" />
                   </button>
                 )}
               </div>
 
               {/* Node Body */}
-              <div className="p-2">
+              <div className="p-2.5">
                 {/* Input Ports */}
                 {node.inputs.map((input) => (
                   <div key={input.id} className="flex items-center mb-2">
@@ -2666,7 +2754,7 @@ export default function NodeGraph({
 
               {/* Node Data Display */}
               {Object.keys(node.data).length > 0 && (
-                <div className="my-2 px-2 py-1 bg-black/20 rounded text-[10px] text-gray-400">
+                <div className="my-2 px-2.5 py-2 bg-black/30 border border-white/5 rounded-lg text-[10px] text-gray-400">
                   {renderInlineEditor(node) ?? (
                     <>
                       {Object.entries(node.data).map(([key, value]) => (

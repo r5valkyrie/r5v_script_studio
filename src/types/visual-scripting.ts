@@ -531,7 +531,7 @@ export interface ScriptNode {
   category: NodeCategory;
   label: string;
   position: { x: number; y: number };
-  size?: { width: number; height: number }; // For resizable nodes like comments
+  size?: { width: number; height?: number }; // For resizable nodes like comments, width used for grid snap
   data: Record<string, any>;
   inputs: NodePort[];
   outputs: NodePort[];
