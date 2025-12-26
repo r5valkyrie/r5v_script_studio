@@ -1,12 +1,13 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { ScriptNode, NodeConnection } from '../types/visual-scripting';
-import type { ProjectData, ProjectMetadata, ScriptFile, ModSettings } from '../types/project';
+import type { ProjectData, ProjectMetadata, ScriptFile, ModSettings, WeaponFile, ActiveFileType } from '../types/project';
 import { 
   serializeProject, 
   deserializeProject, 
   validateProject,
   createNewProject,
-  createScriptFile
+  createScriptFile,
+  createWeaponFile
 } from '../utils/project-manager';
 import { saveFile, openFile } from '../utils/file-system';
 
@@ -19,6 +20,12 @@ export interface UseProjectFilesReturn {
   activeScriptFile: ScriptFile | null;
   recentProjects: Array<{ name: string; path: string; lastOpened: number }>;
   modifiedFileIds: Set<string>; // Track which files have unsaved changes
+  
+  // Weapon file state
+  weaponFiles: WeaponFile[];
+  activeWeaponFile: WeaponFile | null;
+  activeFileType: ActiveFileType;
+  weaponFolders: string[];
   
   // Project actions
   newProject: () => void;
@@ -37,6 +44,16 @@ export interface UseProjectFilesReturn {
   updateActiveScriptContent: (nodes: ScriptNode[], connections: NodeConnection[]) => void;
   markFileModified: (fileId: string) => void;
   markFileSaved: (fileId: string) => void;
+  
+  // Weapon file actions
+  createNewWeaponFile: (name: string, baseWeapon?: string) => void;
+  deleteWeaponFile: (fileId: string) => void;
+  renameWeaponFile: (fileId: string, newName: string) => void;
+  setActiveWeaponFile: (fileId: string | null) => void;
+  updateWeaponContent: (fileId: string, content: string) => void;
+  createWeaponFolder: (folderPath: string) => void;
+  deleteWeaponFolder: (folderPath: string) => void;
+  renameWeaponFolder: (oldPath: string, newPath: string) => void;
   
   // Folder actions
   createFolder: (folderPath: string) => void;
@@ -88,6 +105,13 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
   const activeFileId = projectData?.settings.activeScriptFile;
   // Only use the explicit activeFileId, don't fall back to first file
   const activeScriptFile = activeFileId ? (scriptFiles.find(f => f.id === activeFileId) || null) : null;
+  
+  // Weapon file derived state
+  const weaponFiles = projectData?.weaponFiles || [];
+  const weaponFolders = projectData?.settings.weaponFolders || [];
+  const activeWeaponFileId = projectData?.settings.activeWeaponFile;
+  const activeWeaponFile = activeWeaponFileId ? (weaponFiles.find(f => f.id === activeWeaponFileId) || null) : null;
+  const activeFileType: ActiveFileType = projectData?.settings.activeFileType || 'script';
 
   // Helper to save project data (used for auto-save after structural changes)
   const saveProjectData = useCallback(async (data: ProjectData, filePath: string | null): Promise<boolean> => {
@@ -97,7 +121,8 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
       const jsonContent = serializeProject(
         data.scriptFiles,
         data.metadata,
-        data.settings
+        data.settings,
+        data.weaponFiles
       );
       
       if (window.electron) {
@@ -127,7 +152,8 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
       const jsonContent = serializeProject(
         projectData.scriptFiles,
         projectData.metadata,
-        projectData.settings
+        projectData.settings,
+        projectData.weaponFiles
       );
       
       let filePath = currentFilePath;
@@ -169,7 +195,8 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
       const jsonContent = serializeProject(
         projectData.scriptFiles,
         projectData.metadata,
-        projectData.settings
+        projectData.settings,
+        projectData.weaponFiles
       );
       
       const filePath = await saveFile(jsonContent, {
@@ -384,6 +411,7 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
         settings: {
           ...prev.settings,
           activeScriptFile: fileId ?? undefined,
+          activeFileType: 'script',
         },
       };
     });
@@ -445,6 +473,239 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
   const markModified = useCallback(() => {
     setHasUnsavedChanges(true);
   }, []);
+
+  // ============================================
+  // Weapon File Management
+  // ============================================
+
+  // Create new weapon file
+  const createNewWeaponFile = useCallback((name: string, baseWeapon?: string) => {
+    setProjectData(prev => {
+      if (!prev) return prev;
+      const newFile = createWeaponFile(name, baseWeapon);
+      return {
+        ...prev,
+        weaponFiles: [...(prev.weaponFiles || []), newFile],
+        settings: {
+          ...prev.settings,
+          activeWeaponFile: newFile.id,
+          activeFileType: 'weapon',
+        },
+      };
+    });
+    setHasUnsavedChanges(true);
+  }, []);
+
+  // Delete weapon file
+  const deleteWeaponFile = useCallback((fileId: string) => {
+    setProjectData(prev => {
+      if (!prev) return prev;
+      const filtered = (prev.weaponFiles || []).filter(f => f.id !== fileId);
+      const newActiveId = prev.settings.activeWeaponFile === fileId 
+        ? (filtered.length > 0 ? filtered[0].id : undefined)
+        : prev.settings.activeWeaponFile;
+      
+      // If deleting the active weapon file, switch to script view if no weapons left
+      const newActiveType = prev.settings.activeWeaponFile === fileId && filtered.length === 0
+        ? 'script' as const
+        : prev.settings.activeFileType;
+      
+      const newData: ProjectData = {
+        ...prev,
+        weaponFiles: filtered,
+        settings: {
+          ...prev.settings,
+          activeWeaponFile: newActiveId,
+          activeFileType: newActiveType,
+        },
+      };
+      
+      // Auto-save after structural change
+      if (currentFilePath) {
+        setTimeout(() => {
+          saveProjectData(newData, currentFilePath).then(saved => {
+            if (saved) {
+              setHasUnsavedChanges(false);
+              setModifiedFileIds(new Set());
+            }
+          });
+        }, 0);
+      } else {
+        setHasUnsavedChanges(true);
+      }
+      
+      return newData;
+    });
+  }, [currentFilePath, saveProjectData]);
+
+  // Rename weapon file
+  const renameWeaponFile = useCallback((fileId: string, newName: string) => {
+    setProjectData(prev => {
+      if (!prev) return prev;
+      const cleanName = newName.endsWith('.txt') ? newName.slice(0, -4) : newName;
+      const newData: ProjectData = {
+        ...prev,
+        weaponFiles: (prev.weaponFiles || []).map(f => 
+          f.id === fileId 
+            ? { ...f, name: cleanName, modifiedAt: new Date().toISOString() }
+            : f
+        ),
+      };
+      
+      // Auto-save after structural change
+      if (currentFilePath) {
+        setTimeout(() => {
+          saveProjectData(newData, currentFilePath).then(saved => {
+            if (saved) {
+              setHasUnsavedChanges(false);
+              setModifiedFileIds(new Set());
+            }
+          });
+        }, 0);
+      } else {
+        setHasUnsavedChanges(true);
+      }
+      
+      return newData;
+    });
+  }, [currentFilePath, saveProjectData]);
+
+  // Set active weapon file
+  const setActiveWeaponFile = useCallback((fileId: string | null) => {
+    setProjectData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        settings: {
+          ...prev.settings,
+          activeWeaponFile: fileId ?? undefined,
+          activeFileType: 'weapon',
+        },
+      };
+    });
+  }, []);
+
+  // Update weapon file content
+  const updateWeaponContent = useCallback((fileId: string, content: string) => {
+    setProjectData(prev => {
+      if (!prev) return prev;
+      setModifiedFileIds(ids => {
+        const newIds = new Set(ids);
+        newIds.add(fileId);
+        return newIds;
+      });
+      return {
+        ...prev,
+        weaponFiles: (prev.weaponFiles || []).map(f =>
+          f.id === fileId
+            ? { ...f, content, modifiedAt: new Date().toISOString() }
+            : f
+        ),
+      };
+    });
+    setHasUnsavedChanges(true);
+  }, []);
+
+  // Create weapon folder
+  const createWeaponFolder = useCallback((folderPath: string) => {
+    setProjectData(prev => {
+      if (!prev) return prev;
+      const currentFolders = prev.settings.weaponFolders || [];
+      if (currentFolders.includes(folderPath)) return prev;
+      const newData: ProjectData = {
+        ...prev,
+        settings: {
+          ...prev.settings,
+          weaponFolders: [...currentFolders, folderPath],
+        },
+      };
+      
+      if (currentFilePath) {
+        setTimeout(() => {
+          saveProjectData(newData, currentFilePath).then(saved => {
+            if (saved) {
+              setHasUnsavedChanges(false);
+              setModifiedFileIds(new Set());
+            }
+          });
+        }, 0);
+      } else {
+        setHasUnsavedChanges(true);
+      }
+      
+      return newData;
+    });
+  }, [currentFilePath, saveProjectData]);
+
+  // Delete weapon folder
+  const deleteWeaponFolder = useCallback((folderPath: string) => {
+    setProjectData(prev => {
+      if (!prev) return prev;
+      const filtered = (prev.weaponFiles || []).filter(f => !f.name.startsWith(`${folderPath}/`));
+      const newData: ProjectData = {
+        ...prev,
+        weaponFiles: filtered,
+        settings: {
+          ...prev.settings,
+          weaponFolders: (prev.settings.weaponFolders || []).filter(f => f !== folderPath && !f.startsWith(`${folderPath}/`)),
+        },
+      };
+      
+      if (currentFilePath) {
+        setTimeout(() => {
+          saveProjectData(newData, currentFilePath).then(saved => {
+            if (saved) {
+              setHasUnsavedChanges(false);
+              setModifiedFileIds(new Set());
+            }
+          });
+        }, 0);
+      } else {
+        setHasUnsavedChanges(true);
+      }
+      
+      return newData;
+    });
+  }, [currentFilePath, saveProjectData]);
+
+  // Rename weapon folder
+  const renameWeaponFolder = useCallback((oldPath: string, newPath: string) => {
+    setProjectData(prev => {
+      if (!prev) return prev;
+      const updatedFolders = (prev.settings.weaponFolders || []).map(f => 
+        f === oldPath ? newPath : f.startsWith(`${oldPath}/`) ? f.replace(oldPath, newPath) : f
+      );
+      const updatedFiles = (prev.weaponFiles || []).map(f => {
+        if (f.name.startsWith(`${oldPath}/`)) {
+          return { ...f, name: f.name.replace(`${oldPath}/`, `${newPath}/`), modifiedAt: new Date().toISOString() };
+        }
+        return f;
+      });
+      const newData: ProjectData = {
+        ...prev,
+        weaponFiles: updatedFiles,
+        settings: {
+          ...prev.settings,
+          weaponFolders: updatedFolders,
+        },
+      };
+      
+      if (currentFilePath) {
+        setTimeout(() => {
+          saveProjectData(newData, currentFilePath).then(saved => {
+            if (saved) {
+              setHasUnsavedChanges(false);
+              setModifiedFileIds(new Set());
+            }
+          });
+        }, 0);
+      } else {
+        setHasUnsavedChanges(true);
+      }
+      
+      return newData;
+    });
+  }, [currentFilePath, saveProjectData]);
 
   // Create folder
   const createFolder = useCallback((folderPath: string) => {
@@ -570,6 +831,13 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
     recentProjects,
     folders,
     modifiedFileIds,
+    
+    // Weapon file state
+    weaponFiles,
+    activeWeaponFile,
+    activeFileType,
+    weaponFolders,
+    
     newProject,
     saveProject,
     saveProjectAs,
@@ -584,6 +852,17 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
     updateActiveScriptContent,
     markFileModified,
     markFileSaved,
+    
+    // Weapon file actions
+    createNewWeaponFile,
+    deleteWeaponFile,
+    renameWeaponFile,
+    setActiveWeaponFile,
+    updateWeaponContent,
+    createWeaponFolder,
+    deleteWeaponFolder,
+    renameWeaponFolder,
+    
     createFolder,
     deleteFolder,
     renameFolder,

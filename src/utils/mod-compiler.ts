@@ -3,7 +3,7 @@
  * Compiles a project into a mod folder structure
  */
 
-import type { ProjectData, ModSettings, ScriptFile } from '../types/project';
+import type { ProjectData, ModSettings, ScriptFile, WeaponFile } from '../types/project';
 import { DEFAULT_MOD_SETTINGS } from '../types/project';
 import { generateCode } from './code-generator';
 import { generateCodeMetadata, embedProjectInCode } from './project-manager';
@@ -188,6 +188,7 @@ export async function compileProject(
     const modDir = `${options.outputDir}/${folderName}`;
     const scriptsDir = `${modDir}/scripts`;
     const vscriptsDir = `${scriptsDir}/vscripts`;
+    const weaponsDir = `${scriptsDir}/weapons`;
     
     // Check if electron API is available
     if (!window.electronAPI) {
@@ -204,6 +205,12 @@ export async function compileProject(
     await window.electronAPI.createDirectory(modDir);
     await window.electronAPI.createDirectory(scriptsDir);
     await window.electronAPI.createDirectory(vscriptsDir);
+    
+    // Create weapons directory if we have weapon files
+    const weaponFiles = project.weaponFiles || [];
+    if (weaponFiles.length > 0) {
+      await window.electronAPI.createDirectory(weaponsDir);
+    }
     
     // Create mod.vdf
     const vdfContent = generateModVdf(modSettings);
@@ -253,6 +260,30 @@ export async function compileProject(
       return { success: false, error: `Failed to write scripts.rson: ${rsonResult.error}` };
     }
     filesCreated.push(`${vscriptsDir}/scripts.rson`);
+    
+    // Generate and write weapon files
+    for (const weaponFile of weaponFiles) {
+      // Determine file name
+      const fileName = weaponFile.name.endsWith('.txt')
+        ? weaponFile.name
+        : `${weaponFile.name}.txt`;
+      
+      // Handle nested paths
+      const filePath = `${weaponsDir}/${fileName}`;
+      
+      // Create parent directories if needed
+      const parentDir = filePath.substring(0, filePath.lastIndexOf('/'));
+      if (parentDir !== weaponsDir) {
+        await window.electronAPI.createDirectory(parentDir);
+      }
+      
+      // Write weapon file
+      const writeResult = await window.electronAPI.writeFile(filePath, weaponFile.content);
+      if (!writeResult.success) {
+        return { success: false, error: `Failed to write ${fileName}: ${writeResult.error}` };
+      }
+      filesCreated.push(filePath);
+    }
     
     return {
       success: true,

@@ -1,5 +1,5 @@
 import type { ScriptNode, NodeConnection } from '../types/visual-scripting';
-import type { ProjectData, ProjectMetadata, SerializedProject, ScriptFile } from '../types/project';
+import type { ProjectData, ProjectMetadata, SerializedProject, ScriptFile, WeaponFile } from '../types/project';
 
 const CURRENT_PROJECT_VERSION = '1.0.0';
 const EDITOR_VERSION = '0.1.0'; // From package.json
@@ -14,6 +14,36 @@ export function createScriptFile(name: string): ScriptFile {
     name: name.endsWith('.nut') ? name : `${name}.nut`,
     nodes: [],
     connections: [],
+    createdAt: now,
+    modifiedAt: now,
+  };
+}
+
+/**
+ * Creates a new weapon file with default content
+ */
+export function createWeaponFile(name: string, baseWeapon?: string): WeaponFile {
+  const now = new Date().toISOString();
+  const fileName = name.endsWith('.txt') ? name.slice(0, -4) : name;
+  
+  // Generate default weapon content
+  const baseDirective = baseWeapon ? `#base "${baseWeapon}.txt"\n\n` : '';
+  const defaultContent = `${baseDirective}WeaponData
+{
+    // General
+    "printname"                   "#WPN_CUSTOM"
+    "shortprintname"              "#WPN_CUSTOM_SHORT"
+    "description"                 "#WPN_CUSTOM_DESC"
+    
+    // Add your weapon properties here
+}
+`;
+  
+  return {
+    id: `weapon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    name: fileName,
+    baseWeapon,
+    content: defaultContent,
     createdAt: now,
     modifiedAt: now,
   };
@@ -40,9 +70,12 @@ export function createNewProject(name: string = 'Untitled Project'): ProjectData
       canvasPosition: { x: 0, y: 0 },
       canvasZoom: 1,
       activeScriptFile: initialScript.id,
+      activeFileType: 'script',
       folders: [],
+      weaponFolders: [],
     },
     scriptFiles: [initialScript],
+    weaponFiles: [],
   };
 }
 
@@ -52,7 +85,8 @@ export function createNewProject(name: string = 'Untitled Project'): ProjectData
 export function serializeProject(
   scriptFiles: ScriptFile[],
   metadata: Partial<ProjectMetadata> = {},
-  settings: ProjectData['settings'] = {}
+  settings: ProjectData['settings'] = {},
+  weaponFiles: WeaponFile[] = []
 ): string {
   const now = new Date().toISOString();
   
@@ -71,9 +105,14 @@ export function serializeProject(
       canvasZoom: settings.canvasZoom || 1,
       lastOpenedNode: settings.lastOpenedNode,
       activeScriptFile: settings.activeScriptFile,
+      activeWeaponFile: settings.activeWeaponFile,
+      activeFileType: settings.activeFileType || 'script',
       folders: settings.folders || [],
+      weaponFolders: settings.weaponFolders || [],
+      mod: settings.mod,
     },
     scriptFiles,
+    weaponFiles,
   };
 
   const serialized: SerializedProject = {
@@ -119,6 +158,16 @@ export function deserializeProject(jsonString: string): ProjectData {
     // Ensure scriptFiles exists
     if (!parsed.data.scriptFiles) {
       parsed.data.scriptFiles = [createScriptFile('main')];
+    }
+    
+    // Ensure weaponFiles exists (migration for older projects)
+    if (!parsed.data.weaponFiles) {
+      parsed.data.weaponFiles = [];
+    }
+    
+    // Ensure activeFileType exists
+    if (!parsed.data.settings.activeFileType) {
+      parsed.data.settings.activeFileType = 'script';
     }
     
     return parsed.data;

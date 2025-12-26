@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { PanelLeft, PanelRight, GitBranch, Code, Save, FolderOpen, FileDown, FileText, FilePlus, ChevronDown, ChevronLeft, ChevronRight, Folder, X, Settings, Package, Library } from 'lucide-react';
+import { PanelLeft, PanelRight, GitBranch, Code, Save, FolderOpen, FileDown, FileText, FilePlus, ChevronDown, ChevronLeft, ChevronRight, Folder, X, Settings, Package, Library, Crosshair } from 'lucide-react';
 import SettingsModal, { loadSettings, saveSettings, DEFAULT_SETTINGS } from './visual-scripting/SettingsModal';
 import ProjectSettingsModal from './visual-scripting/ProjectSettingsModal';
 import { NotificationContainer, ExportPathModal, useNotifications, useConfirmModal } from './visual-scripting/Notification';
@@ -12,6 +12,8 @@ import NodeSpotlight from './visual-scripting/NodeSpotlight';
 import NodeDocModal from './visual-scripting/NodeDocModal';
 import CodeView from './visual-scripting/CodeView';
 import ProjectPanel from './visual-scripting/ProjectPanel';
+import ProjectSidebar from './visual-scripting/ProjectSidebar';
+import WeaponEditor from './visual-scripting/WeaponEditor';
 import WelcomeScreen from './visual-scripting/WelcomeScreen';
 import TemplatesLibrary from './visual-scripting/TemplatesLibrary';
 import SaveTemplateModal from './visual-scripting/SaveTemplateModal';
@@ -74,8 +76,9 @@ export default function VisualScriptEditor() {
     setIsHydrated(true);
   }, []);
 
-  // Open file tabs
-  const [openFileTabs, setOpenFileTabs] = useState<string[]>([]);
+  // Open file tabs - now stores file ID and type
+  type OpenTab = { id: string; type: 'script' | 'weapon' };
+  const [openFileTabs, setOpenFileTabs] = useState<OpenTab[]>([]);
   
   // Collapsed categories in node palette
   const [collapsedCategories, setCollapsedCategories] = useState<string[]>([]);
@@ -92,6 +95,11 @@ export default function VisualScriptEditor() {
     recentProjects,
     folders,
     modifiedFileIds,
+    // Weapon file state
+    weaponFiles,
+    activeWeaponFile,
+    activeFileType,
+    weaponFolders,
     saveProject,
     saveProjectAs,
     loadProject,
@@ -106,7 +114,31 @@ export default function VisualScriptEditor() {
     createFolder,
     deleteFolder,
     renameFolder,
+    // Weapon file actions
+    createNewWeaponFile,
+    deleteWeaponFile,
+    renameWeaponFile,
+    setActiveWeaponFile: setActiveWeaponFileBase,
+    updateWeaponContent,
+    createWeaponFolder,
+    deleteWeaponFolder,
+    renameWeaponFolder,
   } = useProjectFiles({ maxRecentProjects: appSettings.general.maxRecentProjects });
+
+  // Wrapper to set active weapon file AND add tab simultaneously
+  const setActiveWeaponFile = useCallback((fileId: string | null) => {
+    setActiveWeaponFileBase(fileId);
+    if (fileId) {
+      // Add tab immediately when selecting a weapon file
+      setOpenFileTabs(prevTabs => {
+        const alreadyOpen = prevTabs.some(tab => tab.id === fileId && tab.type === 'weapon');
+        if (!alreadyOpen) {
+          return [...prevTabs, { id: fileId, type: 'weapon' as const }];
+        }
+        return prevTabs;
+      });
+    }
+  }, [setActiveWeaponFileBase]);
 
   // Auto-save functionality
   useEffect(() => {
@@ -198,8 +230,8 @@ export default function VisualScriptEditor() {
       };
       // Add to open tabs if not already there
       setOpenFileTabs(tabs => {
-        if (!tabs.includes(activeScriptFile.id)) {
-          return [...tabs, activeScriptFile.id];
+        if (!tabs.some(tab => tab.id === activeScriptFile.id && tab.type === 'script')) {
+          return [...tabs, { id: activeScriptFile.id, type: 'script' as const }];
         }
         return tabs;
       });
@@ -210,36 +242,60 @@ export default function VisualScriptEditor() {
     }
   }, [activeScriptFile?.id]);
 
+  // Add weapon file to tabs when loaded from saved project (backup for initial load)
+  useEffect(() => {
+    if (activeWeaponFile && activeWeaponFile.id) {
+      setOpenFileTabs(prevTabs => {
+        const alreadyOpen = prevTabs.some(tab => tab.id === activeWeaponFile.id && tab.type === 'weapon');
+        if (!alreadyOpen) {
+          return [...prevTabs, { id: activeWeaponFile.id, type: 'weapon' as const }];
+        }
+        return prevTabs;
+      });
+    }
+  }, [activeWeaponFile?.id]);
+
   // Close a file tab
-  const handleCloseTab = useCallback((fileId: string, e: React.MouseEvent) => {
+  const handleCloseTab = useCallback((fileId: string, fileType: 'script' | 'weapon', e: React.MouseEvent) => {
     e.stopPropagation();
     
     // Get the current tabs state to calculate new tabs
     setOpenFileTabs(prevTabs => {
-      const newTabs = prevTabs.filter(id => id !== fileId);
+      const closedIndex = prevTabs.findIndex(tab => tab.id === fileId && tab.type === fileType);
+      const newTabs = prevTabs.filter(tab => !(tab.id === fileId && tab.type === fileType));
       
       // Schedule the active file update for after this state update
-      // Use setTimeout to avoid calling state setters inside state updater
       setTimeout(() => {
-        if (activeScriptFile?.id === fileId) {
+        const isActiveScript = fileType === 'script' && activeScriptFile?.id === fileId;
+        const isActiveWeapon = fileType === 'weapon' && activeWeaponFile?.id === fileId;
+        
+        if (isActiveScript || isActiveWeapon) {
           if (newTabs.length > 0) {
             // Switch to the previous tab or the first remaining tab
-            const closedIndex = prevTabs.indexOf(fileId);
             const newActiveIndex = Math.min(closedIndex, newTabs.length - 1);
-            setActiveScriptFile(newTabs[newActiveIndex]);
+            const newActiveTab = newTabs[newActiveIndex];
+            if (newActiveTab.type === 'script') {
+              setActiveScriptFile(newActiveTab.id);
+            } else {
+              setActiveWeaponFile(newActiveTab.id);
+            }
           } else {
             // No more tabs, clear the active file and graph state
-            setActiveScriptFile(null);
-            setNodes([]);
-            setConnections([]);
-            setSelectedNodeIds([]);
+            if (isActiveScript) {
+              setActiveScriptFile(null);
+              setNodes([]);
+              setConnections([]);
+              setSelectedNodeIds([]);
+            } else {
+              setActiveWeaponFile(null);
+            }
           }
         }
       }, 0);
       
       return newTabs;
     });
-  }, [activeScriptFile?.id, setActiveScriptFile]);
+  }, [activeScriptFile?.id, activeWeaponFile?.id, setActiveScriptFile, setActiveWeaponFile]);
 
   // Update active script when nodes/connections change (but not during initial load)
   useEffect(() => {
@@ -999,20 +1055,28 @@ export default function VisualScriptEditor() {
           {/* File Tabs - spans full width */}
           {openFileTabs.length > 0 && (
             <div className="flex-shrink-0 flex items-center bg-gradient-to-b from-[#0f1419] to-[#151a21] border-b border-white/5 overflow-x-auto px-1 gap-1 h-9">
-              {openFileTabs.map(fileId => {
-                const file = scriptFiles.find(f => f.id === fileId);
+              {openFileTabs.map(tab => {
+                const isScript = tab.type === 'script';
+                const file = isScript 
+                  ? scriptFiles.find(f => f.id === tab.id)
+                  : weaponFiles.find(f => f.id === tab.id);
                 if (!file) return null;
-                const isActive = activeScriptFile?.id === fileId;
-                const isModified = modifiedFileIds.has(fileId);
+                
+                const isActive = isScript 
+                  ? (activeFileType === 'script' && activeScriptFile?.id === tab.id)
+                  : (activeFileType === 'weapon' && activeWeaponFile?.id === tab.id);
+                const isModified = modifiedFileIds.has(tab.id);
+                const displayName = isScript ? file.name : `${file.name}.txt`;
+                
                 return (
                   <div
-                    key={fileId}
+                    key={`${tab.type}-${tab.id}`}
                     className={`relative flex items-center gap-2 px-3 py-1.5 cursor-pointer group rounded-t-lg transition-all duration-200 ${
                       isActive 
                         ? 'bg-[#1a1f28] text-white shadow-lg' 
                         : 'text-gray-500 hover:bg-[#1a1f28]/50 hover:text-gray-300'
                     }`}
-                    onClick={() => setActiveScriptFile(fileId)}
+                    onClick={() => isScript ? setActiveScriptFile(tab.id) : setActiveWeaponFile(tab.id)}
                   >
                     {/* Active tab indicator line */}
                     {isActive && (
@@ -1021,14 +1085,22 @@ export default function VisualScriptEditor() {
                         style={{ backgroundColor: accentColor }}
                       />
                     )}
-                    <FileText 
-                      size={13} 
-                      style={{ color: isActive ? accentColor : undefined }} 
-                      className={`flex-shrink-0 ${isActive ? '' : 'text-gray-600'}`} 
-                    />
-                    <span className="text-xs font-medium whitespace-nowrap">{file.name}</span>
+                    {isScript ? (
+                      <FileText 
+                        size={13} 
+                        style={{ color: isActive ? accentColor : undefined }} 
+                        className={`flex-shrink-0 ${isActive ? '' : 'text-gray-600'}`} 
+                      />
+                    ) : (
+                      <Crosshair 
+                        size={13} 
+                        style={{ color: isActive ? '#f59e0b' : undefined }} 
+                        className={`flex-shrink-0 ${isActive ? '' : 'text-gray-600'}`} 
+                      />
+                    )}
+                    <span className="text-xs font-medium whitespace-nowrap">{displayName}</span>
                     <button
-                      onClick={(e) => handleCloseTab(fileId, e)}
+                      onClick={(e) => handleCloseTab(tab.id, tab.type, e)}
                       className={`ml-0.5 p-1 rounded-md hover:bg-white/10 transition-all duration-200 ${
                         isModified ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                       }`}
@@ -1085,28 +1157,40 @@ export default function VisualScriptEditor() {
                       <ChevronDown size={14} className={`text-gray-400 transition-transform ${isProjectSectionExpanded ? '' : '-rotate-90'}`} />
                     </button>
                     
-                    {/* Project Content */}
+                    {/* Project Content - New Sidebar with Script/Weapon tabs */}
                     {isProjectSectionExpanded && (
                       <div className="max-h-[550px] overflow-y-auto">
-                        <ProjectPanel
+                        <ProjectSidebar
                           scriptFiles={scriptFiles}
-                          activeFileId={activeScriptFile?.id || null}
-                          projectName={projectData?.metadata.name || 'Untitled Project'}
-                          folders={folders}
-                          onSelectFile={setActiveScriptFile}
-                          onCreateFile={createNewScriptFile}
-                          onDeleteFile={deleteScriptFile}
-                          onRenameFile={renameScriptFile}
-                          onCreateFolder={createFolder}
-                          onDeleteFolder={deleteFolder}
-                          onRenameFolder={renameFolder}
-                          isEmbedded={true}
+                          activeScriptFileId={activeScriptFile?.id || null}
+                          scriptFolders={folders}
+                          onSelectScriptFile={setActiveScriptFile}
+                          onCreateScriptFile={createNewScriptFile}
+                          onDeleteScriptFile={deleteScriptFile}
+                          onRenameScriptFile={renameScriptFile}
+                          onCreateScriptFolder={createFolder}
+                          onDeleteScriptFolder={deleteFolder}
+                          onRenameScriptFolder={renameFolder}
+                          weaponFiles={weaponFiles}
+                          activeWeaponFileId={activeWeaponFile?.id || null}
+                          weaponFolders={weaponFolders}
+                          onSelectWeaponFile={setActiveWeaponFile}
+                          onCreateWeaponFile={createNewWeaponFile}
+                          onDeleteWeaponFile={deleteWeaponFile}
+                          onRenameWeaponFile={renameWeaponFile}
+                          onCreateWeaponFolder={createWeaponFolder}
+                          onDeleteWeaponFolder={deleteWeaponFolder}
+                          onRenameWeaponFolder={renameWeaponFolder}
+                          activeFileType={activeFileType}
+                          modifiedFileIds={modifiedFileIds}
+                          accentColor={accentColor}
                         />
                       </div>
                     )}
                   </div>
 
-                  {/* Node Palette Section */}
+                  {/* Node Palette Section - only show for script files */}
+                  {activeFileType === 'script' && (
                   <div className={`${isNodesSectionExpanded && !isTemplatesSectionExpanded ? 'flex-1' : 'flex-shrink-0'} overflow-hidden border-b border-white/10`}>
                     <NodePalette
                       onAddNode={handleAddNode}
@@ -1127,8 +1211,10 @@ export default function VisualScriptEditor() {
                       onShowNodeDoc={setDocNodeType}
                     />
                   </div>
+                  )}
 
-                  {/* Templates Library Section */}
+                  {/* Templates Library Section - only show for script files */}
+                  {activeFileType === 'script' && (
                   <div className={`${isTemplatesSectionExpanded ? 'flex-1' : 'flex-shrink-0'} overflow-hidden`}>
                     <TemplatesLibrary
                       onInsertTemplate={handleInsertTemplate}
@@ -1146,6 +1232,7 @@ export default function VisualScriptEditor() {
                       accentColor={accentColor}
                     />
                   </div>
+                  )}
                 </div>
                 {/* Resize Handle */}
                 <div
@@ -1204,20 +1291,18 @@ export default function VisualScriptEditor() {
             )}
 
             {/* Main Canvas */}
-            <div className="flex-1 h-full flex flex-col">
-              {/* Node Graph or Empty State */}
-              <div className="flex-1">
-                {!activeScriptFile ? (
-                  <div className="h-full flex flex-col items-center justify-center bg-[#0f1419] text-center p-8">
-                    <div className="p-4 rounded-full mb-4" style={{ backgroundColor: `${accentColor}20` }}>
-                      <FileText size={48} style={{ color: `${accentColor}80` }} />
-                    </div>
-                    <h2 className="text-xl font-semibold text-gray-300 mb-2">No File Open</h2>
-                    <p className="text-gray-500 text-sm max-w-xs">
-                      Select a file from the Project panel to begin editing, or create a new script file.
-                    </p>
-                  </div>
-                ) : (
+            <div className="flex-1 h-full flex flex-col min-h-0">
+              {/* Node Graph, Weapon Editor, or Empty State */}
+              <div className="flex-1 h-full min-h-0">
+                {activeFileType === 'weapon' && activeWeaponFile ? (
+                  // Weapon Editor
+                  <WeaponEditor
+                    weaponFile={activeWeaponFile}
+                    onContentChange={updateWeaponContent}
+                    isModified={modifiedFileIds.has(activeWeaponFile.id)}
+                    accentColor={accentColor}
+                  />
+                ) : activeFileType === 'script' && activeScriptFile ? (
                   <NodeGraph
                     nodes={nodes}
                     connections={connections}
@@ -1250,12 +1335,22 @@ export default function VisualScriptEditor() {
                     animateConnections={appSettings.editor.animateConnections}
                     isDev={import.meta.env.DEV}
                   />
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center bg-[#0f1419] text-center p-8">
+                    <div className="p-4 rounded-full mb-4" style={{ backgroundColor: `${accentColor}20` }}>
+                      <FileText size={48} style={{ color: `${accentColor}80` }} />
+                    </div>
+                    <h2 className="text-xl font-semibold text-gray-300 mb-2">No File Open</h2>
+                    <p className="text-gray-500 text-sm max-w-xs">
+                      Select a file from the Project panel to begin editing, or create a new script file.
+                    </p>
+                  </div>
                 )}
               </div>
             </div>
 
-            {/* Code Panel */}
-            {isCodePanelOpen && (
+            {/* Code Panel - only show for script files */}
+            {activeFileType === 'script' && isCodePanelOpen && (
               <div className="flex h-full flex-shrink-0" style={{ width: codePanelWidth }}>
                 {/* Resize Handle */}
                 <div
@@ -1274,8 +1369,8 @@ export default function VisualScriptEditor() {
               </div>
             )}
 
-            {/* Code Panel Toggle Button (when closed) */}
-            {!isCodePanelOpen && (
+            {/* Code Panel Toggle Button (when closed) - only show for script files */}
+            {activeFileType === 'script' && !isCodePanelOpen && (
               <div 
                 className="flex-shrink-0 h-full w-10 bg-gradient-to-l from-[#0f1419] via-[#151a21] to-[#1a1f28] hover:from-[#151a21] hover:via-[#1a1f28] hover:to-[#1e242c] transition-all duration-300 flex flex-col items-center py-4 group cursor-pointer relative overflow-hidden"
                 style={{ borderLeft: `2px solid ${accentColor}40` }}

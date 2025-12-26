@@ -46,10 +46,43 @@ export interface ScriptFile {
   modifiedAt: string;
 }
 
+/**
+ * Weapon file - KeyValue format .txt files for weapon definitions
+ * Located in scripts/weapons/
+ */
+export interface WeaponFile {
+  id: string;
+  name: string;           // Filename without extension (e.g., "mp_weapon_custom")
+  baseWeapon?: string;    // Base weapon to inherit from (e.g., "_base_smg")
+  content: string;        // Raw KeyValue content
+  createdAt: string;
+  modifiedAt: string;
+}
+
+/**
+ * Type of active file being edited
+ */
+export type ActiveFileType = 'script' | 'weapon';
+
+export interface ProjectSettings {
+  canvasPosition?: { x: number; y: number };
+  canvasZoom?: number;
+  lastOpenedNode?: string;
+  activeScriptFile?: string; // ID of currently open script file
+  activeWeaponFile?: string; // ID of currently open weapon file
+  activeFileType?: ActiveFileType; // Which type of file is currently active
+  folders?: string[]; // Explicit folder paths for scripts (including empty folders)
+  weaponFolders?: string[]; // Explicit folder paths for weapons
+  
+  // Mod export settings
+  mod?: ModSettings;
+}
+
 export interface ProjectData {
   metadata: ProjectMetadata;
   settings: ProjectSettings;
   scriptFiles: ScriptFile[]; // Multiple script files
+  weaponFiles: WeaponFile[]; // Weapon definition files
   nodes?: any[]; // Legacy support - will migrate to scriptFiles
   connections?: any[]; // Legacy support
 }
