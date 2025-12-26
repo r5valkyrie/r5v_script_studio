@@ -144,6 +144,27 @@ void function UICodeCallback_ModInit()
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { gamemode: 'MY_MODE' },
+    documentation: {
+      longDescription: 'Creates a new gamemode definition or resets an existing one. This is the first step in registering a custom gamemode. The gamemode ID must be unique and is typically uppercase with underscores.',
+      codeExample: `// Create a new gamemode
+GameMode_Create( "CUSTOM_MODE" )
+
+// This initializes the gamemode structure
+// Configure with additional nodes after this`,
+      tips: [
+        'Call this first before other gamemode functions',
+        'Gamemode ID should be uppercase (e.g., "DEATHMATCH")',
+        'ID must be unique across all gamemodes',
+        'Reset existing gamemodes to reconfigure them'
+      ],
+      useCases: [
+        'Creating a new game mode',
+        'Resetting gamemode state',
+        'Initializing custom mode infrastructure',
+        'Setting up mode-specific rules'
+      ],
+      relatedNodes: ['gamemode-register', 'gamemode-set-name', 'gamemode-set-desc']
+    }
   },
   {
     type: 'gamemode-set-name',
@@ -160,6 +181,27 @@ void function UICodeCallback_ModInit()
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { gamemode: 'MY_MODE', name: '#GAMEMODE_MY_MODE' },
+    documentation: {
+      longDescription: 'Sets the display name shown in the mode selection menu. Use a localization string (starting with #) to support multiple languages. The string should match a key in your localization files.',
+      codeExample: `// Set the display name
+GameMode_SetName( "CUSTOM_MODE", "#GAMEMODE_CUSTOM_MODE" )
+
+// In localization file:
+// #GAMEMODE_CUSTOM_MODE "Custom Mode"`,
+      tips: [
+        'Use localization strings for multi-language support',
+        'The name appears in the mode selection screen',
+        'Keep names concise and descriptive',
+        'Must be called after GameMode_Create'
+      ],
+      useCases: [
+        'Setting mode display names',
+        'Localized mode names',
+        'Mode branding',
+        'Multi-language support'
+      ],
+      relatedNodes: ['gamemode-create', 'gamemode-set-desc', 'gamemode-register']
+    }
   },
   {
     type: 'gamemode-set-desc',
@@ -176,6 +218,27 @@ void function UICodeCallback_ModInit()
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { gamemode: 'MY_MODE', description: '#MY_MODE_DESC' },
+    documentation: {
+      longDescription: 'Sets the description shown in the mode selection menu. Use a localization string to support multiple languages. Describe the mode\'s rules and gameplay.',
+      codeExample: `// Set the mode description
+GameMode_SetDesc( "CUSTOM_MODE", "#MY_MODE_DESC" )
+
+// In localization file:
+// #MY_MODE_DESC "Eliminate all opponents to win!"`,
+      tips: [
+        'Use localization strings for multi-language support',
+        'Briefly describe mode rules',
+        'Mention win conditions',
+        'Include any special features'
+      ],
+      useCases: [
+        'Setting mode descriptions',
+        'Explaining rules to players',
+        'Marketing the mode',
+        'Multi-language support'
+      ],
+      relatedNodes: ['gamemode-create', 'gamemode-set-name', 'gamemode-register']
+    }
   },
   {
     type: 'gamemode-set-score-limits',
@@ -193,6 +256,27 @@ void function UICodeCallback_ModInit()
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { gamemode: 'MY_MODE', scoreLimit: 50, roundScoreLimit: 0 },
+    documentation: {
+      longDescription: 'Sets the winning score threshold and per-round score limit. When a team or player reaches the score limit, the match ends. Set roundScoreLimit to 0 for unlimited.',
+      codeExample: `// Set score limits for a deathmatch mode
+GameMode_SetScoreLimit( "CUSTOM_DM", 100, 0 )
+
+// Teams earn points throughout the match
+// First to 100 points wins`,
+      tips: [
+        'Score Limit is the winning threshold',
+        'Round Score Limit for per-round scoring',
+        'Set to 0 for no limit',
+        'Works with built-in score tracking'
+      ],
+      useCases: [
+        'Setting win conditions',
+        'Scoring-based modes',
+        'Round-based scoring',
+        'Competitive mode setup'
+      ],
+      relatedNodes: ['gamemode-create', 'gamemode-register', 'gamemode-set-time-limits']
+    }
   },
   {
     type: 'gamemode-set-time-limits',
@@ -210,6 +294,27 @@ void function UICodeCallback_ModInit()
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { gamemode: 'MY_MODE', timeLimit: 15, roundTimeLimit: 0.0 },
+    documentation: {
+      longDescription: 'Sets the match duration in minutes. Time Limit is the total match duration. Round Time Limit is for per-round timers. Set to 0 for no time limit.',
+      codeExample: `// Set 10 minute match
+GameMode_SetTimeLimit( "CUSTOM_MODE", 10, 0 )
+
+// Match ends when time expires
+// Scores are compared to determine winner`,
+      tips: [
+        'Time is in minutes',
+        'Use 0 for no limit',
+        'Works with built-in timer UI',
+        'Combined with score limit for sudden death'
+      ],
+      useCases: [
+        'Setting match duration',
+        'Timed rounds',
+        'Countdown modes',
+        'Competitive play'
+      ],
+      relatedNodes: ['gamemode-create', 'gamemode-set-score-limits', 'gamemode-register']
+    }
   },
   {
     type: 'gamemode-add-scoreboard-column',
@@ -228,6 +333,28 @@ void function UICodeCallback_ModInit()
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { gamemode: 'MY_MODE', title: '#SCOREBOARD_KILLS', scoreType: 0, numDigits: 2 },
+    documentation: {
+      longDescription: 'Adds a custom column to the scoreboard for this gamemode. Score Type determines what metric to display (kills, score, etc.). Num Digits controls padding for the display.',
+      codeExample: `// Add kills column to scoreboard
+GameMode_AddScoreboardColumn( "CUSTOM_DM", "#SCOREBOARD_KILLS", 0, 3 )
+
+// Score Type 0 = Kills
+// Score Type 1 = Score
+// etc.`,
+      tips: [
+        'Use localization string for column title',
+        'Multiple columns can be added',
+        'Score Type determines the data shown',
+        'Num Digits for alignment'
+      ],
+      useCases: [
+        'Custom scoreboard displays',
+        'Mode-specific stats',
+        'Leaderboard columns',
+        'Team scoring'
+      ],
+      relatedNodes: ['gamemode-register', 'gamemode-create']
+    }
   },
   {
     type: 'gamemode-add-shared-init',
@@ -244,6 +371,32 @@ void function UICodeCallback_ModInit()
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { gamemode: 'MY_MODE', function: 'GamemodeShared_Init' },
+    documentation: {
+      longDescription: 'Registers a shared initialization function that runs on both server and client. This is called once when the gamemode is initialized, before player connections.',
+      codeExample: `// Shared initialization
+void function GamemodeCustom_Init()
+{
+    // Runs on both server and client
+    // Set up shared game rules
+    // Register shared callbacks
+}
+
+// Register it
+GameMode_AddSharedInitFunction( "CUSTOM_MODE", GamemodeCustom_Init )`,
+      tips: [
+        'Runs on both server and client',
+        'Use for shared game state',
+        'Don\'t use for player-specific logic',
+        'Runs before players join'
+      ],
+      useCases: [
+        'Setting shared rules',
+        'Initializing global state',
+        'Shared entity setup',
+        'Cross-client logic'
+      ],
+      relatedNodes: ['gamemode-add-server-init', 'gamemode-add-client-init', 'init-server']
+    }
   },
   {
     type: 'gamemode-add-server-init',
@@ -261,6 +414,34 @@ void function UICodeCallback_ModInit()
     ],
     defaultData: { gamemode: 'MY_MODE', function: 'GamemodeServer_Init' },
     serverOnly: true,
+    documentation: {
+      longDescription: 'Registers a server-only initialization function. This runs only on the server when the gamemode starts. Use for server-side logic like spawn points, scoring, and player management.',
+      codeExample: `// Server-side initialization
+void function GamemodeCustom_InitServer()
+{
+    // Server-only setup
+    AddCallback_OnPlayerKilled( OnPlayerKilled )
+    
+    // Set up spawn points
+    // Initialize scoring
+}
+
+// Register it
+GameMode_AddServerInitFunction( "CUSTOM_MODE", GamemodeCustom_InitServer )`,
+      tips: [
+        'Server-only execution',
+        'Use for player callbacks',
+        'Manage spawns and scoring',
+        'Can\'t be called from client'
+      ],
+      useCases: [
+        'Player event handling',
+        'Server-side scoring',
+        'Spawn management',
+        'Server-only rules'
+      ],
+      relatedNodes: ['gamemode-add-shared-init', 'gamemode-add-client-init', 'init-server']
+    }
   },
   {
     type: 'gamemode-add-client-init',
@@ -278,6 +459,34 @@ void function UICodeCallback_ModInit()
     ],
     defaultData: { gamemode: 'MY_MODE', function: 'GamemodeClient_Init' },
     clientOnly: true,
+    documentation: {
+      longDescription: 'Registers a client-only initialization function. This runs on each client when the gamemode starts. Use for UI, effects, and client-side state management.',
+      codeExample: `// Client-side initialization
+void function GamemodeCustom_InitClient()
+{
+    // Client-only setup
+    RegisterHUDElement( CustomHUD )
+    
+    // Play intro effects
+    // Set up client callbacks
+}
+
+// Register it
+GameMode_AddClientInitFunction( "CUSTOM_MODE", GamemodeCustom_InitClient )`,
+      tips: [
+        'Client-only execution',
+        'Use for UI and effects',
+        'Can\'t access server functions',
+        'Runs for each connected client'
+      ],
+      useCases: [
+        'UI setup',
+        'Client effects',
+        'Local player state',
+        'HUD elements'
+      ],
+      relatedNodes: ['gamemode-add-shared-init', 'gamemode-add-server-init', 'init-client']
+    }
   },
   {
     type: 'gamemode-set-evac',
@@ -294,6 +503,27 @@ void function UICodeCallback_ModInit()
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { gamemode: 'MY_MODE', enabled: false },
+    documentation: {
+      longDescription: 'Enables or disables the evac plane for this gamemode. When enabled, players can evac from the dropship during the match. Common in survival-style modes.',
+      codeExample: `// Enable evac for survival mode
+GameMode_SetEvac( "CUSTOM_SURVIVAL", true )
+
+// Players can call evac during match
+// Evac plane appears when called`,
+      tips: [
+        'Works with survival game modes',
+        'Enables evac drop functionality',
+        'Disable for fixed-position modes',
+        'Related to survival zone logic'
+      ],
+      useCases: [
+        'Survival mode evac',
+        'Extraction mechanics',
+        'Dynamic zone modes',
+        'Battle royale style'
+      ],
+      relatedNodes: ['gamemode-register', 'gamemode-create']
+    }
   },
   {
     type: 'gamemode-register-spawn-func',
@@ -312,6 +542,43 @@ void function UICodeCallback_ModInit()
     ],
     defaultData: { gamemode: 'MY_MODE', function: 'RateSpawnpoints_Generic', isPilot: true },
     serverOnly: true,
+    documentation: {
+      longDescription: 'Registers a spawn point rating function that determines where players/NPCs spawn. The function returns a rating for each spawn point, and the highest-rated valid point is chosen. Separate functions can be registered for pilots and titans.',
+      codeExample: `// Custom spawn rating
+float function CustomSpawnRating( entity spawnPoint, array entities )
+{
+    // Rate spawn points based on distance from enemies
+    float rating = 1000.0
+    
+    foreach ( entity player in entities )
+    {
+        if ( player.GetTeam() != GetLocalTeam() )
+        {
+            float dist = Distance( spawnPoint.GetOrigin(), player.GetOrigin() )
+            if ( dist < 500 )
+                rating -= 100
+        }
+    }
+    
+    return rating
+}
+
+// Register for pilots
+GameMode_AddSpawnFunc( "CUSTOM_MODE", CustomSpawnRating, true )`,
+      tips: [
+        'Higher rating = more likely to spawn',
+        'Return -1 to mark point as invalid',
+        'Separate functions for pilot vs titan',
+        'Called for each potential spawn point'
+      ],
+      useCases: [
+        'Balanced spawn systems',
+        'Avoiding spawn kills',
+        'Team-based spawn logic',
+        'Objective-based spawning'
+      ],
+      relatedNodes: ['gamemode-add-server-init', 'gamemode-register']
+    }
   },
   {
     type: 'gamemode-register',
@@ -383,6 +650,33 @@ void function UICodeCallback_ModInit()
     ],
     defaultData: {},
     tags: ['gamestate', 'state', 'gamemode'],
+    documentation: {
+      longDescription: 'Returns the current game state enum value. Game states include playing, intermission, Sudden Death, etc. Use with Game State Enter callback to detect state changes.',
+      codeExample: `// Check current game state
+int state = GetGameState()
+
+if ( state == eGameState.Playing )
+{
+    print( "Match is in progress" )
+}
+else if ( state == eGameState.SuddenDeath )
+{
+    print( "Sudden Death!" )
+}`,
+      tips: [
+        'Returns int enum value',
+        'Common states: Playing, Intermission, SuddenDeath',
+        'Use with OnGameStatePostEnter callback',
+        'Check eGameState enum for values'
+      ],
+      useCases: [
+        'Checking match status',
+        'Conditional game logic',
+        'State-based behaviors',
+        'UI state display'
+      ],
+      relatedNodes: ['set-game-state', 'on-game-state-enter']
+    }
   },
   {
     type: 'set-game-state',
@@ -399,6 +693,27 @@ void function UICodeCallback_ModInit()
     ],
     defaultData: { state: 0 },
     tags: ['gamestate', 'state', 'gamemode'],
+    documentation: {
+      longDescription: 'Sets the game to a new state. This triggers the OnGameStatePostEnter callback on all clients. Use this to manually advance game states for custom mode logic.',
+      codeExample: `// Advance to Sudden Death
+SetGameState( eGameState.SuddenDeath )
+
+// This triggers callbacks on all clients
+// UI and logic can react to state change`,
+      tips: [
+        'Triggers state change callbacks',
+        'Use eGameState enum values',
+        'Works with built-in game state logic',
+        'Use for custom mode state machines'
+      ],
+      useCases: [
+        'Starting matches',
+        'Transitioning to intermission',
+        'Sudden Death triggers',
+        'Custom state machines'
+      ],
+      relatedNodes: ['get-game-state', 'on-game-state-enter']
+    }
   },
 
   // Core Flow Nodes
@@ -467,6 +782,26 @@ DoThirdThing()   // Out 3`,
     defaultData: {
       outputCount: 2,
     },
+    documentation: {
+      longDescription: 'Splits execution flow into multiple sequential outputs. Unlike the fixed 3-output Sequence node, this allows dynamically adding or removing outputs to chain multiple operations in order.',
+      codeExample: `// Chain multiple operations
+DoFirstThing()          // Then 0
+DoSecondThing()         // Then 1
+DoThirdThing()          // Then 2 (add via + button)`,
+      tips: [
+        'Use + and - buttons to add/remove output ports',
+        'Each output fires sequentially after the previous one completes',
+        'Great for initialization sequences and setup chains',
+        'Each connected node runs to completion before the next fires'
+      ],
+      useCases: [
+        'Initializing multiple game systems in order',
+        'Setting up entities with multiple properties',
+        'Chaining animation or effect sequences',
+        'Sequential spawn operations'
+      ],
+      relatedNodes: ['sequence', 'delay', 'thread']
+    }
   },
   {
     type: 'branch',
@@ -617,6 +952,27 @@ DoNextThing()`,
       { label: 'Done', type: 'exec', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Iterates through each element in an array. The Loop output fires once per element with the current element and its index available. The Done output fires after all elements have been processed.',
+      codeExample: `foreach ( entity player in GetPlayerArray() )
+{
+    // Process each player
+    print( "Found player: " + player.GetPlayerName() )
+}`,
+      tips: [
+        'Element output changes each iteration - connect to where you need the current value',
+        'Index starts at 0 and increments for each element',
+        'Done fires after the Loop has fired for all elements',
+        'Modifying the array during iteration can cause unexpected behavior'
+      ],
+      useCases: [
+        'Processing all players in the game',
+        'Applying effects to multiple entities',
+        'Validating or modifying array contents',
+        'Searching for specific elements'
+      ],
+      relatedNodes: ['loop-for', 'loop-while', 'array-get', 'array-length']
+    }
   },
   {
     type: 'loop-while',
@@ -633,6 +989,31 @@ DoNextThing()`,
       { label: 'Done', type: 'exec', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Continuously executes the Loop output while the Condition remains true. The condition is re-evaluated before each iteration. Use carefully as infinite loops can freeze the game.',
+      codeExample: `bool condition = true
+int count = 0
+
+while ( condition && count < 10 )
+{
+    count++
+    // Do something each iteration
+    if ( count >= 10 )
+        condition = false`,
+      tips: [
+        'Always ensure the condition can become false to avoid infinite loops',
+        'Consider adding a counter or timeout for safety',
+        'The condition is checked before each Loop iteration',
+        'Done fires immediately if condition is false when starting'
+      ],
+      useCases: [
+        'Waiting for a condition to become true',
+        'Repeatedly checking entity states',
+        'Polling for player actions',
+        'Animation loops with exit conditions'
+      ],
+      relatedNodes: ['loop-for', 'loop-foreach', 'branch', 'delay']
+    }
   },
   {
     type: 'wait',
@@ -648,6 +1029,27 @@ DoNextThing()`,
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { duration: 0.0 },
+    documentation: {
+      longDescription: 'Pauses execution for the specified duration. Unlike the Delay node which uses wait(), this uses the Wait() function for more explicit control. The calling thread yields and resumes after the duration.',
+      codeExample: `// Wait for 3 seconds
+wait 3.0
+
+// Continue execution
+print( "3 seconds have passed!" )`,
+      tips: [
+        'Duration is in seconds (1.0 = 1 second)',
+        'Use Wait() for clearer intent in threaded code',
+        'Combined with loops for timed intervals',
+        'Consider using coroutines for complex timing'
+      ],
+      useCases: [
+        'Creating cooldown timers',
+        'Delaying respawns',
+        'Animation timing',
+        'Periodic updates or checks'
+      ],
+      relatedNodes: ['delay', 'thread', 'loop-while']
+    }
   },
   {
     type: 'signal',
@@ -664,6 +1066,32 @@ DoNextThing()`,
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { signal: 'MySignal' },
+    documentation: {
+      longDescription: 'Sends a signal to an entity, which triggers any registered signal handlers. Signals are used for entity-to-entity communication and event handling.',
+      codeExample: `// Send a signal to an NPC
+entity npc = GetEntByScriptName( "my_npc" )
+Signal( npc, "Attack" )
+
+// In the NPC's code, this would trigger:
+// void function OnSignal( string signalName )
+// {
+//     if ( signalName == "Attack" )
+//         StartAttack()
+// }`,
+      tips: [
+        'Use Register Signal to set up signal handlers first',
+        'Signal names are case-sensitive',
+        'Multiple entities can respond to the same signal',
+        'EndSignal cancels a signal before it fires'
+      ],
+      useCases: [
+        'Triggering AI behaviors',
+        'Coordinating entity actions',
+        'Animation triggers',
+        'State machine transitions'
+      ],
+      relatedNodes: ['register-signal', 'wait-signal', 'end-signal']
+    }
   },
   {
     type: 'end-signal',
@@ -680,6 +1108,27 @@ DoNextThing()`,
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { signal: 'MySignal' },
+    documentation: {
+      longDescription: 'Cancels a pending signal on an entity. If the signal was queued but not yet processed, EndSignal prevents it from executing. Useful for interrupting signal-based behaviors.',
+      codeExample: `// Prevent a signal from firing
+entity npc = GetEntByScriptName( "my_npc" )
+
+// If "Attack" was queued, this cancels it
+EndSignal( npc, "Attack" )`,
+      tips: [
+        'Use to prevent queued signals from executing',
+        'Works on signals sent via Signal() or threaded signals',
+        'Signal handlers must use WaitSignal() to be cancellable',
+        'Does not affect signals already being processed'
+      ],
+      useCases: [
+        'Cancelling queued animations',
+        'Interrupting AI behaviors',
+        'Preventing duplicate signal handlers',
+        'State machine cleanup'
+      ],
+      relatedNodes: ['signal', 'wait-signal', 'register-signal']
+    }
   },
   {
     type: 'wait-signal',
@@ -696,6 +1145,30 @@ DoNextThing()`,
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { signal: 'MySignal' },
+    documentation: {
+      longDescription: 'Pauses execution until the specified signal is received by the entity. The current thread yields and resumes when Signal() is called with a matching signal name. Can be cancelled with EndSignal().',
+      codeExample: `// Wait for a signal on an NPC
+entity npc = GetEntByScriptName( "my_npc" )
+
+// This will pause until Signal(npc, "Ready") is called
+WaitSignal( npc, "Ready" )
+
+// After signal is received, execution continues
+print( "NPC is ready!" )`,
+      tips: [
+        'The thread yields until the signal is received',
+        'Use EndSignal() to cancel and prevent hanging',
+        'Signal handlers must be registered first',
+        'Multiple WaitSignals can wait for different signals'
+      ],
+      useCases: [
+        'Waiting for entity initialization',
+        'Synchronizing entity behaviors',
+        'Creating sequential animations',
+        'Coordinating multi-step events'
+      ],
+      relatedNodes: ['signal', 'end-signal', 'register-signal', 'delay']
+    }
   },
   {
     type: 'register-signal',
@@ -712,6 +1185,30 @@ DoNextThing()`,
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { signal: 'MySignal' },
+    documentation: {
+      longDescription: 'Registers a signal name on an entity, allowing it to receive and handle that signal. Must be called before using WaitSignal() to wait for signals on that entity.',
+      codeExample: `// Register that an entity can receive the "Move" signal
+entity npc = GetEntByScriptName( "my_npc" )
+RegisterSignal( npc, "Move" )
+RegisterSignal( npc, "Attack" )
+
+// Now these can be used:
+// WaitSignal( npc, "Move" )
+// Signal( npc, "Attack" )`,
+      tips: [
+        'Register signals during entity initialization',
+        'Each signal name must be registered separately',
+        'Allows WaitSignal() to work with that entity',
+        'Signal names should be descriptive'
+      ],
+      useCases: [
+        'Setting up entity communication',
+        'Preparing for async signal handling',
+        'Creating extensible entity behaviors',
+        'Implementing observer patterns'
+      ],
+      relatedNodes: ['signal', 'wait-signal', 'end-signal']
+    }
   },
   {
     type: 'reroute',
@@ -726,6 +1223,27 @@ DoNextThing()`,
       { label: 'Out', type: 'data', dataType: 'any', isInput: false },
     ],
     defaultData: { isExec: false },
+    documentation: {
+      longDescription: 'A utility node that passes through data or execution flow to help organize complex graphs. Useful for creating cleaner visual layouts by rerouting wires around other nodes.',
+      codeExample: `// Reroute doesn't change the data
+// It just provides a visual way to organize connections
+
+// Input -> Reroute -> Output
+// Value passes through unchanged`,
+      tips: [
+        'Use to clean up crossing wires',
+        'Can handle both data and exec flow (toggle isExec)',
+        'Chain multiple reroutes for complex paths',
+        'Does not modify or transform the data'
+      ],
+      useCases: [
+        'Cleaning up complex node graphs',
+        'Creating visual separation in graphs',
+        'Grouping related functionality',
+        'Avoiding wire spaghetti'
+      ],
+      relatedNodes: ['comment', 'sequence']
+    }
   },
   {
     type: 'return',
@@ -739,6 +1257,31 @@ DoNextThing()`,
     ],
     outputs: [],
     defaultData: {},
+    documentation: {
+      longDescription: 'Returns a value from the current function context. Used in custom functions to output results back to the calling code. Terminates function execution.',
+      codeExample: `// In a custom function that calculates distance
+float function CalculateDistance( vector a, vector b )
+{
+    vector diff = b - a
+    return diff.Length()
+}
+
+// Or in visual scripting:
+// Return node sends value back to caller`,
+      tips: [
+        'Terminates function execution immediately',
+        'Can return any data type',
+        'Use with Custom Function nodes',
+        'Value output must be connected to function output'
+      ],
+      useCases: [
+        'Returning calculation results',
+        'Early exit from functions',
+        'Returning entity references',
+        'Error handling with null returns'
+      ],
+      relatedNodes: ['custom-function', 'call-function']
+    }
   },
   {
     type: 'call-function',
@@ -755,6 +1298,31 @@ DoNextThing()`,
       { label: 'Return', type: 'data', dataType: 'any', isInput: false },
     ],
     defaultData: { function: 'MyFunction', returnType: 'none', argCount: 0, threaded: false },
+    documentation: {
+      longDescription: 'Calls an existing function by name, passing optional arguments. The function must be defined and GlobalizeFunction() called to make it accessible. The Return output provides the function\'s return value.',
+      codeExample: `// Call a previously defined and globalized function
+function MyFunction( int value ) => string
+{
+    return "Value is: " + value
+}
+
+// In visual scripting:
+// Call Function -> MyFunction
+// Arguments connected -> Return value available`,
+      tips: [
+        'Function must be globalized to be callable',
+        'Use Function Reference node to connect the function',
+        'Return output provides the function\'s return value',
+        'Threaded mode runs function in separate thread'
+      ],
+      useCases: [
+        'Calling utility functions',
+        'Reusing common logic',
+        'Integrating with existing scripts',
+        'Organizing complex operations'
+      ],
+      relatedNodes: ['custom-function', 'function-ref', 'globalize-function']
+    }
   },
   {
     type: 'custom-function',
@@ -767,6 +1335,32 @@ DoNextThing()`,
       { label: 'Exec', type: 'exec', isInput: false },
     ],
     defaultData: { functionName: 'MyFunction', returnType: 'void', paramCount: 0, paramNames: [], paramTypes: [], isGlobal: false },
+    documentation: {
+      longDescription: 'Defines a reusable function that can be called from other nodes. Functions can have parameters and return values. When called, the Exec output triggers the function body.',
+      codeExample: `// Function definition in visual scripting:
+// Custom Function: CalculateDistance
+// Parameters: Vector A, Vector B
+// Returns: float
+
+void function CalculateDistance( vector a, vector b )
+{
+    float dist = (b - a).Length()
+    return dist
+}`,
+      tips: [
+        'Use + to add parameters',
+        'Functions can be global or local',
+        'GlobalizeFunction to call from other scripts',
+        'Return type void means no return value'
+      ],
+      useCases: [
+        'Creating reusable logic blocks',
+        'Encapsulating complex operations',
+        'Abstracting common calculations',
+        'Creating library functions'
+      ],
+      relatedNodes: ['call-function', 'function-ref', 'globalize-function', 'return']
+    }
   },
   {
     type: 'comment',
@@ -777,6 +1371,26 @@ DoNextThing()`,
     inputs: [],
     outputs: [],
     defaultData: { comment: 'Comment', commentColor: '#6C7A89' },
+    documentation: {
+      longDescription: 'Adds a text label that can be resized to annotate sections of your graph. Comments appear behind other nodes and are purely for documentation purposes.',
+      codeExample: `// Comments help document your visual scripting graph
+// Use them to explain complex logic
+// Document assumptions and requirements
+// Mark sections for easy navigation`,
+      tips: [
+        'Comments stay behind other nodes',
+        'Can be resized by dragging edges',
+        'Use to document complex logic',
+        'Helps team members understand the graph'
+      ],
+      useCases: [
+        'Documenting complex logic',
+        'Marking sections of graphs',
+        'Adding context to algorithms',
+        'Organizing collaborative projects'
+      ],
+      relatedNodes: ['reroute']
+    }
   },
   {
     type: 'custom-code',
@@ -791,6 +1405,39 @@ DoNextThing()`,
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { code: '// Your code here' },
+    documentation: {
+      longDescription: 'Allows writing raw Squirrel code for operations not covered by other nodes. Use this when you need specific functionality or optimizations that visual scripting doesn\'t provide.',
+      codeExample: `// Custom Squirrel code examples:
+
+// Simple calculation
+float healthPercent = player.GetHealth() / player.GetMaxHealth() * 100
+
+// Loop through players
+foreach ( entity p in GetPlayerArray() )
+{
+    if ( p.GetTeam() == TEAM_IMC )
+        p.SetHealth( 100 )
+}
+
+// Complex logic
+if ( entity.IsValid() && entity.IsAlive() )
+{
+    print( "Entity is ready!" )
+}`,
+      tips: [
+        'Use standard Squirrel syntax',
+        'Can access all game APIs',
+        'Great for complex logic or algorithms',
+        'Use Custom Code sparingly - prefer nodes for readability'
+      ],
+      useCases: [
+        'Complex mathematical calculations',
+        'Special game API access',
+        'Performance-critical code',
+        'Custom algorithms'
+      ],
+      relatedNodes: ['call-function', 'custom-function']
+    }
   },
   {
     type: 'set-portal',
@@ -806,6 +1453,28 @@ DoNextThing()`,
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { portalName: 'MyPortal' },
+    documentation: {
+      longDescription: 'Stores a value in a named "portal" that can be retrieved anywhere in the graph without wire connections. Useful for sharing data across distant parts of a complex graph.',
+      codeExample: `// Store a value
+SetPortal( "playerScore", 100 )
+
+// Later, retrieve it
+int score = GetPortal( "playerScore" )
+print( "Current score: " + score )`,
+      tips: [
+        'Portal names are case-sensitive',
+        'Use descriptive names for portals',
+        'Can store any data type',
+        'Get Portal retrieves the value by name'
+      ],
+      useCases: [
+        'Sharing data across distant nodes',
+        'Global state management',
+        'Reducing wire clutter',
+        'Sharing values between parallel branches'
+      ],
+      relatedNodes: ['get-portal', 'variable-set', 'variable-get']
+    }
   },
   {
     type: 'get-portal',
@@ -818,6 +1487,28 @@ DoNextThing()`,
       { label: 'Value', type: 'data', dataType: 'any', isInput: false },
     ],
     defaultData: { portalName: 'MyPortal' },
+    documentation: {
+      longDescription: 'Retrieves a value previously stored in a named portal by Set Portal. Allows accessing stored data without physical wire connections.',
+      codeExample: `// Store and retrieve
+SetPortal( "spawnPoint", player.GetOrigin() )
+
+// Later...
+vector spawn = GetPortal( "spawnPoint" )
+CreatePropDynamic( model, spawn, angles )`,
+      tips: [
+        'Portal must be set before getting',
+        'Returns null if portal doesn\'t exist',
+        'Use consistent naming across the graph',
+        'Works across different execution contexts'
+      ],
+      useCases: [
+        'Accessing values set in different graph areas',
+        'Sharing configuration data',
+        'Storing global references',
+        'Cross-branch communication'
+      ],
+      relatedNodes: ['set-portal', 'variable-get']
+    }
   },
 
   // ==================== SWITCH ====================
@@ -836,6 +1527,37 @@ DoNextThing()`,
     ],
     defaultData: { caseCount: 2 },
     tags: ['switch', 'case', 'branch', 'select'],
+    documentation: {
+      longDescription: 'Creates a multi-way branch that routes execution based on the value of the input. Each Case node specifies a value to match. If no case matches, the Default output fires.',
+      codeExample: `// Switch on player team
+switch ( player.GetTeam() )
+{
+    case TEAM_IMC:
+        // IMC team logic
+        break
+    
+    case TEAM_MILITIA:
+        // Militia team logic
+        break
+    
+    default:
+        // Unknown team
+        break
+}`,
+      tips: [
+        'Add Case nodes for each value to check',
+        'Default fires when no cases match',
+        'Case nodes connect to the Switch\'s Value input',
+        'Each case should have a Break unless fallthrough is wanted'
+      ],
+      useCases: [
+        'Different behavior per team',
+        'State machine implementations',
+        'Menu navigation logic',
+        'Entity type handling'
+      ],
+      relatedNodes: ['switch-case', 'branch', 'compare-equal']
+    }
   },
   {
     type: 'switch-case',
@@ -852,6 +1574,27 @@ DoNextThing()`,
     ],
     defaultData: { caseValue: 0 },
     tags: ['switch', 'case'],
+    documentation: {
+      longDescription: 'Defines a single case for a Switch node. When the Switch\'s value matches this case\'s Match value, the Exec output fires. Chain multiple Case nodes together.',
+      codeExample: `// Switch with multiple cases
+Switch node -> Value input
+Case(0) -> Match: 1 -> Exec: IMC logic
+Case(1) -> Match: 2 -> Exec: Militia logic
+Case(2) -> Match: 3 -> Exec: Neutral logic`,
+      tips: [
+        'Connect Exec output to next Case\'s Switch input',
+        'Match value must match Switch\'s value exactly',
+        'Use Break to exit after case logic',
+        'Add Case nodes for each condition'
+      ],
+      useCases: [
+        'Multiple value matching',
+        'Enum-based branching',
+        'State handling',
+        'Type-based dispatch'
+      ],
+      relatedNodes: ['switch', 'break', 'branch']
+    }
   },
   {
     type: 'break',
@@ -865,6 +1608,42 @@ DoNextThing()`,
     outputs: [],
     defaultData: {},
     tags: ['break', 'loop', 'switch'],
+    documentation: {
+      longDescription: 'Immediately exits the nearest enclosing loop or switch statement. For loops, execution continues after the loop. For switches, prevents fallthrough to next case.',
+      codeExample: `// Break out of a loop
+for ( int i = 0; i < 10; i++ )
+{
+    if ( i == 5 )
+        break  // Exit loop when i is 5
+    
+    print( "Index: " + i )
+}
+
+// In a switch
+switch ( value )
+{
+    case 1:
+        DoSomething()
+        break  // Don\'t fall through to case 2
+    
+    case 2:
+        DoOtherThing()
+        break
+}`,
+      tips: [
+        'Only exits one level of nesting',
+        'Required after each case (unless fallthrough wanted)',
+        'Use with For Loop, For Each, While Loop',
+        'Execution continues after the loop/switch'
+      ],
+      useCases: [
+        'Early exit from loops when condition met',
+        'Preventing switch fallthrough',
+        'Search optimization',
+        'Error handling'
+      ],
+      relatedNodes: ['loop-for', 'loop-foreach', 'loop-while', 'switch', 'continue']
+    }
   },
   {
     type: 'continue',
@@ -878,6 +1657,32 @@ DoNextThing()`,
     outputs: [],
     defaultData: {},
     tags: ['continue', 'loop'],
+    documentation: {
+      longDescription: 'Skips the remainder of the current loop iteration and proceeds to the next iteration. For For Loops, increments the counter and checks the condition. For While Loops, re-evaluates the condition.',
+      codeExample: `// Skip certain values in a loop
+for ( int i = 0; i < 10; i++ )
+{
+    if ( i % 2 == 0 )
+        continue  // Skip even numbers
+    
+    print( "Odd number: " + i )
+}
+
+// Output: Odd numbers 1, 3, 5, 7, 9`,
+      tips: [
+        'Skips remaining code in current iteration',
+        'Proceeds to next loop iteration',
+        'Useful for filtering in loops',
+        'More efficient than nested if-break'
+      ],
+      useCases: [
+        'Skipping unwanted values',
+        'Filtering array elements',
+        'Conditional processing',
+        'Validation loops'
+      ],
+      relatedNodes: ['loop-for', 'loop-foreach', 'loop-while', 'break']
+    }
   },
 
   // ==================== STRUCTS & ENUMS ====================
@@ -899,6 +1704,33 @@ DoNextThing()`,
       fieldDefaults: ['', ''],
     },
     tags: ['struct', 'structure', 'type', 'define'],
+    documentation: {
+      longDescription: 'Defines a new struct type for organizing related data. Structs allow you to group multiple pieces of data together and pass them as a single unit. Each struct has fields with specific types and optional default values.',
+      codeExample: `// Define a PlayerStats struct
+// Fields: name (string), score (int), health (float)
+
+// Later create and use:
+PlayerStats stats
+stats.name = "Player1"
+stats.score = 100
+stats.health = 75.5
+
+// Pass as single unit
+ProcessPlayerStats( stats )`,
+      tips: [
+        'Use meaningful names for struct and fields',
+        'Field types determine what data can be stored',
+        'Global structs can be accessed from anywhere',
+        'Use with Create Struct to make instances'
+      ],
+      useCases: [
+        'Player data grouping',
+        'Game state storage',
+        'Configuration objects',
+        'Data serialization'
+      ],
+      relatedNodes: ['struct-create', 'struct-get-field', 'struct-set-field']
+    }
   },
   {
     type: 'struct-create',
@@ -915,6 +1747,36 @@ DoNextThing()`,
     ],
     defaultData: { structName: 'MyStruct' },
     tags: ['struct', 'create', 'instance', 'new'],
+    documentation: {
+      longDescription: 'Creates a new instance of a previously defined struct type. The instance will have all the fields defined in the struct, initialized to their default values.',
+      codeExample: `// Create a PlayerStats instance
+PlayerStats stats = {
+    name = "",
+    score = 0,
+    health = 100.0
+}
+
+// Set field values
+stats.name = "Player1"
+stats.score = 500
+stats.health = 75.0
+
+// Use the instance
+ProcessStats( stats )`,
+      tips: [
+        'Struct must be defined first',
+        'Fields are initialized to defaults',
+        'Use Set Struct Field to modify fields',
+        'Get Struct Field to read values'
+      ],
+      useCases: [
+        'Creating player data objects',
+        'Game state instances',
+        'Configuration objects',
+        'Data passing between functions'
+      ],
+      relatedNodes: ['struct-define', 'struct-get-field', 'struct-set-field']
+    }
   },
   {
     type: 'struct-get-field',
@@ -930,6 +1792,35 @@ DoNextThing()`,
     ],
     defaultData: { fieldName: 'field1' },
     tags: ['struct', 'get', 'field', 'property'],
+    documentation: {
+      longDescription: 'Retrieves the value of a specific field from a struct instance. The field name must match one defined in the struct.',
+      codeExample: `// Get field from struct
+PlayerStats stats = CreatePlayerStats()
+
+// Get individual fields
+string playerName = stats.name
+int playerScore = stats.score
+float playerHealth = stats.health
+
+// Use in expressions
+if ( playerHealth < 25.0 )
+{
+    print( playerName + " needs healing!" )
+}`,
+      tips: [
+        'Returns the field\'s current value',
+        'Field must exist in struct definition',
+        'Type matches the field\'s defined type',
+        'Can be used directly in expressions'
+      ],
+      useCases: [
+        'Reading player stats',
+        'Accessing configuration values',
+        'Conditional checks',
+        'Data aggregation'
+      ],
+      relatedNodes: ['struct-set-field', 'struct-create', 'branch']
+    }
   },
   {
     type: 'struct-set-field',
@@ -947,6 +1838,33 @@ DoNextThing()`,
     ],
     defaultData: { fieldName: 'field1' },
     tags: ['struct', 'set', 'field', 'property'],
+    documentation: {
+      longDescription: 'Modifies the value of a specific field in a struct instance. The value type must match the field\'s defined type.',
+      codeExample: `// Create and modify struct
+PlayerStats stats
+
+// Set field values
+stats.name = "Player1"
+stats.score = stats.score + 100  // Add points
+stats.health = 100.0  // Full heal
+
+// Update multiple fields
+stats.kills++
+stats.deaths = stats.deaths + 1`,
+      tips: [
+        'Modifies the struct instance in place',
+        'Value type must match field definition',
+        'Can be chained with other nodes',
+        'Changes persist for the struct lifetime'
+      ],
+      useCases: [
+        'Updating player stats',
+        'Modifying configuration',
+        'Tracking game state changes',
+        'Building complex data'
+      ],
+      relatedNodes: ['struct-get-field', 'struct-create', 'loop-foreach']
+    }
   },
   {
     type: 'enum-define',
@@ -1122,6 +2040,38 @@ DoNextThing()`,
       { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
     ],
     defaultData: { functionName: 'OnClientConnected' },
+    serverOnly: true,
+    documentation: {
+      longDescription: 'Called when a player connects to the server. Use this to welcome players, initialize player-specific data, set up per-player callbacks, or track connection count.',
+      codeExample: `// Handle player connection
+void function OnClientConnected( entity player )
+{
+    // Welcome the player
+    SendHudMessage( player, "Welcome to the server!", -1, -1, 255, 0, 0 )
+    
+    // Initialize player data
+    InitPlayerScore( player )
+    
+    // Track connections
+    print( player.GetPlayerName() + " connected" )
+    
+    // Announce to others
+    NotifyAll( player.GetPlayerName() + " has joined" )
+}`, 
+      tips: [
+        'Server-side only',
+        'Player is fully connected at this point',
+        'Good place to initialize player variables',
+        'Player can immediately interact with game'
+      ],
+      useCases: [
+        'Welcome messages',
+        'Player initialization',
+        'Connection tracking',
+        'Loadout assignment'
+      ],
+      relatedNodes: ['on-client-disconnected', 'loop-foreach', 'get-player-by-index', 'on-player-respawned']
+    }
   },
   {
     type: 'on-client-disconnected',
@@ -1138,6 +2088,40 @@ DoNextThing()`,
       { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
     ],
     defaultData: { functionName: 'OnClientDisconnected' },
+    serverOnly: true,
+    documentation: {
+      longDescription: 'Called when a player disconnects from the server. Use this to clean up player data, announce departure, update team counts, or handle AFK tracking.',
+      codeExample: `// Handle player disconnection
+void function OnClientDisconnected( entity player )
+{
+    string name = player.GetPlayerName()
+    
+    // Announce departure
+    NotifyAll( name + " has disconnected" )
+    
+    // Clean up player data
+    ClearPlayerScore( player )
+    
+    // Check if game needs to end
+    if ( GetPlayerArray().len() < 2 )
+    {
+        EndGame( "Not enough players" )
+    }
+}`, 
+      tips: [
+        'Server-side only',
+        'Player entity may become invalid shortly',
+        'Good for cleanup operations',
+        'Track disconnection reasons if needed'
+      ],
+      useCases: [
+        'Departure announcements',
+        'Player data cleanup',
+        'AFK tracking',
+        'Game end conditions'
+      ],
+      relatedNodes: ['on-client-connected', 'loop-foreach', 'set-game-state']
+    }
   },
   {
     type: 'on-player-killed',
@@ -1156,6 +2140,38 @@ DoNextThing()`,
       { label: 'DamageInfo', type: 'data', dataType: 'var', isInput: false },
     ],
     defaultData: { functionName: 'OnPlayerKilled' },
+    serverOnly: true,
+    documentation: {
+      longDescription: 'Called when a player is killed. Use this to track kills, update scores, implement custom death mechanics, or trigger events on player death. The callback provides the victim, attacker, and damage information.',
+      codeExample: `// Track player kills
+void function OnPlayerKilled( entity victim, entity attacker, var damageInfo )
+{
+    if ( IsValid( attacker ) && attacker.IsPlayer() )
+    {
+        print( attacker.GetPlayerName() + " killed " + victim.GetPlayerName() )
+        
+        // Award points
+        ScoreEvent_Kill( attacker )
+    }
+    
+    // Check for last kill
+    if ( GetPlayerArray().len() == 1 )
+        AnnounceWinner( survivor )
+}`, 
+      tips: [
+        'Server-side only',
+        'Victim and attacker may be invalid if disconnected',
+        'Use DamageInfo to get damage amount and type',
+        'Combine with OnPlayerRespawned for full lifecycle'
+      ],
+      useCases: [
+        'Kill tracking and scoring',
+        'Death announcements',
+        'Custom death mechanics',
+        'Achievement systems'
+      ],
+      relatedNodes: ['on-player-respawned', 'on-npc-killed', 'on-death', 'get-all-players']
+    }
   },
   {
     type: 'on-player-respawned',
@@ -1172,12 +2188,46 @@ DoNextThing()`,
       { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
     ],
     defaultData: { functionName: 'OnPlayerRespawned' },
+    serverOnly: true,
+    documentation: {
+      longDescription: 'Called when a player respawns. Use this to set spawn loadout, apply buffs, initialize spawn location, or trigger respawn events.',
+      codeExample: `// Handle player respawn
+void function OnPlayerRespawned( entity player )
+{
+    // Give loadout
+    GiveRespawnLoadout( player )
+    
+    // Apply spawn protection
+    StatusEffect_AddEndless( player, eStatusEffect.invulnerable, 1.0 )
+    
+    // Move to spawn point
+    vector spawnPos = GetSpawnPoint( player )
+    player.SetOrigin( spawnPos )
+    
+    // Remove protection after delay
+    wait 3.0
+    StatusEffect_StopAll( player )
+}`, 
+      tips: [
+        'Server-side only',
+        'Player is alive when this fires',
+        'Good place to apply spawn loadouts',
+        'Combine with spawn protection effects'
+      ],
+      useCases: [
+        'Spawn loadout assignment',
+        'Spawn protection',
+        'Spawn point selection',
+        'Respawn events'
+      ],
+      relatedNodes: ['on-player-killed', 'give-weapon', 'status-effect-add', 'get-health']
+    }
   },
   {
     type: 'on-npc-killed',
     category: 'callbacks',
     label: 'AddCallback_OnNPCKilled',
-    description: 'Callback for when an NPC is killed',
+    description: 'Callback for when an NPC is killed (SERVER)',
     color: '#E8A838',
     inputs: [
       { label: 'Register', type: 'exec', isInput: true },
@@ -1190,6 +2240,40 @@ DoNextThing()`,
       { label: 'DamageInfo', type: 'data', dataType: 'var', isInput: false },
     ],
     defaultData: { functionName: 'OnNPCKilled' },
+    serverOnly: true,
+    documentation: {
+      longDescription: 'Called when an NPC is killed. Use this to track NPC kills, implement NPC-specific death effects, or handle quest objectives involving NPCs.',
+      codeExample: `// Handle NPC death
+void function OnNPCKilled( entity npc, entity attacker, var damageInfo )
+{
+    // Track NPC kills
+    print( "NPC killed by: " + (attacker.IsPlayer() ? attacker.GetPlayerName() : "NPC") )
+    
+    // Check if player killed it
+    if ( IsValid( attacker ) && attacker.IsPlayer() )
+    {
+        // Award points or track stats
+        player.AddNPCKill()
+    }
+    
+    // Spawn death effects
+    vector deathPos = npc.GetOrigin()
+    PlayFXOnEntity( deathEffect, npc, "" )
+}`, 
+      tips: [
+        'Server-side only',
+        'NPCs include soldiers, prowlers, drones, etc.',
+        'Can check attacker type with IsPlayer/IsNPC',
+        'Good for tracking kill challenges'
+      ],
+      useCases: [
+        'NPC kill tracking',
+        'Quest objectives',
+        'Death effects',
+        'Bounty systems'
+      ],
+      relatedNodes: ['on-player-killed', 'on-death', 'loop-foreach', 'get-all-players']
+    }
   },
   {
     type: 'on-client-connecting',
@@ -1293,7 +2377,7 @@ DoNextThing()`,
     type: 'on-game-state-enter',
     category: 'callbacks',
     label: 'AddCallback_GameStatePostEnter',
-    description: 'Callback for when game state changes',
+    description: 'Callback for when game state changes (SERVER)',
     color: '#E8A838',
     inputs: [
       { label: 'Register', type: 'exec', isInput: true },
@@ -1304,6 +2388,43 @@ DoNextThing()`,
       { label: 'GameState', type: 'data', dataType: 'int', isInput: false },
     ],
     defaultData: { functionName: 'OnGameStatePostEnter' },
+    serverOnly: true,
+    documentation: {
+      longDescription: 'Called when the game state changes. Use this to trigger mode-specific logic when the match transitions between states like playing, intermission, or Sudden Death.',
+      codeExample: `// Handle game state changes
+void function OnGameStatePostEnter( int newState )
+{
+    if ( newState == eGameState.Playing )
+    {
+        print( "Match started!" )
+        StartMatchTimer()
+    }
+    else if ( newState == eGameState.SuddenDeath )
+    {
+        // Enable sudden death mechanics
+        AnnounceSuddenDeath()
+        ShrinkPlayArea()
+    }
+    else if ( newState == eGameState.Intermission )
+    {
+        // Match ended
+        ShowScoreboard()
+    }
+}`, 
+      tips: [
+        'Use eGameState enum for state values',
+        'Called after state transition completes',
+        'Common states: Playing, SuddenDeath, Intermission, Warmup',
+        'Combine with GetGameState for current state'
+      ],
+      useCases: [
+        'Match start/end logic',
+        'Sudden Death triggers',
+        'Scoreboard display',
+        'Timer management'
+      ],
+      relatedNodes: ['get-game-state', 'set-game-state', 'gamemode-register']
+    }
   },
   {
     type: 'on-player-weapon-activated',
@@ -1741,6 +2862,29 @@ DoNextThing()`,
       { label: 'Origin', type: 'data', dataType: 'vector', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Returns the world position (origin) of an entity as a vector. This is the entity\'s center point in 3D space (X, Y, Z coordinates). Use this to get where an entity is located.',
+      codeExample: `// Get player position
+entity player = GetPlayerByIndex( 0 )
+vector pos = player.GetOrigin()
+
+// Use the position
+print( "Player is at: " + pos )
+CreatePropDynamic( model, pos + <0, 0, 100>, <0, 0, 0> )`,
+      tips: [
+        'Returns vector with X, Y, Z coordinates',
+        'Y is typically forward/backward in Source engine',
+        'Use with vector math nodes for calculations',
+        'Origin is usually at the entity\'s center'
+      ],
+      useCases: [
+        'Getting entity positions',
+        'Distance calculations',
+        'Spawning things near entities',
+        'Position-based logic'
+      ],
+      relatedNodes: ['set-origin', 'get-angles', 'get-velocity', 'trace-line']
+    }
   },
   {
     type: 'get-view-vector',
@@ -1755,6 +2899,28 @@ DoNextThing()`,
       { label: 'Vector', type: 'data', dataType: 'vector', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Returns the direction a player is looking as a normalized vector. This is the forward view direction from the player\'s eyes, useful for determining aim direction.',
+      codeExample: `// Get where player is looking
+entity player = GetLocalPlayer()
+vector lookDir = player.GetViewVector()
+
+// Use for shooting direction
+vector bulletDir = player.GetOrigin() + (lookDir * 1000)`,
+      tips: [
+        'Returns normalized direction vector',
+        'Based on eye angles, not body rotation',
+        'Use for projectile aiming',
+        'Works with GetEyePosition for complete ray'
+      ],
+      useCases: [
+        'Aiming projectiles',
+        'Determining player facing',
+        'Raycasting from player view',
+        'Visual effects direction'
+      ],
+      relatedNodes: ['get-eye-position', 'get-forward-vector', 'vector-to-angles']
+    }
   },
   {
     type: 'set-origin',
@@ -1771,6 +2937,31 @@ DoNextThing()`,
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Moves an entity to a new position in the world. The entity\'s position is instantly changed to the specified coordinates. Use this for teleportation or repositioning.',
+      codeExample: `// Teleport player to spawn point
+entity player = GetPlayerByIndex( 0 )
+vector spawnPos = <1000, 2000, 100>
+
+player.SetOrigin( spawnPos )
+
+// Move with offset
+entity npc = GetEntByScriptName( "guard_1" )
+npc.SetOrigin( player.GetOrigin() + <0, 0, 100> )`,
+      tips: [
+        'Instant teleportation',
+        'Can be used on any entity type',
+        'Often used with GetOrigin for relative moves',
+        'Use DispatchSpawn for unspawned entities'
+      ],
+      useCases: [
+        'Teleportation',
+        'Respawning entities',
+        'Repositioning NPCs',
+        'Checkpoint systems'
+      ],
+      relatedNodes: ['get-origin', 'set-angles', 'create-entity']
+    }
   },
   {
     type: 'get-angles',
@@ -1785,6 +2976,31 @@ DoNextThing()`,
       { label: 'Angles', type: 'data', dataType: 'vector', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Returns the entity\'s rotation as pitch, yaw, roll angles in a vector. Pitch is X (up/down), Yaw is Y (left/right), Roll is Z (tilt). Use with AnglesToForward to get facing direction.',
+      codeExample: `// Get entity orientation
+entity npc = GetEntByScriptName( "guard_1" )
+vector angles = npc.GetAngles()
+
+// Get forward direction
+vector forward = npc.GetForwardVector()
+
+// Or use AnglesToForward
+vector dir = AnglesToForward( angles )`,
+      tips: [
+        'Angles are in pitch, yaw, roll format',
+        'Yaw is rotation around vertical axis',
+        'Use with GetForwardVector for facing',
+        'Negative angles are valid'
+      ],
+      useCases: [
+        'Getting entity orientation',
+        'Calculating facing direction',
+        'Rotating entities',
+        'Alignment logic'
+      ],
+      relatedNodes: ['set-angles', 'get-forward-vector', 'angles-to-forward']
+    }
   },
   {
     type: 'set-angles',
@@ -1801,6 +3017,32 @@ DoNextThing()`,
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Sets the entity\'s rotation using pitch, yaw, roll angles. Changes how the entity is oriented in the world. Use <0, yaw, 0> to rotate around vertical axis.',
+      codeExample: `// Face a direction
+entity prop = GetEntByScriptName( "my_prop" )
+
+// Rotate 90 degrees on Y axis
+prop.SetAngles( <0, 90, 0> )
+
+// Make entity face another
+entity npc = GetEntByScriptName( "guard" )
+entity target = GetEntByScriptName( "target" )
+npc.SetAngles( (target.GetOrigin() - npc.GetOrigin()).ToAngles() )`,
+      tips: [
+        'Use <pitch, yaw, roll> format',
+        'Yaw is in degrees (0-360)',
+        'Can use VectorToAngles to convert direction',
+        'Use LookAt for simple facing'
+      ],
+      useCases: [
+        'Rotating entities',
+        'Facing targets',
+        'Orientation adjustments',
+        'Door/elevator control'
+      ],
+      relatedNodes: ['get-angles', 'look-at', 'vector-to-angles']
+    }
   },
   {
     type: 'get-velocity',
@@ -1815,6 +3057,35 @@ DoNextThing()`,
       { label: 'Velocity', type: 'data', dataType: 'vector', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Returns the entity\'s current velocity as a vector. The vector represents direction and speed (units per second). A stopped entity has <0, 0, 0> velocity.',
+      codeExample: `// Check if entity is moving
+entity player = GetPlayerByIndex( 0 )
+vector vel = player.GetVelocity()
+
+if ( vel.Length() > 10 )
+{
+    print( "Player is moving at " + vel.Length() + " units/sec" )
+}
+
+// Apply knockback
+entity target = GetEntByScriptName( "boulder" )
+vector push = <0, 0, 500>  // Push up
+target.SetVelocity( push )`,
+      tips: [
+        'Velocity is in units per second',
+        'Z component affects height movement',
+        'Use with SetVelocity for physics effects',
+        'Falling objects have negative Z velocity'
+      ],
+      useCases: [
+        'Movement detection',
+        'Physics interactions',
+        'Knockback effects',
+        'Velocity-based logic'
+      ],
+      relatedNodes: ['set-velocity', 'get-origin', 'trace-line']
+    }
   },
   {
     type: 'set-velocity',
@@ -1831,6 +3102,31 @@ DoNextThing()`,
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Sets the entity\'s velocity directly. The entity will move in the specified direction at the specified speed. Use for launch effects, knockback, or physics impulses.',
+      codeExample: `// Launch player upward
+entity player = GetPlayerByIndex( 0 )
+player.SetVelocity( <0, 0, 1000> )
+
+// Knockback in facing direction
+entity victim = GetEntByScriptName( "hit_entity" )
+vector knockback = attacker.GetForwardVector() * 500
+knockback.z = 200  // Add upward pop
+victim.SetVelocity( knockback )`,
+      tips: [
+        'Instant velocity change',
+        'Physics will continue from new velocity',
+        'Combine with GetForwardVector for directional launches',
+        'Gravity affects Z over time'
+      ],
+      useCases: [
+        'Launch mechanics',
+        'Knockback effects',
+        'Physics impulses',
+        'Jump pads'
+      ],
+      relatedNodes: ['get-velocity', 'get-forward-vector', 'create-script-mover']
+    }
   },
   {
     type: 'get-health',
@@ -1845,6 +3141,32 @@ DoNextThing()`,
       { label: 'Health', type: 'data', dataType: 'number', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Returns the entity\'s current health value. Health decreases when damage is taken. When health reaches 0 or below, the entity dies. Use with GetMaxHealth to calculate health percentage.',
+      codeExample: `// Check player health
+entity player = GetPlayerByIndex( 0 )
+float currentHealth = player.GetHealth()
+float maxHealth = player.GetMaxHealth()
+float healthPercent = (currentHealth / maxHealth) * 100
+
+if ( currentHealth <= 0 )
+{
+    print( "Player is dead!" )
+}`,
+      tips: [
+        'Returns current health value',
+        'Use with GetMaxHealth for percentage',
+        '0 or less means dead',
+        'Returns 0 for dead entities'
+      ],
+      useCases: [
+        'Health checks',
+        'Health bar UI',
+        'Death detection',
+        'Regeneration logic'
+      ],
+      relatedNodes: ['set-health', 'get-max-health', 'set-max-health']
+    }
   },
   {
     type: 'set-health',
@@ -1861,6 +3183,32 @@ DoNextThing()`,
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { health: 100 },
+    documentation: {
+      longDescription: 'Sets the entity\'s current health to the specified value. This can heal, damage, or revive entities. Setting health above max is possible but may be clamped by game rules.',
+      codeExample: `// Heal player
+entity player = GetPlayerByIndex( 0 )
+player.SetHealth( 100 )  // Full heal
+
+// Overheal above max
+player.SetHealth( 150 )
+
+// Kill entity
+entity npc = GetEntByScriptName( "target" )
+npc.SetHealth( 0 )`,
+      tips: [
+        'Can set to any value',
+        '0 health kills the entity',
+        'Above max may be clamped',
+        'Works on players and NPCs'
+      ],
+      useCases: [
+        'Healing mechanics',
+        'Damage over time',
+        'Reviving players',
+        'One-hit kill effects'
+      ],
+      relatedNodes: ['get-health', 'get-max-health', 'set-max-health', 'kill-entity']
+    }
   },
   {
     type: 'get-max-health',
@@ -1875,6 +3223,30 @@ DoNextThing()`,
       { label: 'MaxHealth', type: 'data', dataType: 'number', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Returns the entity\'s maximum health value. This is the upper limit of health the entity can have. Default varies by entity type (players have 100, titans have more).',
+      codeExample: `// Calculate health percentage
+entity player = GetPlayerByIndex( 0 )
+float current = player.GetHealth()
+float max = player.GetMaxHealth()
+float percent = (current / max) * 100
+
+// Use for health bar UI
+RuiSetFloat( hudRui, "healthPercent", percent )`,
+      tips: [
+        'Returns maximum health cap',
+        'Used with GetHealth for percentages',
+        'Can be changed with SetMaxHealth',
+        'Different entity types have different defaults'
+      ],
+      useCases: [
+        'Health percentage calculations',
+        'Health bar UI',
+        'Scaling damage by max health',
+        'Difficulty adjustments'
+      ],
+      relatedNodes: ['get-health', 'set-health', 'set-max-health']
+    }
   },
   {
     type: 'set-max-health',
@@ -1891,6 +3263,30 @@ DoNextThing()`,
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { maxHealth: 100 },
+    documentation: {
+      longDescription: 'Sets the entity\'s maximum health value. This changes the upper limit of health. If current health exceeds the new max, it may be clamped down.',
+      codeExample: `// Increase player max health (buff)
+entity player = GetPlayerByIndex( 0 )
+player.SetMaxHealth( 150 )
+player.SetHealth( 150 )  // Also heal to new max
+
+// Set NPC difficulty scaling
+entity npc = GetEntByScriptName( "elite_enemy" )
+npc.SetMaxHealth( 500 )  // Stronger enemy`,
+      tips: [
+        'Changes health cap',
+        'May clamp current health if over',
+        'Useful for buff/debuff systems',
+        'Affected entities keep current health value'
+      ],
+      useCases: [
+        'Health buffs/debuffs',
+        'Difficulty scaling',
+        'Elite enemy variants',
+        'Game mode modifiers'
+      ],
+      relatedNodes: ['get-max-health', 'get-health', 'set-health']
+    }
   },
   {
     type: 'get-shield-health',
@@ -1905,6 +3301,28 @@ DoNextThing()`,
       { label: 'Shield', type: 'data', dataType: 'number', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Returns the entity\'s shield health (armor) value. Shields absorb damage before health takes effect. Common on players and titans. Returns 0 for entities without shields.',
+      codeExample: `// Check shield status
+entity player = GetPlayerByIndex( 0 )
+float shield = player.GetShieldHealth()
+float health = player.GetHealth()
+
+print( "Shields: " + shield + " | Health: " + health )`,
+      tips: [
+        'Shields absorb damage first',
+        'Returns 0 if no shields',
+        'Use with GetMaxShield for percentage',
+        'Shield break effects can be triggered'
+      ],
+      useCases: [
+        'Shield status UI',
+        'Shield break detection',
+        'Damage calculation',
+        'Regeneration logic'
+      ],
+      relatedNodes: ['set-shield-health', 'get-health', 'set-health']
+    }
   },
   {
     type: 'set-shield-health',
@@ -1921,6 +3339,32 @@ DoNextThing()`,
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { shield: 100 },
+    documentation: {
+      longDescription: 'Sets the entity\'s shield health. Shields absorb damage before health is affected. Setting to 0 breaks all shields. Use for shield regeneration or depletion mechanics.',
+      codeExample: `// Regenerate shields
+entity player = GetPlayerByIndex( 0 )
+player.SetShieldHealth( 100 )  // Full shields
+
+// Break shields
+entity target = GetEntByScriptName( "shielded_enemy" )
+target.SetShieldHealth( 0 )  // Break shields
+
+// Partial shield restore
+target.SetShieldHealth( 50 )`,
+      tips: [
+        'Shield must be 0 for health to take damage',
+        'Can set to any value',
+        'Used for shield regen mechanics',
+        'Shield break triggers visuals/sounds'
+      ],
+      useCases: [
+        'Shield regeneration',
+        'Shield break effects',
+        'Shield drain mechanics',
+        'Buff systems'
+      ],
+      relatedNodes: ['get-shield-health', 'get-health', 'set-health']
+    }
   },
   {
     type: 'get-team',
@@ -1935,6 +3379,34 @@ DoNextThing()`,
       { label: 'Team', type: 'data', dataType: 'number', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Returns the entity\'s team number. Common teams are TEAM_IMC (2) and TEAM_MILITIA (3). Use with Compare nodes to check team membership for friendly/hostile detection.',
+      codeExample: `// Check player team
+entity player = GetPlayerByIndex( 0 )
+int team = player.GetTeam()
+
+if ( team == TEAM_IMC )
+{
+    print( "Player is on IMC" )
+}
+else if ( team == TEAM_MILITIA )
+{
+    print( "Player is on Militia" )
+}`,
+      tips: [
+        'Returns team enum value',
+        'TEAM_IMC = 2, TEAM_MILITIA = 3',
+        'Use for team-based logic',
+        'Team 0/1 may be neutral or unassigned'
+      ],
+      useCases: [
+        'Team checking',
+        'Friendly fire prevention',
+        'Team-based scoring',
+        'Objective assignment'
+      ],
+      relatedNodes: ['set-team', 'get-players-on-team', 'switch']
+    }
   },
   {
     type: 'freeze',
@@ -1951,6 +3423,29 @@ DoNextThing()`,
     ],
     defaultData: {},
     tags: ['freeze', 'movement', 'physics'],
+    documentation: {
+      longDescription: 'Stops all physics movement on the entity, freezing it in place. The entity remains at its current position and rotation. Use Unfreeze to restore movement.',
+      codeExample: `// Freeze a prop
+entity crate = GetEntByScriptName( "floating_crate" )
+crate.Freeze()
+
+// Freeze player (stops movement)
+entity player = GetPlayerByIndex( 0 )
+player.Freeze()  // Player can still look around`,
+      tips: [
+        'Stops all physics',
+        'Entity can still receive damage',
+        'Use Unfreeze to restore',
+        'Can be used for stasis effects'
+      ],
+      useCases: [
+        'Freeze traps',
+        'Cinematic freeze',
+        'Stasis effects',
+        'Physics puzzles'
+      ],
+      relatedNodes: ['unfreeze', 'set-velocity', 'is-valid']
+    }
   },
   {
     type: 'unfreeze',
@@ -1967,6 +3462,29 @@ DoNextThing()`,
     ],
     defaultData: {},
     tags: ['unfreeze', 'movement', 'physics'],
+    documentation: {
+      longDescription: 'Restores physics movement on a previously frozen entity. The entity resumes responding to forces and gravity. Use after Freeze to unfreeze.',
+      codeExample: `// Unfreeze after delay
+entity crate = GetEntByScriptName( "floating_crate" )
+crate.Freeze()
+
+wait 5.0  // Wait 5 seconds
+
+crate.Unfreeze()  // Resume physics`,
+      tips: [
+        'Restores physics simulation',
+        'Works after Freeze',
+        'Entity may fall if in air',
+        'Use for timed freeze effects'
+      ],
+      useCases: [
+        'Ending freeze traps',
+        'Timed stasis',
+        'Physics puzzle solutions',
+        'Freeze/thaw cycles'
+      ],
+      relatedNodes: ['freeze', 'set-velocity']
+    }
   },
   {
     type: 'look-at',
@@ -1984,6 +3502,31 @@ DoNextThing()`,
     ],
     defaultData: {},
     tags: ['lookat', 'rotation', 'angles'],
+    documentation: {
+      longDescription: 'Rotates the entity to face directly at the target entity. The entity\'s forward direction will point at the target\'s origin. Uses the shortest rotation path.',
+      codeExample: `// NPC looks at player
+entity npc = GetEntByScriptName( "guard_1" )
+entity player = GetPlayerByIndex( 0 )
+
+npc.LookAt( player )
+
+// Turret tracks player
+entity turret = GetEntByScriptName( "auto_turret" )
+turret.LookAt( closestPlayer )`,
+      tips: [
+        'Rotates entity to face target',
+        'Uses shortest rotation path',
+        'Works on NPCs, props, turrets',
+        'Can be used continuously for tracking'
+      ],
+      useCases: [
+        'NPC facing',
+        'Turret tracking',
+        'Door orientation',
+        'Camera pointing'
+      ],
+      relatedNodes: ['set-angles', 'get-angles', 'get-forward-vector']
+    }
   },
   {
     type: 'get-player-name',
@@ -1998,6 +3541,30 @@ DoNextThing()`,
       { label: 'Name', type: 'data', dataType: 'string', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Returns the player\'s display name as a string. This is the name shown in the scoreboard and kill feed. Use for player identification and messaging.',
+      codeExample: `// Get player name
+entity player = GetPlayerByIndex( 0 )
+string name = player.GetPlayerName()
+
+print( "Player: " + name )
+
+// Display on HUD
+RuiSetString( hudRui, "playerName", name )`,
+      tips: [
+        'Returns display name string',
+        'Available for players only',
+        'Use for player identification',
+        'Can be used in messages'
+      ],
+      useCases: [
+        'Player identification',
+        'Kill feed messages',
+        'HUD display',
+        'Log messages'
+      ],
+      relatedNodes: ['get-player-by-index', 'get-all-players', 'print']
+    }
   },
   {
     type: 'set-team',
@@ -2014,6 +3581,29 @@ DoNextThing()`,
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { team: 2 },
+    documentation: {
+      longDescription: 'Changes the entity\'s team affiliation. This affects who they are friendly with and can shoot. Common teams are TEAM_IMC (2) and TEAM_MILITIA (3). Use for team switching or bot assignment.',
+      codeExample: `// Change player team
+entity player = GetPlayerByIndex( 0 )
+player.SetTeam( TEAM_MILITIA )  // Switch to Militia
+
+// NPC team assignment
+entity bot = GetEntByScriptName( "bot_1" )
+bot.SetTeam( TEAM_IMC )  // Bot joins IMC`,
+      tips: [
+        'Changes team affiliation',
+        'Affects friendly fire rules',
+        'May trigger team change callbacks',
+        'Use enum values (TEAM_IMC, TEAM_MILITIA)'
+      ],
+      useCases: [
+        'Team switching',
+        'Bot assignment',
+        'Spectator mode',
+        'Team-based objectives'
+      ],
+      relatedNodes: ['get-team', 'get-players-on-team', 'on-player-changed-team']
+    }
   },
   {
     type: 'get-owner',
@@ -2028,6 +3618,31 @@ DoNextThing()`,
       { label: 'Owner', type: 'data', dataType: 'entity', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Returns the entity\'s owner as set by SetOwner or during creation. Owners are typically the entity that created or is responsible for the owned entity. Returns invalid entity if no owner is set.',
+      codeExample: `// Get projectile owner
+entity projectile = GetEntByScriptName( "my_projectile" )
+entity owner = projectile.GetOwner()
+
+if ( IsValid( owner ) )
+{
+    // Owner created this projectile
+    print( "Projectile was fired by: " + owner.GetPlayerName() )
+}`,
+      tips: [
+        'Returns owner entity reference',
+        'May be invalid if no owner set',
+        'Use for damage attribution',
+        'Set during entity creation'
+      ],
+      useCases: [
+        'Damage attribution',
+        'Projectile tracking',
+        'Ownership chains',
+        'Cleanup hierarchy'
+      ],
+      relatedNodes: ['set-owner', 'create-entity']
+    }
   },
   {
     type: 'set-owner',
@@ -2044,6 +3659,34 @@ DoNextThing()`,
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Sets the entity\'s owner. The owner is typically the entity that created this one or is responsible for it. Used for damage attribution, cleanup chains, and ownership tracking.',
+      codeExample: `// Set projectile owner
+entity projectile = CreateEntity( "info_target" )
+projectile.SetOrigin( shooter.GetOrigin() + <0, 0, 50> )
+projectile.SetOwner( shooter )  // Mark shooter as owner
+DispatchSpawn( projectile )
+
+// Later, get owner for damage
+entity owner = projectile.GetOwner()
+if ( IsValid( owner ) )
+{
+    print( "Owner: " + owner.GetPlayerName() )
+}`,
+      tips: [
+        'Sets ownership reference',
+        'Used for damage attribution',
+        'Helps with cleanup hierarchy',
+        'Can be retrieved with GetOwner'
+      ],
+      useCases: [
+        'Damage attribution',
+        'Projectile ownership',
+        'Cleanup chains',
+        'Friendly fire prevention'
+      ],
+      relatedNodes: ['get-owner', 'create-entity']
+    }
   },
   {
     type: 'get-parent',
@@ -2058,6 +3701,34 @@ DoNextThing()`,
       { label: 'Parent', type: 'data', dataType: 'entity', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Returns the entity\'s parent if one is set. Parented entities move and rotate with their parent. Use SetParent to establish parent-child relationships.',
+      codeExample: `// Check if entity is parented
+entity child = GetEntByScriptName( "turret_base" )
+entity parent = child.GetParent()
+
+if ( IsValid( parent ) )
+{
+    print( "Turret is parented to: " + parent.GetScriptName() )
+}
+else
+{
+    print( "Turret has no parent" )
+}`,
+      tips: [
+        'Returns parent entity reference',
+        'Returns invalid if not parented',
+        'Use SetParent to create relationship',
+        'Parent moves child with it'
+      ],
+      useCases: [
+        'Hierarchy checking',
+        'Attachment verification',
+        'Entity relationships',
+        'Mount point logic'
+      ],
+      relatedNodes: ['set-parent', 'clear-parent']
+    }
   },
   {
     type: 'set-parent',
@@ -2075,6 +3746,33 @@ DoNextThing()`,
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { attachment: '' },
+    documentation: {
+      longDescription: 'Parents the entity to another entity. The child will move and rotate with the parent. Use an attachment point name to attach to a specific point on the parent, or empty string for origin-to-origin attachment.',
+      codeExample: `// Parent turret to moving platform
+entity turret = GetEntByScriptName( "moving_turret" )
+entity platform = GetEntByScriptName( "elevator" )
+
+// Attach turret to platform
+turret.SetParent( platform )  // Moves with platform
+
+// Attach with specific attachment point
+entity flag = GetEntByScriptName( "team_flag" )
+entity carrier = GetEntByScriptName( "flag_carrier" )
+flag.SetParent( carrier, "flag_attachment" )`,
+      tips: [
+        'Creates parent-child relationship',
+        'Child follows parent movement',
+        'Attachment point is optional',
+        'Use ClearParent to detach'
+      ],
+      useCases: [
+        'Vehicle attachments',
+        'Moving platforms',
+        'Equipment carrying',
+        'Hierarchical animations'
+      ],
+      relatedNodes: ['get-parent', 'clear-parent', 'create-entity']
+    }
   },
   {
     type: 'clear-parent',
@@ -2090,6 +3788,33 @@ DoNextThing()`,
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Removes the parent-child relationship. The entity becomes independent and retains its current position and rotation. Use this to detach carried items or leave moving platforms.',
+      codeExample: `// Drop carried item
+entity carriedItem = GetEntByScriptName( "carried_object" )
+carriedItem.ClearParent()  // Item stays at current position
+
+// Detach from platform at destination
+entity turret = GetEntByScriptName( "elevator_turret" )
+entity elevator = GetEntByScriptName( "elevator" )
+
+// When elevator reaches top
+elevator.SetOrigin( <0, 0, 500> )
+turret.ClearParent()  // Turret stays at top`,
+      tips: [
+        'Removes parent relationship',
+        'Entity keeps current position',
+        'Use after SetParent to detach',
+        'Entity becomes world-relative'
+      ],
+      useCases: [
+        'Dropping items',
+        'Detaching from vehicles',
+        'Leaving platforms',
+        'Releasing attachments'
+      ],
+      relatedNodes: ['set-parent', 'get-parent']
+    }
   },
   {
     type: 'is-valid',
@@ -2104,6 +3829,43 @@ DoNextThing()`,
       { label: 'Valid', type: 'data', dataType: 'boolean', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Checks if an entity reference is still valid. Entities become invalid after being destroyed, killed, or when the entity no longer exists. Always check before using entity references.',
+      codeExample: `// Check if player is still in game
+entity player = GetPlayerByIndex( 0 )
+
+if ( IsValid( player ) )
+{
+    // Safe to use player
+    player.SetHealth( 100 )
+}
+else
+{
+    print( "Player disconnected!" )
+}
+
+// Safe entity array iteration
+foreach ( entity ent in myEntities )
+{
+    if ( IsValid( ent ) )
+    {
+        // Process valid entity
+    }
+}`,
+      tips: [
+        'Returns true if entity exists',
+        'Always check before using entity',
+        'Invalid after entity is killed/removed',
+        'Essential for safe array iteration'
+      ],
+      useCases: [
+        'Safe entity access',
+        'Disconnection handling',
+        'Array cleanup',
+        'Callback validation'
+      ],
+      relatedNodes: ['is-alive', 'is-player', 'get-all-players']
+    }
   },
   {
     type: 'is-alive',
@@ -2118,6 +3880,41 @@ DoNextThing()`,
       { label: 'Alive', type: 'data', dataType: 'boolean', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Checks if an entity is currently alive. Returns true for living entities, false for dead or destroyed entities. Use this to check player/NPC status before interactions.',
+      codeExample: `// Check if player is alive
+entity player = GetPlayerByIndex( 0 )
+
+if ( IsAlive( player ) )
+{
+    // Player is alive, can interact
+    player.SetHealth( 100 )
+}
+else
+{
+    print( "Player is dead" )
+}
+
+// NPC status check
+entity npc = GetEntByScriptName( "enemy_1" )
+if ( IsAlive( npc ) && npc.GetTeam() == TEAM_IMC )
+{
+    // Attack alive IMC NPC
+}`,
+      tips: [
+        'Returns true if entity is alive',
+        'False for dead or invalid entities',
+        'Use before damaging or interacting',
+        'Combine with IsValid for full check'
+      ],
+      useCases: [
+        'Death checks',
+        'Respawn logic',
+        'Conditional interactions',
+        'Game state tracking'
+      ],
+      relatedNodes: ['is-valid', 'get-health', 'on-death']
+    }
   },
   {
     type: 'is-player',
@@ -2132,6 +3929,35 @@ DoNextThing()`,
       { label: 'IsPlayer', type: 'data', dataType: 'boolean', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Checks if the entity is a player. Returns true for player entities, false for NPCs, props, or other non-player entities. Use to differentiate between players and AI.',
+      codeExample: `// Check entity type
+entity ent = GetEntByScriptName( "unknown_entity" )
+
+if ( IsPlayer( ent ) )
+{
+    // Treat as player
+    print( "This is a player: " + ent.GetPlayerName() )
+}
+else if ( IsNPC( ent ) )
+{
+    // Treat as NPC
+    print( "This is an NPC" )
+}`,
+      tips: [
+        'Returns true for players only',
+        'False for NPCs and props',
+        'Use for type-specific handling',
+        'Combine with other type checks'
+      ],
+      useCases: [
+        'Entity type checking',
+        'Player-specific logic',
+        'NPC filtering',
+        'Damage type handling'
+      ],
+      relatedNodes: ['is-npc', 'is-titan', 'is-pilot']
+    }
   },
   {
     type: 'is-npc',
@@ -2146,6 +3972,40 @@ DoNextThing()`,
       { label: 'IsNPC', type: 'data', dataType: 'boolean', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Checks if the entity is an NPC (non-player character). Returns true for AI entities like soldiers, prowlers, and drones. Use to apply NPC-specific logic.',
+      codeExample: `// Check if entity is NPC
+entity ent = GetEntByScriptName( "creature" )
+
+if ( IsNPC( ent ) )
+{
+    // Apply NPC AI logic
+    ent.SetSpawnOption_AISettings( "npc_soldier" )
+}
+
+// Filter NPC from player array
+array players = GetPlayerArray()
+array npcs = []
+
+foreach ( entity e in GetEntityArray() )
+{
+    if ( IsNPC( e ) )
+        npcs.append( e )
+}`,
+      tips: [
+        'Returns true for AI entities',
+        'False for players and props',
+        'Use for AI-specific handling',
+        'Combine with IsTitan/IsPilot'
+      ],
+      useCases: [
+        'NPC detection',
+        'AI logic application',
+        'Entity filtering',
+        'Spawn system setup'
+      ],
+      relatedNodes: ['is-player', 'is-titan', 'is-pilot']
+    }
   },
   {
     type: 'is-titan',
@@ -2160,6 +4020,41 @@ DoNextThing()`,
       { label: 'IsTitan', type: 'data', dataType: 'boolean', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Checks if the entity is a Titan. Returns true for player titans and AI titans. Use to apply titan-specific logic like doom, execute, or loadout handling.',
+      codeExample: `// Check if entity is a Titan
+entity ent = GetEntByScriptName( "big_enemy" )
+
+if ( IsTitan( ent ) )
+{
+    // Apply titan-specific logic
+    // Can use doom, execute, etc.
+    print( "This is a Titan!" )
+}
+
+// Different handling for titans vs pilots
+if ( IsTitan( target ) )
+{
+    // Titan damage handling
+}
+else if ( IsPilot( target ) )
+{
+    // Pilot damage handling
+}`,
+      tips: [
+        'Returns true for Titans',
+        'Works on player and AI titans',
+        'Use for titan-specific mechanics',
+        'Combine with IsPlayer for full type'
+      ],
+      useCases: [
+        'Titan detection',
+        'Execute mechanics',
+        'Doom system',
+        'Titan-specific damage'
+      ],
+      relatedNodes: ['is-player', 'is-npc', 'is-pilot']
+    }
   },
   {
     type: 'is-pilot',
@@ -2174,6 +4069,36 @@ DoNextThing()`,
       { label: 'IsPilot', type: 'data', dataType: 'boolean', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Checks if the entity is a pilot (on-foot player or NPC). Returns true for player pilots and foot-soldier NPCs. Use to apply pilot-specific handling.',
+      codeExample: `// Check if entity is a pilot
+entity ent = GetEntByScriptName( "soldier" )
+
+if ( IsPilot( ent ) )
+{
+    // Pilot-specific handling
+    // Different damage, abilities, etc.
+}
+
+// Distinguish from titan
+if ( IsPilot( target ) && !IsTitan( target ) )
+{
+    // Definitely a pilot (not in titan)
+}`,
+      tips: [
+        'Returns true for pilots',
+        'True for both player and NPC pilots',
+        'False for titans (players in titans)',
+        'Use with IsPlayer for player check'
+      ],
+      useCases: [
+        'Pilot detection',
+        'Pilot-specific abilities',
+        'Damage type handling',
+        'Loadout handling'
+      ],
+      relatedNodes: ['is-player', 'is-npc', 'is-titan']
+    }
   },
   {
     type: 'get-class-name',
@@ -2188,6 +4113,40 @@ DoNextThing()`,
       { label: 'ClassName', type: 'data', dataType: 'string', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Returns the entity\'s class name as a string. Class names identify the entity type (e.g., "player", "npc_soldier", "prop_dynamic", "trigger_radius"). Use for type checking and spawning.',
+      codeExample: `// Get entity class
+entity ent = GetEntByScriptName( "mystery_entity" )
+string className = ent.GetClassName()
+
+if ( className == "player" )
+{
+    print( "It\'s a player!" )
+}
+else if ( className == "npc_soldier" )
+{
+    print( "It\'s a soldier NPC!" )
+}
+
+// Check before spawning
+if ( className == "prop_dynamic" )
+{
+    print( "This is a dynamic prop" )
+}`,
+      tips: [
+        'Returns the entity\'s class type string',
+        'Common classes: player, npc_*, prop_*, trigger_*',
+        'Use for type validation',
+        'Compare with string equality'
+      ],
+      useCases: [
+        'Entity type checking',
+        'Spawn filtering',
+        'Callback handling',
+        'Entity classification'
+      ],
+      relatedNodes: ['is-player', 'is-npc', 'create-entity']
+    }
   },
   {
     type: 'get-ent-index',
@@ -2202,6 +4161,35 @@ DoNextThing()`,
       { label: 'Index', type: 'data', dataType: 'number', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Returns the entity\'s internal index number. This is a unique identifier assigned by the engine. Use with GetEntByIndex to retrieve the entity by its index.',
+      codeExample: `// Get entity index
+entity player = GetPlayerByIndex( 0 )
+int index = player.GetEntIndex()
+
+print( "Player index: " + index )
+
+// Later, retrieve by index
+entity retrieved = GetEntByIndex( index )
+
+if ( IsValid( retrieved ) )
+{
+    print( "Got entity back!" )
+}`,
+      tips: [
+        'Returns unique entity index',
+        'Use with GetEntByIndex to retrieve',
+        'Index persists while entity exists',
+        'Useful for serialization'
+      ],
+      useCases: [
+        'Entity identification',
+        'Serialization',
+        'Network entity references',
+        'Entity lookup'
+      ],
+      relatedNodes: ['get-ent-by-index', 'get-entity-by-script-name']
+    }
   },
   {
     type: 'get-script-name',
@@ -2216,6 +4204,34 @@ DoNextThing()`,
       { label: 'ScriptName', type: 'data', dataType: 'string', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Returns the entity\'s script name as set by SetScriptName or in the map. Script names provide a way to reference entities by a custom name. Use GetEntByScriptName to find by script name.',
+      codeExample: `// Get entity script name
+entity prop = GetEntByScriptName( "spawn_point_1" )
+string name = prop.GetScriptName()
+
+if ( name == "spawn_point_1" )
+{
+    print( "Found spawn point!" )
+}
+
+// All entities have some script name
+entity player = GetPlayerByIndex( 0 )
+print( "Player script name: " + player.GetScriptName() )`,
+      tips: [
+        'Returns custom script name',
+        'Set via SetScriptName or map editor',
+        'Use GetEntByScriptName to find entities',
+        'Names should be unique for reliable lookup'
+      ],
+      useCases: [
+        'Entity identification',
+        'Named entity lookup',
+        'Level entity reference',
+        'Spawn point systems'
+      ],
+      relatedNodes: ['set-script-name', 'get-entity-by-script-name']
+    }
   },
   {
     type: 'set-script-name',
@@ -2232,6 +4248,33 @@ DoNextThing()`,
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { scriptName: 'my_entity' },
+    documentation: {
+      longDescription: 'Sets a custom script name on an entity. This allows the entity to be found later using GetEntByScriptName. Script names must be unique for reliable lookup.',
+      codeExample: `// Name an entity for later lookup
+entity spawnPoint = CreatePropDynamic( model, origin, angles )
+spawnPoint.SetScriptName( "my_spawn_point" )
+
+// Later, find it
+entity found = GetEntByScriptName( "my_spawn_point" )
+
+if ( IsValid( found ) )
+{
+    print( "Found my spawn point!" )
+}`,
+      tips: [
+        'Sets custom identifier for entity',
+        'Use unique names to avoid conflicts',
+        'Can be set during creation or later',
+        'Use with GetEntByScriptName for lookup'
+      ],
+      useCases: [
+        'Naming entities for lookup',
+        'Spawn point systems',
+        'Checkpoint tracking',
+        'Level object reference'
+      ],
+      relatedNodes: ['get-script-name', 'get-entity-by-script-name', 'create-entity']
+    }
   },
   {
     type: 'kill-entity',
@@ -2247,6 +4290,36 @@ DoNextThing()`,
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Destroys the entity immediately. The entity is removed from the game and all references to it become invalid. Use for removing temporary objects, defeated enemies, or cleanup.',
+      codeExample: `// Destroy a temporary entity
+entity tempProp = GetEntByScriptName( "temp_decoration" )
+tempProp.Kill()  // Entity is now gone
+
+// Kill defeated enemy
+entity npc = GetEntByScriptName( "boss_npc" )
+npc.Kill()
+
+// Cleanup after use
+foreach ( entity obj in tempObjects )
+{
+    obj.Kill()
+}
+tempObjects.clear()`,
+      tips: [
+        'Immediately destroys entity',
+        'All references become invalid',
+        'Use IsValid to check after kill',
+        'Triggers death callbacks if applicable'
+      ],
+      useCases: [
+        'Removing temporary objects',
+        'Destroying defeated enemies',
+        'Cleanup operations',
+        'Object pooling cleanup'
+      ],
+      relatedNodes: ['is-valid', 'is-alive', 'on-death', 'set-health']
+    }
   },
   {
     type: 'create-entity',
@@ -2291,6 +4364,39 @@ DoNextThing()`,
     defaultData: { className: 'prop_dynamic' },
     serverOnly: true,
     tags: ['CreateEntity', 'spawn', 'create', 'entity', 'prop', 'trigger', 'npc', 'particle', 'mover', 'zipline', 'SetRadius', 'SetParent', 'SetOwner', 'kv', 'keyvalue'],
+    documentation: {
+      longDescription: 'Creates a new entity in the world with specified properties. The entity is not spawned until DispatchSpawn is called. Use the KeyValues input with KV nodes for additional properties. Common classnames: prop_dynamic, prop_physics, trigger_radius, info_particle_system.',
+      codeExample: `// Create a simple prop
+entity prop = CreateEntity( "prop_dynamic" )
+prop.SetValueForModelKey( $"mdl/props/cargo_container.rmdl" )
+prop.SetOrigin( <0, 0, 100> )
+prop.SetAngles( <0, 45, 0> )
+prop.SetScriptName( "my_cargo" )
+DispatchSpawn( prop )
+
+// Create a trigger
+entity trigger = CreateEntity( "trigger_radius" )
+trigger.SetOrigin( player.GetOrigin() )
+trigger.SetRadius( 256 )
+trigger.SetAboveHeight( 128 )
+trigger.SetBelowHeight( 64 )
+SetTriggerEnterCallback( trigger, OnPlayerEnter )
+DispatchSpawn( trigger )`,
+      tips: [
+        'Call DispatchSpawn after setting properties',
+        'Use KV nodes for additional properties',
+        'ClassName is required',
+        'Origin/Angles default to <0,0,0>',
+        'KeyValues input accepts multiple connections'
+      ],
+      useCases: [
+        'Spawning dynamic props',
+        'Creating trigger volumes',
+        'Spawning particles',
+        'Creating NPC spawners'
+      ],
+      relatedNodes: ['dispatch-spawn', 'set-entity-kv', 'create-prop-dynamic', 'create-trigger-cylinder']
+    }
   },
   {
     type: 'entity-classname',
@@ -2304,6 +4410,32 @@ DoNextThing()`,
     ],
     defaultData: { className: 'prop_dynamic' },
     tags: ['entity', 'classname', 'type', 'prop', 'npc', 'trigger', 'particle', 'dropdown', 'select'],
+    documentation: {
+      longDescription: 'Provides a dropdown list of all available entity class names for use with Create Entity. Common classes include prop_dynamic, prop_physics, trigger_radius, info_particle_system, npc_soldier, and more.',
+      codeExample: `// Select entity type from dropdown
+// Common choices:
+// - prop_dynamic (static props)
+// - prop_physics (physics-enabled props)
+// - trigger_radius (trigger zone)
+// - info_particle_system (particle emitter)
+// - npc_soldier (soldier NPC)
+
+entity ent = CreateEntity( "prop_dynamic" )
+DispatchSpawn( ent )`,
+      tips: [
+        'Use dropdown to select valid class names',
+        'ClassName determines entity behavior',
+        'Some classes require additional setup',
+        'Check game documentation for available classes'
+      ],
+      useCases: [
+        'Entity creation',
+        'Spawn point selection',
+        'Trigger setup',
+        'Particle system creation'
+      ],
+      relatedNodes: ['create-entity', 'dispatch-spawn', 'create-prop-dynamic']
+    }
   },
 
   // ==================== KEYVALUE NODES ====================
@@ -2510,6 +4642,33 @@ DoNextThing()`,
     defaultData: {},
     serverOnly: true,
     tags: ['create', 'mover', 'script_mover', 'movement', 'path'],
+    documentation: {
+      longDescription: 'Creates a ScriptMover entity that can move smoothly between positions. ScriptMovers are invisible helper entities useful for moving platforms, animated objects, or as parent points for other entities.',
+      codeExample: `// Create a moving platform
+entity mover = CreateScriptMover( <100, 0, 100>, <0, 0, 0> )
+mover.SetScriptName( "elevator_platform" )
+DispatchSpawn( mover )
+
+// Parent objects to the mover
+entity crate = GetEntByScriptName( "platform_crate" )
+crate.SetParent( mover )
+
+// Move the platform (use custom code or lerp functions)
+// mover.SetOrigin( <100, 0, 300> )`,
+      tips: [
+        'Invisible but functional',
+        'Can be parented to for moving groups',
+        'Use SetOrigin/SetAngles for movement',
+        'Smooth movement requires custom logic'
+      ],
+      useCases: [
+        'Moving platforms',
+        'Animated doors',
+        'Parent points',
+        'Elevator systems'
+      ],
+      relatedNodes: ['set-origin', 'set-angles', 'set-parent', 'create-entity']
+    }
   },
 
   // ==================== SPECIALIZED ENTITY CREATION ====================
@@ -2532,6 +4691,23 @@ DoNextThing()`,
     defaultData: { model: '$"mdl/dev/empty_model.rmdl"', solid: true },
     serverOnly: true,
     tags: ['create', 'prop', 'prop_dynamic', 'model', 'spawn'],
+    documentation: {
+      longDescription: 'Creates a dynamic prop with the specified model. Prop_dynamics can be animated, have different skins, and respond to damage if configured. Use for scenery, obstacles, and interactive objects.',
+      codeExample: `// Create a simple prop\nentity crate = CreatePropDynamic( $"mdl/props/crate_01.rmdl", <100, 200, 50>, <0, 45, 0> )\ncrate.SetScriptName( "crate_1" )\nDispatchSpawn( crate )\n\n// Make it solid\ncrate.SetSolid( true )\n\n// Set skin if available\n// crate.SetSkin( 1 )`,
+      tips: [
+        'Use for static and animated props',
+        'Can be parented to movers',
+        'Set Solid for collision',
+        'Supports model skins'
+      ],
+      useCases: [
+        'Scenery objects',
+        'Obstacles',
+        'Animated props',
+        'Interactive objects'
+      ],
+      relatedNodes: ['create-prop-physics', 'set-model', 'set-solid']
+    }
   },
   {
     type: 'create-prop-physics',
@@ -2552,6 +4728,23 @@ DoNextThing()`,
     defaultData: { model: '$"mdl/dev/empty_model.rmdl"' },
     serverOnly: true,
     tags: ['create', 'prop', 'prop_physics', 'physics', 'model', 'spawn'],
+    documentation: {
+      longDescription: 'Creates a physics-enabled prop that responds to gravity and collisions. Unlike prop_dynamic, physics props can be pushed, thrown, and will interact with the physics world.',
+      codeExample: `// Create a physics prop\nentity ball = CreatePropPhysics( $"mdl/props/ball_01.rmdl", <0, 0, 200>, <0, 0, 0> )\nball.SetScriptName( "physics_ball" )\nDispatchSpawn( ball )\n\n// Ball will fall and roll\n// Can be pushed by players and explosions`,
+      tips: [
+        'Responds to gravity and collisions',
+        'Can be kicked/pushed',
+        'More expensive than prop_dynamic',
+        'Use for throwable objects'
+      ],
+      useCases: [
+        'Throwable objects',
+        'Physics toys',
+        'Obstacles',
+        'Interactive physics'
+      ],
+      relatedNodes: ['create-prop-dynamic', 'set-velocity', 'set-solid']
+    }
   },
   {
     type: 'create-info-target',
@@ -2570,6 +4763,33 @@ DoNextThing()`,
     defaultData: {},
     serverOnly: true,
     tags: ['create', 'info_target', 'reference', 'point', 'inflictor'],
+    documentation: {
+      longDescription: 'Creates an info_target entity, which is a simple point in space. Used as reference points, damage sources, attachment points, or for line-of-sight checks. Completely invisible and non-interactive except as a position.',
+      codeExample: `// Create a target point
+entity target = CreateInfoTarget( <100, 200, 50> )
+target.SetScriptName( "shoot_target" )
+DispatchSpawn( target )
+
+// Use as damage inflictor
+// DamageInfo_SetInflictor( damageInfo, target )
+
+// Use for attachment point
+entity prop = GetEntByScriptName( "flag" )
+prop.SetParent( target )`,
+      tips: [
+        'Invisible reference point',
+        'Good for damage attribution',
+        'Can be parented to',
+        'Lightweight entity type'
+      ],
+      useCases: [
+        'Reference points',
+        'Damage sources',
+        'Attachment points',
+        'Raycast targets'
+      ],
+      relatedNodes: ['create-entity', 'set-parent', 'trace-line']
+    }
   },
   {
     type: 'create-particle-system',
@@ -2846,6 +5066,33 @@ DoNextThing()`,
     defaultData: {},
     serverOnly: true,
     tags: ['DispatchSpawn', 'spawn', 'finalize', 'create'],
+    documentation: {
+      longDescription: 'Finalizes entity creation by spawning the entity in the world. Must be called after CreateEntity and setting any initial properties. The entity is not active until DispatchSpawn is called.',
+      codeExample: `// Complete entity creation
+entity prop = CreateEntity( "prop_dynamic" )
+prop.SetValueForModelKey( $"mdl/props/crate.rmdl" )
+prop.SetOrigin( <100, 200, 50> )
+prop.SetScriptName( "my_crate" )
+
+// This activates the entity
+DispatchSpawn( prop )
+
+// Now it exists in the world
+print( "Crate spawned!" )`,
+      tips: [
+        'Required to activate created entities',
+        'Call after all property setup',
+        'Entity is not valid until this is called',
+        'Triggers spawn callbacks'
+      ],
+      useCases: [
+        'Finalizing entity creation',
+        'Spawning dynamic objects',
+        'Creating triggers',
+        'Object pool activation'
+      ],
+      relatedNodes: ['create-entity', 'set-model', 'set-entity-kv']
+    }
   },
   {
     type: 'set-model',
@@ -2986,6 +5233,35 @@ DoNextThing()`,
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { visible: true },
+    documentation: {
+      longDescription: 'Controls whether the entity is visible. Invisible entities still exist and can interact, but are not rendered. Use for cloaking effects, hidden doors, or temporary invisibility.',
+      codeExample: `// Make entity invisible
+entity enemy = GetEntByScriptName( "stealth_enemy" )
+enemy.SetVisible( false )
+
+// Make visible again
+wait 5.0
+enemy.SetVisible( true )
+
+// Toggle visibility
+if ( enemy.IsVisible() )
+    enemy.SetVisible( false )
+else
+    enemy.SetVisible( true )`,
+      tips: [
+        'Controls rendering only',
+        'Entity still collides and interacts',
+        'Use for stealth/invisibility',
+        'Can be combined with physics changes'
+      ],
+      useCases: [
+        'Stealth mechanics',
+        'Hidden objects',
+        'Cloaking devices',
+        'Door hiding'
+      ],
+      relatedNodes: ['make-invisible', 'set-solid']
+    }
   },
   {
     type: 'set-solid',
@@ -3002,6 +5278,33 @@ DoNextThing()`,
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { solid: true },
+    documentation: {
+      longDescription: 'Controls whether the entity has collision and blocks movement. Non-solid entities can be walked through. Use for ghost mode, trigger volumes, or collision toggling.',
+      codeExample: `// Make entity non-solid (ghost mode)
+entity player = GetPlayerByIndex( 0 )
+player.SetSolid( false )  // Player becomes non-solid
+
+// Can walk through walls
+wait 10.0
+player.SetSolid( true )  // Restore collision
+
+// Toggle collision on prop
+entity barrier = GetEntByScriptName( "temporary_wall" )
+barrier.SetSolid( false )  // Walk through`,
+      tips: [
+        'Controls collision',
+        'Non-solid entities can be walked through',
+        'Players can still interact with non-solid entities',
+        'Useful for trigger-like behavior'
+      ],
+      useCases: [
+        'Ghost mode',
+        'Temporary barriers',
+        'Trigger volumes',
+        'Collision puzzles'
+      ],
+      relatedNodes: ['set-visible', 'create-trigger-cylinder', 'kv-solid']
+    }
   },
   {
     type: 'make-invisible',
@@ -3017,6 +5320,28 @@ DoNextThing()`,
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Makes the entity completely invisible. The entity still exists and can interact, but is not rendered. This is a simpler alternative to SetVisible(false) for permanent invisibility.',
+      codeExample: `// Make entity invisible
+entity ghost = GetEntByScriptName( "ghost_entity" )
+ghost.MakeInvisible()
+
+// Entity still collides but can't be seen
+// Can still be damaged, interacts normally`,
+      tips: [
+        'Makes entity non-rendered',
+        'Entity still functions normally',
+        'Use for ghosts, spirits, hidden objects',
+        'Simpler than SetVisible for permanent case'
+      ],
+      useCases: [
+        'Ghost entities',
+        'Invisible references',
+        'Hidden checkpoints',
+        'Debug visualization toggle'
+      ],
+      relatedNodes: ['set-visible', 'set-solid']
+    }
   },
   {
     type: 'get-forward-vector',
@@ -3031,6 +5356,32 @@ DoNextThing()`,
       { label: 'Forward', type: 'data', dataType: 'vector', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Returns the entity\'s forward direction as a normalized vector based on its angles. This is the direction the entity is "facing" along its X axis. Used for directional calculations.',
+      codeExample: `// Get forward direction
+entity player = GetPlayerByIndex( 0 )
+vector forward = player.GetForwardVector()
+
+// Calculate point in front of player
+vector aimPoint = player.GetOrigin() + (forward * 100)
+
+// Shoot in facing direction
+vector bulletDir = player.GetForwardVector()
+FireWeaponBullet( weapon, player.GetOrigin(), bulletDir )`,
+      tips: [
+        'Returns normalized direction vector',
+        'Based on entity\'s yaw and pitch',
+        'Use for directional calculations',
+        'Combined with distance for point in front'
+      ],
+      useCases: [
+        'Aiming calculations',
+        'Directional movement',
+        'Raycasting',
+        'Projectile trajectory'
+      ],
+      relatedNodes: ['get-right-vector', 'get-up-vector', 'angles-to-forward', 'set-angles']
+    }
   },
   {
     type: 'get-right-vector',
@@ -3045,6 +5396,31 @@ DoNextThing()`,
       { label: 'Right', type: 'data', dataType: 'vector', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Returns the entity\'s right direction as a normalized vector. The right vector points 90 degrees from forward, along the Y axis of the entity\'s angles.',
+      codeExample: `// Get right direction
+entity player = GetPlayerByIndex( 0 )
+vector right = player.GetRightVector()
+
+// Move to the right
+vector moveDir = right * 100
+
+// Strafe movement
+vector strafePos = player.GetOrigin() + (player.GetRightVector() * 50)`,
+      tips: [
+        'Returns normalized right direction',
+        '90 degrees from forward',
+        'Used for strafe calculations',
+        'Can be used for lateral positioning'
+      ],
+      useCases: [
+        'Strafe movement',
+        'Lateral positioning',
+        'Cross products',
+        'Relative positioning'
+      ],
+      relatedNodes: ['get-forward-vector', 'get-up-vector', 'vector-cross']
+    }
   },
   {
     type: 'get-up-vector',
@@ -3059,6 +5435,32 @@ DoNextThing()`,
       { label: 'Up', type: 'data', dataType: 'vector', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Returns the entity\'s up direction as a normalized vector. This is the direction pointing straight up from the entity, along the Z axis of its angles.',
+      codeExample: `// Get up direction
+entity entity = GetEntByScriptName( "hovering_prop" )
+vector up = entity.GetUpVector()
+
+// Apply upward force
+vector liftForce = up * 500
+entity.SetVelocity( liftForce )
+
+// Calculate hover height adjustment
+vector currentUp = entity.GetUpVector()`,
+      tips: [
+        'Returns normalized up direction',
+        'Based on entity\'s roll/pitch',
+        'Used for vertical calculations',
+        'Combine with other vectors'
+      ],
+      useCases: [
+        'Vertical positioning',
+        'Levitation effects',
+        'Upward force application',
+        'Orientation analysis'
+      ],
+      relatedNodes: ['get-forward-vector', 'get-right-vector', 'vector-cross']
+    }
   },
   {
     type: 'get-eye-position',
@@ -3073,6 +5475,32 @@ DoNextThing()`,
       { label: 'EyePos', type: 'data', dataType: 'vector', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Returns the position of the entity\'s eyes as a vector. For players, this is the camera position. For NPCs, this is where their eyes are located. Used for line-of-sight checks and aiming.',
+      codeExample: `// Get eye position for raycast
+entity player = GetPlayerByIndex( 0 )
+vector eyePos = player.GetEyePosition()
+vector lookDir = player.GetViewVector()
+
+// Raycast from eyes
+TraceLine( eyePos, eyePos + lookDir * 1000, null, TRACE_MASK_SHOT, TRACE_COLLISION_GROUP_NONE )
+
+// Position effects at eye level
+vector muzzlePos = player.GetEyePosition() + (player.GetForwardVector() * 50)`,
+      tips: [
+        'Returns eye-level position',
+        'Different from origin for tall entities',
+        'Use for accurate raycasts',
+        'Essential for shooting mechanics'
+      ],
+      useCases: [
+        'Line-of-sight checks',
+        'Muzzle position',
+        'First-person effects',
+        'Aiming calculations'
+      ],
+      relatedNodes: ['get-eye-angles', 'get-view-vector', 'trace-line']
+    }
   },
   {
     type: 'get-eye-angles',
@@ -3087,6 +5515,31 @@ DoNextThing()`,
       { label: 'EyeAngles', type: 'data', dataType: 'vector', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Returns the angles the entity\'s eyes are facing. This represents the actual view direction, which may differ from body angles for players looking around without turning their body.',
+      codeExample: `// Get eye angles for precise aiming
+entity player = GetPlayerByIndex( 0 )
+vector eyeAngles = player.GetEyeAngles()
+
+// Convert to forward vector
+vector aimDir = AnglesToForward( eyeAngles )
+
+// Position crosshair target
+vector targetPos = player.GetEyePosition() + (aimDir * 1000)`,
+      tips: [
+        'Returns actual view direction',
+        'May differ from body angles',
+        'Use for precise aiming',
+        'Combined with EyePosition for complete view'
+      ],
+      useCases: [
+        'Precise aiming',
+        'View direction tracking',
+        'Crosshair positioning',
+        'Camera effects'
+      ],
+      relatedNodes: ['get-eye-position', 'get-view-vector', 'angles-to-forward']
+    }
   },
 
   // ==================== ENTITY STRUCT PROPERTIES ====================
@@ -3385,7 +5838,7 @@ DoNextThing()`,
     type: 'give-weapon',
     category: 'weapons',
     label: 'GiveWeapon',
-    description: 'Give weapon to player',
+    description: 'Give a weapon to a player',
     color: '#E67E22',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
@@ -3398,6 +5851,39 @@ DoNextThing()`,
       { label: 'Weapon', type: 'data', dataType: 'weapon', isInput: false },
     ],
     defaultData: { weaponClass: 'mp_weapon_r97', mods: [], slot: 'WEAPON_INVENTORY_SLOT_PRIMARY_0' },
+    documentation: {
+      longDescription: 'Gives a weapon to a player. The weapon is added to their inventory and can be accessed later. You can specify weapon mods to attach. Returns the created weapon entity.',
+      codeExample: `// Give basic weapon
+giveWeapon( player, "mp_weapon_r97" )
+
+// Give weapon with mods
+array mods = ["extended_mag_lvl1", "hipfire_lvl1"]
+entity weapon = GiveWeapon( player, "mp_weapon_alternator", mods )
+
+// Give and auto-switch
+GiveWeapon( player, "mp_weapon_shotgun" )
+wait 0.1
+SwitchToWeapon( player, "mp_weapon_shotgun" )
+
+// Give to all players
+foreach ( entity p in GetPlayerArray() )
+{
+    GiveWeapon( p, "mp_weapon_p2020" )
+}`,
+      tips: [
+        'Weapon is added to inventory',
+        'Mods array contains mod names as strings',
+        'Returns weapon entity for further customization',
+        'Use WEAPON_INVENTORY_SLOT constants for slots'
+      ],
+      useCases: [
+        'Loadout assignment',
+        'Weapon pickups',
+        'Loadout customization',
+        'Loadout presets'
+      ],
+      relatedNodes: ['take-weapon', 'switch-to-weapon', 'get-active-weapon']
+    }
   },
   {
     type: 'take-weapon',
@@ -3725,7 +6211,7 @@ DoNextThing()`,
     type: 'status-effect-add',
     category: 'status-effects',
     label: 'StatusEffect_AddEndless',
-    description: 'Add endless status effect to entity',
+    description: 'Add an endless status effect to an entity (SERVER)',
     color: '#9B59B6',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
@@ -3739,12 +6225,39 @@ DoNextThing()`,
     ],
     defaultData: { effectID: 0, severity: 1.0 },
     serverOnly: true,
+    documentation: {
+      longDescription: 'Applies an endless status effect to an entity. The effect persists until explicitly stopped with StatusEffect_Stop. Common effects include invulnerable, slowed, blind, and more. Severity controls the effect intensity.',
+      codeExample: `// Make player invulnerable
+StatusEffect_AddEndless( player, eStatusEffect.invulnerable, 1.0 )
+
+// Apply slow effect
+StatusEffect_AddEndless( enemy, eStatusEffect.slowed, 0.5 )
+
+// Later stop the effect
+StatusEffect_Stop( player, handle )
+
+// Or stop all of a type
+StatusEffect_StopAllOfType( player, eStatusEffect.invulnerable )`,
+      tips: [
+        'Effect continues until explicitly stopped',
+        'Save handle to stop specific effect',
+        'Use StatusEffect_StopAll to clear all',
+        'Common effects: invulnerable, slowed, blind, ghost'
+      ],
+      useCases: [
+        'Spawn protection',
+        'Ability debuffs',
+        'Buff mechanics',
+        'Status immunity'
+      ],
+      relatedNodes: ['status-effect-stop', 'status-effect-stop-all', 'status-effect-has']
+    }
   },
   {
     type: 'status-effect-stop',
     category: 'status-effects',
     label: 'StatusEffect_Stop',
-    description: 'Stop status effect by handle',
+    description: 'Stop a specific status effect by handle (SERVER)',
     color: '#9B59B6',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
@@ -3756,6 +6269,33 @@ DoNextThing()`,
     ],
     defaultData: {},
     serverOnly: true,
+    documentation: {
+      longDescription: 'Stops a specific status effect that was previously applied. The handle must match the one returned when the effect was added. Use this to end temporary buffs or debuffs.',
+      codeExample: `// Apply temporary invincibility
+int handle = StatusEffect_AddEndless( player, eStatusEffect.invulnerable, 1.0 )
+
+// Lasts for 5 seconds
+wait 5.0
+
+// Stop it specifically
+StatusEffect_Stop( player, handle )
+
+// Or stop all effects
+StatusEffect_StopAll( player )`,
+      tips: [
+        'Handle comes from AddEndless/AddTimed',
+        'Only stops the specific effect',
+        'Use StopAllOfType for all effects of a type',
+        'Use StopAll to clear everything'
+      ],
+      useCases: [
+        'Buff expiration',
+        'Debuff removal',
+        'Cooldown completion',
+        'Cleanup on death'
+      ],
+      relatedNodes: ['status-effect-add', 'status-effect-stop-all', 'status-effect-stop-all-of-type']
+    }
   },
   {
     type: 'status-effect-stop-all-of-type',
@@ -3979,7 +6519,7 @@ DoNextThing()`,
     type: 'start-particle-on-entity',
     category: 'vfx',
     label: 'StartParticleEffectOnEntity',
-    description: 'Start particle on entity',
+    description: 'Start a particle effect attached to an entity',
     color: '#F39C12',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
@@ -3992,6 +6532,35 @@ DoNextThing()`,
       { label: 'Handle', type: 'data', dataType: 'number', isInput: false },
     ],
     defaultData: { asset: '$""', attachment: '' },
+    documentation: {
+      longDescription: 'Spawns a particle effect that follows an entity. The effect can be attached to a specific attachment point (bone) or play at the entity\'s origin. Use the handle to later stop the effect.',
+      codeExample: `// Play effect on entity
+entity player = GetPlayerByIndex( 0 )
+
+// At origin
+StartParticleEffectOnEntity( player, $"P_wing_loop" )
+
+// At specific attachment (bone)
+StartParticleEffectOnEntity( player, $"P_glow_loop", "CHESTFOCUS" )
+
+// Later stop with handle
+int handle = StartParticleEffectOnEntity( player, effect )
+wait 5.0
+EffectStop( handle, true )`,
+      tips: [
+        'Effect follows entity as it moves',
+        'Use empty attachment for origin',
+        'Save handle to stop effect later',
+        'Common attachments: CHESTFOCUS, HEAD, L_FOOT, R_FOOT'
+      ],
+      useCases: [
+        'Character glow effects',
+        'Weapon trails',
+        'Ability visual feedback',
+        'Status indicators'
+      ],
+      relatedNodes: ['stop-particle', 'set-particle-control-point', 'play-fx-on-entity']
+    }
   },
   {
     type: 'start-particle-effect-in-world',
@@ -4015,7 +6584,7 @@ DoNextThing()`,
     type: 'stop-particle',
     category: 'vfx',
     label: 'EffectStop',
-    description: 'Stop particle effect',
+    description: 'Stop a particle effect using its handle',
     color: '#F39C12',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
@@ -4026,6 +6595,33 @@ DoNextThing()`,
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { stopImmediately: false },
+    documentation: {
+      longDescription: 'Stops a playing particle effect. The handle must have been returned from StartParticleEffectOnEntity or StartParticleEffectInWorld. Use StopImmediately=true to kill the effect instantly, or false to let it finish its loop.',
+      codeExample: `// Start effect and get handle
+int handle = StartParticleEffectOnEntity( player, $"P_glow_loop" )
+
+// Stop after delay
+wait 5.0
+
+// Graceful stop (finish current loop)
+EffectStop( handle, false )
+
+// Or immediate kill
+EffectStop( handle, true )`,
+      tips: [
+        'Handle comes from start particle nodes',
+        'false = let current loop finish',
+        'true = immediate kill',
+        'Use EffectStopAllOnEntity to stop all'
+      ],
+      useCases: [
+        'Ending temporary effects',
+        'Cleanup on entity death',
+        'Ability cooldown visuals',
+        'Timer-based effects'
+      ],
+      relatedNodes: ['start-particle-on-entity', 'start-particle-effect-in-world', 'effect-stop-all-on-entity']
+    }
   },
   {
     type: 'effect-stop-all-on-entity',
@@ -4182,7 +6778,7 @@ DoNextThing()`,
     type: 'radius-damage',
     category: 'damage',
     label: 'RadiusDamage',
-    description: 'Deal radius damage',
+    description: 'Deal damage to all entities within a radius (SERVER)',
     color: '#E74C3C',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
@@ -4197,12 +6793,47 @@ DoNextThing()`,
     ],
     defaultData: { damage: 100, radius: 200 },
     serverOnly: true,
+    documentation: {
+      longDescription: 'Applies damage to all entities within the specified radius from the origin point. Used for explosions, grenades, and area-of-effect abilities. Both players and NPCs are affected.',
+      codeExample: `// Grenade explosion
+void function OnGrenadeDetonate( entity grenade )
+{
+    // Damage everyone nearby
+    RadiusDamage(
+        grenade.GetOrigin(),  // Center of explosion
+        grenade.GetOwner(),   // Who gets credit for kills
+        grenade,             // The grenade itself
+        100,                 // 100 damage
+        300                  // 300 unit radius
+    )
+
+    // Visual and audio effects
+    PlayFXOnEntity( explosionFX, grenade, "" )
+    EmitSoundAtPosition( grenade.GetOrigin(), "explosion_dist" )
+    
+    // Knockback
+    ApplyKnockbackToNearby( grenade )
+}`, 
+      tips: [
+        'Affects all entities in radius, including teammates',
+        'Use friendly fire checks for team modes',
+        'Radius is in game units (typically ~100-500)',
+        'Damage falls off with distance'
+      ],
+      useCases: [
+        'Grenade explosions',
+        'AOE abilities',
+        'Explosive barrels',
+        'Environmental hazards'
+      ],
+      relatedNodes: ['entity-take-damage', 'play-fx-on-entity', 'emit-sound-at-position']
+    }
   },
   {
     type: 'entity-take-damage',
     category: 'damage',
     label: 'TakeDamage',
-    description: 'Make entity take damage',
+    description: 'Make an entity take damage (SERVER)',
     color: '#E74C3C',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
@@ -4217,12 +6848,48 @@ DoNextThing()`,
     ],
     defaultData: { damage: 100, damageType: 0 },
     serverOnly: true,
+    documentation: {
+      longDescription: 'Applies damage to a specific entity. The damage will trigger death callbacks, score events, and any damage handlers. Use DamageType to specify how the damage should be categorized.',
+      codeExample: `// Direct damage
+entity target = GetEntByScriptName( "enemy_npc" )
+entity player = GetPlayerByIndex( 0 )
+
+// Deal 50 damage
+TakeDamage(
+    target,           // Entity to damage
+    player,           // Attacker (gets credit)
+    player.GetActiveWeapon(),  // Inflictor
+    50,               // Damage amount
+    DF_BULLET         // Damage type
+)
+
+// Check if killed
+if ( !IsAlive( target ) )
+{
+    print( "Target eliminated!" )
+}
+
+// Damage types: DF_BULLET, DF_EXPLOSION, DF_MELEE, etc.`,
+      tips: [
+        'Attacker gets credit for kills',
+        'DamageType affects death animations',
+        'Triggers OnDamage and OnKilled callbacks',
+        'Use DamageInfo nodes for more control'
+      ],
+      useCases: [
+        'Direct damage abilities',
+        'Environmental damage',
+        'Trap damage',
+        'Custom damage sources'
+      ],
+      relatedNodes: ['radius-damage', 'on-damage', 'on-killed', 'damageinfo-set-damage']
+    }
   },
   {
     type: 'trace-line',
     category: 'entity',
     label: 'TraceLine',
-    description: 'Trace a line between two points and return hit info',
+    description: 'Trace a line between two points and return hit information',
     color: '#27AE60',
     inputs: [
       { label: 'Start', type: 'data', dataType: 'vector', isInput: true },
@@ -4239,6 +6906,44 @@ DoNextThing()`,
       { label: 'Fraction', type: 'data', dataType: 'number', isInput: false },
     ],
     defaultData: { traceMask: 'TRACE_MASK_SHOT', collisionGroup: 'TRACE_COLLISION_GROUP_NONE' },
+    documentation: {
+      longDescription: 'Shoots a ray from Start to End and returns what it hit. Used for line-of-sight checks, shooting mechanics, and collision detection. Fraction indicates how far the trace went (0-1, where 1=reached end).',
+      codeExample: `// Line of sight check
+entity player = GetPlayerByIndex( 0 )
+vector eyePos = player.GetEyePosition()
+vector targetPos = enemy.GetOrigin()
+
+TraceLineResults result = TraceLine( eyePos, targetPos, null, TRACE_MASK_SHOT, TRACE_COLLISION_GROUP_NONE )
+
+if ( result.hitEnt == enemy )
+{
+    // Clear line of sight!
+    FireWeapon( player, target )
+}
+
+// Distance check
+vector start = <0, 0, 0>
+vector end = <1000, 0, 0>
+TraceLine( start, end, null, TRACE_MASK_VISIBLE, TRACE_COLLISION_GROUP_NONE )
+
+if ( result.fraction < 1.0 )
+{
+    print( "Hit something at: " + result.endPos )
+}`, 
+      tips: [
+        'Fraction < 1.0 means something was hit',
+        'HitEnt is null if nothing hit',
+        'Common masks: TRACE_MASK_SHOT, TRACE_MASK_VISIBLE',
+        'EyePosition is best for shooting raycasts'
+      ],
+      useCases: [
+        'Line of sight checks',
+        'Shooting mechanics',
+        'Wall detection',
+        'Distance calculations'
+      ],
+      relatedNodes: ['trace-hull', 'get-eye-position', 'fire-weapon-bullet']
+    }
   },
   {
     type: 'trace-hull',
@@ -5113,6 +7818,30 @@ DoNextThing()`,
       { label: 'Result', type: 'data', dataType: 'vector', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Adds two vectors together component-wise (X+X, Y+Y, Z+Z). Use this to combine positions, offsets, or direction vectors.',
+      codeExample: `// Add two positions
+vector pos1 = <100, 200, 50>
+vector pos2 = <50, 100, 25>
+vector result = pos1 + pos2  // <150, 300, 75>
+
+// Offset a position
+vector offset = <0, 0, 100>
+vector newPos = player.GetOrigin() + offset`,
+      tips: [
+        'Component-wise addition',
+        'Use for position offsets',
+        'Works with any vector inputs',
+        'Result is also a vector'
+      ],
+      useCases: [
+        'Position calculations',
+        'Offset positioning',
+        'Movement vectors',
+        'Combined directions'
+      ],
+      relatedNodes: ['vector-subtract', 'vector-multiply', 'get-origin']
+    }
   },
   {
     type: 'vector-subtract',
@@ -5128,6 +7857,29 @@ DoNextThing()`,
       { label: 'Result', type: 'data', dataType: 'vector', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Subtracts the second vector from the first component-wise. Use this to get the direction from one point to another or find relative positions.',
+      codeExample: `// Get direction from A to B
+vector from = player.GetOrigin()
+vector to = target.GetOrigin()
+vector direction = to - from  // Points from player to target
+
+// Calculate offset
+vector offset = targetPos - origin  // How far target is from origin`,
+      tips: [
+        'Component-wise subtraction',
+        'Result points from A to B when A is origin',
+        'Use for relative positions',
+        'Distance = VectorToAngles result length'
+      ],
+      useCases: [
+        'Direction to target',
+        'Relative positioning',
+        'Offset calculations',
+        'Movement vectors'
+      ],
+      relatedNodes: ['vector-add', 'vector-distance', 'vector-normalize']
+    }
   },
   {
     type: 'vector-multiply',
@@ -5143,6 +7895,32 @@ DoNextThing()`,
       { label: 'Result', type: 'data', dataType: 'vector', isInput: false },
     ],
     defaultData: { scalar: 1.0 },
+    documentation: {
+      longDescription: 'Scales a vector by multiplying each component by a scalar value. Use this to extend vectors, apply multipliers, or adjust distances.',
+      codeExample: `// Scale a direction vector
+vector dir = player.GetForwardVector()
+vector scaled = dir * 500  // Extend 500 units in that direction
+
+// Point in front of player at distance
+vector point = player.GetOrigin() + (player.GetForwardVector() * 100)
+
+// Scale velocity
+vector currentVel = projectile.GetVelocity()
+projectile.SetVelocity( currentVel * 1.5 )  // Speed up`,
+      tips: [
+        'Scales all components equally',
+        'Negative scalar reverses direction',
+        'Use 0 to zero out vector',
+        'Common for distance calculations'
+      ],
+      useCases: [
+        'Distance scaling',
+        'Velocity modification',
+        'Point positioning',
+        'Direction extension'
+      ],
+      relatedNodes: ['vector-add', 'vector-normalize', 'vector-length']
+    }
   },
   {
     type: 'vector-normalize',
@@ -5157,6 +7935,29 @@ DoNextThing()`,
       { label: 'Result', type: 'data', dataType: 'vector', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Reduces a vector to its direction by scaling it to length 1. The direction is preserved but magnitude becomes 1. Use this to get pure direction from any vector.',
+      codeExample: `// Get pure direction
+vector offset = targetPos - playerPos
+vector direction = Normalize( offset )  // Length = 1
+
+// Use for movement at fixed speed
+vector moveDir = Normalize( player.GetVelocity() )
+entity.SetVelocity( moveDir * 200 )  // Move at 200 units/sec`,
+      tips: [
+        'Returns unit vector (length 1)',
+        'Preserves direction only',
+        'Use before multiplying for distance',
+        'Zero vector stays zero'
+      ],
+      useCases: [
+        'Direction extraction',
+        'Fixed-speed movement',
+        'Aiming calculations',
+        'Movement normalization'
+      ],
+      relatedNodes: ['vector-length', 'vector-multiply', 'vector-distance']
+    }
   },
   {
     type: 'vector-length',
@@ -5171,6 +7972,33 @@ DoNextThing()`,
       { label: 'Length', type: 'data', dataType: 'number', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Returns the length (magnitude) of a vector. This is the distance from origin to the point represented by the vector. Use for distance checks and range calculations.',
+      codeExample: `// Get distance
+vector offset = targetPos - playerPos
+float dist = VectorLength( offset )
+
+if ( dist < 100 )
+{
+    print( "Target is close! (< 100 units)" )
+}
+
+// Distance between entities
+float distBetween = VectorLength( entityA.GetOrigin() - entityB.GetOrigin() )`,
+      tips: [
+        'Returns distance from origin',
+        'Use for range checks',
+        'More efficient than Distance for relative',
+        'Zero vector has length 0'
+      ],
+      useCases: [
+        'Distance calculations',
+        'Range checks',
+        'Speed normalization',
+        'Proximity detection'
+      ],
+      relatedNodes: ['vector-distance', 'vector-normalize', 'math-clamp']
+    }
   },
   {
     type: 'vector-distance',
@@ -5186,6 +8014,33 @@ DoNextThing()`,
       { label: 'Distance', type: 'data', dataType: 'number', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Calculates the distance between two points in 3D space. This is the length of the line connecting the two positions. Use for range checks and proximity detection.',
+      codeExample: `// Distance between entities
+float dist = Distance( player.GetOrigin(), enemy.GetOrigin() )
+
+if ( dist < 200 )
+{
+    print( "In range! Can attack." )
+}
+
+// Distance from point
+vector origin = <0, 0, 0>
+float distFromCenter = Distance( origin, player.GetOrigin() )`,
+      tips: [
+        'Returns straight-line distance',
+        'Use for attack range checks',
+        'Audio falloff calculations',
+        'Spawn distance validation'
+      ],
+      useCases: [
+        'Attack range',
+        'Proximity detection',
+        'Spawn validation',
+        'Audio/visual range'
+      ],
+      relatedNodes: ['vector-length', 'compare-less', 'trace-line']
+    }
   },
   {
     type: 'vector-dot',
@@ -5201,6 +8056,37 @@ DoNextThing()`,
       { label: 'Result', type: 'data', dataType: 'number', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Calculates the dot product of two vectors. The result is positive if the angle between vectors is less than 90 degrees, zero if perpendicular, and negative if greater than 90 degrees. Use for angle comparisons and "facing" checks.',
+      codeExample: `// Check if looking at target
+vector toTarget = Normalize( targetPos - playerPos )
+vector lookDir = player.GetForwardVector()
+float dot = VectorDot( lookDir, toTarget )
+
+if ( dot > 0.9 )
+{
+    print( "Looking directly at target!" )
+}
+
+// Cone detection
+if ( dot > 0.5 )  // Within ~60 degree cone
+{
+    print( "In view cone" )
+}`,
+      tips: [
+        'Result = |A| * |B| * cos(angle)',
+        'Dot > 0 means same general direction',
+        'Dot = 1 means parallel (same direction)',
+        'Dot = -1 means opposite directions'
+      ],
+      useCases: [
+        'View cone detection',
+        'Angle comparisons',
+        'Facing checks',
+        'Similarity measures'
+      ],
+      relatedNodes: ['compare-greater', 'get-forward-vector', 'angles-to-forward']
+    }
   },
   {
     type: 'vector-cross',
@@ -5216,6 +8102,32 @@ DoNextThing()`,
       { label: 'Result', type: 'data', dataType: 'vector', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Calculates the cross product of two vectors, which results in a vector perpendicular to both. The direction follows the right-hand rule. Use for calculating surface normals or finding perpendicular directions.',
+      codeExample: `// Get perpendicular direction
+vector up = <0, 0, 1>
+vector forward = player.GetForwardVector()
+vector right = CrossProduct( up, forward )  // Perpendicular to both
+
+// Surface normal
+vector surfaceNormal = CrossProduct( edge1, edge2 )
+
+// Rotate 90 degrees
+vector rotated = CrossProduct( <0, 0, 1>, originalDir )`,
+      tips: [
+        'Result is perpendicular to both inputs',
+        'Order matters (A x B != B x A)',
+        'Zero if vectors are parallel',
+        'Useful for rotation math'
+      ],
+      useCases: [
+        'Surface normals',
+        'Perpendicular directions',
+        'Rotation calculations',
+        'Physics interactions'
+      ],
+      relatedNodes: ['get-forward-vector', 'get-right-vector', 'get-up-vector']
+    }
   },
   {
     type: 'angles-to-forward',
@@ -5230,6 +8142,31 @@ DoNextThing()`,
       { label: 'Forward', type: 'data', dataType: 'vector', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Converts pitch, yaw, roll angles to a forward direction vector. The yaw determines the horizontal direction, pitch affects vertical. Use for calculating aim direction from angles.',
+      codeExample: `// Get forward from angles
+vector angles = <0, 90, 0>  // Pitch, Yaw, Roll
+vector forward = AnglesToForward( angles )  // Points East
+
+// Convert entity angles to direction
+vector dir = AnglesToForward( player.GetAngles() )
+
+// Use for shooting
+vector aimDir = AnglesToForward( <0, player.GetAngles().y, 0> )  // Ignore pitch`,
+      tips: [
+        'Converts angles to direction',
+        'Yaw is the most important component',
+        'Result is normalized',
+        'Use with SetAngles for reverse'
+      ],
+      useCases: [
+        'Aiming calculations',
+        'Angle to direction conversion',
+        'Raycast direction',
+        'Movement direction'
+      ],
+      relatedNodes: ['vector-to-angles', 'get-forward-vector', 'set-angles']
+    }
   },
   {
     type: 'vector-to-angles',
@@ -5244,6 +8181,33 @@ DoNextThing()`,
       { label: 'Angles', type: 'data', dataType: 'vector', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Converts a direction vector to pitch, yaw, roll angles. The resulting angles can be used with SetAngles to orient an entity. Use for making one entity face another.',
+      codeExample: `// Make entity face another
+entity npc = GetEntByScriptName( "guard" )
+entity target = GetEntByScriptName( "player" )
+
+vector toTarget = target.GetOrigin() - npc.GetOrigin()
+vector angles = VectorToAngles( toTarget )
+npc.SetAngles( angles )
+
+// Convert direction to angles
+vector direction = <1, 1, 0>  // 45 degrees diagonal
+vector resultAngles = VectorToAngles( direction )`,
+      tips: [
+        'Converts direction to angles',
+        'Use with SetAngles for facing',
+        'Result is pitch, yaw, roll',
+        'Input should be normalized ideally'
+      ],
+      useCases: [
+        'Facing targets',
+        'Angle conversion',
+        'Orientation from direction',
+        'Aiming setup'
+      ],
+      relatedNodes: ['angles-to-forward', 'set-angles', 'get-angles']
+    }
   },
   {
     type: 'vector-lerp',
@@ -5275,6 +8239,33 @@ DoNextThing()`,
       { label: 'Result', type: 'data', dataType: 'number', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Adds two numbers together. Use for incrementing values, combining quantities, or calculating sums.',
+      codeExample: `// Simple addition
+int score = 10 + 5  // 15
+
+// Increment
+int kills = 0
+kills = kills + 1  // 1
+
+// Calculate total
+float healthBonus = 25.0
+float armorBonus = 15.0
+float totalBonus = healthBonus + armorBonus  // 40.0`,
+      tips: [
+        'Works with int and float',
+        'Use for scoring',
+        'Can chain multiple adds',
+        'Use += for in-place addition'
+      ],
+      useCases: [
+        'Score calculation',
+        'Value accumulation',
+        'Stat bonuses',
+        'Counter increments'
+      ],
+      relatedNodes: ['math-subtract', 'math-multiply', 'math-clamp']
+    }
   },
   {
     type: 'math-subtract',
@@ -5290,6 +8281,32 @@ DoNextThing()`,
       { label: 'Result', type: 'data', dataType: 'number', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Subtracts the second number from the first. Use for calculating differences, reducing values, or finding remainders.',
+      codeExample: `// Subtraction
+int remaining = 100 - 30  // 70
+
+// Damage calculation
+float damage = 50.0
+float mitigation = 15.0
+float finalDamage = damage - mitigation  // 35.0
+
+// Difference
+int diff = 100 - 95  // 5`,
+      tips: [
+        'A - B = difference',
+        'Can result in negative numbers',
+        'Use for damage calculations',
+        'Use for stat reductions'
+      ],
+      useCases: [
+        'Damage calculations',
+        'Stat reductions',
+        'Difference finding',
+        'Health remaining'
+      ],
+      relatedNodes: ['math-add', 'math-multiply', 'set-health']
+    }
   },
   {
     type: 'math-multiply',
@@ -5305,6 +8322,32 @@ DoNextThing()`,
       { label: 'Result', type: 'data', dataType: 'number', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Multiplies two numbers together. Use for scaling values, calculating areas, or applying multipliers.',
+      codeExample: `// Multiplication
+int doubled = 5 * 2  // 10
+
+// Damage multiplier
+float baseDamage = 50.0
+float multiplier = 1.5
+float finalDamage = baseDamage * multiplier  // 75.0
+
+// Scaling
+int scale = 10 * 10  // 100`,
+      tips: [
+        'Use for scaling and multipliers',
+        'Damage amplification',
+        'Speed modifiers',
+        'Area calculations'
+      ],
+      useCases: [
+        'Damage scaling',
+        'Speed modifiers',
+        'Area calculations',
+        'Stat multipliers'
+      ],
+      relatedNodes: ['math-divide', 'math-add', 'math-clamp']
+    }
   },
   {
     type: 'math-divide',
@@ -5320,6 +8363,33 @@ DoNextThing()`,
       { label: 'Result', type: 'data', dataType: 'number', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Divides the first number by the second. Use for averaging, percentages, or scaling down. Be careful of division by zero.',
+      codeExample: `// Division
+float half = 10.0 / 2.0  // 5.0
+
+// Percentage
+int score = 1500
+int total = 3000
+float percent = (float(score) / float(total)) * 100  // 50%
+
+// Average
+int sum = 10 + 20 + 30
+float average = float(sum) / 3.0  // 20.0`,
+      tips: [
+        'A / B = quotient',
+        'Avoid division by zero',
+        'Convert to float for decimal results',
+        'Use for percentages'
+      ],
+      useCases: [
+        'Percentages',
+        'Averaging',
+        'Scaling down',
+        'Ratios'
+      ],
+      relatedNodes: ['math-multiply', 'math-add', 'math-clamp']
+    }
   },
   {
     type: 'math-clamp',
@@ -5336,6 +8406,33 @@ DoNextThing()`,
       { label: 'Result', type: 'data', dataType: 'number', isInput: false },
     ],
     defaultData: { min: 0, max: 1 },
+    documentation: {
+      longDescription: 'Restricts a value to be within a specified range. If the value is below min, returns min. If above max, returns max. Otherwise returns the original value.',
+      codeExample: `// Clamp health percentage
+float healthPercent = 150.0
+healthPercent = Clamp( healthPercent, 0, 100 )  // 100
+
+// Clamp position
+float x = -50.0
+x = Clamp( x, 0, 1000 )  // 0 (minimum)
+
+// Safe division result
+float damage = 75.0
+damage = Clamp( damage, 1.0, 100.0 )  // In range`,
+      tips: [
+        'Ensures value stays in range',
+        'Useful for health percentages',
+        'Prevents invalid values',
+        'Min and Max can be swapped'
+      ],
+      useCases: [
+        'Health percentages',
+        'Progress bars',
+        'Angle clamping',
+        'Value validation'
+      ],
+      relatedNodes: ['math-min', 'math-max', 'get-health']
+    }
   },
   {
     type: 'math-min',
