@@ -1,10 +1,10 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { PanelLeft, PanelRight, GitBranch, Code, Save, FolderOpen, FileDown, FileText, FilePlus, ChevronDown, ChevronLeft, ChevronRight, Folder, X, Settings, Package } from 'lucide-react';
+import { PanelLeft, PanelRight, GitBranch, Code, Save, FolderOpen, FileDown, FileText, FilePlus, ChevronDown, ChevronLeft, ChevronRight, Folder, X, Settings, Package, Library } from 'lucide-react';
 import SettingsModal, { loadSettings, saveSettings, DEFAULT_SETTINGS } from './visual-scripting/SettingsModal';
 import ProjectSettingsModal from './visual-scripting/ProjectSettingsModal';
 import { NotificationContainer, ExportPathModal, useNotifications, useConfirmModal } from './visual-scripting/Notification';
 import type { AppSettings } from './visual-scripting/SettingsModal';
-import type { ScriptNode, NodeConnection, NodeType } from '../types/visual-scripting';
+import type { ScriptNode, NodeConnection, NodeType, TemplateCategory } from '../types/visual-scripting';
 import type { ModSettings } from '../types/project';
 import NodeGraph from './visual-scripting/NodeGraph';
 import NodePalette from './visual-scripting/NodePalette';
@@ -13,12 +13,15 @@ import NodeDocModal from './visual-scripting/NodeDocModal';
 import CodeView from './visual-scripting/CodeView';
 import ProjectPanel from './visual-scripting/ProjectPanel';
 import WelcomeScreen from './visual-scripting/WelcomeScreen';
+import TemplatesLibrary from './visual-scripting/TemplatesLibrary';
+import SaveTemplateModal from './visual-scripting/SaveTemplateModal';
 import { generateCode } from '../utils/code-generator';
 import { getNodeDefinition, NODE_DEFINITIONS } from '../data/node-definitions';
 import { useProjectFiles } from '../hooks/useProjectFiles';
 import { saveSquirrelCode } from '../utils/file-system';
 import { generateCodeMetadata, embedProjectInCode } from '../utils/project-manager';
 import { compileProject, selectOutputDirectory } from '../utils/mod-compiler';
+import { createTemplateFromSelection, addTemplate, loadTemplates } from '../utils/template-storage';
 
 export default function VisualScriptEditor() {
   const [nodes, setNodes] = useState<ScriptNode[]>([]);
@@ -35,6 +38,7 @@ export default function VisualScriptEditor() {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [isProjectSectionExpanded, setProjectSectionExpanded] = useState(true);
   const [isNodesSectionExpanded, setNodesSectionExpanded] = useState(true);
+  const [isTemplatesSectionExpanded, setTemplatesSectionExpanded] = useState(false);
   const [isCodePanelOpen, setCodePanelOpen] = useState(false);
   const [docNodeType, setDocNodeType] = useState<NodeType | null>(null);
   const [isFileMenuOpen, setFileMenuOpen] = useState(false);
@@ -42,6 +46,9 @@ export default function VisualScriptEditor() {
   const [isProjectSettingsOpen, setProjectSettingsOpen] = useState(false);
   const [isSpotlightOpen, setSpotlightOpen] = useState(false);
   const [isExportPathModalOpen, setExportPathModalOpen] = useState(false);
+  const [isSaveTemplateModalOpen, setSaveTemplateModalOpen] = useState(false);
+  const [saveTemplateNodeIds, setSaveTemplateNodeIds] = useState<string[]>([]);
+  const [templateRefreshKey, setTemplateRefreshKey] = useState(0);
   // Initialize with defaults to avoid hydration mismatch, then load from localStorage
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -341,6 +348,31 @@ export default function VisualScriptEditor() {
   const handleAddNode = useCallback((newNode: ScriptNode) => {
     setNodes(currentNodes => [...currentNodes, newNode]);
   }, []);
+
+  // Insert template nodes and connections
+  const handleInsertTemplate = useCallback((templateNodes: ScriptNode[], templateConnections: NodeConnection[]) => {
+    setNodes(currentNodes => [...currentNodes, ...templateNodes]);
+    setConnections(currentConnections => [...currentConnections, ...templateConnections]);
+    // Select the inserted nodes
+    setSelectedNodeIds(templateNodes.map(n => n.id));
+    success('Template Inserted', `Added ${templateNodes.length} nodes`, 2000);
+  }, [success]);
+
+  // Save selected nodes as a template
+  const handleSaveAsTemplate = useCallback((name: string, description: string, category: TemplateCategory, tags: string[]) => {
+    if (saveTemplateNodeIds.length === 0) return;
+    
+    const selectedNodes = nodes.filter(n => saveTemplateNodeIds.includes(n.id));
+    try {
+      const template = createTemplateFromSelection(name, description, category, selectedNodes, connections, tags);
+      addTemplate(template);
+      setTemplateRefreshKey(k => k + 1);
+      success('Template Saved', `"${name}" saved with ${selectedNodes.length} nodes`, 3000);
+      setSaveTemplateModalOpen(false);
+    } catch (e) {
+      error('Failed to Save Template', (e as Error).message);
+    }
+  }, [saveTemplateNodeIds, nodes, connections, success, error]);
 
   const handleSelectNodes = useCallback((nodeIds: string[]) => {
     setSelectedNodeIds(nodeIds);
@@ -1075,7 +1107,7 @@ export default function VisualScriptEditor() {
                   </div>
 
                   {/* Node Palette Section */}
-                  <div className={`${isNodesSectionExpanded ? 'flex-1' : 'flex-shrink-0'} overflow-hidden`}>
+                  <div className={`${isNodesSectionExpanded && !isTemplatesSectionExpanded ? 'flex-1' : 'flex-shrink-0'} overflow-hidden border-b border-white/10`}>
                     <NodePalette
                       onAddNode={handleAddNode}
                       onClose={() => setSidebarOpen(false)}
@@ -1093,6 +1125,25 @@ export default function VisualScriptEditor() {
                       viewState={graphView}
                       canvasSize={canvasSize}
                       onShowNodeDoc={setDocNodeType}
+                    />
+                  </div>
+
+                  {/* Templates Library Section */}
+                  <div className={`${isTemplatesSectionExpanded ? 'flex-1' : 'flex-shrink-0'} overflow-hidden`}>
+                    <TemplatesLibrary
+                      onInsertTemplate={handleInsertTemplate}
+                      onSaveTemplate={() => {
+                        setSaveTemplateNodeIds(selectedNodeIds);
+                        setSaveTemplateModalOpen(true);
+                      }}
+                      hasSelection={selectedNodeIds.length > 0}
+                      viewState={graphView}
+                      canvasSize={canvasSize}
+                      isExpanded={isTemplatesSectionExpanded}
+                      onToggleExpanded={() => setTemplatesSectionExpanded(!isTemplatesSectionExpanded)}
+                      isEmbedded={true}
+                      refreshKey={templateRefreshKey}
+                      accentColor={accentColor}
                     />
                   </div>
                 </div>
@@ -1180,6 +1231,10 @@ export default function VisualScriptEditor() {
                     onAddNode={handleAddNode}
                     onViewChange={setGraphView}
                     onRequestHistorySnapshot={forceHistorySnapshot}
+                    onSaveAsTemplate={(nodeIds) => {
+                      setSaveTemplateNodeIds(nodeIds);
+                      setSaveTemplateModalOpen(true);
+                    }}
                     showGridLines={appSettings.appearance.showGridLines}
                     gridStyle={appSettings.appearance.gridStyle}
                     coloredGrid={appSettings.appearance.coloredGrid}
@@ -1193,6 +1248,7 @@ export default function VisualScriptEditor() {
                     autoConnect={appSettings.editor.autoConnect}
                     highlightConnections={appSettings.editor.highlightConnections}
                     animateConnections={appSettings.editor.animateConnections}
+                    isDev={import.meta.env.DEV}
                   />
                 )}
               </div>
@@ -1339,6 +1395,15 @@ export default function VisualScriptEditor() {
           pendingCompileRef.current = false;
         }}
         onSelect={handleExportPathSelect}
+        accentColor={accentColor}
+      />
+
+      {/* Save Template Modal */}
+      <SaveTemplateModal
+        isOpen={isSaveTemplateModalOpen}
+        onClose={() => setSaveTemplateModalOpen(false)}
+        onSave={handleSaveAsTemplate}
+        nodeCount={saveTemplateNodeIds.length}
         accentColor={accentColor}
       />
 

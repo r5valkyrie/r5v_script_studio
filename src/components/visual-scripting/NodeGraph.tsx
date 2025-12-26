@@ -18,6 +18,7 @@ interface NodeGraphProps {
   onAddNode: (node: ScriptNode) => void;
   onViewChange?: (view: { x: number; y: number; scale: number }) => void;
   onRequestHistorySnapshot?: () => void;
+  onSaveAsTemplate?: (nodeIds: string[]) => void;
   // Appearance settings
   showGridLines?: boolean;
   gridSize?: number;
@@ -33,6 +34,7 @@ interface NodeGraphProps {
   autoConnect?: boolean;
   highlightConnections?: boolean;
   animateConnections?: boolean;
+  isDev?: boolean;
 }
 
 interface QuickMenuState {
@@ -100,6 +102,7 @@ export default function NodeGraph({
   onAddNode,
   onViewChange,
   onRequestHistorySnapshot,
+  onSaveAsTemplate,
   // Appearance settings with defaults
   showGridLines = true,
   gridStyle = 'dots',
@@ -115,6 +118,7 @@ export default function NodeGraph({
   autoConnect = true,
   highlightConnections = true,
   animateConnections = false,
+  isDev = false,
 }: NodeGraphProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -2710,6 +2714,94 @@ export default function NodeGraph({
     setContextMenu(null);
   };
 
+  // Generate built-in template code (dev only)
+  const handleGenerateTemplateCode = (nodeIds: string[]) => {
+    const selectedNodes = nodes.filter(n => nodeIds.includes(n.id));
+    if (selectedNodes.length === 0) return;
+
+    // Find top-left corner as origin
+    const minX = Math.min(...selectedNodes.map(n => n.position.x));
+    const minY = Math.min(...selectedNodes.map(n => n.position.y));
+
+    // Create node index map
+    const nodeIdToIndex = new Map<string, number>();
+    selectedNodes.forEach((node, index) => {
+      nodeIdToIndex.set(node.id, index);
+    });
+
+    // Filter connections between selected nodes
+    const relevantConnections = connections.filter(
+      c => nodeIdToIndex.has(c.from.nodeId) && nodeIdToIndex.has(c.to.nodeId)
+    );
+
+    // Generate nodes array code
+    const nodesCode = selectedNodes.map(node => {
+      const inputsCode = node.inputs.map(input => {
+        const base = `{ label: '${input.label}', type: '${input.type}', isInput: ${input.isInput}`;
+        if (input.dataType) {
+          return base + `, dataType: '${input.dataType}' }`;
+        }
+        return base + ' }';
+      }).join(',\n          ');
+
+      const outputsCode = node.outputs.map(output => {
+        const base = `{ label: '${output.label}', type: '${output.type}', isInput: ${output.isInput}`;
+        if (output.dataType) {
+          return base + `, dataType: '${output.dataType}' }`;
+        }
+        return base + ' }';
+      }).join(',\n          ');
+
+      const dataStr = JSON.stringify(node.data);
+
+      return `      {
+        type: '${node.type}',
+        label: '${node.label}',
+        relativePosition: { x: ${node.position.x - minX}, y: ${node.position.y - minY} },
+        data: ${dataStr},
+        inputs: [
+          ${inputsCode}
+        ],
+        outputs: [
+          ${outputsCode}
+        ],
+      }`;
+    }).join(',\n');
+
+    // Generate connections array code
+    const connectionsCode = relevantConnections.map(conn => {
+      const fromNode = selectedNodes.find(n => n.id === conn.from.nodeId);
+      const toNode = selectedNodes.find(n => n.id === conn.to.nodeId);
+      const fromPortIndex = fromNode?.outputs.findIndex(o => o.id === conn.from.portId) ?? 0;
+      const toPortIndex = toNode?.inputs.findIndex(i => i.id === conn.to.portId) ?? 0;
+
+      return `      { fromNodeIndex: ${nodeIdToIndex.get(conn.from.nodeId)}, fromPortIndex: ${fromPortIndex}, toNodeIndex: ${nodeIdToIndex.get(conn.to.nodeId)}, toPortIndex: ${toPortIndex} }`;
+    }).join(',\n');
+
+    const templateCode = `  {
+    id: 'builtin_CHANGE_ME',
+    name: 'TEMPLATE_NAME',
+    description: 'TEMPLATE_DESCRIPTION',
+    category: 'built-in',
+    tags: ['tag1', 'tag2'],
+    createdAt: 0,
+    isBuiltIn: true,
+    nodes: [
+${nodesCode}
+    ],
+    connections: [
+${connectionsCode}
+    ],
+  },`;
+
+    // Copy to clipboard
+    navigator.clipboard.writeText(templateCode).then(() => {
+      console.log('Template code copied to clipboard!');
+      alert('Template code copied to clipboard! Paste it into built-in-templates.ts');
+    });
+    setContextMenu(null);
+  };
+
   // Paste nodes from clipboard
   const handlePasteNodes = (position?: { x: number; y: number }) => {
     if (clipboard.nodes.length === 0) return;
@@ -3970,6 +4062,41 @@ export default function NodeGraph({
               >
                 Cut {contextMenu.nodeIds.length} Nodes
               </button>
+              <div className="border-t border-white/10 my-1" />
+              {onSaveAsTemplate && (
+                <button
+                  className="px-3 py-2 w-full text-left flex items-center gap-2 transition-colors"
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `#FFFFFF20`}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSaveAsTemplate(contextMenu.nodeIds!);
+                    setContextMenu(null);
+                  }}
+                >
+                  Save as Template
+                </button>
+              )}
+              
+              {isDev && (
+              <div className="border-t border-white/10 my-1" />
+              )}
+
+              {isDev && (
+                <button
+                  className="px-3 py-2 w-full text-left flex items-center gap-2 transition-colors"
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `#FFFFFF20`}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleGenerateTemplateCode(contextMenu.nodeIds!);
+                  }}
+                >
+                  [Dev] Copy Template Code
+                </button>
+              )}
               <div className="border-t border-white/10 my-1" />
               <button
                 className="px-3 py-2 hover:bg-red-500/20 w-full text-left flex items-center gap-2 text-red-400"

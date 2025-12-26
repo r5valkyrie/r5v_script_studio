@@ -8,10 +8,11 @@ interface CustomSelectProps {
   options: SelectOption[];
   onChange: (value: string) => void;
   className?: string;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
+  accentColor?: string;
 }
 
-export default function CustomSelect({ value, options, onChange, className = '', size = 'md' }: CustomSelectProps) {
+export default function CustomSelect({ value, options, onChange, className = '', size = 'md', accentColor = '#8B5CF6' }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -44,11 +45,17 @@ export default function CustomSelect({ value, options, onChange, className = '',
 
   const sizeClasses = size === 'sm' 
     ? 'px-1.5 py-0.5 text-[10px]' 
+    : size === 'lg'
+    ? 'px-3 py-2.5 text-sm'
     : 'px-2 py-1.5 text-[11px]';
 
   const dropdownSizeClasses = size === 'sm'
     ? 'text-[10px]'
+    : size === 'lg'
+    ? 'text-sm'
     : 'text-[11px]';
+
+  const roundedClass = size === 'lg' ? 'rounded-lg' : 'rounded';
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
@@ -60,11 +67,11 @@ export default function CustomSelect({ value, options, onChange, className = '',
           setIsOpen(!isOpen);
         }}
         onMouseDown={(e) => e.stopPropagation()}
-        className={`w-full ${sizeClasses} bg-[#1a1f28] rounded text-gray-200 cursor-pointer hover:bg-[#151a21] transition-colors flex items-center justify-between gap-2 border border-white/10`}
+        className={`w-full ${sizeClasses} bg-black/30 ${roundedClass} text-gray-200 cursor-pointer hover:bg-black/40 transition-colors flex items-center justify-between gap-2 border border-white/10`}
       >
         <span className="truncate">{displayLabel}</span>
         <ChevronDown 
-          size={size === 'sm' ? 10 : 12} 
+          size={size === 'sm' ? 10 : size === 'lg' ? 14 : 12} 
           className={`text-gray-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} 
         />
       </button>
@@ -72,7 +79,7 @@ export default function CustomSelect({ value, options, onChange, className = '',
       {/* Dropdown menu */}
       {isOpen && (
         <div 
-          className="absolute left-0 right-0 mt-1 bg-[#1a1f28] border border-white/10 rounded shadow-xl z-50 overflow-hidden max-h-48 overflow-y-auto"
+          className={`absolute left-0 right-0 mt-1 bg-[#1a1f28] border border-white/10 ${roundedClass} shadow-xl z-50 overflow-hidden max-h-48 overflow-y-auto`}
           onMouseDown={(e) => e.stopPropagation()}
         >
           {normalizedOptions.map((option) => (
@@ -85,9 +92,10 @@ export default function CustomSelect({ value, options, onChange, className = '',
               }}
               className={`w-full px-2 py-1.5 text-left ${dropdownSizeClasses} transition-colors ${
                 option.value === value
-                  ? 'bg-purple-600/30 text-white'
+                  ? 'text-white'
                   : 'text-gray-300 hover:bg-white/10 hover:text-white'
               }`}
+              style={option.value === value ? { backgroundColor: `${accentColor}30` } : undefined}
             >
               {option.label}
             </button>

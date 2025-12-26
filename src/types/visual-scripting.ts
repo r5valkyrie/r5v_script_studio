@@ -731,3 +731,66 @@ export const CATEGORY_INFO: CategoryInfo[] = [
   { id: 'passives', label: 'Passives', color: '#9B59B6', textClass: 'text-purple-400', description: 'Passive ability system' },
   { id: 'character', label: 'Character', color: '#3498DB', textClass: 'text-blue-400', description: 'Character abilities and classes' },
 ];
+
+// ==================== NODE TEMPLATES ====================
+
+/** A template category for organizing node templates */
+export type TemplateCategory =
+  | 'built-in'
+  | 'weapon-setup'
+  | 'npc-spawning'
+  | 'gamemode'
+  | 'callbacks'
+  | 'ui-patterns'
+  | 'custom';
+
+/** Template metadata for display and organization */
+export interface TemplateInfo {
+  id: string;
+  name: string;
+  description: string;
+  category: TemplateCategory;
+  icon?: string; // Optional icon name
+  tags?: string[];
+  createdAt: number;
+  isBuiltIn?: boolean;
+}
+
+/** A saved node template containing nodes and their connections */
+export interface NodeTemplate extends TemplateInfo {
+  /** The nodes in this template (positions are relative to template origin) */
+  nodes: {
+    type: NodeType;
+    label: string;
+    relativePosition: { x: number; y: number };
+    data: Record<string, any>;
+    // Store port configurations for connection mapping
+    inputs: Omit<NodePort, 'id'>[];
+    outputs: Omit<NodePort, 'id'>[];
+  }[];
+  /** Connections between nodes (using indices into nodes array) */
+  connections: {
+    fromNodeIndex: number;
+    fromPortIndex: number;
+    toNodeIndex: number;
+    toPortIndex: number;
+  }[];
+}
+
+/** Category metadata for template organization */
+export interface TemplateCategoryInfo {
+  id: TemplateCategory;
+  label: string;
+  color: string;
+  description: string;
+}
+
+export const TEMPLATE_CATEGORY_INFO: TemplateCategoryInfo[] = [
+  { id: 'built-in', label: 'Built-in', color: '#8B5CF6', description: 'Pre-made templates included with the editor' },
+  { id: 'weapon-setup', label: 'Weapons', color: '#E67E22', description: 'Weapon initialization and configuration patterns' },
+  { id: 'npc-spawning', label: 'NPC Spawning', color: '#27AE60', description: 'NPC creation and AI setup patterns' },
+  { id: 'gamemode', label: 'Gamemodes', color: '#C0392B', description: 'Gamemode registration and configuration' },
+  { id: 'callbacks', label: 'Callbacks', color: '#8E44AD', description: 'Event callback registration patterns' },
+  { id: 'ui-patterns', label: 'UI Patterns', color: '#3498DB', description: 'UI initialization and RUI patterns' },
+  { id: 'custom', label: 'Custom', color: '#95A5A6', description: 'Your custom saved templates' },
+];
