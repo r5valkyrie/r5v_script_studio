@@ -1,4 +1,5 @@
 import { FilePlus, FolderOpen, Clock, GitBranch, ArrowRight } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface RecentProject {
   name: string;
@@ -6,12 +7,18 @@ interface RecentProject {
   lastOpened: number;
 }
 
+type GridStyle = 'dots' | 'lines' | 'crosshatch' | 'hexagons' | 'isometric' | 'blueprint' | 'diamonds' | 'triangles' | 'graph' | 'waves';
+
 interface WelcomeScreenProps {
   onNewProject: () => void;
   onOpenProject: () => void;
   onOpenRecent: (path: string) => void;
   recentProjects: RecentProject[];
   accentColor?: string;
+  gridStyle?: GridStyle;
+  gridSize?: number;
+  coloredGrid?: boolean;
+  theme?: 'dark' | 'light';
 }
 
 // Helper to convert hex to rgba
@@ -30,13 +37,150 @@ function lightenColor(hex: string, amount: number): string {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
+// Generate grid background styles matching NodeGraph
+function getGridStyles(
+  gridStyle: GridStyle,
+  gridSize: number,
+  accentColor: string,
+  coloredGrid: boolean,
+  theme: 'dark' | 'light',
+  offset: { x: number; y: number }
+) {
+  const gridColor = coloredGrid 
+    ? (theme === 'light' ? `${accentColor}25` : `${accentColor}40`)
+    : (theme === 'light' ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)');
+  const gridColorLight = coloredGrid
+    ? (theme === 'light' ? `${accentColor}15` : `${accentColor}25`)
+    : (theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.03)');
+  const gridColorStrong = coloredGrid
+    ? (theme === 'light' ? `${accentColor}35` : `${accentColor}50`)
+    : (theme === 'light' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.08)');
+  const dotColor = coloredGrid
+    ? (theme === 'light' ? `${accentColor}40` : `${accentColor}60`)
+    : (theme === 'light' ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.12)');
+  const svgStrokeColor = coloredGrid
+    ? encodeURIComponent(accentColor)
+    : (theme === 'light' ? '%23000' : '%23fff');
+  const svgStrokeOpacity = coloredGrid
+    ? (theme === 'light' ? '0.2' : '0.35')
+    : (theme === 'light' ? '0.08' : '0.15');
+  const hexStrokeColor = coloredGrid
+    ? accentColor
+    : (theme === 'light' ? '#000' : '#555');
+  const hexStrokeOpacity = coloredGrid
+    ? (theme === 'light' ? '0.25' : '0.4')
+    : (theme === 'light' ? '0.08' : '0.2');
+
+  let backgroundImage: string;
+  let backgroundSize: string;
+
+  switch (gridStyle) {
+    case 'dots':
+      backgroundImage = `radial-gradient(circle, ${dotColor} 1px, transparent 1px)`;
+      backgroundSize = `${gridSize}px ${gridSize}px`;
+      break;
+    case 'lines':
+      backgroundImage = `linear-gradient(to right, ${gridColor} 1px, transparent 1px),
+                         linear-gradient(to bottom, ${gridColor} 1px, transparent 1px)`;
+      backgroundSize = `${gridSize}px ${gridSize}px`;
+      break;
+    case 'crosshatch':
+      backgroundImage = `linear-gradient(to right, ${gridColor} 1px, transparent 1px),
+                         linear-gradient(to bottom, ${gridColor} 1px, transparent 1px),
+                         repeating-linear-gradient(45deg, transparent, transparent 10px, ${gridColorLight} 10px, ${gridColorLight} 11px),
+                         repeating-linear-gradient(-45deg, transparent, transparent 10px, ${gridColorLight} 10px, ${gridColorLight} 11px)`;
+      backgroundSize = `${gridSize}px ${gridSize}px, ${gridSize}px ${gridSize}px, auto, auto`;
+      break;
+    case 'hexagons':
+      backgroundImage = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='50' height='86.6' viewBox='0 0 50 86.6'><polygon fill='none' stroke='${hexStrokeColor}' stroke-width='1' stroke-opacity='${hexStrokeOpacity}' points='25,0 50,14.43 50,43.3 25,57.74 0,43.3 0,14.43'/><polygon fill='none' stroke='${hexStrokeColor}' stroke-width='1' stroke-opacity='${hexStrokeOpacity}' points='50,43.3 75,57.74 75,86.6 50,101.04 25,86.6 25,57.74'/><polygon fill='none' stroke='${hexStrokeColor}' stroke-width='1' stroke-opacity='${hexStrokeOpacity}' points='0,43.3 25,57.74 25,86.6 0,101.04 -25,86.6 -25,57.74'/></svg>`)}")`;
+      backgroundSize = `50px 86.6px`;
+      break;
+    case 'isometric':
+      backgroundImage = `repeating-linear-gradient(30deg, ${gridColor} 0px, ${gridColor} 1px, transparent 1px, transparent 20px),
+                         repeating-linear-gradient(150deg, ${gridColor} 0px, ${gridColor} 1px, transparent 1px, transparent 20px),
+                         repeating-linear-gradient(90deg, ${gridColorLight} 0px, ${gridColorLight} 1px, transparent 1px, transparent 20px)`;
+      backgroundSize = 'auto';
+      break;
+    case 'blueprint':
+      backgroundImage = `linear-gradient(to right, ${accentColor}25 1px, transparent 1px),
+                         linear-gradient(to bottom, ${accentColor}25 1px, transparent 1px),
+                         linear-gradient(to right, ${accentColor}50 1px, transparent 1px),
+                         linear-gradient(to bottom, ${accentColor}50 1px, transparent 1px)`;
+      backgroundSize = `${gridSize}px ${gridSize}px, ${gridSize}px ${gridSize}px, ${gridSize * 5}px ${gridSize * 5}px, ${gridSize * 5}px ${gridSize * 5}px`;
+      break;
+    case 'diamonds':
+      backgroundImage = `repeating-linear-gradient(45deg, ${gridColor} 0px, ${gridColor} 1px, transparent 1px, transparent 14px),
+                         repeating-linear-gradient(-45deg, ${gridColor} 0px, ${gridColor} 1px, transparent 1px, transparent 14px)`;
+      backgroundSize = 'auto';
+      break;
+    case 'triangles':
+      backgroundImage = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='35' viewBox='0 0 40 35'%3E%3Cpath fill='none' stroke='${svgStrokeColor}' stroke-width='0.5' stroke-opacity='${svgStrokeOpacity}' d='M20 0 L40 35 L0 35 Z M0 0 L20 35 L40 0'/%3E%3C/svg%3E")`;
+      backgroundSize = `40px 35px`;
+      break;
+    case 'graph':
+      backgroundImage = `linear-gradient(to right, ${gridColorLight} 1px, transparent 1px),
+                         linear-gradient(to bottom, ${gridColorLight} 1px, transparent 1px),
+                         linear-gradient(to right, ${gridColorStrong} 1px, transparent 1px),
+                         linear-gradient(to bottom, ${gridColorStrong} 1px, transparent 1px)`;
+      backgroundSize = `${gridSize}px ${gridSize}px, ${gridSize}px ${gridSize}px, ${gridSize * 5}px ${gridSize * 5}px, ${gridSize * 5}px ${gridSize * 5}px`;
+      break;
+    case 'waves':
+    default:
+      backgroundImage = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='20' viewBox='0 0 40 20'%3E%3Cpath fill='none' stroke='${svgStrokeColor}' stroke-width='0.5' stroke-opacity='${coloredGrid ? (theme === 'light' ? '0.2' : '0.35') : (theme === 'light' ? '0.08' : '0.25')}' d='M0 10 Q10 0, 20 10 T40 10'/%3E%3C/svg%3E")`;
+      backgroundSize = `40px 20px`;
+      break;
+  }
+
+  const bgTint = coloredGrid || gridStyle === 'blueprint'
+    ? (theme === 'light' ? `${accentColor}08` : `${accentColor}10`)
+    : undefined;
+
+  return {
+    backgroundColor: bgTint,
+    backgroundImage,
+    backgroundSize,
+    backgroundPosition: `${offset.x}px ${offset.y}px`,
+  };
+}
+
 export default function WelcomeScreen({ 
   onNewProject, 
   onOpenProject, 
   onOpenRecent,
   recentProjects,
-  accentColor = '#8B5CF6'
+  accentColor = '#8B5CF6',
+  gridStyle = 'dots',
+  gridSize = 20,
+  coloredGrid = false,
+  theme = 'dark',
 }: WelcomeScreenProps) {
+  // Animate the grid offset for scrolling effect
+  const [gridOffset, setGridOffset] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    let animationId: number;
+    let startTime: number | null = null;
+    const speed = 15; // pixels per second
+
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const elapsed = (timestamp - startTime) / 1000;
+      
+      // Diagonal scrolling - move down-right
+      const offset = elapsed * speed;
+      setGridOffset({
+        x: offset % 200,
+        y: offset % 200,
+      });
+      
+      animationId = requestAnimationFrame(animate);
+    };
+
+    animationId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationId);
+  }, []);
+
+  const gridStyles = getGridStyles(gridStyle, gridSize, accentColor, coloredGrid, theme, gridOffset);
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -57,7 +201,23 @@ export default function WelcomeScreen({
   };
 
   return (
-    <div className="w-full h-full bg-animated flex items-center justify-center overflow-auto">
+    <div className="w-full h-full relative overflow-hidden">
+      {/* Base animated gradient background */}
+      <div className="absolute inset-0 bg-animated" />
+      
+      {/* Scrolling grid overlay */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          ...gridStyles,
+          opacity: 0.6,
+          maskImage: 'radial-gradient(ellipse 80% 60% at 50% 50%, black 20%, transparent 70%)',
+          WebkitMaskImage: 'radial-gradient(ellipse 80% 60% at 50% 50%, black 20%, transparent 70%)',
+        }}
+      />
+      
+      {/* Content layer */}
+      <div className="relative z-10 w-full h-full flex items-center justify-center overflow-auto">
       <div className="max-w-5xl w-full px-8 py-12">
         {/* Header */}
         <div className="text-center mb-16">
@@ -252,6 +412,7 @@ export default function WelcomeScreen({
             <span className="mx-2 text-gray-700">spotlight</span>
           </p>
         </div>
+      </div>
       </div>
     </div>
   );

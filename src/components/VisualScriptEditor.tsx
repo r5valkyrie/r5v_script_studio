@@ -805,6 +805,10 @@ export default function VisualScriptEditor() {
           onOpenRecent={loadProjectFromPath}
           recentProjects={recentProjects}
           accentColor={accentColor}
+          gridStyle={appSettings.appearance.gridStyle}
+          gridSize={appSettings.appearance.gridSize}
+          coloredGrid={appSettings.appearance.coloredGrid}
+          theme={appSettings.appearance.theme === 'system' ? 'dark' : appSettings.appearance.theme}
         />
       ) : (
         <>
