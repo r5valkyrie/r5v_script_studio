@@ -253,34 +253,34 @@ export default function NodeGraph({
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
   // Notify parent when view changes and update scale ref
-  // Also trigger a delayed repaint to fix blurry scaling in Chromium/Electron
-  const zoomRepaintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [zoomKey, setZoomKey] = useState(0);
-  const lastScaleRef = useRef(view.scale);
+  const viewScaleLastRef = useRef(view.scale);
   
   useEffect(() => {
     viewScaleRef.current = view.scale;
+    viewScaleLastRef.current = view.scale;
     onViewChange?.(view);
-    
-    // Only trigger repaint key change when scale actually changes (not pan)
-    if (lastScaleRef.current !== view.scale) {
-      lastScaleRef.current = view.scale;
-      
-      // Debounced key change after zoom stops - forces full layer recreation
-      if (zoomRepaintTimeoutRef.current) {
-        clearTimeout(zoomRepaintTimeoutRef.current);
-      }
-      zoomRepaintTimeoutRef.current = setTimeout(() => {
-        setZoomKey(k => k + 1);
-      }, 150);
+  }, [view.x, view.y, view.scale, onViewChange]);
+  
+  // Separate effect for zoom repaint to avoid infinite loops
+  // Triggers a debounced key change to fix blurry scaling in Chromium/Electron
+  const zoomRepaintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [zoomKey, setZoomKey] = useState(0);
+  
+  useEffect(() => {
+    // Debounced key change after zoom stops - forces full layer recreation
+    if (zoomRepaintTimeoutRef.current) {
+      clearTimeout(zoomRepaintTimeoutRef.current);
     }
+    zoomRepaintTimeoutRef.current = setTimeout(() => {
+      setZoomKey(k => k + 1);
+    }, 150);
     
     return () => {
       if (zoomRepaintTimeoutRef.current) {
         clearTimeout(zoomRepaintTimeoutRef.current);
       }
     };
-  }, [view, onViewChange]);
+  }, [view.scale]);
   const [selectionRect, setSelectionRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
 
   // Helper to snap a position to the grid if snap is enabled
@@ -2364,15 +2364,63 @@ export default function NodeGraph({
       if (isCtrl && key === 'c') {
         if (selectedNodeIds.length > 0) {
           e.preventDefault();
-          handleCopyNodes(selectedNodeIds);
+          // Inline copy logic to use fresh state values
+          const nodesToCopy = nodes.filter(n => selectedNodeIds.includes(n.id));
+          const connectionsToCopy = connections.filter(c => 
+            selectedNodeIds.includes(c.from.nodeId) && selectedNodeIds.includes(c.to.nodeId)
+          );
+          setClipboard({
+            nodes: nodesToCopy.map(n => ({ ...n })),
+            connections: connectionsToCopy.map(c => ({ ...c })),
+          });
         }
         return;
       }
 
       if (isCtrl && key === 'v') {
         e.preventDefault();
+        // Inline paste logic to use fresh state values
+        if (clipboard.nodes.length === 0) return;
+        
         const pastePos = lastMousePosRef.current ? screenToWorld(lastMousePosRef.current) : undefined;
-        handlePasteNodes(pastePos);
+        const minX = Math.min(...clipboard.nodes.map(n => n.position.x));
+        const minY = Math.min(...clipboard.nodes.map(n => n.position.y));
+        
+        const basePastePos = snapPosition({
+          x: pastePos?.x ?? minX + 50,
+          y: pastePos?.y ?? minY + 50,
+        });
+        
+        const offsetX = basePastePos.x - minX;
+        const offsetY = basePastePos.y - minY;
+        
+        const idMap = new Map<string, string>();
+        const newNodes: ScriptNode[] = clipboard.nodes.map(n => {
+          const newId = `${n.type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          idMap.set(n.id, newId);
+          const newPos = snapPosition({
+            x: n.position.x + offsetX,
+            y: n.position.y + offsetY,
+          });
+          return { ...n, id: newId, position: newPos };
+        });
+        
+        newNodes.forEach(n => onAddNodeRef.current(n));
+        
+        clipboard.connections.forEach(conn => {
+          const newFromId = idMap.get(conn.from.nodeId);
+          const newToId = idMap.get(conn.to.nodeId);
+          if (newFromId && newToId) {
+            const newConnection: NodeConnection = {
+              id: `conn-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              from: { nodeId: newFromId, portId: conn.from.portId },
+              to: { nodeId: newToId, portId: conn.to.portId },
+            };
+            onConnectRef.current(newConnection);
+          }
+        });
+        
+        onSelectNodes(newNodes.map(n => n.id));
         return;
       }
 
@@ -2388,7 +2436,7 @@ export default function NodeGraph({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedNodeIds, quickMenu, handleAddCommentForSelection]);
+  }, [selectedNodeIds, quickMenu, handleAddCommentForSelection, nodes, connections, clipboard, snapPosition, onSelectNodes]);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => {
@@ -3250,7 +3298,8 @@ export default function NodeGraph({
   return (
     <div
       ref={canvasRef}
-      className="node-graph-container relative w-full h-full bg-[#1a1f28] overflow-hidden"
+      tabIndex={-1}
+      className="node-graph-container relative w-full h-full bg-[#1a1f28] overflow-hidden outline-none"
       onClick={handleCanvasClick}
       onMouseDown={handleCanvasMouseDown}
       onMouseDownCapture={handleSelectionStart}

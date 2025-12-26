@@ -2652,23 +2652,6 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     tags: ['SetValueForEffectNameKey', 'effect', 'particle', 'fx'],
   },
   {
-    type: 'set-script-name',
-    category: 'entity',
-    label: 'SetScriptName',
-    description: 'Set the script name for an entity. Used for GetEntByScriptName() lookups.',
-    color: '#27AE60',
-    inputs: [
-      { label: 'In', type: 'exec', isInput: true },
-      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
-      { label: 'Name', type: 'data', dataType: 'string', isInput: true },
-    ],
-    outputs: [
-      { label: 'Out', type: 'exec', isInput: false },
-    ],
-    defaultData: { name: '' },
-    tags: ['SetScriptName', 'name', 'identifier', 'lookup'],
-  },
-  {
     type: 'set-entity-kv',
     category: 'entity',
     label: 'Set KeyValue',
