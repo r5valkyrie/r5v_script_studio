@@ -721,15 +721,16 @@ export default function VisualScriptEditor() {
     const updateCanvasSize = () => {
       // Approximate main content area size
       const sidebarW = isSidebarOpen ? 280 : 0;
+      const codePanelW = isCodePanelOpen ? codePanelWidth : 0;
       setCanvasSize({
-        width: window.innerWidth - sidebarW,
+        width: window.innerWidth - sidebarW - codePanelW,
         height: window.innerHeight - 48 // Subtract header height
       });
     };
     updateCanvasSize();
     window.addEventListener('resize', updateCanvasSize);
     return () => window.removeEventListener('resize', updateCanvasSize);
-  }, [isSidebarOpen]);
+  }, [isSidebarOpen, isCodePanelOpen, codePanelWidth]);
   // Close file menu on click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {

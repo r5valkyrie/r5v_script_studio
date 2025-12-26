@@ -253,9 +253,33 @@ export default function NodeGraph({
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
   // Notify parent when view changes and update scale ref
+  // Also trigger a delayed repaint to fix blurry scaling in Chromium/Electron
+  const zoomRepaintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [zoomKey, setZoomKey] = useState(0);
+  const lastScaleRef = useRef(view.scale);
+  
   useEffect(() => {
     viewScaleRef.current = view.scale;
     onViewChange?.(view);
+    
+    // Only trigger repaint key change when scale actually changes (not pan)
+    if (lastScaleRef.current !== view.scale) {
+      lastScaleRef.current = view.scale;
+      
+      // Debounced key change after zoom stops - forces full layer recreation
+      if (zoomRepaintTimeoutRef.current) {
+        clearTimeout(zoomRepaintTimeoutRef.current);
+      }
+      zoomRepaintTimeoutRef.current = setTimeout(() => {
+        setZoomKey(k => k + 1);
+      }, 150);
+    }
+    
+    return () => {
+      if (zoomRepaintTimeoutRef.current) {
+        clearTimeout(zoomRepaintTimeoutRef.current);
+      }
+    };
   }, [view, onViewChange]);
   const [selectionRect, setSelectionRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
 
@@ -3348,6 +3372,7 @@ export default function NodeGraph({
         );
       })()}
       <div
+        key={`transform-layer-${zoomKey}`}
         className="absolute inset-0"
         style={{
           transform: `translate3d(${view.x}px, ${view.y}px, 0) scale(${view.scale})`,
@@ -3796,6 +3821,7 @@ export default function NodeGraph({
       {quickMenu && (
         <QuickNodeMenu
           position={quickMenu.screenPosition}
+          containerOffset={canvasRef.current?.getBoundingClientRect()}
           sourcePort={quickMenu.sourcePort}
           onSelectNode={handleQuickNodeSelect}
           onClose={() => setQuickMenu(null)}
@@ -3819,8 +3845,11 @@ export default function NodeGraph({
       {contextMenu && (
         <div
           data-context-menu="true"
-          className="fixed z-[1100] bg-[#1a1f28] border border-white/20 rounded-md shadow-xl text-sm text-white min-w-[160px] py-1"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
+          className="absolute z-[1100] bg-[#1a1f28] border border-white/20 rounded-md shadow-xl text-sm text-white min-w-[160px] py-1"
+          style={{ 
+            left: contextMenu.x - (canvasRef.current?.getBoundingClientRect().left ?? 0), 
+            top: contextMenu.y - (canvasRef.current?.getBoundingClientRect().top ?? 0) 
+          }}
         >
           {/* Canvas context menu */}
           {contextMenu.type === 'canvas' && (

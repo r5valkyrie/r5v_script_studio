@@ -6,6 +6,7 @@ import { CATEGORY_INFO } from '../../types/visual-scripting';
 
 interface QuickNodeMenuProps {
   position: { x: number; y: number };
+  containerOffset?: { left: number; top: number };
   sourcePort?: {
     nodeId: string;
     portId: string;
@@ -39,6 +40,7 @@ function areTypesCompatible(sourceType?: NodeDataType, targetType?: NodeDataType
 
 export default function QuickNodeMenu({
   position,
+  containerOffset,
   sourcePort,
   onSelectNode,
   onClose,
@@ -255,23 +257,26 @@ export default function QuickNodeMenu({
   const menuStyle = useMemo(() => {
     const menuWidth = 360;
     const menuHeight = 420;
-    let x = position.x;
-    let y = position.y;
+    // Convert to position relative to container if offset provided
+    let x = containerOffset ? position.x - containerOffset.left : position.x;
+    let y = containerOffset ? position.y - containerOffset.top : position.y;
 
-    // Keep menu on screen
+    // Keep menu on screen (use container dimensions if available)
     if (typeof window !== 'undefined') {
-      if (x + menuWidth > window.innerWidth - 20) {
-        x = window.innerWidth - menuWidth - 20;
+      const maxX = containerOffset ? window.innerWidth - containerOffset.left : window.innerWidth;
+      const maxY = containerOffset ? window.innerHeight - containerOffset.top : window.innerHeight;
+      if (x + menuWidth > maxX - 20) {
+        x = maxX - menuWidth - 20;
       }
-      if (y + menuHeight > window.innerHeight - 20) {
-        y = window.innerHeight - menuHeight - 20;
+      if (y + menuHeight > maxY - 20) {
+        y = maxY - menuHeight - 20;
       }
       if (x < 20) x = 20;
       if (y < 20) y = 20;
     }
 
     return { left: x, top: y };
-  }, [position]);
+  }, [position, containerOffset]);
 
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -293,7 +298,7 @@ export default function QuickNodeMenu({
     <div
       ref={menuRef}
       data-quick-node-menu="true"
-      className="fixed z-[1000] w-[340px] bg-[#1a1d24] border border-white/10 rounded-xl shadow-2xl overflow-hidden"
+      className="absolute z-[1000] w-[340px] bg-[#1a1d24] border border-white/10 rounded-xl shadow-2xl overflow-hidden"
       style={menuStyle}
       onWheel={(e) => e.stopPropagation()}
       onKeyDown={handleKeyDown}
