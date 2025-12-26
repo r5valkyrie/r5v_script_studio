@@ -1,4 +1,4 @@
-import { FilePlus, FolderOpen, Clock, Sparkles } from 'lucide-react';
+import { FilePlus, FolderOpen, Clock, GitBranch, ArrowRight } from 'lucide-react';
 
 interface RecentProject {
   name: string;
@@ -46,61 +46,87 @@ export default function WelcomeScreen({
     const diffDays = Math.floor(diffMs / 86400000);
 
     if (diffMins < 60) {
-      return diffMins === 0 ? 'Just now' : `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
+      return diffMins === 0 ? 'Just now' : `${diffMins}m ago`;
     } else if (diffHours < 24) {
-      return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+      return `${diffHours}h ago`;
     } else if (diffDays < 7) {
-      return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+      return `${diffDays}d ago`;
     } else {
       return date.toLocaleDateString();
     }
   };
 
   return (
-    <div className="w-full h-full bg-gradient-to-br from-[#0f1419] via-[#151a21] to-[#1a1f26] flex items-center justify-center overflow-auto">
-      <div className="max-w-4xl w-full px-8 py-12">
+    <div className="w-full h-full bg-animated flex items-center justify-center overflow-auto">
+      <div className="max-w-5xl w-full px-8 py-12">
         {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Sparkles style={{ color: accentColor }} size={40} />
-            <h1 className="text-5xl font-bold text-white">R5V Script Studio</h1>
+        <div className="text-center mb-16">
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <div 
+              className="p-3 rounded-xl"
+              style={{ 
+                backgroundColor: hexToRgba(accentColor, 0.15),
+                boxShadow: `0 0 30px ${hexToRgba(accentColor, 0.3)}, inset 0 1px 0 rgba(255,255,255,0.1)`
+              }}
+            >
+              <GitBranch style={{ color: accentColor }} size={36} />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold text-white tracking-tight">R5V Script Studio</h1>
+              <p className="text-gray-400 mt-1">Visual scripting for R5Valkyrie</p>
+            </div>
           </div>
-          <p className="text-xl text-gray-400">Visual scripting for R5Valkyrie</p>
         </div>
 
         {/* Main Actions */}
-        <div className="grid grid-cols-2 gap-6 mb-12">
+        <div className="grid grid-cols-2 gap-6 mb-10">
           <button
             onClick={onNewProject}
-            className="group relative rounded-xl p-8 transition-all duration-300 hover:scale-105"
+            className="group glass relative overflow-hidden rounded-xl p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl"
             style={{
-              background: `linear-gradient(to bottom right, ${hexToRgba(accentColor, 0.1)}, ${hexToRgba(accentColor, 0.05)})`,
-              border: `2px solid ${hexToRgba(accentColor, 0.3)}`,
+              borderColor: hexToRgba(accentColor, 0.2),
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = `linear-gradient(to bottom right, ${hexToRgba(accentColor, 0.2)}, ${hexToRgba(accentColor, 0.1)})`;
-              e.currentTarget.style.borderColor = hexToRgba(accentColor, 0.5);
+              e.currentTarget.style.borderColor = hexToRgba(accentColor, 0.4);
+              e.currentTarget.style.boxShadow = `0 14px 28px rgba(0,0,0,0.35), 0 4px 10px rgba(0,0,0,0.25), 0 0 40px ${hexToRgba(accentColor, 0.15)}`;
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = `linear-gradient(to bottom right, ${hexToRgba(accentColor, 0.1)}, ${hexToRgba(accentColor, 0.05)})`;
-              e.currentTarget.style.borderColor = hexToRgba(accentColor, 0.3);
+              e.currentTarget.style.borderColor = hexToRgba(accentColor, 0.2);
+              e.currentTarget.style.boxShadow = '';
             }}
           >
-            <div className="flex flex-col items-center gap-4">
+            {/* Subtle gradient overlay */}
+            <div 
+              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              style={{
+                background: `linear-gradient(135deg, ${hexToRgba(accentColor, 0.08)} 0%, transparent 60%)`
+              }}
+            />
+            <div className="relative flex items-center gap-5">
               <div 
-                className="p-4 rounded-full transition-colors"
-                style={{ backgroundColor: hexToRgba(accentColor, 0.2) }}
+                className="p-4 rounded-xl transition-all duration-300 group-hover:scale-110"
+                style={{ 
+                  backgroundColor: hexToRgba(accentColor, 0.15),
+                  boxShadow: `inset 0 1px 0 rgba(255,255,255,0.1)`
+                }}
               >
-                <FilePlus size={32} style={{ color: lightenColor(accentColor, 30) }} />
+                <FilePlus size={28} style={{ color: lightenColor(accentColor, 30) }} />
               </div>
-              <div>
-                <h3 className="text-xl font-semibold text-white mb-2">New Project</h3>
+              <div className="flex-1 text-left">
+                <h3 className="text-lg font-semibold text-white mb-1">New Project</h3>
                 <p className="text-sm text-gray-400">Start with a fresh visual script</p>
               </div>
+              <ArrowRight 
+                size={20} 
+                className="text-gray-600 group-hover:text-gray-400 transition-all duration-300 group-hover:translate-x-1"
+              />
             </div>
             <div 
-              className="absolute top-4 right-4 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-              style={{ color: lightenColor(accentColor, 30) }}
+              className="absolute top-3 right-3 px-2 py-1 rounded text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity"
+              style={{ 
+                backgroundColor: hexToRgba(accentColor, 0.2),
+                color: lightenColor(accentColor, 40)
+              }}
             >
               Ctrl+N
             </div>
@@ -108,30 +134,52 @@ export default function WelcomeScreen({
 
           <button
             onClick={onOpenProject}
-            className="group relative rounded-xl p-8 transition-all duration-300 hover:scale-105"
+            className="group glass relative overflow-hidden rounded-xl p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl"
             style={{
-              background: `linear-gradient(to bottom right, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05))`,
-              border: `2px solid rgba(59, 130, 246, 0.3)`,
+              borderColor: 'rgba(59, 130, 246, 0.2)',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = `linear-gradient(to bottom right, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.1))`;
-              e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+              e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+              e.currentTarget.style.boxShadow = '0 14px 28px rgba(0,0,0,0.35), 0 4px 10px rgba(0,0,0,0.25), 0 0 40px rgba(59, 130, 246, 0.15)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = `linear-gradient(to bottom right, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05))`;
-              e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+              e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.2)';
+              e.currentTarget.style.boxShadow = '';
             }}
           >
-            <div className="flex flex-col items-center gap-4">
-              <div className="p-4 bg-blue-500/20 rounded-full group-hover:bg-blue-500/30 transition-colors">
-                <FolderOpen size={32} className="text-blue-400 group-hover:text-blue-300" />
+            {/* Subtle gradient overlay */}
+            <div 
+              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              style={{
+                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, transparent 60%)'
+              }}
+            />
+            <div className="relative flex items-center gap-5">
+              <div 
+                className="p-4 rounded-xl transition-all duration-300 group-hover:scale-110"
+                style={{ 
+                  backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)'
+                }}
+              >
+                <FolderOpen size={28} className="text-blue-400" />
               </div>
-              <div>
-                <h3 className="text-xl font-semibold text-white mb-2">Open Project</h3>
+              <div className="flex-1 text-left">
+                <h3 className="text-lg font-semibold text-white mb-1">Open Project</h3>
                 <p className="text-sm text-gray-400">Browse for an existing project</p>
               </div>
+              <ArrowRight 
+                size={20} 
+                className="text-gray-600 group-hover:text-gray-400 transition-all duration-300 group-hover:translate-x-1"
+              />
             </div>
-            <div className="absolute top-4 right-4 text-xs text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div 
+              className="absolute top-3 right-3 px-2 py-1 rounded text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity"
+              style={{ 
+                backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                color: 'rgb(147, 197, 253)'
+              }}
+            >
               Ctrl+O
             </div>
           </button>
@@ -139,51 +187,69 @@ export default function WelcomeScreen({
 
         {/* Recent Projects */}
         {recentProjects.length > 0 && (
-          <div className="bg-[#1a1f26]/50 border border-white/10 rounded-xl p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Clock size={20} className="text-gray-400" />
-              <h2 className="text-lg font-semibold text-white">Recent Projects</h2>
+          <div className="glass rounded-xl overflow-hidden">
+            <div className="flex items-center gap-2 px-5 py-4 border-b border-white/10">
+              <Clock size={16} className="text-gray-400" />
+              <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Recent Projects</h2>
             </div>
-            <div className="space-y-2">
+            <div className="divide-y divide-white/5">
               {recentProjects.slice(0, 5).map((project, index) => (
                 <button
                   key={index}
                   onClick={() => onOpenRecent(project.path)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-all group"
-                  style={{ 
-                    ['--hover-border' as string]: hexToRgba(accentColor, 0.3)
-                  }}
+                  className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-white/5 transition-all group"
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = hexToRgba(accentColor, 0.3);
+                    e.currentTarget.style.backgroundColor = hexToRgba(accentColor, 0.05);
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    e.currentTarget.style.backgroundColor = '';
                   }}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-4">
                     <div 
-                      className="p-2 rounded transition-colors"
-                      style={{ backgroundColor: hexToRgba(accentColor, 0.2) }}
+                      className="p-2 rounded-lg transition-all duration-200 group-hover:scale-110"
+                      style={{ backgroundColor: hexToRgba(accentColor, 0.12) }}
                     >
                       <FileText size={16} style={{ color: lightenColor(accentColor, 30) }} />
                     </div>
                     <div className="text-left">
-                      <div className="text-sm font-medium text-white">{project.name}</div>
-                      <div className="text-xs text-gray-500 truncate max-w-md">{project.path}</div>
+                      <div className="text-sm font-medium text-white group-hover:text-white/90">{project.name}</div>
+                      <div className="text-xs text-gray-500 truncate max-w-lg font-mono">{project.path}</div>
                     </div>
                   </div>
-                  <div className="text-xs text-gray-500">{formatDate(project.lastOpened)}</div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-gray-500">{formatDate(project.lastOpened)}</span>
+                    <ArrowRight 
+                      size={14} 
+                      className="text-gray-600 opacity-0 group-hover:opacity-100 transition-all duration-200 group-hover:translate-x-1"
+                    />
+                  </div>
                 </button>
               ))}
             </div>
           </div>
         )}
 
+        {/* Empty state if no recent projects */}
+        {recentProjects.length === 0 && (
+          <div className="glass rounded-xl p-8 text-center">
+            <div className="text-gray-500 mb-2">
+              <Clock size={32} className="mx-auto mb-3 opacity-50" />
+              <p className="text-sm">No recent projects</p>
+            </div>
+            <p className="text-xs text-gray-600">Your recently opened projects will appear here</p>
+          </div>
+        )}
+
         {/* Footer Tips */}
-        <div className="mt-12 text-center">
-          <p className="text-sm text-gray-500">
-            Tip: Use <kbd className="px-2 py-1 bg-white/10 rounded text-xs">Ctrl+S</kbd> to save and{' '}
-            <kbd className="px-2 py-1 bg-white/10 rounded text-xs">Ctrl+Shift+S</kbd> to export
+        <div className="mt-10 text-center">
+          <p className="text-xs text-gray-600">
+            <kbd className="px-2 py-1 bg-white/5 border border-white/10 rounded text-[10px] text-gray-400 font-mono">Ctrl+S</kbd>
+            <span className="mx-2 text-gray-700">save</span>
+            <kbd className="px-2 py-1 bg-white/5 border border-white/10 rounded text-[10px] text-gray-400 font-mono">Ctrl+Shift+S</kbd>
+            <span className="mx-2 text-gray-700">export</span>
+            <kbd className="px-2 py-1 bg-white/5 border border-white/10 rounded text-[10px] text-gray-400 font-mono">Ctrl+Space</kbd>
+            <span className="mx-2 text-gray-700">spotlight</span>
           </p>
         </div>
       </div>
