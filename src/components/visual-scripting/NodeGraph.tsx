@@ -3528,27 +3528,31 @@ export default function NodeGraph({
 
                 {/* Resize handle - right edge */}
                 <div
-                  className="absolute top-8 bottom-2 right-0 w-2 cursor-ew-resize hover:bg-purple-500/30 transition-colors"
+                  className="absolute top-8 bottom-2 right-0 w-4 cursor-ew-resize hover:bg-purple-500/30 transition-colors"
                   onMouseDown={(e) => handleCommentResizeStart(e, node, 'right')}
                 />
 
                 {/* Resize handle - bottom edge */}
                 <div
-                  className="absolute bottom-0 left-0 right-2 h-2 cursor-ns-resize hover:bg-purple-500/30 transition-colors"
+                  className="absolute bottom-0 left-0 right-2 h-4 cursor-ns-resize hover:bg-purple-500/30 transition-colors"
                   onMouseDown={(e) => handleCommentResizeStart(e, node, 'bottom')}
                 />
 
                 {/* Resize handle - corner */}
                 <div
-                  className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize group"
+                  className="absolute bottom-0 right-0 w-8 h-8 cursor-nwse-resize group flex items-end justify-end"
                   onMouseDown={(e) => handleCommentResizeStart(e, node, 'corner')}
                 >
                   <svg
-                    className="w-full h-full text-white/30 group-hover:text-purple-400 transition-colors"
-                    viewBox="0 0 16 16"
-                    fill="currentColor"
+                    className="w-5 h-5 mb-1 mr-1 text-white/40 group-hover:text-purple-400 transition-colors"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   >
-                    <path d="M14 14H16V16H14V14ZM10 14H12V16H10V14ZM14 10H16V12H14V10Z" />
+                    <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
                   </svg>
                 </div>
               </div>
