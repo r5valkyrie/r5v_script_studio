@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { ChevronRight, Crosshair, Copy, Code, Eye, Search, RotateCcw } from 'lucide-react';
+import { ChevronRight, ChevronDown, Crosshair, Copy, Code, Eye, Search, RotateCcw, Plus, X, Settings, Zap, Box, Volume2, Sparkles, Target, Palette, Brain, Layers, Wand2, Trash2 } from 'lucide-react';
 import type { WeaponFile } from '../../types/project';
 
 interface WeaponEditorProps {
@@ -22,17 +22,117 @@ interface PropertyDef {
 interface CategoryDef {
   id: string;
   name: string;
-  icon: string;
+  icon: React.ReactNode;
   description: string;
   properties: PropertyDef[];
 }
+
+// Special blocks that can be added
+interface SpecialBlockDef {
+  id: string;
+  name: string;
+  description: string;
+  icon: React.ReactNode;
+  template: string;
+}
+
+const SPECIAL_BLOCKS: SpecialBlockDef[] = [
+  {
+    id: 'mods',
+    name: 'Mods',
+    description: 'Weapon modifications and attachments',
+    icon: <Wand2 size={14} />,
+    template: `\tMods
+\t{
+\t\tgold
+\t\t{
+\t\t}
+
+\t\tsurvival_finite_ammo
+\t\t{
+\t\t\t"uses_ammo_pool"\t\t\t\t"1"
+\t\t}
+\t}`
+  },
+  {
+    id: 'rui_crosshair',
+    name: 'RUI_CrosshairData',
+    description: 'Crosshair configuration and UI',
+    icon: <Target size={14} />,
+    template: `\tRUI_CrosshairData
+\t{
+\t\tDefaultArgs
+\t\t{
+\t\t\tadjustedSpread\t\tweapon_spread
+\t\t\tadsFrac\t\t\t\tplayer_zoomFrac
+\t\t\tisSprinting\t\t\tplayer_is_sprinting
+\t\t\tisReloading\t\t\tweapon_is_reloading
+\t\t\tteamColor\t\t\tcrosshair_team_color
+\t\t\tisAmped\t\t\t\tweapon_is_amped
+\t\t\tcrosshairMovementX\tcrosshair_movement_x
+\t\t\tcrosshairMovementY\tcrosshair_movement_y
+\t\t}
+
+\t\tCrosshair_1
+\t\t{
+\t\t\t"ui"\t\t\t"ui/crosshair_plus_dot"
+\t\t\t"base_spread"\t"0"
+
+\t\t\tArgs
+\t\t\t{
+\t\t\t\tisFiring\tweapon_is_firing
+\t\t\t}
+\t\t}
+\t}`
+  },
+  {
+    id: 'uidata1',
+    name: 'UiData1',
+    description: 'Primary weapon UI element',
+    icon: <Layers size={14} />,
+    template: `\t"ui1_enable"\t\t\t\t\t\t\t\t   "1"
+\t"ui1_draw_cloaked"\t\t\t\t\t\t\t   "1"
+\tUiData1
+\t{
+\t\t"ui"\t\t\t\t\t\t\t"ui/weapon_hud"
+\t\t"mesh"\t\t\t\t\t\t  "models/weapons/attachments/weapon_rui_reticle"
+
+\t\tArgs
+\t\t{
+\t\t\tvis\t\t\t\t\t\tplayer_zoomfrac
+\t\t\tammo\t\t\t\t\tweapon_ammo
+\t\t\tclipSize\t\t\t\tweapon_clipSize
+\t\t}
+\t}`
+  },
+  {
+    id: 'uidata2',
+    name: 'UiData2',
+    description: 'Secondary weapon UI element',
+    icon: <Layers size={14} />,
+    template: `\t"ui2_enable"\t\t\t\t\t\t\t\t   "1"
+\t"ui2_draw_cloaked"\t\t\t\t\t\t\t   "1"
+\tUiData2
+\t{
+\t\t"ui"\t\t\t\t\t\t\t"ui/ammo_counter"
+\t\t"mesh"\t\t\t\t\t\t  "models/weapons/attachments/weapon_rui_ammo"
+
+\t\tArgs
+\t\t{
+\t\t\t"vis"\t\t\t"player_zoomfrac"
+\t\t\t"ammo"\t\t  "weapon_ammo"
+\t\t\t"clipSize"  "weapon_clipSize"
+\t\t}
+\t}`
+  }
+];
 
 // Property categories with their key patterns and editable properties
 const PROPERTY_CATEGORIES: CategoryDef[] = [
   {
     id: 'general',
     name: 'General',
-    icon: '',
+    icon: <Settings size={14} />,
     description: 'Basic weapon info and identification',
     properties: [
       { key: 'printname', label: 'Display Name', type: 'string', description: 'Localization key for weapon name' },
@@ -55,7 +155,7 @@ const PROPERTY_CATEGORIES: CategoryDef[] = [
   {
     id: 'damage',
     name: 'Damage',
-    icon: '',
+    icon: <Zap size={14} />,
     description: 'Damage values and multipliers',
     properties: [
       { key: 'damage_near_value', label: 'Near Damage', type: 'number', description: 'Damage at close range' },
@@ -81,7 +181,7 @@ const PROPERTY_CATEGORIES: CategoryDef[] = [
   {
     id: 'ammo',
     name: 'Ammo & Reload',
-    icon: '',
+    icon: <Box size={14} />,
     description: 'Magazine size and reload timing',
     properties: [
       { key: 'ammo_clip_size', label: 'Magazine Size', type: 'number', description: 'Rounds per magazine' },
@@ -108,7 +208,7 @@ const PROPERTY_CATEGORIES: CategoryDef[] = [
   {
     id: 'behavior',
     name: 'Fire Behavior',
-    icon: '',
+    icon: <Crosshair size={14} />,
     description: 'Fire rate, burst, and projectile settings',
     properties: [
       { key: 'fire_rate', label: 'Fire Rate', type: 'number', step: 0.1, description: 'Rounds per second' },
@@ -138,7 +238,7 @@ const PROPERTY_CATEGORIES: CategoryDef[] = [
   {
     id: 'spread',
     name: 'Spread',
-    icon: '',
+    icon: <Target size={14} />,
     description: 'Hipfire and ADS spread settings',
     properties: [
       { key: 'spread_stand_hip', label: 'Hip Spread (Standing)', type: 'number', step: 0.1, description: 'Hipfire spread while standing' },
@@ -164,7 +264,7 @@ const PROPERTY_CATEGORIES: CategoryDef[] = [
   {
     id: 'recoil',
     name: 'Recoil',
-    icon: '',
+    icon: <Zap size={14} />,
     description: 'View kick and recoil patterns',
     properties: [
       { key: 'viewkick_pattern', label: 'Recoil Pattern', type: 'string', description: 'Named recoil pattern to use' },
@@ -195,7 +295,7 @@ const PROPERTY_CATEGORIES: CategoryDef[] = [
   {
     id: 'viewmodel',
     name: 'Viewmodel',
-    icon: '',
+    icon: <Eye size={14} />,
     description: 'Viewmodel offsets, shake, and attachments',
     properties: [
       { key: 'viewmodel', label: 'Viewmodel', type: 'string', description: 'First-person weapon model' },
@@ -213,7 +313,7 @@ const PROPERTY_CATEGORIES: CategoryDef[] = [
   {
     id: 'ui',
     name: 'UI & Icons',
-    icon: '',
+    icon: <Palette size={14} />,
     description: 'Menu icons, HUD icons, and RUI',
     properties: [
       { key: 'menu_icon', label: 'Menu Icon', type: 'string', description: 'Icon shown in menus' },
@@ -226,7 +326,7 @@ const PROPERTY_CATEGORIES: CategoryDef[] = [
   {
     id: 'sounds',
     name: 'Sounds',
-    icon: '',
+    icon: <Volume2 size={14} />,
     description: 'Audio events and sound effects',
     properties: [
       { key: 'fire_sound_1_player_1p', label: 'Fire Sound 1P', type: 'string', description: 'First-person fire sound' },
@@ -250,7 +350,7 @@ const PROPERTY_CATEGORIES: CategoryDef[] = [
   {
     id: 'fx',
     name: 'Effects',
-    icon: '',
+    icon: <Sparkles size={14} />,
     description: 'Visual effects and impacts',
     properties: [
       { key: 'fx_muzzle_flash_view', label: 'Muzzle Flash View', type: 'string', description: 'First-person muzzle flash effect' },
@@ -268,7 +368,7 @@ const PROPERTY_CATEGORIES: CategoryDef[] = [
   {
     id: 'npc',
     name: 'NPC Settings',
-    icon: '',
+    icon: <Brain size={14} />,
     description: 'AI and NPC behavior',
     properties: [
       { key: 'npc_damage_near_value', label: 'NPC Near Damage', type: 'number', description: 'Damage when used by NPCs' },
@@ -294,7 +394,7 @@ const PROPERTY_CATEGORIES: CategoryDef[] = [
   {
     id: 'advanced',
     name: 'Advanced',
-    icon: '',
+    icon: <Settings size={14} />,
     description: 'Advanced settings and gameplay modifiers',
     properties: [
       { key: 'damage_type', label: 'Damage Type', type: 'string', description: 'Type of damage (bullet, etc.)' },
@@ -317,7 +417,7 @@ const PROPERTY_CATEGORIES: CategoryDef[] = [
   {
     id: 'dof',
     name: 'Depth of Field',
-    icon: '',
+    icon: <Eye size={14} />,
     description: 'Camera depth of field settings',
     properties: [
       { key: 'dof_zoom_nearDepthStart', label: 'Zoom Near Start', type: 'number', step: 0.1, description: 'DoF near depth start when zoomed' },
@@ -332,7 +432,7 @@ const PROPERTY_CATEGORIES: CategoryDef[] = [
   {
     id: 'sway',
     name: 'Sway',
-    icon: '',
+    icon: <Crosshair size={14} />,
     description: 'Weapon sway and view drift',
     properties: [
       { key: 'sway_min_pitch_zoomed', label: 'Sway Min Pitch', type: 'number', step: 0.001, description: 'Minimum pitch sway zoomed' },
@@ -353,7 +453,7 @@ const PROPERTY_CATEGORIES: CategoryDef[] = [
   {
     id: 'bob',
     name: 'Bobbing',
-    icon: '',
+    icon: <Layers size={14} />,
     description: 'Weapon bobbing settings',
     properties: [
       { key: 'bob_cycle_time', label: 'Bob Cycle Time', type: 'number', step: 0.1, description: 'Bob cycle animation time' },
@@ -372,7 +472,7 @@ const PROPERTY_CATEGORIES: CategoryDef[] = [
   {
     id: 'aimassist',
     name: 'Aim Assist',
-    icon: '',
+    icon: <Target size={14} />,
     description: 'Aim assist settings',
     properties: [
       { key: 'aimassist_adspull_weaponclass', label: 'AA Weapon Class', type: 'string', description: 'Aim assist weapon class' },
@@ -385,7 +485,7 @@ const PROPERTY_CATEGORIES: CategoryDef[] = [
   {
     id: 'blast',
     name: 'Blast Pattern',
-    icon: '',
+    icon: <Sparkles size={14} />,
     description: 'Shotgun blast pattern settings',
     properties: [
       { key: 'blast_pattern', label: 'Blast Pattern', type: 'string', description: 'Named blast pattern' },
@@ -416,6 +516,143 @@ function parseKeyValues(content: string): Record<string, string> {
       const value = match[2] !== undefined ? match[2] : match[3];
       result[key] = value;
     }
+  }
+  
+  return result;
+}
+
+// Parse Mods block - returns array of mod names
+interface ModEntry {
+  name: string;
+  properties: Record<string, string>;
+}
+
+function parseModsBlock(content: string): ModEntry[] {
+  const mods: ModEntry[] = [];
+  // Match both quoted "Mods" and unquoted Mods
+  const modsMatch = content.match(/^\s*"?Mods"?\s*\n\s*\{([\s\S]*?)^\s*\}/m);
+  if (!modsMatch) return mods;
+  
+  const modsContent = modsMatch[1];
+  const lines = modsContent.split('\n');
+  
+  let currentMod: ModEntry | null = null;
+  let braceDepth = 0;
+  
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('//')) continue;
+    
+    if (trimmed === '{') {
+      braceDepth++;
+      continue;
+    }
+    
+    if (trimmed === '}') {
+      braceDepth--;
+      if (braceDepth === 0 && currentMod) {
+        mods.push(currentMod);
+        currentMod = null;
+      }
+      continue;
+    }
+    
+    // Mod name (unquoted or quoted)
+    if (braceDepth === 0) {
+      const modName = trimmed.replace(/^"|"$/g, '');
+      if (modName && !modName.includes(' ')) {
+        currentMod = { name: modName, properties: {} };
+      }
+    } else if (braceDepth === 1 && currentMod) {
+      // Property inside mod
+      const propMatch = trimmed.match(/^"([^"]+)"\s+(?:"([^"]*)"|(\S+))/);
+      if (propMatch) {
+        currentMod.properties[propMatch[1]] = propMatch[2] !== undefined ? propMatch[2] : propMatch[3];
+      }
+    }
+  }
+  
+  return mods;
+}
+
+// Parse RUI_CrosshairData block
+interface CrosshairEntry {
+  name: string;
+  ui?: string;
+  baseSpread?: string;
+  args: Record<string, string>;
+}
+
+interface RUICrosshairData {
+  defaultArgs: Record<string, string>;
+  crosshairs: CrosshairEntry[];
+}
+
+function parseRUICrosshairData(content: string): RUICrosshairData | null {
+  const result: RUICrosshairData = { defaultArgs: {}, crosshairs: [] };
+  
+  // Match both quoted "RUI_CrosshairData" and unquoted
+  const blockMatch = content.match(/"?RUI_CrosshairData"?\s*\n\s*\{([\s\S]*?)^\s*\}/m);
+  if (!blockMatch) return null;
+  
+  const blockContent = blockMatch[1];
+  
+  // Parse DefaultArgs
+  const defaultArgsMatch = blockContent.match(/DefaultArgs\s*\n\s*\{([\s\S]*?)\n\s*\}/);
+  if (defaultArgsMatch) {
+    const argsLines = defaultArgsMatch[1].split('\n');
+    for (const line of argsLines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('//')) continue;
+      const parts = trimmed.split(/\s+/);
+      if (parts.length >= 2) {
+        result.defaultArgs[parts[0].replace(/"/g, '')] = parts.slice(1).join(' ').replace(/"/g, '');
+      }
+    }
+  }
+  
+  // Parse Crosshair_N entries
+  const crosshairPattern = /Crosshair_(\d+)\s*\n\s*\{([\s\S]*?)\n\s*\}/g;
+  let crosshairMatch;
+  while ((crosshairMatch = crosshairPattern.exec(blockContent)) !== null) {
+    const crosshair: CrosshairEntry = {
+      name: `Crosshair_${crosshairMatch[1]}`,
+      args: {}
+    };
+    
+    const crosshairContent = crosshairMatch[2];
+    const lines = crosshairContent.split('\n');
+    
+    let inArgs = false;
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('//')) continue;
+      
+      if (trimmed === 'Args' || trimmed === '"Args"') {
+        inArgs = true;
+        continue;
+      }
+      if (trimmed === '{') continue;
+      if (trimmed === '}') {
+        inArgs = false;
+        continue;
+      }
+      
+      if (inArgs) {
+        const parts = trimmed.split(/\s+/);
+        if (parts.length >= 2) {
+          crosshair.args[parts[0].replace(/"/g, '')] = parts.slice(1).join(' ').replace(/"/g, '');
+        }
+      } else {
+        const propMatch = trimmed.match(/^"([^"]+)"\s+(?:"([^"]*)"|(\S+))/);
+        if (propMatch) {
+          if (propMatch[1] === 'ui') crosshair.ui = propMatch[2] || propMatch[3];
+          else if (propMatch[1] === 'base_spread') crosshair.baseSpread = propMatch[2] || propMatch[3];
+        }
+      }
+    }
+    
+    result.crosshairs.push(crosshair);
   }
   
   return result;
@@ -458,13 +695,49 @@ export default function WeaponEditor({
 }: WeaponEditorProps) {
   const [content, setContent] = useState('');
   const [isRawMode, setIsRawMode] = useState(false);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['general', 'damage', 'ammo']));
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [enabledSections, setEnabledSections] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAddSectionMenu, setShowAddSectionMenu] = useState(false);
+  const [showAddBlockMenu, setShowAddBlockMenu] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
 
   // Parse properties from content
   const parsedProperties = useMemo(() => parseKeyValues(content), [content]);
+
+  // Parse special blocks
+  const parsedMods = useMemo(() => parseModsBlock(content), [content]);
+  const parsedCrosshair = useMemo(() => parseRUICrosshairData(content), [content]);
+
+  // Detect which special blocks exist in content
+  const existingBlocks = useMemo(() => {
+    const blocks: Set<string> = new Set();
+    if (/^\s*"?Mods"?\s*$/m.test(content)) blocks.add('mods');
+    if (/^\s*"?RUI_CrosshairData"?\s*$/m.test(content)) blocks.add('rui_crosshair');
+    if (/^\s*"?UiData1"?\s*$/m.test(content)) blocks.add('uidata1');
+    if (/^\s*"?UiData2"?\s*$/m.test(content)) blocks.add('uidata2');
+    return blocks;
+  }, [content]);
+
+  // Auto-detect sections that have values and enable them
+  useEffect(() => {
+    if (weaponFile) {
+      const detected = new Set<string>();
+      for (const category of PROPERTY_CATEGORIES) {
+        if (category.properties.some(p => parsedProperties[p.key])) {
+          detected.add(category.id);
+        }
+      }
+      // Always enable general if nothing else
+      if (detected.size === 0) detected.add('general');
+      setEnabledSections(detected);
+      // Expand first detected section
+      if (detected.size > 0) {
+        setExpandedCategories(new Set([Array.from(detected)[0]]));
+      }
+    }
+  }, [weaponFile?.id]);
 
   // Load content when weapon file changes
   useEffect(() => {
@@ -474,6 +747,19 @@ export default function WeaponEditor({
       setContent('');
     }
   }, [weaponFile?.id]);
+
+  // Close menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-menu]')) {
+        setShowAddSectionMenu(false);
+        setShowAddBlockMenu(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   // Sync scroll between textarea and highlight overlay
   const handleScroll = useCallback(() => {
@@ -514,19 +800,71 @@ export default function WeaponEditor({
     });
   }, []);
 
-  // Filter categories based on search
+  // Add a section to the editor
+  const addSection = useCallback((categoryId: string) => {
+    setEnabledSections(prev => new Set(prev).add(categoryId));
+    setExpandedCategories(prev => new Set(prev).add(categoryId));
+    setShowAddSectionMenu(false);
+  }, []);
+
+  // Remove a section from the editor
+  const removeSection = useCallback((categoryId: string) => {
+    setEnabledSections(prev => {
+      const next = new Set(prev);
+      next.delete(categoryId);
+      return next;
+    });
+    setExpandedCategories(prev => {
+      const next = new Set(prev);
+      next.delete(categoryId);
+      return next;
+    });
+  }, []);
+
+  // Add a special block to the content
+  const addSpecialBlock = useCallback((blockId: string) => {
+    const block = SPECIAL_BLOCKS.find(b => b.id === blockId);
+    if (!block || !weaponFile) return;
+    
+    // Find the last closing brace (end of WeaponData)
+    const lines = content.split('\n');
+    const lastBraceIndex = lines.findLastIndex(line => line.trim() === '}');
+    
+    if (lastBraceIndex > 0) {
+      lines.splice(lastBraceIndex, 0, '', block.template);
+      const newContent = lines.join('\n');
+      setContent(newContent);
+      onContentChange(weaponFile.id, newContent);
+    }
+    setShowAddBlockMenu(false);
+  }, [content, weaponFile, onContentChange]);
+
+  // Get sections available to add (not already enabled)
+  const availableSections = useMemo(() => {
+    return PROPERTY_CATEGORIES.filter(cat => !enabledSections.has(cat.id));
+  }, [enabledSections]);
+
+  // Get blocks available to add (not already in content)
+  const availableBlocks = useMemo(() => {
+    return SPECIAL_BLOCKS.filter(block => !existingBlocks.has(block.id));
+  }, [existingBlocks]);
+
+  // Filter categories based on search AND enabled sections
   const filteredCategories = useMemo(() => {
-    if (!searchQuery) return PROPERTY_CATEGORIES;
-    const query = searchQuery.toLowerCase();
-    return PROPERTY_CATEGORIES.map(cat => ({
-      ...cat,
-      properties: cat.properties.filter(p => 
-        p.key.toLowerCase().includes(query) ||
-        p.label.toLowerCase().includes(query) ||
-        p.description?.toLowerCase().includes(query)
-      )
-    })).filter(cat => cat.properties.length > 0);
-  }, [searchQuery]);
+    let categories = PROPERTY_CATEGORIES.filter(cat => enabledSections.has(cat.id));
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      categories = categories.map(cat => ({
+        ...cat,
+        properties: cat.properties.filter(p => 
+          p.key.toLowerCase().includes(query) ||
+          p.label.toLowerCase().includes(query) ||
+          p.description?.toLowerCase().includes(query)
+        )
+      })).filter(cat => cat.properties.length > 0);
+    }
+    return categories;
+  }, [searchQuery, enabledSections]);
 
   // Render a property input based on its type
   const renderPropertyInput = useCallback((prop: PropertyDef) => {
@@ -692,22 +1030,147 @@ export default function WeaponEditor({
         ) : (
           /* Visual Property Editor */
           <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Search */}
+            {/* Toolbar */}
             <div className="flex-shrink-0 px-4 py-3 border-b border-white/10 bg-[#0f1419]">
-              <div className="relative">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search properties..."
-                  className="w-full bg-[#0d1117] border border-white/10 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:border-amber-400/50 focus:outline-none"
-                />
+              <div className="flex items-center gap-3">
+                {/* Search */}
+                <div className="relative flex-1">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search properties..."
+                    className="w-full bg-[#0d1117] border border-white/10 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:border-amber-400/50 focus:outline-none"
+                  />
+                </div>
+                
+                {/* Add Section Button */}
+                <div className="relative" data-menu>
+                  <button
+                    onClick={() => { setShowAddSectionMenu(!showAddSectionMenu); setShowAddBlockMenu(false); }}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-lg text-xs font-medium transition-colors"
+                  >
+                    <Plus size={14} />
+                    Add Section
+                  </button>
+                  
+                  {showAddSectionMenu && availableSections.length > 0 && (
+                    <div className="absolute right-0 top-full mt-1 w-64 bg-[#1c2128] border border-white/10 rounded-lg shadow-xl z-50 max-h-80 overflow-y-auto">
+                      <div className="p-2 border-b border-white/10">
+                        <span className="text-xs text-gray-400">Add property section</span>
+                      </div>
+                      {availableSections.map(section => (
+                        <button
+                          key={section.id}
+                          onClick={() => addSection(section.id)}
+                          className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/5 transition-colors text-left"
+                        >
+                          <span className="text-amber-400">{section.icon}</span>
+                          <div>
+                            <div className="text-sm text-white">{section.name}</div>
+                            <div className="text-xs text-gray-500">{section.description}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Add Block Button */}
+                <div className="relative" data-menu>
+                  <button
+                    onClick={() => { setShowAddBlockMenu(!showAddBlockMenu); setShowAddSectionMenu(false); }}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 rounded-lg text-xs font-medium transition-colors"
+                  >
+                    <Plus size={14} />
+                    Add Block
+                  </button>
+                  
+                  {showAddBlockMenu && availableBlocks.length > 0 && (
+                    <div className="absolute right-0 top-full mt-1 w-64 bg-[#1c2128] border border-white/10 rounded-lg shadow-xl z-50">
+                      <div className="p-2 border-b border-white/10">
+                        <span className="text-xs text-gray-400">Add special block</span>
+                      </div>
+                      {availableBlocks.map(block => (
+                        <button
+                          key={block.id}
+                          onClick={() => addSpecialBlock(block.id)}
+                          className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/5 transition-colors text-left"
+                        >
+                          <span className="text-purple-400">{block.icon}</span>
+                          <div>
+                            <div className="text-sm text-white">{block.name}</div>
+                            <div className="text-xs text-gray-500">{block.description}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {showAddBlockMenu && availableBlocks.length === 0 && (
+                    <div className="absolute right-0 top-full mt-1 w-64 bg-[#1c2128] border border-white/10 rounded-lg shadow-xl z-50 p-3">
+                      <span className="text-xs text-gray-400">All blocks already added</span>
+                    </div>
+                  )}
+                </div>
               </div>
+              
+              {/* Active Sections Pills */}
+              {enabledSections.size > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {Array.from(enabledSections).map(sectionId => {
+                    const section = PROPERTY_CATEGORIES.find(c => c.id === sectionId);
+                    if (!section) return null;
+                    return (
+                      <div
+                        key={sectionId}
+                        className="flex items-center gap-1.5 px-2 py-1 bg-white/5 rounded-full text-xs"
+                      >
+                        <span className="text-amber-400">{section.icon}</span>
+                        <span className="text-gray-300">{section.name}</span>
+                        <button
+                          onClick={() => removeSection(sectionId)}
+                          className="p-0.5 hover:bg-white/10 rounded-full text-gray-500 hover:text-red-400 transition-colors"
+                        >
+                          <X size={10} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              
+              {/* Existing Blocks Indicator */}
+              {existingBlocks.size > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {Array.from(existingBlocks).map(blockId => {
+                    const block = SPECIAL_BLOCKS.find(b => b.id === blockId);
+                    if (!block) return null;
+                    return (
+                      <div
+                        key={blockId}
+                        className="flex items-center gap-1.5 px-2 py-1 bg-purple-500/10 rounded-full text-xs"
+                      >
+                        <span className="text-purple-400">{block.icon}</span>
+                        <span className="text-purple-300">{block.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Property Categories */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {filteredCategories.length === 0 && !searchQuery && (
+                <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+                  <Plus size={32} className="mb-3 opacity-30" />
+                  <p className="text-sm">No sections added yet</p>
+                  <p className="text-xs mt-1">Click "Add Section" to start building your weapon</p>
+                </div>
+              )}
+              
               {filteredCategories.map(category => {
                 const isExpanded = expandedCategories.has(category.id);
                 const hasValues = category.properties.some(p => parsedProperties[p.key]);
@@ -718,12 +1181,13 @@ export default function WeaponEditor({
                     className="bg-[#161b22] rounded-lg border border-white/5 overflow-hidden"
                   >
                     {/* Category Header */}
-                    <button
-                      onClick={() => toggleCategory(category.id)}
-                      className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="text-left">
+                    <div className="flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors">
+                      <button
+                        onClick={() => toggleCategory(category.id)}
+                        className="flex-1 flex items-center gap-3 text-left"
+                      >
+                        <span className="text-amber-400">{category.icon}</span>
+                        <div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium text-white">{category.name}</span>
                             {hasValues && (
@@ -732,12 +1196,21 @@ export default function WeaponEditor({
                           </div>
                           <span className="text-xs text-gray-500">{category.description}</span>
                         </div>
+                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); removeSection(category.id); }}
+                          className="p-1 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
+                          title="Remove section"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                        <ChevronDown 
+                          size={16} 
+                          className={`text-gray-400 transition-transform ${isExpanded ? '' : '-rotate-90'}`} 
+                        />
                       </div>
-                      <ChevronRight 
-                        size={16} 
-                        className={`text-gray-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} 
-                      />
-                    </button>
+                    </div>
 
                     {/* Properties */}
                     {isExpanded && (
@@ -784,14 +1257,15 @@ export default function WeaponEditor({
                     className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors"
                   >
                     <div className="flex items-center gap-3">
+                      <span className="text-cyan-400"><Settings size={14} /></span>
                       <div className="text-left">
                         <span className="text-sm font-medium text-white">Other Properties</span>
                         <span className="text-xs text-gray-500 block">Properties not in standard categories</span>
                       </div>
                     </div>
-                    <ChevronRight 
+                    <ChevronDown 
                       size={16} 
-                      className={`text-gray-400 transition-transform ${expandedCategories.has('other') ? 'rotate-90' : ''}`} 
+                      className={`text-gray-400 transition-transform ${expandedCategories.has('other') ? '' : '-rotate-90'}`} 
                     />
                   </button>
                   
@@ -816,6 +1290,148 @@ export default function WeaponEditor({
                   )}
                 </div>
               )}
+
+              {/* Visual Mods Block Editor */}
+              {existingBlocks.has('mods') && parsedMods.length > 0 && (
+                <div className="bg-[#161b22] rounded-lg border border-purple-500/20 overflow-hidden">
+                  <button
+                    onClick={() => toggleCategory('mods_visual')}
+                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-purple-400"><Wand2 size={14} /></span>
+                      <div className="text-left">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-white">Mods</span>
+                          <span className="text-xs bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded">{parsedMods.length} mods</span>
+                        </div>
+                        <span className="text-xs text-gray-500 block">Weapon modifications and attachments</span>
+                      </div>
+                    </div>
+                    <ChevronDown 
+                      size={16} 
+                      className={`text-gray-400 transition-transform ${expandedCategories.has('mods_visual') ? '' : '-rotate-90'}`} 
+                    />
+                  </button>
+                  
+                  {expandedCategories.has('mods_visual') && (
+                    <div className="px-4 pb-4 space-y-2 border-t border-purple-500/10 pt-3">
+                      {parsedMods.map((mod, idx) => (
+                        <div key={idx} className="bg-[#0d1117] rounded-lg border border-white/5 p-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xs font-medium text-purple-400">{mod.name}</span>
+                            {Object.keys(mod.properties).length > 0 && (
+                              <span className="text-[10px] bg-white/5 text-gray-400 px-1.5 py-0.5 rounded">
+                                {Object.keys(mod.properties).length} properties
+                              </span>
+                            )}
+                          </div>
+                          {Object.keys(mod.properties).length > 0 ? (
+                            <div className="space-y-1.5">
+                              {Object.entries(mod.properties).map(([key, value]) => (
+                                <div key={key} className="flex items-center gap-2 text-xs">
+                                  <span className="text-cyan-400 font-mono w-40 flex-shrink-0 truncate">{key}</span>
+                                  <span className="text-green-400 font-mono truncate">{value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-500 italic">Empty mod (inherits all defaults)</span>
+                          )}
+                        </div>
+                      ))}
+                      <p className="text-xs text-gray-500 mt-2">
+                        To edit mods, switch to Raw mode
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Visual RUI_CrosshairData Block Editor */}
+              {existingBlocks.has('rui_crosshair') && parsedCrosshair && (
+                <div className="bg-[#161b22] rounded-lg border border-purple-500/20 overflow-hidden">
+                  <button
+                    onClick={() => toggleCategory('crosshair_visual')}
+                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-purple-400"><Target size={14} /></span>
+                      <div className="text-left">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-white">RUI_CrosshairData</span>
+                          <span className="text-xs bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded">
+                            {parsedCrosshair.crosshairs.length} crosshair{parsedCrosshair.crosshairs.length !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-500 block">Crosshair configuration and UI</span>
+                      </div>
+                    </div>
+                    <ChevronDown 
+                      size={16} 
+                      className={`text-gray-400 transition-transform ${expandedCategories.has('crosshair_visual') ? '' : '-rotate-90'}`} 
+                    />
+                  </button>
+                  
+                  {expandedCategories.has('crosshair_visual') && (
+                    <div className="px-4 pb-4 space-y-3 border-t border-purple-500/10 pt-3">
+                      {/* DefaultArgs */}
+                      {Object.keys(parsedCrosshair.defaultArgs).length > 0 && (
+                        <div className="bg-[#0d1117] rounded-lg border border-white/5 p-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xs font-medium text-yellow-400">DefaultArgs</span>
+                          </div>
+                          <div className="space-y-1">
+                            {Object.entries(parsedCrosshair.defaultArgs).map(([key, value]) => (
+                              <div key={key} className="flex items-center gap-2 text-xs">
+                                <span className="text-cyan-400 font-mono w-32 flex-shrink-0">{key}</span>
+                                <span className="text-green-400 font-mono">{value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Crosshairs */}
+                      {parsedCrosshair.crosshairs.map((crosshair, idx) => (
+                        <div key={idx} className="bg-[#0d1117] rounded-lg border border-white/5 p-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xs font-medium text-purple-400">{crosshair.name}</span>
+                          </div>
+                          <div className="space-y-1.5">
+                            {crosshair.ui && (
+                              <div className="flex items-center gap-2 text-xs">
+                                <span className="text-cyan-400 font-mono w-24">ui</span>
+                                <span className="text-green-400 font-mono">{crosshair.ui}</span>
+                              </div>
+                            )}
+                            {crosshair.baseSpread && (
+                              <div className="flex items-center gap-2 text-xs">
+                                <span className="text-cyan-400 font-mono w-24">base_spread</span>
+                                <span className="text-green-400 font-mono">{crosshair.baseSpread}</span>
+                              </div>
+                            )}
+                            {Object.keys(crosshair.args).length > 0 && (
+                              <div className="mt-2 pt-2 border-t border-white/5">
+                                <span className="text-[10px] text-gray-500 block mb-1">Args:</span>
+                                {Object.entries(crosshair.args).map(([key, value]) => (
+                                  <div key={key} className="flex items-center gap-2 text-xs pl-2">
+                                    <span className="text-cyan-400/70 font-mono w-32 flex-shrink-0">{key}</span>
+                                    <span className="text-green-400/70 font-mono">{value}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      <p className="text-xs text-gray-500 mt-2">
+                        To edit crosshair data, switch to Raw mode
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -825,6 +1441,8 @@ export default function WeaponEditor({
       <div className="flex-shrink-0 flex items-center justify-between px-4 py-1.5 bg-[#161b22] border-t border-white/10 text-xs text-gray-500">
         <div className="flex items-center gap-4">
           <span>Properties: {Object.keys(parsedProperties).length}</span>
+          <span>Sections: {enabledSections.size}</span>
+          {existingBlocks.size > 0 && <span>Blocks: {existingBlocks.size}</span>}
           <span>Lines: {content.split('\n').length}</span>
         </div>
         <div className="flex items-center gap-2">
