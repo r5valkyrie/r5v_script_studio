@@ -202,7 +202,6 @@ export type NodeType =
   | 'get-ent-index'
   | 'get-script-name'
   | 'set-script-name'
-  | 'kill-entity'
   | 'set-visible'
   | 'set-solid'
   | 'make-invisible'

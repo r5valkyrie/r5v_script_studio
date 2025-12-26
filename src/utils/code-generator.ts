@@ -1304,13 +1304,6 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
-    case 'kill-entity': {
-      const entity = getInputValue(ctx, node, 'input_1');
-      lines.push(`${ind}${entity}.Kill()`);
-      followExec('output_0');
-      break;
-    }
-
     case 'freeze': {
       const entity = getInputValue(ctx, node, 'input_1');
       lines.push(`${ind}${entity}.Freeze()`);

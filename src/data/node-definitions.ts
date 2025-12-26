@@ -3207,7 +3207,7 @@ npc.SetHealth( 0 )`,
         'Reviving players',
         'One-hit kill effects'
       ],
-      relatedNodes: ['get-health', 'get-max-health', 'set-max-health', 'kill-entity']
+      relatedNodes: ['get-health', 'get-max-health', 'set-max-health']
     }
   },
   {
@@ -4274,51 +4274,6 @@ if ( IsValid( found ) )
         'Level object reference'
       ],
       relatedNodes: ['get-script-name', 'get-entity-by-script-name', 'create-entity']
-    }
-  },
-  {
-    type: 'kill-entity',
-    category: 'entity',
-    label: 'Kill',
-    description: 'Kill/destroy entity',
-    color: '#27AE60',
-    inputs: [
-      { label: 'In', type: 'exec', isInput: true },
-      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
-    ],
-    outputs: [
-      { label: 'Out', type: 'exec', isInput: false },
-    ],
-    defaultData: {},
-    documentation: {
-      longDescription: 'Destroys the entity immediately. The entity is removed from the game and all references to it become invalid. Use for removing temporary objects, defeated enemies, or cleanup.',
-      codeExample: `// Destroy a temporary entity
-entity tempProp = GetEntByScriptName( "temp_decoration" )
-tempProp.Kill()  // Entity is now gone
-
-// Kill defeated enemy
-entity npc = GetEntByScriptName( "boss_npc" )
-npc.Kill()
-
-// Cleanup after use
-foreach ( entity obj in tempObjects )
-{
-    obj.Kill()
-}
-tempObjects.clear()`,
-      tips: [
-        'Immediately destroys entity',
-        'All references become invalid',
-        'Use IsValid to check after kill',
-        'Triggers death callbacks if applicable'
-      ],
-      useCases: [
-        'Removing temporary objects',
-        'Destroying defeated enemies',
-        'Cleanup operations',
-        'Object pooling cleanup'
-      ],
-      relatedNodes: ['is-valid', 'is-alive', 'on-death', 'set-health']
     }
   },
   {
@@ -6887,7 +6842,7 @@ if ( !IsAlive( target ) )
   },
   {
     type: 'trace-line',
-    category: 'entity',
+    category: 'debug',
     label: 'TraceLine',
     description: 'Trace a line between two points and return hit information',
     color: '#27AE60',
@@ -6947,7 +6902,7 @@ if ( result.fraction < 1.0 )
   },
   {
     type: 'trace-hull',
-    category: 'entity',
+    category: 'debug',
     label: 'TraceHull',
     description: 'Trace a hull (box) between two points and return hit info',
     color: '#27AE60',
@@ -6968,6 +6923,48 @@ if ( result.fraction < 1.0 )
       { label: 'Fraction', type: 'data', dataType: 'number', isInput: false },
     ],
     defaultData: { mins: '<-16, -16, 0>', maxs: '<16, 16, 72>', traceMask: 'TRACE_MASK_SHOT', collisionGroup: 'TRACE_COLLISION_GROUP_NONE' },
+    documentation: {
+      longDescription: 'Shoots a hull (axis-aligned box) from Start to End and returns what it hit. Unlike TraceLine which only checks a single point, TraceHull accounts for the size of the entity being traced, making it useful for checking if a player-sized object can fit through a space or if a movement would collide.',
+      codeExample: `// Check if player can fit through a gap
+vector mins = <-16, -16, 0>  // Player half-width
+vector maxs = <16, 16, 72>   // Player height
+
+vector startPos = player.GetOrigin()
+vector endPos = <1000, 0, 0>  // Where player wants to go
+
+TraceHullResults result = TraceHull( startPos, endPos, mins, maxs, null, TRACE_MASK_PLAYER, TRACE_COLLISION_GROUP_NONE )
+
+if ( result.fraction >= 1.0 || result.hitEnt == null )
+{
+    // Path is clear!
+    player.SetOrigin( endPos )
+}
+else
+{
+    // Hit something - don't move
+    print( "Blocked by: " + result.hitEnt.GetClassName() )
+}
+
+// Check for wall penetration
+vector traceStart = <0, 0, 100>
+vector traceEnd = <1000, 0, 100>
+TraceHull( traceStart, traceEnd, <-5, -5, -5>, <5, 5, 5>, null, TRACE_MASK_SHOT, TRACE_COLLISION_GROUP_NONE )`, 
+      tips: [
+        'Use player dimensions for player movement checks',
+        'Mins/Maxs define the hull size (not from center)',
+        'Fraction < 1.0 means the hull was blocked',
+        'HitEnt is null if nothing was hit',
+        'Great for collision detection and movement validation'
+      ],
+      useCases: [
+        'Player movement collision checks',
+        'Checking if entities fit through gaps',
+        'Physics collision detection',
+        'Wall penetration testing',
+        'Movement validation'
+      ],
+      relatedNodes: ['trace-line', 'get-origin', 'set-origin', 'is-valid']
+    }
   },
   {
     type: 'get-damage-source-identifier',
