@@ -2153,15 +2153,6 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
-    case 'math-random-float': {
-      const min = getInputValue(ctx, node, 'input_0');
-      const max = getInputValue(ctx, node, 'input_1');
-      const resultVar = getVarName(ctx, 'rand');
-      ctx.variables.set(`${node.id}:output_0`, resultVar);
-      lines.push(`${ind}float ${resultVar} = RandomFloatRange(${min}, ${max})`);
-      break;
-    }
-
     // ==================== DATA ====================
     case 'const-string': {
       const value = node.data.value || '';
