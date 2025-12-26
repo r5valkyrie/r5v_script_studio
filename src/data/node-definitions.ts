@@ -483,7 +483,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'reroute',
-    category: 'data',
+    category: 'flow',
     label: 'Reroute',
     description: 'Reroute connections for cleaner wire organization',
     color: '#6B7280',
@@ -538,10 +538,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'comment',
-    category: 'data',
+    category: 'utilities',
     label: 'Comment',
     description: 'Add a resizable comment box to organize nodes (stays behind other nodes)',
-    color: '#6C7A89',
+    color: '#F39C12',
     inputs: [],
     outputs: [],
     defaultData: { comment: 'Comment', commentColor: '#6C7A89' },
@@ -562,10 +562,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'set-portal',
-    category: 'data',
+    category: 'utilities',
     label: 'Set Portal',
     description: 'Store a value in a named portal for use elsewhere without wires',
-    color: '#9B59B6',
+    color: '#F39C12',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Value', type: 'data', dataType: 'any', isInput: true },
@@ -577,10 +577,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-portal',
-    category: 'data',
+    category: 'utilities',
     label: 'Get Portal',
     description: 'Retrieve a value from a named portal',
-    color: '#9B59B6',
+    color: '#F39C12',
     inputs: [],
     outputs: [
       { label: 'Value', type: 'data', dataType: 'any', isInput: false },
@@ -2262,7 +2262,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
 
   {
     type: 'create-script-mover',
-    category: 'entity',
+    category: 'entity-creation',
     label: 'CreateScriptMover',
     description: 'Create a script mover entity. Movers can move smoothly along paths and can parent other entities.',
     color: '#27AE60',
@@ -2283,7 +2283,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   // ==================== SPECIALIZED ENTITY CREATION ====================
   {
     type: 'create-prop-dynamic',
-    category: 'entity',
+    category: 'entity-creation',
     label: 'Create Prop Dynamic',
     description: 'Create a prop_dynamic entity with a model. Can be animated and have skins.',
     color: '#27AE60',
@@ -2303,7 +2303,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'create-prop-physics',
-    category: 'entity',
+    category: 'entity-creation',
     label: 'Create Prop Physics',
     description: 'Create a prop_physics entity with physics simulation. Will fall and collide.',
     color: '#27AE60',
@@ -2323,7 +2323,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'create-info-target',
-    category: 'entity',
+    category: 'entity-creation',
     label: 'Create Info Target',
     description: 'Create an info_target entity. Useful as a reference point, damage inflictor, or attachment point.',
     color: '#27AE60',
@@ -2341,7 +2341,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'create-particle-system',
-    category: 'entity',
+    category: 'entity-creation',
     label: 'Create Particle System',
     description: 'Create an info_particle_system entity for persistent particle effects. Set effect with SetValueForEffectNameKey().',
     color: '#9B59B6',
@@ -2361,7 +2361,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'create-control-point',
-    category: 'entity',
+    category: 'entity-creation',
     label: 'Create Control Point',
     description: 'Create an info_placement_helper for particle control points. Use SetOrigin to position, link via kv.cpoint1.',
     color: '#9B59B6',
@@ -2379,7 +2379,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'create-ambient-generic',
-    category: 'entity',
+    category: 'entity-creation',
     label: 'Create Ambient Sound',
     description: 'Create an ambient_generic entity for playing sounds at a location.',
     color: '#E74C3C',
@@ -2398,7 +2398,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'create-vortex-sphere',
-    category: 'entity',
+    category: 'entity-creation',
     label: 'Create Vortex Sphere',
     description: 'Create a vortex_sphere entity for absorbing projectiles (like Vortex Shield).',
     color: '#3498DB',
@@ -2418,7 +2418,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'create-zipline',
-    category: 'entity',
+    category: 'entity-creation',
     label: 'Create Zipline',
     description: 'Create a zipline between two points. Creates both zipline and zipline_end entities.',
     color: '#F39C12',
@@ -2438,7 +2438,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'create-point-viewcontrol',
-    category: 'entity',
+    category: 'entity-creation',
     label: 'Create Camera',
     description: 'Create a point_viewcontrol for controlling player camera/view.',
     color: '#8E44AD',
@@ -3543,7 +3543,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     serverOnly: true,
   },
   {
-    type: 'status-effect-stop-all',
+    type: 'status-effect-stop-all-of-type',
     category: 'status-effects',
     label: 'StatusEffect_StopAllOfType',
     description: 'Stop all status effects of type',
@@ -3588,68 +3588,6 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'HasEffect', type: 'data', dataType: 'boolean', isInput: false },
     ],
     defaultData: { effectID: 0 },
-  },
-  {
-    type: 'add-shared-energy',
-    category: 'status-effects',
-    label: 'AddSharedEnergy',
-    description: 'Add shared energy to player',
-    color: '#9B59B6',
-    inputs: [
-      { label: 'In', type: 'exec', isInput: true },
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
-      { label: 'Amount', type: 'data', dataType: 'number', isInput: true },
-    ],
-    outputs: [
-      { label: 'Out', type: 'exec', isInput: false },
-    ],
-    defaultData: { amount: 100 },
-    serverOnly: true,
-  },
-  {
-    type: 'get-shared-energy',
-    category: 'status-effects',
-    label: 'GetSharedEnergy',
-    description: 'Get player shared energy',
-    color: '#9B59B6',
-    inputs: [
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
-    ],
-    outputs: [
-      { label: 'Energy', type: 'data', dataType: 'number', isInput: false },
-    ],
-    defaultData: {},
-  },
-  {
-    type: 'set-shared-energy',
-    category: 'status-effects',
-    label: 'SetSharedEnergy',
-    description: 'Set player shared energy',
-    color: '#9B59B6',
-    inputs: [
-      { label: 'In', type: 'exec', isInput: true },
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
-      { label: 'Energy', type: 'data', dataType: 'number', isInput: true },
-    ],
-    outputs: [
-      { label: 'Out', type: 'exec', isInput: false },
-    ],
-    defaultData: { energy: 100 },
-    serverOnly: true,
-  },
-  {
-    type: 'get-shared-energy-max',
-    category: 'status-effects',
-    label: 'GetSharedEnergyMax',
-    description: 'Get player max shared energy',
-    color: '#9B59B6',
-    inputs: [
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
-    ],
-    outputs: [
-      { label: 'MaxEnergy', type: 'data', dataType: 'number', isInput: false },
-    ],
-    defaultData: {},
   },
   {
     type: 'status-effect-stim',
@@ -3738,11 +3676,78 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     defaultData: { duration: 5.0, multiplier: 1.5 },
     serverOnly: true,
   },
+  {
+    type: 'status-effect-add-timed',
+    category: 'status-effects',
+    label: 'StatusEffect_AddTimed',
+    description: 'Add timed status effect to entity with duration',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'EffectID', type: 'data', dataType: 'number', isInput: true },
+      { label: 'Severity', type: 'data', dataType: 'number', isInput: true },
+      { label: 'Duration', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+      { label: 'Handle', type: 'data', dataType: 'number', isInput: false },
+    ],
+    defaultData: { effectID: 0, severity: 1.0, duration: 5.0 },
+    serverOnly: true,
+  },
+  {
+    type: 'status-effect-has-severity',
+    category: 'status-effects',
+    label: 'StatusEffect_HasSeverity',
+    description: 'Check if entity has status effect with minimum severity',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'EffectID', type: 'data', dataType: 'number', isInput: true },
+      { label: 'MinSeverity', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'HasEffect', type: 'data', dataType: 'boolean', isInput: false },
+    ],
+    defaultData: { effectID: 0, minSeverity: 1.0 },
+  },
+  {
+    type: 'status-effect-get-severity',
+    category: 'status-effects',
+    label: 'StatusEffect_GetSeverity',
+    description: 'Get severity level of a status effect',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'EffectID', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'Severity', type: 'data', dataType: 'number', isInput: false },
+    ],
+    defaultData: { effectID: 0 },
+  },
+  {
+    type: 'status-effect-stop-all',
+    category: 'status-effects',
+    label: 'StatusEffect_StopAll',
+    description: 'Stop all status effects on entity',
+    color: '#9B59B6',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: {},
+    serverOnly: true,
+  },
 
   // ==================== PARTICLES ====================
   {
     type: 'precache-particle',
-    category: 'vfx',
+    category: 'utilities',
     label: 'PrecacheParticleSystem',
     description: 'Precache particle system',
     color: '#F39C12',
@@ -4000,48 +4005,54 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'trace-line',
-    category: 'damage',
+    category: 'entity',
     label: 'TraceLine',
-    description: 'Trace line between points',
-    color: '#E74C3C',
+    description: 'Trace a line between two points and return hit info',
+    color: '#27AE60',
     inputs: [
       { label: 'Start', type: 'data', dataType: 'vector', isInput: true },
       { label: 'End', type: 'data', dataType: 'vector', isInput: true },
       { label: 'Ignore', type: 'data', dataType: 'entity', isInput: true },
-      { label: 'Mask', type: 'data', dataType: 'number', isInput: true },
+      { label: 'TraceMask', type: 'data', dataType: 'number', isInput: true },
+      { label: 'CollisionGroup', type: 'data', dataType: 'number', isInput: true },
     ],
     outputs: [
+      { label: 'Result', type: 'data', dataType: 'table', isInput: false },
       { label: 'HitEnt', type: 'data', dataType: 'entity', isInput: false },
-      { label: 'HitPos', type: 'data', dataType: 'vector', isInput: false },
-      { label: 'HitNormal', type: 'data', dataType: 'vector', isInput: false },
+      { label: 'EndPos', type: 'data', dataType: 'vector', isInput: false },
+      { label: 'SurfaceNormal', type: 'data', dataType: 'vector', isInput: false },
       { label: 'Fraction', type: 'data', dataType: 'number', isInput: false },
     ],
-    defaultData: { mask: 33570827 },
+    defaultData: { traceMask: 'TRACE_MASK_SHOT', collisionGroup: 'TRACE_COLLISION_GROUP_NONE' },
   },
   {
     type: 'trace-hull',
-    category: 'damage',
+    category: 'entity',
     label: 'TraceHull',
-    description: 'Trace hull between points',
-    color: '#E74C3C',
+    description: 'Trace a hull (box) between two points and return hit info',
+    color: '#27AE60',
     inputs: [
       { label: 'Start', type: 'data', dataType: 'vector', isInput: true },
       { label: 'End', type: 'data', dataType: 'vector', isInput: true },
       { label: 'Mins', type: 'data', dataType: 'vector', isInput: true },
       { label: 'Maxs', type: 'data', dataType: 'vector', isInput: true },
       { label: 'Ignore', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'TraceMask', type: 'data', dataType: 'number', isInput: true },
+      { label: 'CollisionGroup', type: 'data', dataType: 'number', isInput: true },
     ],
     outputs: [
+      { label: 'Result', type: 'data', dataType: 'table', isInput: false },
       { label: 'HitEnt', type: 'data', dataType: 'entity', isInput: false },
-      { label: 'HitPos', type: 'data', dataType: 'vector', isInput: false },
+      { label: 'EndPos', type: 'data', dataType: 'vector', isInput: false },
+      { label: 'SurfaceNormal', type: 'data', dataType: 'vector', isInput: false },
       { label: 'Fraction', type: 'data', dataType: 'number', isInput: false },
     ],
-    defaultData: {},
+    defaultData: { mins: '<-16, -16, 0>', maxs: '<16, 16, 72>', traceMask: 'TRACE_MASK_SHOT', collisionGroup: 'TRACE_COLLISION_GROUP_NONE' },
   },
   {
     type: 'get-damage-source-identifier',
     category: 'damage',
-    label: 'GetDamageSourceIdentifier',
+    label: 'DamageInfo_GetDamageSourceIdentifier',
     description: 'Get damage source ID',
     color: '#E74C3C',
     inputs: [
@@ -4053,20 +4064,407 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     defaultData: { damageSource: 'damagedef_unknown' },
   },
   {
-    type: 'register-damage-source',
+    type: 'damageinfo-set-damage',
     category: 'damage',
-    label: 'RegisterWeaponDamageSource',
-    description: 'Register weapon damage source',
+    label: 'DamageInfo_SetDamage',
+    description: 'Set the damage amount on damageInfo',
     color: '#E74C3C',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
-      { label: 'SourceName', type: 'data', dataType: 'string', isInput: true },
-      { label: 'DisplayName', type: 'data', dataType: 'string', isInput: true },
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+      { label: 'Damage', type: 'data', dataType: 'number', isInput: true },
     ],
     outputs: [
       { label: 'Out', type: 'exec', isInput: false },
     ],
-    defaultData: { sourceName: 'my_weapon', displayName: 'My Weapon' },
+    defaultData: { damage: 0 },
+  },
+  {
+    type: 'damageinfo-get-damage',
+    category: 'damage',
+    label: 'DamageInfo_GetDamage',
+    description: 'Get the damage amount from damageInfo',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Damage', type: 'data', dataType: 'number', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'damageinfo-get-inflictor',
+    category: 'damage',
+    label: 'DamageInfo_GetInflictor',
+    description: 'Get the inflictor entity from damageInfo',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Inflictor', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'damageinfo-set-damage-source-identifier',
+    category: 'damage',
+    label: 'DamageInfo_SetDamageSourceIdentifier',
+    description: 'Set the damage source identifier on damageInfo',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+      { label: 'SourceID', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'damageinfo-get-custom-damage-type',
+    category: 'damage',
+    label: 'DamageInfo_GetCustomDamageType',
+    description: 'Get the custom damage type flags from damageInfo',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'DamageType', type: 'data', dataType: 'number', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'damageinfo-add-custom-damage-type',
+    category: 'damage',
+    label: 'DamageInfo_AddCustomDamageType',
+    description: 'Add custom damage type flags to damageInfo',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+      { label: 'DamageType', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { damageType: 0 },
+  },
+  {
+    type: 'damageinfo-scale-damage',
+    category: 'damage',
+    label: 'DamageInfo_ScaleDamage',
+    description: 'Scale the damage by a multiplier',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+      { label: 'Scale', type: 'data', dataType: 'number', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { scale: 1.0 },
+  },
+  {
+    type: 'damageinfo-get-attacker',
+    category: 'damage',
+    label: 'DamageInfo_GetAttacker',
+    description: 'Get the attacker entity from damageInfo',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Attacker', type: 'data', dataType: 'entity', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'damageinfo-get-force-kill',
+    category: 'damage',
+    label: 'DamageInfo_GetForceKill',
+    description: 'Check if damage should force kill',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'ForceKill', type: 'data', dataType: 'boolean', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'damageinfo-get-weapon',
+    category: 'damage',
+    label: 'DamageInfo_GetWeapon',
+    description: 'Get the weapon entity from damageInfo',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Weapon', type: 'data', dataType: 'weapon', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'damageinfo-print',
+    category: 'damage',
+    label: 'DamageInfo_Print',
+    description: 'Print damageInfo to console for debugging',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'damageinfo-get-critical-hit-scale',
+    category: 'damage',
+    label: 'DamageInfo_GetDamageCriticalHitScale',
+    description: 'Get critical hit damage scale',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Scale', type: 'data', dataType: 'number', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'damageinfo-get-shield-scale',
+    category: 'damage',
+    label: 'DamageInfo_GetDamageShieldScale',
+    description: 'Get shield damage scale',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Scale', type: 'data', dataType: 'number', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'damageinfo-get-damage-position',
+    category: 'damage',
+    label: 'DamageInfo_GetDamagePosition',
+    description: 'Get the position where damage was dealt',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Position', type: 'data', dataType: 'vector', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'damageinfo-get-hitgroup',
+    category: 'damage',
+    label: 'DamageInfo_GetHitGroup',
+    description: 'Get the hit group (body part) that was hit',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'HitGroup', type: 'data', dataType: 'number', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'damageinfo-get-hitbox',
+    category: 'damage',
+    label: 'DamageInfo_GetHitBox',
+    description: 'Get the hitbox index that was hit',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'HitBox', type: 'data', dataType: 'number', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'damageinfo-get-death-package',
+    category: 'damage',
+    label: 'DamageInfo_GetDeathPackage',
+    description: 'Get the death package string',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'DeathPackage', type: 'data', dataType: 'string', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'damageinfo-set-death-package',
+    category: 'damage',
+    label: 'DamageInfo_SetDeathPackage',
+    description: 'Set the death package for custom death animations',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+      { label: 'DeathPackage', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { deathPackage: 'instant' },
+  },
+  {
+    type: 'damageinfo-get-viewpunch-multiplier',
+    category: 'damage',
+    label: 'DamageInfo_GetViewPunchMultiplier',
+    description: 'Get the view punch multiplier',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Multiplier', type: 'data', dataType: 'number', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'damageinfo-get-dist-from-attack-origin',
+    category: 'damage',
+    label: 'DamageInfo_GetDistFromAttackOrigin',
+    description: 'Get distance from the attack origin',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Distance', type: 'data', dataType: 'number', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'damageinfo-get-dist-from-explosion-center',
+    category: 'damage',
+    label: 'DamageInfo_GetDistFromExplosionCenter',
+    description: 'Get distance from the explosion center',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Distance', type: 'data', dataType: 'number', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'damageinfo-get-damage-force',
+    category: 'damage',
+    label: 'DamageInfo_GetDamageForce',
+    description: 'Get the damage force vector',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Force', type: 'data', dataType: 'vector', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'damageinfo-get-damage-force-direction',
+    category: 'damage',
+    label: 'DamageInfo_GetDamageForceDirection',
+    description: 'Get the normalized damage force direction',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Direction', type: 'data', dataType: 'vector', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'damageinfo-is-ragdoll-allowed',
+    category: 'damage',
+    label: 'DamageInfo_IsRagdollAllowed',
+    description: 'Check if ragdoll is allowed for this damage',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Allowed', type: 'data', dataType: 'boolean', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'damageinfo-get-damage-flags',
+    category: 'damage',
+    label: 'DamageInfo_GetDamageFlags',
+    description: 'Get the damage flags bitmask',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'Flags', type: 'data', dataType: 'number', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'damageinfo-get-damage-weapon-name',
+    category: 'damage',
+    label: 'DamageInfo_GetDamageWeaponName',
+    description: 'Get the weapon name string from damageInfo',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'WeaponName', type: 'data', dataType: 'string', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'damageinfo-should-record-stats',
+    category: 'damage',
+    label: 'DamageInfo_ShouldRecordStatsForWeapon',
+    description: 'Check if stats should be recorded for this weapon damage',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'ShouldRecord', type: 'data', dataType: 'boolean', isInput: false },
+    ],
+    defaultData: {},
+  },
+  {
+    type: 'damageinfo-get-damage-type',
+    category: 'damage',
+    label: 'DamageInfo_GetDamageType',
+    description: 'Get the damage type flags',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'DamageInfo', type: 'data', dataType: 'any', isInput: true },
+    ],
+    outputs: [
+      { label: 'DamageType', type: 'data', dataType: 'number', isInput: false },
+    ],
+    defaultData: {},
   },
 
   // ==================== UI/RUI ====================
@@ -5020,27 +5418,11 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     defaultData: { className: 'player' },
     serverOnly: true,
   },
-  {
-    type: 'register-weapon-damage-source',
-    category: 'callbacks',
-    label: 'RegisterWeaponDamageSource',
-    description: 'Register weapon damage source',
-    color: '#8E44AD',
-    inputs: [
-      { label: 'In', type: 'exec', isInput: true },
-      { label: 'DamageSource', type: 'data', dataType: 'string', isInput: true },
-      { label: 'DisplayName', type: 'data', dataType: 'string', isInput: true },
-    ],
-    outputs: [
-      { label: 'Out', type: 'exec', isInput: false },
-    ],
-    defaultData: { damageSource: 'mp_weapon_custom', displayName: 'Custom Weapon' },
-  },
 
   // ==================== DATA ====================
   {
     type: 'const-string',
-    category: 'data',
+    category: 'variables',
     label: 'String',
     description: 'String',
     color: '#2ECC71',
@@ -5052,10 +5434,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'const-float',
-    category: 'data',
+    category: 'variables',
     label: 'Float',
     description: 'Float',
-    color: '#2ECC71',
+    color: '#95A5A6',
     inputs: [],
     outputs: [
       { label: 'Value', type: 'data', dataType: 'float', isInput: false },
@@ -5064,10 +5446,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'const-int',
-    category: 'data',
+    category: 'variables',
     label: 'Int',
     description: 'Integer',
-    color: '#2ECC71',
+    color: '#95A5A6',
     inputs: [],
     outputs: [
       { label: 'Value', type: 'data', dataType: 'int', isInput: false },
@@ -5076,10 +5458,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'const-bool',
-    category: 'data',
+    category: 'variables',
     label: 'Bool',
     description: 'Boolean',
-    color: '#2ECC71',
+    color: '#95A5A6',
     inputs: [],
     outputs: [
       { label: 'Value', type: 'data', dataType: 'boolean', isInput: false },
@@ -5088,10 +5470,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'const-vector',
-    category: 'data',
+    category: 'variables',
     label: 'Vector',
     description: 'Vector',
-    color: '#2ECC71',
+    color: '#95A5A6',
     inputs: [],
     outputs: [
       { label: 'Value', type: 'data', dataType: 'vector', isInput: false },
@@ -5100,10 +5482,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'const-asset',
-    category: 'data',
+    category: 'variables',
     label: 'Asset',
     description: 'Asset reference',
-    color: '#2ECC71',
+    color: '#95A5A6',
     inputs: [],
     outputs: [
       { label: 'Asset', type: 'data', dataType: 'asset', isInput: false },
@@ -5112,10 +5494,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'const-loot-tier',
-    category: 'data',
+    category: 'variables',
     label: 'Loot Tier',
     description: 'Loot tier enum value',
-    color: '#2ECC71',
+    color: '#95A5A6',
     inputs: [],
     outputs: [
       { label: 'Tier', type: 'data', dataType: 'number', isInput: false },
@@ -5124,10 +5506,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'const-supported-attachments',
-    category: 'data',
+    category: 'variables',
     label: 'Supported Attachments',
     description: 'Weapon supported attachments list',
-    color: '#2ECC71',
+    color: '#95A5A6',
     inputs: [],
     outputs: [
       { label: 'Attachments', type: 'data', dataType: 'array', isInput: false },
@@ -5136,10 +5518,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'const-weapon-type',
-    category: 'data',
+    category: 'variables',
     label: 'Weapon Type',
     description: 'Weapon type string',
-    color: '#2ECC71',
+    color: '#95A5A6',
     inputs: [],
     outputs: [
       { label: 'Type', type: 'data', dataType: 'string', isInput: false },
@@ -5148,10 +5530,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'variable-get',
-    category: 'data',
+    category: 'variables',
     label: 'Get Variable',
     description: 'Get variable value',
-    color: '#2ECC71',
+    color: '#3498DB',
     inputs: [
       { label: 'Name', type: 'data', dataType: 'string', isInput: true },
     ],
@@ -5162,10 +5544,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'variable-set',
-    category: 'data',
+    category: 'variables',
     label: 'Set Variable',
     description: 'Set variable value',
-    color: '#2ECC71',
+    color: '#3498DB',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Name', type: 'data', dataType: 'string', isInput: true },
@@ -5178,10 +5560,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'variable-declare',
-    category: 'data',
+    category: 'variables',
     label: 'Declare Variable',
     description: 'Declare a typed local variable',
-    color: '#2ECC71',
+    color: '#3498DB',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Initial Value', type: 'data', dataType: 'any', isInput: true },
@@ -5195,16 +5577,16 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'define-const',
-    category: 'data',
+    category: 'variables',
     label: 'Define Const',
     description: 'Define a constant value. Can be global or local. Generates: [global] const [type] NAME = value',
-    color: '#2ECC71',
+    color: '#95A5A6',
     inputs: [],
     outputs: [
       { label: 'Value', type: 'data', dataType: 'any', isInput: false },
     ],
-    defaultData: { 
-      constName: 'MY_CONSTANT', 
+    defaultData: {
+      constName: 'MY_CONSTANT',
       constType: 'int', // int, float, bool, string, vector, asset
       constValue: '100',
       isGlobal: true,
@@ -5213,10 +5595,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'global-variable',
-    category: 'data',
+    category: 'variables',
     label: 'Make Global',
     description: 'Connect to an array, table, or variable node to make it a global file-level variable (adds "global" prefix)',
-    color: '#2ECC71',
+    color: '#3498DB',
     inputs: [],
     outputs: [
       { label: 'Exec', type: 'exec', isInput: false },
@@ -5226,7 +5608,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'local-variable',
-    category: 'data',
+    category: 'variables',
     label: 'Make Local',
     description: 'Connect to an array, table, or variable node to make it a file-level variable (no global prefix)',
     color: '#3498DB',
@@ -5241,10 +5623,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   // ==================== ARRAYS ====================
   {
     type: 'array-create',
-    category: 'data',
+    category: 'collections',
     label: 'Create Array',
     description: 'Create an empty untyped array: array<var>',
-    color: '#a855f7',
+    color: '#2ECC71',
     inputs: [],
     outputs: [
       { label: 'Array', type: 'data', dataType: 'array', isInput: false },
@@ -5254,10 +5636,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'array-create-typed',
-    category: 'data',
+    category: 'collections',
     label: 'Create Typed Array',
     description: 'Create a typed array: array<Type>. Optionally initialize with values.',
-    color: '#a855f7',
+    color: '#2ECC71',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
     ],
@@ -5274,10 +5656,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'array-append',
-    category: 'data',
+    category: 'collections',
     label: 'Array Append',
     description: 'Append element to end of array (.append)',
-    color: '#a855f7',
+    color: '#2ECC71',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Array', type: 'data', dataType: 'array', isInput: true },
@@ -5292,10 +5674,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'array-extend',
-    category: 'data',
+    category: 'collections',
     label: 'Array Extend',
     description: 'Extend array with elements from another array (.extend)',
-    color: '#a855f7',
+    color: '#2ECC71',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Array', type: 'data', dataType: 'array', isInput: true },
@@ -5310,10 +5692,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'array-remove',
-    category: 'data',
+    category: 'collections',
     label: 'Array Remove',
     description: 'Remove first occurrence of element from array (.remove)',
-    color: '#a855f7',
+    color: '#2ECC71',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Array', type: 'data', dataType: 'array', isInput: true },
@@ -5328,10 +5710,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'array-remove-by-index',
-    category: 'data',
+    category: 'collections',
     label: 'Array Remove By Index',
     description: 'Remove element at specific index (.remove)',
-    color: '#a855f7',
+    color: '#2ECC71',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Array', type: 'data', dataType: 'array', isInput: true },
@@ -5346,10 +5728,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'array-get',
-    category: 'data',
+    category: 'collections',
     label: 'Array Get',
     description: 'Get array element by index (array[index])',
-    color: '#a855f7',
+    color: '#2ECC71',
     inputs: [
       { label: 'Array', type: 'data', dataType: 'array', isInput: true },
       { label: 'Index', type: 'data', dataType: 'int', isInput: true },
@@ -5362,10 +5744,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'array-set',
-    category: 'data',
+    category: 'collections',
     label: 'Array Set',
     description: 'Set array element at index (array[index] = value)',
-    color: '#a855f7',
+    color: '#2ECC71',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Array', type: 'data', dataType: 'array', isInput: true },
@@ -5380,10 +5762,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'array-length',
-    category: 'data',
+    category: 'collections',
     label: 'Array Length',
     description: 'Get number of elements in array (.len())',
-    color: '#a855f7',
+    color: '#2ECC71',
     inputs: [
       { label: 'Array', type: 'data', dataType: 'array', isInput: true },
     ],
@@ -5395,10 +5777,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'array-contains',
-    category: 'data',
+    category: 'collections',
     label: 'Array Contains',
     description: 'Check if array contains element (.contains)',
-    color: '#a855f7',
+    color: '#2ECC71',
     inputs: [
       { label: 'Array', type: 'data', dataType: 'array', isInput: true },
       { label: 'Element', type: 'data', dataType: 'any', isInput: true },
@@ -5411,10 +5793,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'array-find',
-    category: 'data',
+    category: 'collections',
     label: 'Array Find',
     description: 'Find index of element in array (.find). Returns -1 if not found.',
-    color: '#a855f7',
+    color: '#2ECC71',
     inputs: [
       { label: 'Array', type: 'data', dataType: 'array', isInput: true },
       { label: 'Element', type: 'data', dataType: 'any', isInput: true },
@@ -5427,10 +5809,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'array-clear',
-    category: 'data',
+    category: 'collections',
     label: 'Array Clear',
     description: 'Remove all elements from array (.clear())',
-    color: '#a855f7',
+    color: '#2ECC71',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Array', type: 'data', dataType: 'array', isInput: true },
@@ -5443,10 +5825,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'array-resize',
-    category: 'data',
+    category: 'collections',
     label: 'Array Resize',
     description: 'Resize array to specified length (.resize)',
-    color: '#a855f7',
+    color: '#2ECC71',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Array', type: 'data', dataType: 'array', isInput: true },
@@ -5460,10 +5842,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'array-randomize',
-    category: 'data',
+    category: 'collections',
     label: 'Array Randomize',
     description: 'Shuffle array elements randomly (.randomize)',
-    color: '#a855f7',
+    color: '#2ECC71',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Array', type: 'data', dataType: 'array', isInput: true },
@@ -5477,10 +5859,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'array-getrandom',
-    category: 'data',
+    category: 'collections',
     label: 'Array Get Random',
     description: 'Get random element from array (.getrandom)',
-    color: '#a855f7',
+    color: '#2ECC71',
     inputs: [
       { label: 'Array', type: 'data', dataType: 'array', isInput: true },
     ],
@@ -5492,10 +5874,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'array-slice',
-    category: 'data',
+    category: 'collections',
     label: 'Array Slice',
     description: 'Get a portion of array (.slice)',
-    color: '#a855f7',
+    color: '#2ECC71',
     inputs: [
       { label: 'Array', type: 'data', dataType: 'array', isInput: true },
       { label: 'Start', type: 'data', dataType: 'int', isInput: true },
@@ -5511,10 +5893,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   // ==================== TABLES ====================
   {
     type: 'table-create',
-    category: 'data',
+    category: 'collections',
     label: 'Create Table',
     description: 'Create an empty untyped table: table',
-    color: '#6366f1',
+    color: '#2ECC71',
     inputs: [],
     outputs: [
       { label: 'Table', type: 'data', dataType: 'table', isInput: false },
@@ -5524,10 +5906,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'table-create-typed',
-    category: 'data',
+    category: 'collections',
     label: 'Create Typed Table',
     description: 'Create a typed table: table<KeyType, ValueType>',
-    color: '#6366f1',
+    color: '#2ECC71',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
     ],
@@ -5544,10 +5926,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'table-get',
-    category: 'data',
+    category: 'collections',
     label: 'Table Get',
     description: 'Get table value by key (table[key])',
-    color: '#6366f1',
+    color: '#2ECC71',
     inputs: [
       { label: 'Table', type: 'data', dataType: 'table', isInput: true },
       { label: 'Key', type: 'data', dataType: 'any', isInput: true },
@@ -5560,10 +5942,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'table-set',
-    category: 'data',
+    category: 'collections',
     label: 'Table Set',
     description: 'Set existing table slot value (table[key] = value). Key must exist.',
-    color: '#6366f1',
+    color: '#2ECC71',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Table', type: 'data', dataType: 'table', isInput: true },
@@ -5578,10 +5960,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'table-add-slot',
-    category: 'data',
+    category: 'collections',
     label: 'Table Add Slot',
     description: 'Add new key-value pair to table (table[key] <- value)',
-    color: '#6366f1',
+    color: '#2ECC71',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Table', type: 'data', dataType: 'table', isInput: true },
@@ -5596,10 +5978,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'table-has-key',
-    category: 'data',
+    category: 'collections',
     label: 'Table Has Key',
     description: 'Check if table contains key (key in table)',
-    color: '#6366f1',
+    color: '#2ECC71',
     inputs: [
       { label: 'Table', type: 'data', dataType: 'table', isInput: true },
       { label: 'Key', type: 'data', dataType: 'any', isInput: true },
@@ -5612,10 +5994,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'table-delete',
-    category: 'data',
+    category: 'collections',
     label: 'Table Delete',
     description: 'Remove key-value pair from table (delete table[key])',
-    color: '#6366f1',
+    color: '#2ECC71',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Table', type: 'data', dataType: 'table', isInput: true },
@@ -5629,10 +6011,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'table-keys',
-    category: 'data',
+    category: 'collections',
     label: 'Table Keys',
     description: 'Get array of all keys in table',
-    color: '#6366f1',
+    color: '#2ECC71',
     inputs: [
       { label: 'Table', type: 'data', dataType: 'table', isInput: true },
     ],
@@ -5644,10 +6026,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'table-values',
-    category: 'data',
+    category: 'collections',
     label: 'Table Values',
     description: 'Get array of all values in table',
-    color: '#6366f1',
+    color: '#2ECC71',
     inputs: [
       { label: 'Table', type: 'data', dataType: 'table', isInput: true },
     ],
@@ -5659,10 +6041,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'table-clear',
-    category: 'data',
+    category: 'collections',
     label: 'Table Clear',
     description: 'Remove all entries from table (.clear())',
-    color: '#6366f1',
+    color: '#2ECC71',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Table', type: 'data', dataType: 'table', isInput: true },
@@ -5677,10 +6059,26 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   // ==================== UTILITIES ====================
   {
     type: 'print',
-    category: 'data',
+    category: 'debug',
     label: 'Print',
+    description: 'Print message to console (no newline)',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Message', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['print', 'debug', 'log', 'console'],
+  },
+  {
+    type: 'printf',
+    category: 'debug',
+    label: 'Printf',
     description: 'Print message to console (auto-concatenates all parts)',
-    color: '#34495E',
+    color: '#E74C3C',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Part 0', type: 'data', dataType: 'any', isInput: true },
@@ -5692,26 +6090,43 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     defaultData: { partCount: 2 },
   },
   {
-    type: 'print-warning',
-    category: 'data',
-    label: 'PrintWarning',
-    description: 'Print warning to console',
-    color: '#34495E',
+    type: 'printt',
+    category: 'debug',
+    label: 'Printt',
+    description: 'Print message with table formatting (prints tables/arrays nicely)',
+    color: '#E74C3C',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
-      { label: 'Message', type: 'data', dataType: 'any', isInput: true },
+      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
     ],
     outputs: [
       { label: 'Out', type: 'exec', isInput: false },
     ],
-    defaultData: { message: 'Warning message' },
+    defaultData: {},
+    tags: ['print', 'debug', 'table', 'array', 'log'],
+  },
+  {
+    type: 'printl',
+    category: 'debug',
+    label: 'Printl',
+    description: 'Print message with newline (adds \\n at end)',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Message', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['print', 'debug', 'newline', 'log'],
   },
   {
     type: 'get-game-time',
-    category: 'data',
+    category: 'utilities',
     label: 'Time',
     description: 'Get current game time',
-    color: '#34495E',
+    color: '#F39C12',
     inputs: [],
     outputs: [
       { label: 'Time', type: 'data', dataType: 'number', isInput: false },
@@ -5720,10 +6135,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-frame-time',
-    category: 'data',
+    category: 'utilities',
     label: 'FrameTime',
     description: 'Get frame delta time',
-    color: '#34495E',
+    color: '#F39C12',
     inputs: [],
     outputs: [
       { label: 'FrameTime', type: 'data', dataType: 'number', isInput: false },
@@ -5732,10 +6147,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-map-name',
-    category: 'data',
+    category: 'utilities',
     label: 'GetMapName',
     description: 'Get current map name',
-    color: '#34495E',
+    color: '#F39C12',
     inputs: [],
     outputs: [
       { label: 'MapName', type: 'data', dataType: 'string', isInput: false },
@@ -5744,10 +6159,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-all-players',
-    category: 'data',
+    category: 'utilities',
     label: 'GetPlayerArray',
     description: 'Get all players',
-    color: '#34495E',
+    color: '#F39C12',
     inputs: [],
     outputs: [
       { label: 'Players', type: 'data', dataType: 'array', isInput: false },
@@ -5756,10 +6171,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-players-on-team',
-    category: 'data',
+    category: 'utilities',
     label: 'GetPlayersOnTeam',
     description: 'Get all players on a team',
-    color: '#34495E',
+    color: '#F39C12',
     inputs: [
       { label: 'Team', type: 'data', dataType: 'int', isInput: true },
     ],
@@ -5770,10 +6185,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-living-players',
-    category: 'data',
+    category: 'utilities',
     label: 'GetLivingPlayers',
     description: 'Get all living players',
-    color: '#34495E',
+    color: '#F39C12',
     inputs: [],
     outputs: [
       { label: 'Players', type: 'data', dataType: 'array', isInput: false },
@@ -5782,10 +6197,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-living-players-on-team',
-    category: 'data',
+    category: 'utilities',
     label: 'GetLivingPlayersOnTeam',
     description: 'Get living players on a team',
-    color: '#34495E',
+    color: '#F39C12',
     inputs: [
       { label: 'Team', type: 'data', dataType: 'int', isInput: true },
     ],
@@ -5796,7 +6211,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-local-player',
-    category: 'data',
+    category: 'entity',
     label: 'GetLocalPlayer',
     description: 'Get the local client player (#if CLIENT)',
     color: '#34495E',
@@ -5809,7 +6224,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-local-view-player',
-    category: 'data',
+    category: 'entity',
     label: 'GetLocalViewPlayer',
     description: 'Get the local view player (#if CLIENT)',
     color: '#34495E',
@@ -5822,10 +6237,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-entity-by-script-name',
-    category: 'data',
+    category: 'utilities',
     label: 'GetEntByScriptName',
     description: 'Get entity by script name',
-    color: '#34495E',
+    color: '#F39C12',
     inputs: [
       { label: 'ScriptName', type: 'data', dataType: 'string', isInput: true },
     ],
@@ -5836,10 +6251,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'precache-model',
-    category: 'data',
+    category: 'utilities',
     label: 'PrecacheModel',
     description: 'Precache model asset',
-    color: '#34495E',
+    color: '#F39C12',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Model', type: 'data', dataType: 'asset', isInput: true },
@@ -5851,10 +6266,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'precache-weapon',
-    category: 'data',
+    category: 'utilities',
     label: 'PrecacheWeapon',
     description: 'Precache weapon',
-    color: '#34495E',
+    color: '#F39C12',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'WeaponClass', type: 'data', dataType: 'string', isInput: true },
@@ -5866,10 +6281,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'globalize-function',
-    category: 'data',
+    category: 'utilities',
     label: 'GlobalizeFunction',
     description: 'Make function globally accessible',
-    color: '#34495E',
+    color: '#F39C12',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Function', type: 'data', dataType: 'function', isInput: true },
@@ -5881,10 +6296,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'function-ref',
-    category: 'data',
+    category: 'utilities',
     label: 'Function Reference',
     description: 'Reference to function',
-    color: '#34495E',
+    color: '#F39C12',
     inputs: [],
     outputs: [
       { label: 'Function', type: 'data', dataType: 'function', isInput: false },
@@ -5893,10 +6308,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-ent-by-index',
-    category: 'data',
+    category: 'utilities',
     label: 'GetEntByIndex',
     description: 'Get entity by index',
-    color: '#34495E',
+    color: '#F39C12',
     inputs: [
       { label: 'Index', type: 'data', dataType: 'int', isInput: true },
     ],
@@ -5907,10 +6322,10 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'get-player-by-index',
-    category: 'data',
+    category: 'utilities',
     label: 'GetPlayerByIndex',
     description: 'Get player entity by index (gp()[index])',
-    color: '#34495E',
+    color: '#F39C12',
     inputs: [
       { label: 'Index', type: 'data', dataType: 'int', isInput: true },
     ],
@@ -5978,7 +6393,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'create-trigger-cylinder',
-    category: 'entity',
+    category: 'entity-creation',
     label: 'Create Trigger Cylinder',
     description: 'Create a cylindrical trigger volume',
     color: '#27AE60',
@@ -5999,7 +6414,7 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'create-trigger-radius-multiple',
-    category: 'entity',
+    category: 'entity-creation',
     label: 'Create Trigger Radius Multiple',
     description: 'Create a trigger with multiple radius points',
     color: '#27AE60',
@@ -6408,6 +6823,220 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     ],
     defaultData: { itemRef: '', count: 1 },
   },
+
+  // ==================== ASSERT NODES ====================
+  {
+    type: 'assert',
+    category: 'debug',
+    label: 'Assert',
+    description: 'Assert that a condition is true. If false, halts execution with error message.',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Condition', type: 'data', dataType: 'boolean', isInput: true },
+      { label: 'Message', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { message: 'Assertion failed' },
+    tags: ['assert', 'debug', 'validation', 'error'],
+  },
+  {
+    type: 'assert-true',
+    category: 'debug',
+    label: 'Assert True',
+    description: 'Assert that a boolean value is true',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Value', type: 'data', dataType: 'boolean', isInput: true },
+      { label: 'Message', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { message: 'Value must be true' },
+    tags: ['assert', 'debug', 'validation', 'boolean'],
+  },
+  {
+    type: 'assert-false',
+    category: 'debug',
+    label: 'Assert False',
+    description: 'Assert that a boolean value is false',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Value', type: 'data', dataType: 'boolean', isInput: true },
+      { label: 'Message', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { message: 'Value must be false' },
+    tags: ['assert', 'debug', 'validation', 'boolean'],
+  },
+  {
+    type: 'assert-not-null',
+    category: 'debug',
+    label: 'Assert Not Null',
+    description: 'Assert that a value is not null',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Value', type: 'data', dataType: 'any', isInput: true },
+      { label: 'Message', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { message: 'Value must not be null' },
+    tags: ['assert', 'debug', 'validation', 'null'],
+  },
+  {
+    type: 'assert-not-equal',
+    category: 'debug',
+    label: 'Assert Not Equal',
+    description: 'Assert that two values are not equal',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Value A', type: 'data', dataType: 'any', isInput: true },
+      { label: 'Value B', type: 'data', dataType: 'any', isInput: true },
+      { label: 'Message', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { message: 'Values must not be equal' },
+    tags: ['assert', 'debug', 'validation', 'comparison'],
+  },
+  {
+    type: 'assert-equal',
+    category: 'debug',
+    label: 'Assert Equal',
+    description: 'Assert that two values are equal',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Value A', type: 'data', dataType: 'any', isInput: true },
+      { label: 'Value B', type: 'data', dataType: 'any', isInput: true },
+      { label: 'Message', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { message: 'Values must be equal' },
+    tags: ['assert', 'debug', 'validation', 'comparison'],
+  },
+  {
+    type: 'assert-valid',
+    category: 'debug',
+    label: 'Assert Valid',
+    description: 'Assert that an entity is valid',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Message', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { message: 'Entity must be valid' },
+    serverOnly: true,
+    tags: ['assert', 'debug', 'validation', 'entity', 'isvalid'],
+  },
+  {
+    type: 'assert-alive',
+    category: 'debug',
+    label: 'Assert Alive',
+    description: 'Assert that an entity is alive',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Message', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { message: 'Entity must be alive' },
+    serverOnly: true,
+    tags: ['assert', 'debug', 'validation', 'entity', 'isalive'],
+  },
+  {
+    type: 'assert-is-player',
+    category: 'debug',
+    label: 'Assert Is Player',
+    description: 'Assert that an entity is a player',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Message', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { message: 'Entity must be a player' },
+    serverOnly: true,
+    tags: ['assert', 'debug', 'validation', 'entity', 'isplayer'],
+  },
+  {
+    type: 'assert-is-npc',
+    category: 'debug',
+    label: 'Assert Is NPC',
+    description: 'Assert that an entity is an NPC',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Message', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { message: 'Entity must be an NPC' },
+    serverOnly: true,
+    tags: ['assert', 'debug', 'validation', 'entity', 'isnpc'],
+  },
+  {
+    type: 'assert-is-titan',
+    category: 'debug',
+    label: 'Assert Is Titan',
+    description: 'Assert that an entity is a Titan',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Message', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { message: 'Entity must be a Titan' },
+    serverOnly: true,
+    tags: ['assert', 'debug', 'validation', 'entity', 'istitan'],
+  },
+  {
+    type: 'assert-is-pilot',
+    category: 'debug',
+    label: 'Assert Is Pilot',
+    description: 'Assert that an entity is a Pilot',
+    color: '#E74C3C',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Entity', type: 'data', dataType: 'entity', isInput: true },
+      { label: 'Message', type: 'data', dataType: 'string', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { message: 'Entity must be a Pilot' },
+    serverOnly: true,
+    tags: ['assert', 'debug', 'validation', 'entity', 'ispilot'],
+  },
 ];
 
 export function getNodeDefinition(type: string): NodeDefinition | undefined {
@@ -6415,5 +7044,7 @@ export function getNodeDefinition(type: string): NodeDefinition | undefined {
 }
 
 export function getNodesByCategory(category: string): NodeDefinition[] {
-  return NODE_DEFINITIONS.filter(def => def.category === category);
+  return NODE_DEFINITIONS
+    .filter(def => def.category === category)
+    .sort((a, b) => a.label.localeCompare(b.label));
 }

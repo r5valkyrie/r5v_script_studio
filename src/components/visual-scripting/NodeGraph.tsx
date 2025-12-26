@@ -1762,7 +1762,7 @@ export default function NodeGraph({
     }
 
     // Print - dynamic part count (auto-concatenates)
-    if (node.type === 'print') {
+    if (node.type === 'printf') {
       const partCount = typeof node.data.partCount === 'number' ? node.data.partCount : 2;
       
       const addPart = () => {

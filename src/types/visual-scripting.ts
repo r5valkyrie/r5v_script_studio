@@ -19,8 +19,10 @@ export type NodeCategory =
   | 'math'            // Math operations
   | 'string'          // String manipulation
   | 'structures'      // Structs, enums, typedefs
-  | 'data'            // Constants, variables
-  | 'collections';    // Arrays, Tables
+  | 'variables'       // Variable operations (Get, Set, Declare, Make Global/Local)
+  | 'collections'     // Arrays and Tables
+  | 'debug'           // Debug nodes (Print, Assert, Warning)
+  | 'utilities'       // Utility functions (Time, Precache, Portals, Entity getters)
 
 export type NodeDataType =
   | 'int'
@@ -324,10 +326,14 @@ export type NodeType =
 
   // ==================== STATUS EFFECTS ====================
   | 'status-effect-add'
+  | 'status-effect-add-timed'
   | 'status-effect-stop'
+  | 'status-effect-stop-all-of-type'
   | 'status-effect-stop-all'
   | 'status-effect-get'
   | 'status-effect-has'
+  | 'status-effect-has-severity'
+  | 'status-effect-get-severity'
   | 'status-effect-register-callback'
   | 'add-shared-energy'
   | 'get-shared-energy'
@@ -376,6 +382,35 @@ export type NodeType =
   | 'get-damage-source-identifier'
   | 'register-damage-source'
   | 'set-damage-source-identifier'
+  // DamageInfo operations
+  | 'damageinfo-set-damage'
+  | 'damageinfo-get-damage'
+  | 'damageinfo-get-inflictor'
+  | 'damageinfo-set-damage-source-identifier'
+  | 'damageinfo-get-custom-damage-type'
+  | 'damageinfo-add-custom-damage-type'
+  | 'damageinfo-scale-damage'
+  | 'damageinfo-get-attacker'
+  | 'damageinfo-get-force-kill'
+  | 'damageinfo-get-weapon'
+  | 'damageinfo-print'
+  | 'damageinfo-get-critical-hit-scale'
+  | 'damageinfo-get-shield-scale'
+  | 'damageinfo-get-damage-position'
+  | 'damageinfo-get-hitgroup'
+  | 'damageinfo-get-hitbox'
+  | 'damageinfo-get-death-package'
+  | 'damageinfo-set-death-package'
+  | 'damageinfo-get-viewpunch-multiplier'
+  | 'damageinfo-get-dist-from-attack-origin'
+  | 'damageinfo-get-dist-from-explosion-center'
+  | 'damageinfo-get-damage-force'
+  | 'damageinfo-get-damage-force-direction'
+  | 'damageinfo-is-ragdoll-allowed'
+  | 'damageinfo-get-damage-flags'
+  | 'damageinfo-get-damage-weapon-name'
+  | 'damageinfo-should-record-stats'
+  | 'damageinfo-get-damage-type'
 
   // ==================== UI/RUI ====================
   | 'rui-create'
@@ -518,9 +553,22 @@ export type NodeType =
 
   // ==================== UTILITIES ====================
   | 'print'
-  | 'print-warning'
-  | 'dev-assert'
+  | 'printf'
+  | 'printt'
+  | 'printl'
   | 'code-warning'
+  | 'assert'
+  | 'assert-true'
+  | 'assert-false'
+  | 'assert-not-null'
+  | 'assert-not-equal'
+  | 'assert-equal'
+  | 'assert-valid'
+  | 'assert-alive'
+  | 'assert-is-player'
+  | 'assert-is-npc'
+  | 'assert-is-titan'
+  | 'assert-is-pilot'
   | 'get-game-time'
   | 'get-frame-time'
   | 'get-map-name'
@@ -640,8 +688,10 @@ export const CATEGORY_INFO: CategoryInfo[] = [
   { id: 'math', label: 'Math', color: '#95A5A6', textClass: 'text-emerald-400', description: 'Math, vector, and logic operations' },
   { id: 'string', label: 'String', color: '#F39C12', textClass: 'text-yellow-400', description: 'String manipulation and formatting' },
   { id: 'structures', label: 'Structures', color: '#16A085', textClass: 'text-teal-400', description: 'Structs, enums, and type definitions' },
-  { id: 'data', label: 'Data', color: '#2ECC71', textClass: 'text-violet-400', description: 'Constants and variables' },
-  { id: 'collections', label: 'Collections', color: '#2ECC71', textClass: 'text-purple-400', description: 'Arrays and tables' },
+  { id: 'variables', label: 'Variables', color: '#3498DB', textClass: 'text-blue-400', description: 'Variable operations: Get, Set, Declare, Make Global/Local' },
+  { id: 'collections', label: 'Collections', color: '#2ECC71', textClass: 'text-green-400', description: 'Arrays and tables' },
+  { id: 'debug', label: 'Debug', color: '#E74C3C', textClass: 'text-red-400', description: 'Debug nodes: Print, Assert, Warning' },
+  { id: 'utilities', label: 'Utilities', color: '#F39C12', textClass: 'text-yellow-400', description: 'Utility functions: Time, Precache, Portals, Entity getters' },
   { id: 'survival', label: 'Survival', color: '#27AE60', textClass: 'text-green-400', description: 'Survival mode loot and inventory' },
   { id: 'passives', label: 'Passives', color: '#9B59B6', textClass: 'text-purple-400', description: 'Passive ability system' },
   { id: 'character', label: 'Character', color: '#3498DB', textClass: 'text-blue-400', description: 'Character abilities and classes' },

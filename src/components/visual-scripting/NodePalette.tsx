@@ -92,7 +92,6 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   'math': <Calculator size={14} />,
   'string': <Type size={14} />,
   'structures': <Boxes size={14} />,
-  'data': <Database size={14} />,
   'collections': <Layers size={14} />,
   'survival': <Map size={14} />,
   'passives': <Heart size={14} />,

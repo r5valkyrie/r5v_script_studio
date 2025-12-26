@@ -19,7 +19,7 @@ function highlightCode(code: string): string {
   const types = new Set(['SERVER', 'CLIENT', 'UI', 'Vector', 'CustomWeaponData']);
 
   const builtins = new Set([
-    'print', 'printt', 'expect', 'Assert', 'GetPlayerArray', 'GetNPCArray',
+    'printf', 'expect', 'Assert', 'GetPlayerArray', 'GetNPCArray',
     'IsValid', 'IsAlive', 'Time', 'RandomInt', 'RandomFloat',
   ]);
 

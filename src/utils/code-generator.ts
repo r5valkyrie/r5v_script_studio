@@ -737,6 +737,272 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
+    case 'get-damage-source-identifier': {
+      const damageSource = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'damageSourceId');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}int ${resultVar} = eDamageSourceId.${damageSource}`);
+      break;
+    }
+
+    case 'damageinfo-set-damage': {
+      const damageInfo = getInputValue(ctx, node, 'input_1');
+      const damage = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}DamageInfo_SetDamage(${damageInfo}, ${damage})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'damageinfo-get-damage': {
+      const damageInfo = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'damage');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}float ${resultVar} = DamageInfo_GetDamage(${damageInfo})`);
+      break;
+    }
+
+    case 'damageinfo-get-inflictor': {
+      const damageInfo = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'inflictor');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}entity ${resultVar} = DamageInfo_GetInflictor(${damageInfo})`);
+      break;
+    }
+
+    case 'damageinfo-set-damage-source-identifier': {
+      const damageInfo = getInputValue(ctx, node, 'input_1');
+      const sourceId = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}DamageInfo_SetDamageSourceIdentifier(${damageInfo}, ${sourceId})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'damageinfo-get-custom-damage-type': {
+      const damageInfo = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'customDamageType');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}int ${resultVar} = DamageInfo_GetCustomDamageType(${damageInfo})`);
+      break;
+    }
+
+    case 'damageinfo-add-custom-damage-type': {
+      const damageInfo = getInputValue(ctx, node, 'input_1');
+      const damageType = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}DamageInfo_AddCustomDamageType(${damageInfo}, ${damageType})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'damageinfo-scale-damage': {
+      const damageInfo = getInputValue(ctx, node, 'input_1');
+      const scale = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}DamageInfo_ScaleDamage(${damageInfo}, ${scale})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'damageinfo-get-attacker': {
+      const damageInfo = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'attacker');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}entity ${resultVar} = DamageInfo_GetAttacker(${damageInfo})`);
+      break;
+    }
+
+    case 'damageinfo-get-force-kill': {
+      const damageInfo = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'forceKill');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}bool ${resultVar} = DamageInfo_GetForceKill(${damageInfo})`);
+      break;
+    }
+
+    case 'damageinfo-get-weapon': {
+      const damageInfo = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'weapon');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}entity ${resultVar} = DamageInfo_GetWeapon(${damageInfo})`);
+      break;
+    }
+
+    case 'damageinfo-print': {
+      const damageInfo = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}DamageInfo_Print(${damageInfo})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'damageinfo-get-critical-hit-scale': {
+      const damageInfo = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'critScale');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}float ${resultVar} = DamageInfo_GetDamageCriticalHitScale(${damageInfo})`);
+      break;
+    }
+
+    case 'damageinfo-get-shield-scale': {
+      const damageInfo = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'shieldScale');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}float ${resultVar} = DamageInfo_GetDamageShieldScale(${damageInfo})`);
+      break;
+    }
+
+    case 'damageinfo-get-damage-position': {
+      const damageInfo = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'damagePos');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}vector ${resultVar} = DamageInfo_GetDamagePosition(${damageInfo})`);
+      break;
+    }
+
+    case 'damageinfo-get-hitgroup': {
+      const damageInfo = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'hitGroup');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}int ${resultVar} = DamageInfo_GetHitGroup(${damageInfo})`);
+      break;
+    }
+
+    case 'damageinfo-get-hitbox': {
+      const damageInfo = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'hitBox');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}int ${resultVar} = DamageInfo_GetHitBox(${damageInfo})`);
+      break;
+    }
+
+    case 'damageinfo-get-death-package': {
+      const damageInfo = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'deathPackage');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}string ${resultVar} = DamageInfo_GetDeathPackage(${damageInfo})`);
+      break;
+    }
+
+    case 'damageinfo-set-death-package': {
+      const damageInfo = getInputValue(ctx, node, 'input_1');
+      const deathPackage = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}DamageInfo_SetDeathPackage(${damageInfo}, ${deathPackage})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'damageinfo-get-viewpunch-multiplier': {
+      const damageInfo = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'viewPunchMult');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}float ${resultVar} = DamageInfo_GetViewPunchMultiplier(${damageInfo})`);
+      break;
+    }
+
+    case 'damageinfo-get-dist-from-attack-origin': {
+      const damageInfo = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'distFromOrigin');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}float ${resultVar} = DamageInfo_GetDistFromAttackOrigin(${damageInfo})`);
+      break;
+    }
+
+    case 'damageinfo-get-dist-from-explosion-center': {
+      const damageInfo = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'distFromExplosion');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}float ${resultVar} = DamageInfo_GetDistFromExplosionCenter(${damageInfo})`);
+      break;
+    }
+
+    case 'damageinfo-get-damage-force': {
+      const damageInfo = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'damageForce');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}vector ${resultVar} = DamageInfo_GetDamageForce(${damageInfo})`);
+      break;
+    }
+
+    case 'damageinfo-get-damage-force-direction': {
+      const damageInfo = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'forceDir');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}vector ${resultVar} = DamageInfo_GetDamageForceDirection(${damageInfo})`);
+      break;
+    }
+
+    case 'damageinfo-is-ragdoll-allowed': {
+      const damageInfo = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'ragdollAllowed');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}bool ${resultVar} = DamageInfo_IsRagdollAllowed(${damageInfo})`);
+      break;
+    }
+
+    case 'damageinfo-get-damage-flags': {
+      const damageInfo = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'damageFlags');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}int ${resultVar} = DamageInfo_GetDamageFlags(${damageInfo})`);
+      break;
+    }
+
+    case 'damageinfo-get-damage-weapon-name': {
+      const damageInfo = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'weaponName');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}string ${resultVar} = DamageInfo_GetDamageWeaponName(${damageInfo})`);
+      break;
+    }
+
+    case 'damageinfo-should-record-stats': {
+      const damageInfo = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'shouldRecord');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}bool ${resultVar} = DamageInfo_ShouldRecordStatsForWeapon(${damageInfo})`);
+      break;
+    }
+
+    case 'damageinfo-get-damage-type': {
+      const damageInfo = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'damageType');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}int ${resultVar} = DamageInfo_GetDamageType(${damageInfo})`);
+      break;
+    }
+
+    // ==================== TRACES ====================
+    case 'trace-line': {
+      const start = getInputValue(ctx, node, 'input_0');
+      const end = getInputValue(ctx, node, 'input_1');
+      const ignore = getInputValue(ctx, node, 'input_2');
+      const traceMask = getInputValue(ctx, node, 'input_3');
+      const collisionGroup = getInputValue(ctx, node, 'input_4');
+      const resultVar = getVarName(ctx, 'traceResult');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      ctx.variables.set(`${node.id}:output_1`, `${resultVar}.hitEnt`);
+      ctx.variables.set(`${node.id}:output_2`, `${resultVar}.endPos`);
+      ctx.variables.set(`${node.id}:output_3`, `${resultVar}.surfaceNormal`);
+      ctx.variables.set(`${node.id}:output_4`, `${resultVar}.fraction`);
+      lines.push(`${ind}TraceResults ${resultVar} = TraceLine(${start}, ${end}, ${ignore}, ${traceMask}, ${collisionGroup})`);
+      break;
+    }
+
+    case 'trace-hull': {
+      const start = getInputValue(ctx, node, 'input_0');
+      const end = getInputValue(ctx, node, 'input_1');
+      const mins = getInputValue(ctx, node, 'input_2');
+      const maxs = getInputValue(ctx, node, 'input_3');
+      const ignore = getInputValue(ctx, node, 'input_4');
+      const traceMask = getInputValue(ctx, node, 'input_5');
+      const collisionGroup = getInputValue(ctx, node, 'input_6');
+      const resultVar = getVarName(ctx, 'traceResult');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      ctx.variables.set(`${node.id}:output_1`, `${resultVar}.hitEnt`);
+      ctx.variables.set(`${node.id}:output_2`, `${resultVar}.endPos`);
+      ctx.variables.set(`${node.id}:output_3`, `${resultVar}.surfaceNormal`);
+      ctx.variables.set(`${node.id}:output_4`, `${resultVar}.fraction`);
+      lines.push(`${ind}TraceResults ${resultVar} = TraceHull(${start}, ${end}, ${mins}, ${maxs}, ${ignore}, ${traceMask}, ${collisionGroup})`);
+      break;
+    }
+
     // ==================== ENTITY ====================
     case 'get-origin': {
       const entity = getInputValue(ctx, node, 'input_0');
@@ -1289,7 +1555,55 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
-    // ==================== PARTICLES ====================
+    case 'emit-sound-at-position': {
+      const origin = getInputValue(ctx, node, 'input_1');
+      const sound = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}EmitSoundAtPosition(${origin}, ${sound})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'emit-weapon-npc-sound': {
+      const weapon = getInputValue(ctx, node, 'input_1');
+      const soundType = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}${weapon}.EmitWeaponNpcSound(${soundType})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'stop-sound-on-entity': {
+      const entity = getInputValue(ctx, node, 'input_1');
+      const sound = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}StopSoundOnEntity(${entity}, ${sound})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'play-sound-to-player': {
+      const player = getInputValue(ctx, node, 'input_1');
+      const sound = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}EmitSoundOnEntityOnlyToPlayer(${player}, ${player}, ${sound})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'fade-out-sound-on-entity': {
+      const entity = getInputValue(ctx, node, 'input_1');
+      const sound = getInputValue(ctx, node, 'input_2');
+      const duration = getInputValue(ctx, node, 'input_3');
+      lines.push(`${ind}FadeOutSoundOnEntity(${entity}, ${sound}, ${duration})`);
+      followExec('output_0');
+      break;
+    }
+
+    // ==================== PARTICLES / VFX ====================
+    case 'precache-particle': {
+      const asset = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}PrecacheParticleSystem(${asset})`);
+      followExec('output_0');
+      break;
+    }
+
     case 'start-particle-on-entity': {
       const entity = getInputValue(ctx, node, 'input_1');
       const effect = getInputValue(ctx, node, 'input_2');
@@ -1297,6 +1611,156 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       const resultVar = getVarName(ctx, 'fxHandle');
       ctx.variables.set(`${node.id}:output_1`, resultVar);
       lines.push(`${ind}int ${resultVar} = StartParticleEffectOnEntity(${entity}, GetParticleSystemIndex(${effect}), FX_PATTACH_POINT_FOLLOW, ${attachment})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'start-particle-effect-in-world': {
+      const asset = getInputValue(ctx, node, 'input_1');
+      const origin = getInputValue(ctx, node, 'input_2');
+      const angles = getInputValue(ctx, node, 'input_3');
+      const resultVar = getVarName(ctx, 'fxHandle');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}int ${resultVar} = StartParticleEffectInWorld(GetParticleSystemIndex(${asset}), ${origin}, ${angles})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'stop-particle': {
+      const handle = getInputValue(ctx, node, 'input_1');
+      const stopImmediately = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}EffectStop(${handle}, ${stopImmediately}, true)`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'effect-stop-all-on-entity': {
+      const entity = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}EffectStopAllOnEntity(${entity})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'set-particle-control-point': {
+      const handle = getInputValue(ctx, node, 'input_1');
+      const index = getInputValue(ctx, node, 'input_2');
+      const value = getInputValue(ctx, node, 'input_3');
+      lines.push(`${ind}EffectSetControlPointVector(${handle}, ${index}, ${value})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'play-fx-on-entity': {
+      const entity = getInputValue(ctx, node, 'input_1');
+      const asset = getInputValue(ctx, node, 'input_2');
+      const tag = getInputValue(ctx, node, 'input_3');
+      const resultVar = getVarName(ctx, 'fxHandle');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}int ${resultVar} = PlayFXOnEntity(${entity}, ${asset}, ${tag})`);
+      followExec('output_0');
+      break;
+    }
+
+    // ==================== PRECACHE ====================
+    case 'precache-model': {
+      const model = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}PrecacheModel(${model})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'precache-weapon': {
+      const weaponClass = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}PrecacheWeapon(${weaponClass})`);
+      followExec('output_0');
+      break;
+    }
+
+    // ==================== UI/RUI ====================
+    case 'rui-create': {
+      const asset = getInputValue(ctx, node, 'input_1');
+      const drawGroup = getInputValue(ctx, node, 'input_2');
+      const resultVar = getVarName(ctx, 'rui');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}var ${resultVar} = RuiCreate(${asset}, clGlobal.topoFullScreen, RUI_DRAW_HUD, ${drawGroup})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'rui-destroy': {
+      const rui = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}RuiDestroy(${rui})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'rui-set-string': {
+      const rui = getInputValue(ctx, node, 'input_1');
+      const argName = getInputValue(ctx, node, 'input_2');
+      const value = getInputValue(ctx, node, 'input_3');
+      lines.push(`${ind}RuiSetString(${rui}, ${argName}, ${value})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'rui-set-int': {
+      const rui = getInputValue(ctx, node, 'input_1');
+      const argName = getInputValue(ctx, node, 'input_2');
+      const value = getInputValue(ctx, node, 'input_3');
+      lines.push(`${ind}RuiSetInt(${rui}, ${argName}, ${value})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'rui-set-float': {
+      const rui = getInputValue(ctx, node, 'input_1');
+      const argName = getInputValue(ctx, node, 'input_2');
+      const value = getInputValue(ctx, node, 'input_3');
+      lines.push(`${ind}RuiSetFloat(${rui}, ${argName}, ${value})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'rui-set-bool': {
+      const rui = getInputValue(ctx, node, 'input_1');
+      const argName = getInputValue(ctx, node, 'input_2');
+      const value = getInputValue(ctx, node, 'input_3');
+      lines.push(`${ind}RuiSetBool(${rui}, ${argName}, ${value})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'rui-set-image': {
+      const rui = getInputValue(ctx, node, 'input_1');
+      const argName = getInputValue(ctx, node, 'input_2');
+      const asset = getInputValue(ctx, node, 'input_3');
+      lines.push(`${ind}RuiSetImage(${rui}, ${argName}, ${asset})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'rui-set-float3': {
+      const rui = getInputValue(ctx, node, 'input_1');
+      const argName = getInputValue(ctx, node, 'input_2');
+      const value = getInputValue(ctx, node, 'input_3');
+      lines.push(`${ind}RuiSetFloat3(${rui}, ${argName}, ${value})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'announcement': {
+      const player = getInputValue(ctx, node, 'input_1');
+      const message = getInputValue(ctx, node, 'input_2');
+      const duration = getInputValue(ctx, node, 'input_3');
+      lines.push(`${ind}SendHudMessage(${player}, ${message}, -1, 0.4, 255, 255, 255, 255, 0.15, ${duration}, 0.5)`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'server-to-client-string-command': {
+      const player = getInputValue(ctx, node, 'input_1');
+      const command = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}Remote_CallFunction_NonReplay(${player}, ${command})`);
       followExec('output_0');
       break;
     }
@@ -1485,11 +1949,80 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
+    case 'vector-subtract': {
+      const a = getInputValue(ctx, node, 'input_0');
+      const b = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'vec');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}vector ${resultVar} = ${a} - ${b}`);
+      break;
+    }
+
+    case 'vector-multiply': {
+      const vec = getInputValue(ctx, node, 'input_0');
+      const scalar = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'vec');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}vector ${resultVar} = ${vec} * ${scalar}`);
+      break;
+    }
+
     case 'vector-normalize': {
       const v = getInputValue(ctx, node, 'input_0');
       const resultVar = getVarName(ctx, 'normalized');
       ctx.variables.set(`${node.id}:output_0`, resultVar);
       lines.push(`${ind}vector ${resultVar} = Normalize(${v})`);
+      break;
+    }
+
+    case 'vector-length': {
+      const v = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'len');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}float ${resultVar} = Length(${v})`);
+      break;
+    }
+
+    case 'vector-distance': {
+      const a = getInputValue(ctx, node, 'input_0');
+      const b = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'dist');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}float ${resultVar} = Distance(${a}, ${b})`);
+      break;
+    }
+
+    case 'vector-dot': {
+      const a = getInputValue(ctx, node, 'input_0');
+      const b = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'dot');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}float ${resultVar} = DotProduct(${a}, ${b})`);
+      break;
+    }
+
+    case 'vector-cross': {
+      const a = getInputValue(ctx, node, 'input_0');
+      const b = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'cross');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}vector ${resultVar} = CrossProduct(${a}, ${b})`);
+      break;
+    }
+
+    case 'angles-to-forward': {
+      const angles = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'forward');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}vector ${resultVar} = AnglesToForward(${angles})`);
+      break;
+    }
+
+    case 'vector-to-angles': {
+      const direction = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'angles');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}vector ${resultVar} = VectorToAngles(${direction})`);
       break;
     }
 
@@ -1512,12 +2045,94 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
+    case 'math-subtract': {
+      const a = getInputValue(ctx, node, 'input_0');
+      const b = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'result');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = ${a} - ${b}`);
+      break;
+    }
+
     case 'math-multiply': {
       const a = getInputValue(ctx, node, 'input_0');
       const b = getInputValue(ctx, node, 'input_1');
       const resultVar = getVarName(ctx, 'result');
       ctx.variables.set(`${node.id}:output_0`, resultVar);
       lines.push(`${ind}var ${resultVar} = ${a} * ${b}`);
+      break;
+    }
+
+    case 'math-divide': {
+      const a = getInputValue(ctx, node, 'input_0');
+      const b = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'result');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = ${a} / ${b}`);
+      break;
+    }
+
+    case 'math-clamp': {
+      const value = getInputValue(ctx, node, 'input_0');
+      const min = getInputValue(ctx, node, 'input_1');
+      const max = getInputValue(ctx, node, 'input_2');
+      const resultVar = getVarName(ctx, 'result');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = clamp(${value}, ${min}, ${max})`);
+      break;
+    }
+
+    case 'math-min': {
+      const a = getInputValue(ctx, node, 'input_0');
+      const b = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'result');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = min(${a}, ${b})`);
+      break;
+    }
+
+    case 'math-max': {
+      const a = getInputValue(ctx, node, 'input_0');
+      const b = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'result');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = max(${a}, ${b})`);
+      break;
+    }
+
+    case 'math-abs': {
+      const value = getInputValue(ctx, node, 'input_0');
+      const resultVar = getVarName(ctx, 'result');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = fabs(${value})`);
+      break;
+    }
+
+    case 'math-random-int': {
+      const min = getInputValue(ctx, node, 'input_0');
+      const max = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'rand');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}int ${resultVar} = RandomIntRange(${min}, ${max})`);
+      break;
+    }
+
+    case 'math-random-float': {
+      const min = getInputValue(ctx, node, 'input_0');
+      const max = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'rand');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}float ${resultVar} = RandomFloatRange(${min}, ${max})`);
+      break;
+    }
+
+    case 'math-lerp': {
+      const a = getInputValue(ctx, node, 'input_0');
+      const b = getInputValue(ctx, node, 'input_1');
+      const t = getInputValue(ctx, node, 'input_2');
+      const resultVar = getVarName(ctx, 'result');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}var ${resultVar} = GraphCapped(${t}, 0.0, 1.0, ${a}, ${b})`);
       break;
     }
 
@@ -1673,6 +2288,13 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
 
     // ==================== UTILITIES ====================
     case 'print': {
+      const message = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}print(${message})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'printf': {
       const partCount = typeof node.data?.partCount === 'number' ? node.data.partCount : (node.inputs.length - 1);
       const parts: string[] = [];
       for (let i = 0; i < partCount; i++) {
@@ -1688,6 +2310,20 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
         const formatStr = parts.map(() => '%s').join('');
         lines.push(`${ind}printf("${formatStr}", ${parts.join(', ')})`);
       }
+      followExec('output_0');
+      break;
+    }
+
+    case 'printt': {
+      const value = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}printt(${value})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'printl': {
+      const message = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}printl(${message})`);
       followExec('output_0');
       break;
     }
@@ -2827,6 +3463,253 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
     case 'local-variable': {
       // Make Local node - just a marker, generation is handled at file level in generateCode()
       // This node doesn't produce any inline code
+      break;
+    }
+
+    // ==================== ASSERT NODES ====================
+    case 'assert': {
+      const condition = getInputValue(ctx, node, 'input_1');
+      const message = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}Assert(${condition}, ${message})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'assert-true': {
+      const value = getInputValue(ctx, node, 'input_1');
+      const message = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}Assert(${value} == true, ${message})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'assert-false': {
+      const value = getInputValue(ctx, node, 'input_1');
+      const message = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}Assert(${value} == false, ${message})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'assert-not-null': {
+      const value = getInputValue(ctx, node, 'input_1');
+      const message = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}Assert(${value} != null, ${message})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'assert-not-equal': {
+      const a = getInputValue(ctx, node, 'input_1');
+      const b = getInputValue(ctx, node, 'input_2');
+      const message = getInputValue(ctx, node, 'input_3');
+      lines.push(`${ind}Assert(${a} != ${b}, ${message})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'assert-equal': {
+      const a = getInputValue(ctx, node, 'input_1');
+      const b = getInputValue(ctx, node, 'input_2');
+      const message = getInputValue(ctx, node, 'input_3');
+      lines.push(`${ind}Assert(${a} == ${b}, ${message})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'assert-valid': {
+      const entity = getInputValue(ctx, node, 'input_1');
+      const message = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}Assert(IsValid(${entity}), ${message})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'assert-alive': {
+      const entity = getInputValue(ctx, node, 'input_1');
+      const message = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}Assert(IsAlive(${entity}), ${message})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'assert-is-player': {
+      const entity = getInputValue(ctx, node, 'input_1');
+      const message = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}Assert(${entity}.IsPlayer(), ${message})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'assert-is-npc': {
+      const entity = getInputValue(ctx, node, 'input_1');
+      const message = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}Assert(${entity}.IsNPC(), ${message})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'assert-is-titan': {
+      const entity = getInputValue(ctx, node, 'input_1');
+      const message = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}Assert(${entity}.IsTitan(), ${message})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'assert-is-pilot': {
+      const entity = getInputValue(ctx, node, 'input_1');
+      const message = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}Assert(IsPilot(${entity}), ${message})`);
+      followExec('output_0');
+      break;
+    }
+
+    // ==================== STATUS EFFECTS ====================
+    case 'status-effect-add': {
+      // StatusEffect_AddEndless
+      const entity = getInputValue(ctx, node, 'input_1');
+      const effectID = getInputValue(ctx, node, 'input_2');
+      const severity = getInputValue(ctx, node, 'input_3');
+      const resultVar = getVarName(ctx, 'seHandle');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}int ${resultVar} = StatusEffect_AddEndless(${entity}, ${effectID}, ${severity})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'status-effect-add-timed': {
+      // StatusEffect_AddTimed
+      const entity = getInputValue(ctx, node, 'input_1');
+      const effectID = getInputValue(ctx, node, 'input_2');
+      const severity = getInputValue(ctx, node, 'input_3');
+      const duration = getInputValue(ctx, node, 'input_4');
+      const resultVar = getVarName(ctx, 'seHandle');
+      ctx.variables.set(`${node.id}:output_1`, resultVar);
+      lines.push(`${ind}int ${resultVar} = StatusEffect_AddTimed(${entity}, ${effectID}, ${severity}, ${duration})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'status-effect-stop': {
+      // StatusEffect_Stop
+      const entity = getInputValue(ctx, node, 'input_1');
+      const handle = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}StatusEffect_Stop(${entity}, ${handle})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'status-effect-stop-all-of-type': {
+      // StatusEffect_StopAllOfType
+      const entity = getInputValue(ctx, node, 'input_1');
+      const effectID = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}StatusEffect_StopAllOfType(${entity}, ${effectID})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'status-effect-stop-all': {
+      // StatusEffect_StopAll - stops ALL status effects on entity
+      const entity = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}StatusEffect_StopAll(${entity})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'status-effect-get': {
+      // StatusEffect_Get - get severity
+      const entity = getInputValue(ctx, node, 'input_0');
+      const effectID = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'seSeverity');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}float ${resultVar} = StatusEffect_Get(${entity}, ${effectID})`);
+      break;
+    }
+
+    case 'status-effect-has': {
+      // StatusEffect_Has
+      const entity = getInputValue(ctx, node, 'input_0');
+      const effectID = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'seHas');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}bool ${resultVar} = StatusEffect_Has(${entity}, ${effectID})`);
+      break;
+    }
+
+    case 'status-effect-has-severity': {
+      // StatusEffect_HasSeverity - check if entity has status effect with minimum severity
+      const entity = getInputValue(ctx, node, 'input_0');
+      const effectID = getInputValue(ctx, node, 'input_1');
+      const minSeverity = getInputValue(ctx, node, 'input_2');
+      const resultVar = getVarName(ctx, 'seHas');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}bool ${resultVar} = StatusEffect_HasSeverity(${entity}, ${effectID}, ${minSeverity})`);
+      break;
+    }
+
+    case 'status-effect-get-severity': {
+      // StatusEffect_GetSeverity - get severity level
+      const entity = getInputValue(ctx, node, 'input_0');
+      const effectID = getInputValue(ctx, node, 'input_1');
+      const resultVar = getVarName(ctx, 'seSeverity');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}float ${resultVar} = StatusEffect_GetSeverity(${entity}, ${effectID})`);
+      break;
+    }
+
+    case 'status-effect-stim': {
+      // Apply stim effect
+      const entity = getInputValue(ctx, node, 'input_1');
+      const duration = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}StatusEffect_Stim(${entity}, ${duration})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'status-effect-cloak': {
+      // Apply cloak/invisibility effect
+      const entity = getInputValue(ctx, node, 'input_1');
+      const duration = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}StatusEffect_Cloak(${entity}, ${duration})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'status-effect-phase': {
+      // Apply phase shift effect
+      const entity = getInputValue(ctx, node, 'input_1');
+      const duration = getInputValue(ctx, node, 'input_2');
+      lines.push(`${ind}StatusEffect_PhaseShift(${entity}, ${duration})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'status-effect-slow': {
+      // Apply slow effect
+      const entity = getInputValue(ctx, node, 'input_1');
+      const duration = getInputValue(ctx, node, 'input_2');
+      const severity = getInputValue(ctx, node, 'input_3');
+      lines.push(`${ind}StatusEffect_Slow(${entity}, ${duration}, ${severity})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'status-effect-speed-boost': {
+      // Apply speed boost effect
+      const entity = getInputValue(ctx, node, 'input_1');
+      const duration = getInputValue(ctx, node, 'input_2');
+      const multiplier = getInputValue(ctx, node, 'input_3');
+      lines.push(`${ind}StatusEffect_SpeedBoost(${entity}, ${duration}, ${multiplier})`);
+      followExec('output_0');
+      break;
+    }
+
+    case 'status-effect-register-callback': {
+      // Register status effect callback
+      const callback = getInputValue(ctx, node, 'input_1');
+      lines.push(`${ind}StatusEffect_RegisterCallback(${callback})`);
+      followExec('output_0');
       break;
     }
 
