@@ -232,8 +232,8 @@ export default function WelcomeScreen({
               <GitBranch style={{ color: accentColor }} size={36} />
             </div>
             <div>
-              <h1 className="text-4xl font-bold text-white tracking-tight">R5V Script Studio</h1>
-              <p className="text-gray-400 mt-1">Visual scripting for R5Valkyrie</p>
+              <h1 className="text-4xl font-bold text-white tracking-tight">R5V Studio</h1>
+              <p className="text-gray-400 mt-1">Visual modding for R5Valkyrie</p>
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
-# R5V Script Studio
+# R5V Studio
 
 <p align="center">
-  <img src="public/favicon.svg" alt="R5V Script Studio" width="120" height="120">
+  <img src="public/favicon.svg" alt="R5V Studio width="120" height="120">
 </p>
 
 <p align="center">
@@ -68,7 +68,7 @@
 
 1. Download the latest release from the [Releases page](https://github.com/r5valkyrie/r5v_script_studio/releases)
 2. Run the installer or extract the archive
-3. Launch R5V Script Studio
+3. Launch R5V Studio
 
 ### From Source
 
@@ -93,7 +93,7 @@ npm run build
 
 ### Creating a Project
 
-1. Launch R5V Script Studio
+1. Launch R5V Studio
 2. Click **New Project** or press `Ctrl+N`
 3. Add nodes from the sidebar by clicking or dragging them onto the canvas
 4. Use **Node Spotlight** (`Ctrl+Space`) for quick node search
