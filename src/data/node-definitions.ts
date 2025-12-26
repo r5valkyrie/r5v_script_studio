@@ -13,6 +13,44 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Exec', type: 'exec', isInput: false },
     ],
     defaultData: { functionName: 'CodeCallback_ModInit' },
+    documentation: {
+      longDescription: 'Entry point for server-side script initialization. This node is called when the server loads your mod. Use it to register callbacks, precache assets, and set up server-side game logic.',
+      codeExample: `#if SERVER
+void function CodeCallback_ModInit()
+{
+    // Register callbacks
+    AddCallback_OnPlayerKilled( OnPlayerKilled )
+    
+    // Precache assets
+    PrecacheWeapon( $"mp_weapon_custom" )
+}
+#endif`,
+      tips: [
+        'Always precache weapons and models here to avoid runtime errors',
+        'Register all server callbacks in this function',
+        'Use AddSpawnCallback for entity spawn handling',
+        'This runs before any players connect'
+      ],
+      useCases: [
+        'Registering player kill/death callbacks',
+        'Setting up gamemode-specific logic',
+        'Precaching custom weapons and models',
+        'Initializing global server variables'
+      ],
+      relatedNodes: ['init-client', 'init-ui', 'on-entities-did-load', 'add-spawn-callback'],
+      exampleDiagram: {
+        nodes: [
+          { type: 'init-server', position: { x: 50, y: 50 } },
+          { type: 'precache-weapon', position: { x: 250, y: 50 } },
+          { type: 'add-spawn-callback', position: { x: 450, y: 50 } }
+        ],
+        connections: [
+          { fromNode: 0, fromPort: 'Exec', toNode: 1, toPort: 'In' },
+          { fromNode: 1, fromPort: 'Out', toNode: 2, toPort: 'In' }
+        ],
+        description: 'Typical server init: precache assets then register callbacks'
+      }
+    }
   },
   {
     type: 'init-client',
@@ -25,6 +63,32 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Exec', type: 'exec', isInput: false },
     ],
     defaultData: { functionName: 'ClientCodeCallback_ModInit' },
+    documentation: {
+      longDescription: 'Entry point for client-side script initialization. Called when a client loads your mod. Use it for registering client-side callbacks, setting up HUD elements, and client-specific precaching.',
+      codeExample: `#if CLIENT
+void function ClientCodeCallback_ModInit()
+{
+    // Register client callbacks
+    AddCallback_OnClientScriptInit( OnClientScriptInit )
+    
+    // Setup HUD elements
+    RegisterHUDElement( CreateCustomHUD )
+}
+#endif`,
+      tips: [
+        'Client code cannot access server-only functions',
+        'Use this for visual effects and HUD setup',
+        'Client callbacks see local player events',
+        'Precache particle effects here'
+      ],
+      useCases: [
+        'Setting up custom HUD elements',
+        'Registering client-side visual effects',
+        'Initializing client-only variables',
+        'Setting up local player callbacks'
+      ],
+      relatedNodes: ['init-server', 'init-ui', 'get-local-player']
+    }
   },
   {
     type: 'init-ui',
@@ -37,6 +101,32 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Exec', type: 'exec', isInput: false },
     ],
     defaultData: { functionName: 'UICodeCallback_ModInit' },
+    documentation: {
+      longDescription: 'Entry point for UI script initialization. Called when UI scripts are loaded. Use for menu modifications, lobby UI changes, and UI-specific callbacks.',
+      codeExample: `#if UI
+void function UICodeCallback_ModInit()
+{
+    // Add custom menu button
+    AddMenuButton( "Custom Mode", OpenCustomModeMenu )
+    
+    // Register UI callbacks
+    AddCallback_OnLobbyCreated( OnLobbyCreated )
+}
+#endif`,
+      tips: [
+        'UI context is separate from CLIENT context',
+        'Use for lobby and menu modifications',
+        'Cannot access in-game entities',
+        'Good for pre-game configuration'
+      ],
+      useCases: [
+        'Adding custom menu buttons',
+        'Modifying lobby UI',
+        'Setting up gamemode selection',
+        'Pre-game player configuration'
+      ],
+      relatedNodes: ['init-server', 'init-client']
+    }
   },
 
   // Gamemode Nodes
@@ -253,6 +343,33 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       serverInitFn: '',
       clientInitFn: '',
     },
+    documentation: {
+      longDescription: 'Registers a complete custom gamemode with all necessary configuration. This is the main node for creating new gamemodes that appear in the playlist.',
+      codeExample: `// In shared init\nGameMode_Create( "CUSTOM_MODE" )\nGameMode_SetName( "CUSTOM_MODE", "#GAMEMODE_CUSTOM" )\nGameMode_SetDesc( "CUSTOM_MODE", "#GAMEMODE_CUSTOM_DESC" )\nGameMode_SetScoreLimit( "CUSTOM_MODE", 50 )\nGameMode_AddSharedInitFunction( "CUSTOM_MODE", GamemodeSurvival_Init )\nGameMode_AddServerInitFunction( "CUSTOM_MODE", GamemodeSurvival_Init_Server )`,
+      tips: [
+        'Gamemode ID should be UPPERCASE with underscores',
+        'Display name should use localization string (#)',
+        'Provide both shared and server init functions',
+        'Use Custom Scoreboard for non-standard scoring'
+      ],
+      useCases: [
+        'Creating a new multiplayer mode',
+        'Setting up survival variants',
+        'Building custom competitive modes',
+        'Defining gamemode with custom rules'
+      ],
+      relatedNodes: ['gamemode-create', 'gamemode-set-name', 'gamemode-set-score-limits', 'init-server'],
+      exampleDiagram: {
+        nodes: [
+          { type: 'init-server', position: { x: 50, y: 80 } },
+          { type: 'gamemode-register', position: { x: 250, y: 50 } }
+        ],
+        connections: [
+          { fromNode: 0, fromPort: 'Exec', toNode: 1, toPort: 'In' }
+        ],
+        description: 'Register custom gamemode during server initialization'
+      }
+    }
   },
   {
     type: 'get-game-state',
@@ -300,6 +417,39 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Out 3', type: 'exec', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Executes multiple output paths in order. Each output fires after the previous one completes. Use Exec Sequence for dynamic output count.',
+      codeExample: `// Generated code structure:
+DoFirstThing()   // Out 1
+DoSecondThing()  // Out 2
+DoThirdThing()   // Out 3`,
+      tips: [
+        'All outputs execute synchronously in order',
+        'Use Exec Sequence node for variable output count',
+        'Great for initialization chains',
+        'Each path completes before the next starts'
+      ],
+      useCases: [
+        'Running multiple setup operations in order',
+        'Chaining related function calls',
+        'Breaking complex logic into steps'
+      ],
+      relatedNodes: ['exec-sequence', 'branch', 'delay'],
+      exampleDiagram: {
+        nodes: [
+          { type: 'sequence', position: { x: 50, y: 50 } },
+          { type: 'print', position: { x: 250, y: 20 }, label: 'Print "Step 1"' },
+          { type: 'print', position: { x: 250, y: 80 }, label: 'Print "Step 2"' },
+          { type: 'print', position: { x: 250, y: 140 }, label: 'Print "Step 3"' }
+        ],
+        connections: [
+          { fromNode: 0, fromPort: 'Out 1', toNode: 1, toPort: 'In' },
+          { fromNode: 0, fromPort: 'Out 2', toNode: 2, toPort: 'In' },
+          { fromNode: 0, fromPort: 'Out 3', toNode: 3, toPort: 'In' }
+        ],
+        description: 'Execute three print statements in order'
+      }
+    }
   },
   {
     type: 'exec-sequence',
@@ -333,6 +483,46 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'False', type: 'exec', isInput: false },
     ],
     defaultData: {},
+    documentation: {
+      longDescription: 'Executes one of two paths based on a boolean condition. Connect comparison or boolean nodes to the Condition input.',
+      codeExample: `if ( condition )
+{
+    // True path
+    DoSomething()
+}
+else
+{
+    // False path
+    DoSomethingElse()
+}`,
+      tips: [
+        'Only one path will execute',
+        'Connect comparison nodes for complex conditions',
+        'Use for player state checks, health thresholds, etc.',
+        'Nest branches for multiple conditions'
+      ],
+      useCases: [
+        'Check if player is alive before action',
+        'Different behavior for different teams',
+        'Health threshold triggers',
+        'Game state validation'
+      ],
+      relatedNodes: ['sequence', 'switch', 'compare-equal', 'compare-greater'],
+      exampleDiagram: {
+        nodes: [
+          { type: 'is-alive', position: { x: 50, y: 50 }, label: 'Is Alive?' },
+          { type: 'branch', position: { x: 220, y: 50 } },
+          { type: 'print', position: { x: 400, y: 20 }, label: 'Player alive!' },
+          { type: 'print', position: { x: 400, y: 100 }, label: 'Player dead!' }
+        ],
+        connections: [
+          { fromNode: 0, fromPort: 'Result', toNode: 1, toPort: 'Condition' },
+          { fromNode: 1, fromPort: 'True', toNode: 2, toPort: 'In' },
+          { fromNode: 1, fromPort: 'False', toNode: 3, toPort: 'In' }
+        ],
+        description: 'Check if entity is alive and branch accordingly'
+      }
+    }
   },
   {
     type: 'delay',
@@ -348,6 +538,27 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
       { label: 'Out', type: 'exec', isInput: false },
     ],
     defaultData: { duration: 1.0 },
+    documentation: {
+      longDescription: 'Pauses execution for the specified duration in seconds. Uses the wait() function which yields the current thread. The code after the delay continues on the same thread.',
+      codeExample: `// Wait for 2 seconds
+wait 2.0
+
+// Continue execution
+DoNextThing()`,
+      tips: [
+        'Duration is in seconds (1.0 = 1 second)',
+        'Use for timed sequences and cooldowns',
+        'Delays block the current thread only',
+        'Combine with Thread node for non-blocking delays'
+      ],
+      useCases: [
+        'Timed ability cooldowns',
+        'Delayed spawn sequences',
+        'Animation timing',
+        'Countdown implementations'
+      ],
+      relatedNodes: ['wait', 'thread', 'sequence', 'loop-for']
+    }
   },
   {
     type: 'loop-for',
@@ -355,6 +566,27 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     label: 'For Loop',
     description: 'Loop from start to end with step',
     color: '#4A90E2',
+    documentation: {
+      longDescription: 'Iterates from a start value to an end value with a configurable step. The Loop Body output fires once per iteration with the current index value available.',
+      codeExample: `for ( int i = 0; i < 10; i++ )
+{
+    // Loop body executes 10 times
+    print( "Index: " + i )
+}`,
+      tips: [
+        'Index starts at Start value and increments by Step',
+        'Loop terminates when Index >= End',
+        'Use the Index output to access current iteration number',
+        'Completed output fires after all iterations'
+      ],
+      useCases: [
+        'Spawning multiple entities',
+        'Iterating through player arrays',
+        'Creating timed sequences',
+        'Processing batches of data'
+      ],
+      relatedNodes: ['loop-foreach', 'loop-while', 'array-get']
+    },
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Start', type: 'data', dataType: 'number', isInput: true },
@@ -5383,6 +5615,42 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     ],
     defaultData: { className: 'player' },
     serverOnly: true,
+    documentation: {
+      longDescription: 'Registers a callback function that fires whenever an entity of the specified class spawns. Common classes include "player", "npc_soldier", "prop_dynamic", etc.',
+      codeExample: `AddSpawnCallback( "player", OnPlayerSpawned )
+
+void function OnPlayerSpawned( entity player )
+{
+    print( "Player spawned: " + player.GetPlayerName() )
+    // Give starting equipment
+    player.GiveWeapon( "mp_weapon_r97" )
+}`,
+      tips: [
+        'Register in Server Init for best results',
+        'Callback receives the spawned entity as parameter',
+        'Use "player" for player spawns',
+        'Fires for initial spawn and respawns'
+      ],
+      useCases: [
+        'Give players weapons on spawn',
+        'Set player properties on spawn',
+        'Track entity spawns for gamemode logic',
+        'Initialize entity state on creation'
+      ],
+      relatedNodes: ['add-death-callback', 'on-spawn', 'init-server'],
+      exampleDiagram: {
+        nodes: [
+          { type: 'init-server', position: { x: 50, y: 50 } },
+          { type: 'add-spawn-callback', position: { x: 250, y: 50 } },
+          { type: 'custom-function', position: { x: 250, y: 130 }, label: 'OnPlayerSpawned' }
+        ],
+        connections: [
+          { fromNode: 0, fromPort: 'Exec', toNode: 1, toPort: 'In' },
+          { fromNode: 2, fromPort: 'Ref', toNode: 1, toPort: 'Function' }
+        ],
+        description: 'Register spawn callback during server initialization'
+      }
+    }
   },
   {
     type: 'add-death-callback',
@@ -5400,6 +5668,29 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     ],
     defaultData: { className: 'player' },
     serverOnly: true,
+    documentation: {
+      longDescription: 'Registers a callback function that fires whenever an entity of the specified class dies. The callback receives the dying entity and damage info.',
+      codeExample: `AddDeathCallback( "player", OnPlayerDeath )
+
+void function OnPlayerDeath( entity player, var damageInfo )
+{
+    entity attacker = DamageInfo_GetAttacker( damageInfo )
+    print( player.GetPlayerName() + " was killed" )
+}`,
+      tips: [
+        'Callback receives entity and damageInfo parameters',
+        'Use DamageInfo functions to get kill details',
+        'Great for kill tracking and scoring',
+        'Fires before entity is fully removed'
+      ],
+      useCases: [
+        'Track player kills for scoring',
+        'Drop loot on death',
+        'Play death effects',
+        'Notify other players of kills'
+      ],
+      relatedNodes: ['add-spawn-callback', 'on-death', 'on-player-killed']
+    }
   },
 
   // ==================== DATA ====================
@@ -6055,6 +6346,23 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     ],
     defaultData: {},
     tags: ['print', 'debug', 'log', 'console'],
+    documentation: {
+      longDescription: 'Prints a message to the game console for debugging. Does not add a newline - use Printl for newlines or Printf for formatted output.',
+      codeExample: `// Simple print\nprint( "Hello World" )\n\n// Print with variable\nprint( "Player: " + player.GetPlayerName() )`,
+      tips: [
+        'Use for quick debugging during development',
+        'Combine with string concatenation for variable output',
+        'Check console with ~ key in-game',
+        'Use Printl for newlines, Printf for complex formatting'
+      ],
+      useCases: [
+        'Debug script execution flow',
+        'Output variable values for testing',
+        'Log events during development',
+        'Trace function calls'
+      ],
+      relatedNodes: ['printl', 'printf', 'printt', 'code-warning']
+    }
   },
   {
     type: 'printf',

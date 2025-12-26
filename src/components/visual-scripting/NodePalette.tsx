@@ -47,7 +47,7 @@ import {
 } from 'lucide-react';
 import { NODE_DEFINITIONS, getNodesByCategory } from '../../data/node-definitions';
 import { CATEGORY_INFO } from '../../types/visual-scripting';
-import type { ScriptNode, NodePort, NodeCategory } from '../../types/visual-scripting';
+import type { ScriptNode, NodePort, NodeCategory, NodeType } from '../../types/visual-scripting';
 
 interface NodePaletteProps {
   onAddNode: (node: ScriptNode) => void;
@@ -59,6 +59,7 @@ interface NodePaletteProps {
   isEmbedded?: boolean;
   viewState?: { x: number; y: number; scale: number };
   canvasSize?: { width: number; height: number };
+  onShowNodeDoc?: (nodeType: NodeType) => void;
 }
 
 interface CategorySectionProps {
@@ -71,6 +72,7 @@ interface CategorySectionProps {
   onToggle?: () => void;
   defaultOpen?: boolean;
   searchTerm?: string;
+  onShowNodeDoc?: (nodeType: NodeType) => void;
 }
 
 // Icons for each category
@@ -147,7 +149,7 @@ const COLOR_CLASSES: Record<string, { bg: string; border: string; text: string; 
   slate: { bg: 'bg-slate-500/10', border: 'border-slate-500/50', text: 'text-slate-400', hover: 'hover:bg-slate-500/20 hover:border-slate-500' },
 };
 
-function CategorySection({ title, category, icon, color, onAddNode, defaultOpen = false, searchTerm = '', isCollapsed, onToggle, viewState, canvasSize }: CategorySectionProps & { viewState?: { x: number; y: number; scale: number }; canvasSize?: { width: number; height: number } }) {
+function CategorySection({ title, category, icon, color, onAddNode, defaultOpen = false, searchTerm = '', isCollapsed, onToggle, viewState, canvasSize, onShowNodeDoc }: CategorySectionProps & { viewState?: { x: number; y: number; scale: number }; canvasSize?: { width: number; height: number } }) {
   const [localIsOpen, setLocalIsOpen] = useState(defaultOpen);
   // Use controlled state if provided, otherwise use local state
   const isOpen = isCollapsed !== undefined ? !isCollapsed : localIsOpen;
@@ -240,33 +242,57 @@ function CategorySection({ title, category, icon, color, onAddNode, defaultOpen 
 
       {isExpanded && (
         <div className="pb-2 pl-2">
-          {nodes.map((node) => (
-            <button
-              key={node.type}
-              onClick={() => handleNodeClick(node.type)}
-              draggable
-              onDragStart={(e) => {
-                e.dataTransfer.setData('node-type', node.type);
-                e.dataTransfer.effectAllowed = 'copy';
-              }}
-              className={`w-full flex items-center gap-2 px-3 py-1.5 text-left text-sm text-gray-400 
-                ${colorClasses.hover} transition-all rounded-l-md border-l-2 border-transparent
-                group/node cursor-grab active:cursor-grabbing`}
-              title={node.description}
-            >
-              <GripVertical size={12} className="text-gray-600 opacity-0 group-hover/node:opacity-100 transition-opacity" />
-              <span className="group-hover/node:text-white transition-colors">
-                {node.label.replace(/^(Event|Flow|Mod|Data|Action):\s*/, '')}
-              </span>
-            </button>
-          ))}
+          {nodes.map((node) => {
+            const hasDoc = !!node.documentation;
+            return (
+              <div
+                key={node.type}
+                className={`w-full flex items-center gap-1 pr-1.5 text-left text-sm text-gray-400 
+                  ${colorClasses.hover} transition-all rounded-l-md border-l-2 border-transparent
+                  group/node`}
+              >
+                <button
+                  onClick={() => handleNodeClick(node.type)}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('node-type', node.type);
+                    e.dataTransfer.effectAllowed = 'copy';
+                  }}
+                  className="flex-1 flex items-center gap-2 px-3 py-1.5 cursor-grab active:cursor-grabbing"
+                  title={node.description}
+                >
+                  <GripVertical size={12} className="text-gray-600 opacity-0 group-hover/node:opacity-100 transition-opacity" />
+                  <span className="group-hover/node:text-white transition-colors flex-1 text-left">
+                    {node.label.replace(/^(Event|Flow|Mod|Data|Action):\s*/, '')}
+                  </span>
+                </button>
+                {/* Documentation button - always visible */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onShowNodeDoc?.(node.type);
+                  }}
+                  className={`p-1 rounded hover:bg-purple-500/20 transition-all flex-shrink-0 ${
+                    hasDoc ? 'text-purple-400' : 'text-gray-600 hover:text-purple-400'
+                  }`}
+                  title={hasDoc ? "View documentation" : "View node info"}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 16v-4"/>
+                    <path d="M12 8h.01"/>
+                  </svg>
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
 
-export default function NodePalette({ onAddNode, onClose, collapsedCategories = [], onToggleCategory, isExpanded = true, onToggleExpanded, isEmbedded = false, viewState, canvasSize }: NodePaletteProps) {
+export default function NodePalette({ onAddNode, onClose, collapsedCategories = [], onToggleCategory, isExpanded = true, onToggleExpanded, isEmbedded = false, viewState, canvasSize, onShowNodeDoc }: NodePaletteProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Derive categories from centralized CATEGORY_INFO
@@ -370,6 +396,7 @@ export default function NodePalette({ onAddNode, onClose, collapsedCategories = 
                   onToggle={onToggleCategory ? () => onToggleCategory(cat.category) : undefined}
                   viewState={viewState}
                   canvasSize={canvasSize}
+                  onShowNodeDoc={onShowNodeDoc}
                 />
               );
             })}

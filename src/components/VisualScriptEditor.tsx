@@ -4,16 +4,17 @@ import SettingsModal, { loadSettings, saveSettings, DEFAULT_SETTINGS } from './v
 import ProjectSettingsModal from './visual-scripting/ProjectSettingsModal';
 import { NotificationContainer, ExportPathModal, useNotifications, useConfirmModal } from './visual-scripting/Notification';
 import type { AppSettings } from './visual-scripting/SettingsModal';
-import type { ScriptNode, NodeConnection } from '../types/visual-scripting';
+import type { ScriptNode, NodeConnection, NodeType } from '../types/visual-scripting';
 import type { ModSettings } from '../types/project';
 import NodeGraph from './visual-scripting/NodeGraph';
 import NodePalette from './visual-scripting/NodePalette';
 import NodeSpotlight from './visual-scripting/NodeSpotlight';
+import NodeDocModal from './visual-scripting/NodeDocModal';
 import CodeView from './visual-scripting/CodeView';
 import ProjectPanel from './visual-scripting/ProjectPanel';
 import WelcomeScreen from './visual-scripting/WelcomeScreen';
 import { generateCode } from '../utils/code-generator';
-import { getNodeDefinition } from '../data/node-definitions';
+import { getNodeDefinition, NODE_DEFINITIONS } from '../data/node-definitions';
 import { useProjectFiles } from '../hooks/useProjectFiles';
 import { saveSquirrelCode } from '../utils/file-system';
 import { generateCodeMetadata, embedProjectInCode } from '../utils/project-manager';
@@ -35,6 +36,7 @@ export default function VisualScriptEditor() {
   const [isProjectSectionExpanded, setProjectSectionExpanded] = useState(true);
   const [isNodesSectionExpanded, setNodesSectionExpanded] = useState(true);
   const [isCodePanelOpen, setCodePanelOpen] = useState(false);
+  const [docNodeType, setDocNodeType] = useState<NodeType | null>(null);
   const [isFileMenuOpen, setFileMenuOpen] = useState(false);
   const [isSettingsOpen, setSettingsOpen] = useState(false);
   const [isProjectSettingsOpen, setProjectSettingsOpen] = useState(false);
@@ -1090,6 +1092,7 @@ export default function VisualScriptEditor() {
                       isEmbedded={true}
                       viewState={graphView}
                       canvasSize={canvasSize}
+                      onShowNodeDoc={setDocNodeType}
                     />
                   </div>
                 </div>
@@ -1260,6 +1263,44 @@ export default function VisualScriptEditor() {
             )}
           </div>
       </div>
+
+      {/* Node Documentation Modal */}
+      <NodeDocModal
+        nodeType={docNodeType}
+        onClose={() => setDocNodeType(null)}
+        onAddNode={(nodeType: NodeType) => {
+          const definition = NODE_DEFINITIONS.find(d => d.type === nodeType);
+          if (!definition) return;
+          
+          // Calculate center of view
+          let spawnX = 300;
+          let spawnY = 200;
+          if (graphView && canvasSize) {
+            const screenCenterX = canvasSize.width / 2;
+            const screenCenterY = canvasSize.height / 2;
+            spawnX = (screenCenterX - graphView.x) / graphView.scale - 90;
+            spawnY = (screenCenterY - graphView.y) / graphView.scale - 30;
+          }
+          
+          const newNode: ScriptNode = {
+            id: `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            type: definition.type,
+            category: definition.category,
+            label: definition.label,
+            position: { x: spawnX, y: spawnY },
+            data: { ...definition.defaultData },
+            inputs: definition.inputs.map((input, idx) => ({
+              ...input,
+              id: `input_${idx}`,
+            })),
+            outputs: definition.outputs.map((output, idx) => ({
+              ...output,
+              id: `output_${idx}`,
+            })),
+          };
+          handleAddNode(newNode);
+        }}
+      />
 
       {/* Settings Modal */}
       <SettingsModal

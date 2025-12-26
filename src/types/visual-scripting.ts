@@ -644,6 +644,40 @@ export interface NodeConnection {
   };
 }
 
+// Documentation for a node, including examples and usage diagrams
+export interface NodeDocumentation {
+  /** Extended description with more details */
+  longDescription?: string;
+  /** Example code snippet showing Squirrel output */
+  codeExample?: string;
+  /** Tips and best practices */
+  tips?: string[];
+  /** Common use cases */
+  useCases?: string[];
+  /** Related node types that work well together */
+  relatedNodes?: NodeType[];
+  /** Links to external documentation (wiki, etc) */
+  externalLinks?: { label: string; url: string }[];
+  /** Example diagram showing node connections */
+  exampleDiagram?: {
+    /** Nodes in the example diagram */
+    nodes: {
+      type: NodeType;
+      position: { x: number; y: number };
+      label?: string;
+    }[];
+    /** Connections between nodes (indices into nodes array) */
+    connections: {
+      fromNode: number;
+      fromPort: string;
+      toNode: number;
+      toPort: string;
+    }[];
+    /** Description of what the diagram demonstrates */
+    description: string;
+  };
+}
+
 export interface NodeDefinition {
   type: NodeType;
   category: NodeCategory;
@@ -659,6 +693,8 @@ export interface NodeDefinition {
   uiOnly?: boolean;
   context?: ('SERVER' | 'CLIENT' | 'UI')[];  // Which contexts this node requires
   tags?: string[];
+  /** Extended documentation for in-app reference */
+  documentation?: NodeDocumentation;
 }
 
 // Category metadata for UI organization
