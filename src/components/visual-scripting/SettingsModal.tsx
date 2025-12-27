@@ -843,6 +843,8 @@ export default function SettingsModal({
                       className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-purple-500"
                     />
                   </label>
+
+
                 </div>
               </div>
             )}

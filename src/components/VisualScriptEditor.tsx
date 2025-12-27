@@ -6,7 +6,7 @@ import { NotificationContainer, ExportPathModal, useNotifications, useConfirmMod
 import type { AppSettings } from './visual-scripting/SettingsModal';
 import type { ScriptNode, NodeConnection, NodeType, TemplateCategory } from '../types/visual-scripting';
 import type { ModSettings } from '../types/project';
-import NodeGraph from './visual-scripting/NodeGraph';
+import ReactFlowGraph from './visual-scripting/ReactFlowGraph';
 import NodePalette from './visual-scripting/NodePalette';
 import NodeSpotlight from './visual-scripting/NodeSpotlight';
 import NodeDocModal from './visual-scripting/NodeDocModal';
@@ -1299,7 +1299,7 @@ export default function VisualScriptEditor() {
                     accentColor={accentColor}
                   />
                 ) : activeFileType === 'script' && activeScriptFile ? (
-                  <NodeGraph
+                  <ReactFlowGraph
                     nodes={nodes}
                     connections={connections}
                     selectedNodeIds={selectedNodeIds}
