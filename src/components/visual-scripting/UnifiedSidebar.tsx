@@ -350,11 +350,35 @@ export default function UnifiedSidebar({
     return (
       <div
         key={node.type}
-        className="group/card flex items-center gap-2 px-2 py-1.5 rounded-md bg-[#2d2d2d] hover:bg-[#3d3d3d] border border-white/5 hover:border-white/10 cursor-grab active:cursor-grabbing transition-all"
+        className="group/card flex items-center gap-2 px-2 py-1.5 rounded-md bg-[#2d2d2d] hover:bg-[#3d3d3d] border border-white/5 hover:border-white/10 cursor-grab active:cursor-grabbing transition-all active:scale-95 active:opacity-70"
         draggable
         onDragStart={(e) => {
           e.dataTransfer.setData('node-type', node.type);
           e.dataTransfer.effectAllowed = 'copy';
+          
+          // Create custom drag image
+          const dragEl = document.createElement('div');
+          dragEl.className = 'flex items-center gap-2 px-3 py-2 rounded-lg text-white text-xs font-medium';
+          dragEl.style.cssText = `
+            background: linear-gradient(135deg, ${categoryColor}dd 0%, ${categoryColor}99 100%);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 20px ${categoryColor}40;
+            border: 1px solid rgba(255,255,255,0.2);
+            position: absolute;
+            top: -1000px;
+            left: -1000px;
+            white-space: nowrap;
+          `;
+          dragEl.innerHTML = `
+            <span style="width: 8px; height: 8px; background: white; border-radius: 50%; opacity: 0.8;"></span>
+            <span>${node.label.replace(/^(Event|Flow|Mod|Data|Action):\s*/, '')}</span>
+          `;
+          document.body.appendChild(dragEl);
+          e.dataTransfer.setDragImage(dragEl, 20, 16);
+          
+          // Clean up after drag starts
+          requestAnimationFrame(() => {
+            document.body.removeChild(dragEl);
+          });
         }}
         onClick={() => handleNodeClick(node.type)}
       >

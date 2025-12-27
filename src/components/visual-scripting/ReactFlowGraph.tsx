@@ -2065,14 +2065,16 @@ function ReactFlowGraphInner({
       e.dataTransfer.dropEffect = 'copy';
       setIsDraggingOver(true);
       
-      // Update drop preview position
-      const pos = reactFlowInstance.screenToFlowPosition({
-        x: e.clientX,
-        y: e.clientY,
-      });
-      setDropPreviewPos(pos);
+      // Update drop preview position - use screen coordinates relative to container
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setDropPreviewPos({
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        });
+      }
     }
-  }, [reactFlowInstance]);
+  }, []);
 
   const handleDragLeave = useCallback(() => {
     setIsDraggingOver(false);
@@ -2169,7 +2171,7 @@ function ReactFlowGraphInner({
     <div 
       ref={containerRef}
       tabIndex={0}
-      className="w-full h-full outline-none" 
+      className="w-full h-full outline-none relative" 
       style={{ backgroundColor: theme === 'dark' ? '#121212' : '#fafafa' }}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -2180,38 +2182,57 @@ function ReactFlowGraphInner({
         <div 
           className="absolute z-50 pointer-events-none"
           style={{
-            left: `calc(50% + ${dropPreviewPos.x}px)`,
-            top: `calc(50% + ${dropPreviewPos.y}px)`,
+            left: dropPreviewPos.x,
+            top: dropPreviewPos.y,
             transform: 'translate(-50%, -50%)',
           }}
         >
           <div 
-            className="w-44 h-16 rounded-lg border-2 border-dashed animate-pulse"
+            className="w-40 h-14 rounded-lg border-2 border-dashed flex items-center justify-center gap-2"
             style={{ 
               borderColor: accentColor,
-              backgroundColor: `${accentColor}20`,
+              backgroundColor: `${accentColor}15`,
+              boxShadow: `0 0 20px ${accentColor}30`,
             }}
-          />
+          >
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: accentColor, opacity: 0.6 }} />
+            <span className="text-xs font-medium" style={{ color: accentColor }}>Drop here</span>
+          </div>
         </div>
       )}
       
-      {/* Drop animation styles */}
+      {/* Drop animation styles - use filter and opacity to avoid transform conflicts with ReactFlow positioning */}
       <style>{`
         @keyframes nodeDropIn {
           0% {
             opacity: 0;
-            transform: scale(0.8) translateY(-20px);
+            filter: blur(4px);
           }
           50% {
-            transform: scale(1.05) translateY(0);
+            opacity: 1;
+            filter: blur(0px);
           }
           100% {
             opacity: 1;
-            transform: scale(1) translateY(0);
+            filter: blur(0px);
           }
         }
         .node-dropping {
-          animation: nodeDropIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          animation: nodeDropIn 0.25s ease-out forwards;
+        }
+        .node-dropping > div {
+          animation: nodeScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        @keyframes nodeScaleIn {
+          0% {
+            transform: scale(0.85);
+          }
+          50% {
+            transform: scale(1.03);
+          }
+          100% {
+            transform: scale(1);
+          }
         }
       `}</style>
       
