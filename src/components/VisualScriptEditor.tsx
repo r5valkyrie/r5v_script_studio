@@ -1328,7 +1328,7 @@ export default function VisualScriptEditor() {
                     snapToGrid={appSettings.editor.snapToGrid}
                     autoConnect={appSettings.editor.autoConnect}
                     highlightConnections={appSettings.editor.highlightConnections}
-                    animateConnections={appSettings.editor.animateConnections}
+                    connectionAnimation={appSettings.appearance.connectionAnimation}
                     isDev={import.meta.env.DEV}
                   />
                 ) : (

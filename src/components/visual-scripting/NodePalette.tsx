@@ -155,6 +155,8 @@ function CategorySection({ title, category, icon, color, onAddNode, defaultOpen 
   const isOpen = isCollapsed !== undefined ? !isCollapsed : localIsOpen;
   const allNodes = getNodesByCategory(category);
   const colorClasses = COLOR_CLASSES[color] || COLOR_CLASSES.purple;
+  const info = getCategoryInfo(category);
+  const categoryColor = info?.color || '#8B5CF6';
   
   const handleToggle = () => {
     if (onToggle) {
@@ -173,6 +175,34 @@ function CategorySection({ title, category, icon, color, onAddNode, defaultOpen 
       node.description?.toLowerCase().includes(term)
     );
   }, [allNodes, searchTerm]);
+
+  // Group nodes by subcategory if they have one
+  const groupedNodes = useMemo(() => {
+    const groups: Record<string, typeof nodes> = {};
+    const ungrouped: typeof nodes = [];
+    
+    nodes.forEach(node => {
+      // Try to extract subcategory from node type or use a default grouping
+      const typePrefix = node.type.split('-')[0];
+      if (typePrefix && nodes.filter(n => n.type.startsWith(typePrefix)).length >= 2) {
+        if (!groups[typePrefix]) groups[typePrefix] = [];
+        groups[typePrefix].push(node);
+      } else {
+        ungrouped.push(node);
+      }
+    });
+    
+    // If most nodes are ungrouped or search is active, don't use subcategories
+    if (ungrouped.length > nodes.length * 0.7 || searchTerm) {
+      return { _all: nodes };
+    }
+    
+    if (ungrouped.length > 0) {
+      groups['other'] = ungrouped;
+    }
+    
+    return groups;
+  }, [nodes, searchTerm]);
 
   // Auto-open if search matches
   const shouldShow = searchTerm ? nodes.length > 0 : true;
@@ -216,76 +246,100 @@ function CategorySection({ title, category, icon, color, onAddNode, defaultOpen 
     onAddNode(newNode);
   };
 
+  const renderNodeItem = (node: typeof nodes[0]) => {
+    const hasDoc = !!node.documentation;
+    return (
+      <div
+        key={node.type}
+        className="group/node flex items-center"
+      >
+        <button
+          onClick={() => handleNodeClick(node.type)}
+          draggable
+          onDragStart={(e) => {
+            e.dataTransfer.setData('node-type', node.type);
+            e.dataTransfer.effectAllowed = 'copy';
+          }}
+          className="flex-1 flex items-center gap-2 px-3 py-1.5 text-left text-[11px] text-gray-400 
+            hover:bg-white/5 hover:text-white transition-all cursor-grab active:cursor-grabbing rounded-md mx-1"
+          title={node.description}
+        >
+          <div 
+            className="w-2 h-2 rounded-full flex-shrink-0"
+            style={{ backgroundColor: categoryColor }}
+          />
+          <span className="flex-1 truncate">
+            {node.label.replace(/^(Event|Flow|Mod|Data|Action):\s*/, '')}
+          </span>
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onShowNodeDoc?.(node.type);
+          }}
+          className={`p-1 mr-2 rounded hover:bg-white/10 transition-all flex-shrink-0 opacity-0 group-hover/node:opacity-100 ${
+            hasDoc ? 'text-purple-400' : 'text-gray-600 hover:text-purple-400'
+          }`}
+          title={hasDoc ? "View documentation" : "View node info"}
+        >
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 16v-4"/>
+            <path d="M12 8h.01"/>
+          </svg>
+        </button>
+      </div>
+    );
+  };
+
   return (
-    <div className="border-b border-white/5">
+    <div className="mb-1">
+      {/* Category Header */}
       <button
         onClick={() => !searchTerm && handleToggle()}
-        className={`w-full flex items-center gap-2 px-3 py-2.5 hover:bg-white/5 transition-colors group`}
+        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-white/5 transition-colors rounded-lg mx-1 my-0.5"
+        style={{ width: 'calc(100% - 8px)' }}
       >
-        <div className={`p-1.5 rounded ${colorClasses.bg} ${colorClasses.text}`}>
-          {icon}
-        </div>
-        <span className={`text-xs font-semibold uppercase tracking-wider ${colorClasses.text}`}>
-          {title}
-        </span>
-        <span className="ml-auto text-[10px] text-gray-600 bg-white/5 px-1.5 py-0.5 rounded">
-          {nodes.length}
-        </span>
         {!searchTerm && (
           isExpanded ? (
-            <ChevronDown size={12} className="text-gray-500" />
+            <ChevronDown size={10} className="text-gray-500" />
           ) : (
-            <ChevronRight size={12} className="text-gray-500" />
+            <ChevronRight size={10} className="text-gray-500" />
           )
         )}
+        <div 
+          className="w-3 h-3 rounded flex items-center justify-center"
+          style={{ backgroundColor: categoryColor }}
+        >
+          {icon && <span className="text-white text-[8px]" style={{ transform: 'scale(0.7)' }}>{icon}</span>}
+        </div>
+        <span className="text-[11px] font-semibold text-white uppercase tracking-wide flex-1 text-left">
+          {title}
+        </span>
+        <span className="text-[9px] text-gray-500 bg-white/5 px-1.5 py-0.5 rounded">
+          {nodes.length}
+        </span>
       </button>
 
+      {/* Nodes List */}
       {isExpanded && (
-        <div className="pb-2 pl-2">
-          {nodes.map((node) => {
-            const hasDoc = !!node.documentation;
-            return (
-              <div
-                key={node.type}
-                className={`w-full flex items-center gap-1 pr-1.5 text-left text-sm text-gray-400 
-                  ${colorClasses.hover} transition-all rounded-l-md border-l-2 border-transparent
-                  group/node`}
-              >
-                <button
-                  onClick={() => handleNodeClick(node.type)}
-                  draggable
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData('node-type', node.type);
-                    e.dataTransfer.effectAllowed = 'copy';
-                  }}
-                  className="flex-1 flex items-center gap-2 px-3 py-1.5 cursor-grab active:cursor-grabbing"
-                  title={node.description}
-                >
-                  <GripVertical size={12} className="text-gray-600 opacity-0 group-hover/node:opacity-100 transition-opacity" />
-                  <span className="group-hover/node:text-white transition-colors flex-1 text-left">
-                    {node.label.replace(/^(Event|Flow|Mod|Data|Action):\s*/, '')}
-                  </span>
-                </button>
-                {/* Documentation button - always visible */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onShowNodeDoc?.(node.type);
-                  }}
-                  className={`p-1 rounded hover:bg-purple-500/20 transition-all flex-shrink-0 ${
-                    hasDoc ? 'text-purple-400' : 'text-gray-600 hover:text-purple-400'
-                  }`}
-                  title={hasDoc ? "View documentation" : "View node info"}
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M12 16v-4"/>
-                    <path d="M12 8h.01"/>
-                  </svg>
-                </button>
+        <div className="ml-3 border-l border-white/10 pl-1">
+          {Object.keys(groupedNodes).length === 1 && groupedNodes['_all'] ? (
+            // No subcategories
+            groupedNodes['_all'].map(renderNodeItem)
+          ) : (
+            // With subcategories
+            Object.entries(groupedNodes).map(([subcat, subNodes]) => (
+              <div key={subcat} className="mb-1">
+                {subcat !== '_all' && (
+                  <div className="px-3 py-1 text-[9px] text-gray-500 uppercase tracking-wider font-medium">
+                    {subcat === 'other' ? 'General' : subcat.replace(/-/g, ' ')}
+                  </div>
+                )}
+                {subNodes.map(renderNodeItem)}
               </div>
-            );
-          })}
+            ))
+          )}
         </div>
       )}
     </div>
@@ -309,7 +363,7 @@ export default function NodePalette({ onAddNode, onClose, collapsedCategories = 
   const totalNodes = categories.reduce((acc, cat) => acc + getNodesByCategory(cat.category).length, 0);
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden">
+    <div className="w-full h-full flex flex-col overflow-hidden bg-[#0f1419]">
       {/* Collapsible Header - matching Project style */}
       {isEmbedded && (
         <button
@@ -331,7 +385,7 @@ export default function NodePalette({ onAddNode, onClose, collapsedCategories = 
 
       {/* Content - only show when expanded (or always when not embedded) */}
       {(isExpanded || !isEmbedded) && (
-        <div className="flex-1 flex flex-col overflow-hidden bg-gradient-to-b from-[#151a21] to-[#0f1419]">
+        <div className="flex-1 flex flex-col overflow-hidden">
           {/* Non-embedded header */}
           {!isEmbedded && (
             <div className="flex-shrink-0 px-3 py-3 border-b border-white/10 bg-[#0a0d10] flex items-center justify-between">
@@ -352,31 +406,29 @@ export default function NodePalette({ onAddNode, onClose, collapsedCategories = 
           )}
 
           {/* Search */}
-          <div className="flex-shrink-0 p-2 border-b border-white/5">
+          <div className="flex-shrink-0 p-3 border-b border-white/5">
             <div className="relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input
                 type="text"
-                placeholder="Search nodes..."
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-black/30 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none transition-all"
-                onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--accent-color-dim)'; e.currentTarget.style.boxShadow = '0 0 0 2px var(--accent-color-bg)'; }}
-                onBlur={(e) => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = ''; }}
+                className="w-full pl-9 pr-8 py-2 bg-[#1a1f28] border border-white/10 rounded-lg text-[11px] text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 transition-all"
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded"
                 >
-                  <X size={12} className="text-gray-500" />
+                  <X size={10} className="text-gray-500" />
                 </button>
               )}
             </div>
           </div>
 
           {/* Categories */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
+          <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0 py-2">
             {categories.map(cat => {
               const info = getCategoryInfo(cat.category);
               const icon = CATEGORY_ICONS[cat.category] || <Database size={14} />;
@@ -405,9 +457,9 @@ export default function NodePalette({ onAddNode, onClose, collapsedCategories = 
           </div>
 
           {/* Footer hint */}
-          <div className="flex-shrink-0 px-3 py-2 border-t border-white/5 bg-black/20">
-            <p className="text-[10px] text-gray-600 text-center">
-              Drag nodes to canvas or click to add
+          <div className="flex-shrink-0 px-3 py-2 border-t border-white/5 bg-[#0a0d10]">
+            <p className="text-[9px] text-gray-600 text-center">
+              Click or drag nodes to canvas
             </p>
           </div>
         </div>
