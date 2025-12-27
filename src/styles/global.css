@@ -67,6 +67,10 @@ html, body, #root {
 }
 
 /* Apply font scaling to hardcoded pixel sizes used in nodes */
+[data-font-size] .text-\[9px\] {
+  font-size: calc(9px * var(--font-scale));
+}
+
 [data-font-size] .text-\[10px\] {
   font-size: calc(10px * var(--font-scale));
 }

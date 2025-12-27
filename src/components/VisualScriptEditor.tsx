@@ -11,7 +11,6 @@ import NodePalette from './visual-scripting/NodePalette';
 import NodeSpotlight from './visual-scripting/NodeSpotlight';
 import NodeDocModal from './visual-scripting/NodeDocModal';
 import CodeView from './visual-scripting/CodeView';
-import ProjectPanel from './visual-scripting/ProjectPanel';
 import ProjectSidebar from './visual-scripting/ProjectSidebar';
 import WeaponEditor from './visual-scripting/WeaponEditor';
 import WelcomeScreen from './visual-scripting/WelcomeScreen';
@@ -1126,8 +1125,6 @@ export default function VisualScriptEditor() {
                   {/* Sidebar Header with minimize button */}
                   <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-[#161b22] to-[#1c222b] border-b border-white/10 flex-shrink-0">
                     <div className="flex items-center gap-2">
-                      <Folder size={16} style={{ color: accentColor }} />
-                      <span className="text-sm font-medium text-gray-200">Project & Nodes</span>
                     </div>
                     <button
                       onClick={() => setSidebarOpen(false)}
@@ -1181,7 +1178,6 @@ export default function VisualScriptEditor() {
                           onCreateWeaponFolder={createWeaponFolder}
                           onDeleteWeaponFolder={deleteWeaponFolder}
                           onRenameWeaponFolder={renameWeaponFolder}
-                          activeFileType={activeFileType}
                           modifiedFileIds={modifiedFileIds}
                           accentColor={accentColor}
                         />
