@@ -179,7 +179,7 @@ export default function UnifiedSidebar({
   activeFileType,
   onClose,
 }: UnifiedSidebarProps) {
-  const [activeTab, setActiveTab] = useState<SidebarTab>('project');
+  const [activeTab, setActiveTab] = useState<SidebarTab>('nodes');
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['init', 'flow']));
   const [favorites, setFavorites] = useState<string[]>(loadFavorites);
@@ -428,9 +428,8 @@ export default function UnifiedSidebar({
 
   return (
     <div className="h-full flex flex-col bg-[#1e1e1e] overflow-hidden">
-      {/* Header with tabs */}
+      {/* Header with close button */}
       <div className="flex-shrink-0 bg-[#212121] border-b border-white/8">
-        {/* Close button row */}
         <div className="flex items-center justify-between px-3 py-2">
           <span className="text-xs font-medium text-gray-400">Explorer</span>
           <button
@@ -441,23 +440,37 @@ export default function UnifiedSidebar({
             <PanelLeft size={14} />
           </button>
         </div>
-        
-        {/* Tabs */}
+      </div>
+      {/* Project view always visible */}
+      <div className="bg-[#212121] border-b border-white/10" style={{ minHeight: 120 }}>
+        <ProjectSidebar
+          scriptFiles={scriptFiles}
+          activeScriptFileId={activeScriptFileId}
+          scriptFolders={scriptFolders}
+          onSelectScriptFile={onSelectScriptFile}
+          onCreateScriptFile={onCreateScriptFile}
+          onDeleteScriptFile={onDeleteScriptFile}
+          onRenameScriptFile={onRenameScriptFile}
+          onCreateScriptFolder={onCreateScriptFolder}
+          onDeleteScriptFolder={onDeleteScriptFolder}
+          onRenameScriptFolder={onRenameScriptFolder}
+          weaponFiles={weaponFiles}
+          activeWeaponFileId={activeWeaponFileId}
+          weaponFolders={weaponFolders}
+          onSelectWeaponFile={onSelectWeaponFile}
+          onCreateWeaponFile={onCreateWeaponFile}
+          onDeleteWeaponFile={onDeleteWeaponFile}
+          onRenameWeaponFile={onRenameWeaponFile}
+          onCreateWeaponFolder={onCreateWeaponFolder}
+          onDeleteWeaponFolder={onDeleteWeaponFolder}
+          onRenameWeaponFolder={onRenameWeaponFolder}
+          modifiedFileIds={modifiedFileIds}
+          accentColor={accentColor}
+        />
+      </div>
+      {/* Tabs for Nodes and Presets below project view */}
+      <div className="flex-shrink-0 bg-[#212121] border-b border-white/8">
         <div className="flex border-t border-white/5">
-          <button
-            onClick={() => setActiveTab('project')}
-            className={`flex-1 px-3 py-2 text-xs font-medium transition-colors border-b-2 ${
-              activeTab === 'project'
-                ? 'text-white border-current'
-                : 'text-gray-500 hover:text-gray-300 border-transparent'
-            }`}
-            style={{ borderColor: activeTab === 'project' ? accentColor : 'transparent' }}
-          >
-            <div className="flex items-center justify-center gap-1.5">
-              <Folder size={12} />
-              Project
-            </div>
-          </button>
           <button
             onClick={() => setActiveTab('nodes')}
             className={`flex-1 px-3 py-2 text-xs font-medium transition-colors border-b-2 ${
@@ -488,39 +501,8 @@ export default function UnifiedSidebar({
           </button>
         </div>
       </div>
-
       {/* Tab Content */}
       <div className="flex-1 overflow-hidden">
-        {/* Project Tab */}
-        {activeTab === 'project' && (
-          <div className="h-full overflow-y-auto">
-            <ProjectSidebar
-              scriptFiles={scriptFiles}
-              activeScriptFileId={activeScriptFileId}
-              scriptFolders={scriptFolders}
-              onSelectScriptFile={onSelectScriptFile}
-              onCreateScriptFile={onCreateScriptFile}
-              onDeleteScriptFile={onDeleteScriptFile}
-              onRenameScriptFile={onRenameScriptFile}
-              onCreateScriptFolder={onCreateScriptFolder}
-              onDeleteScriptFolder={onDeleteScriptFolder}
-              onRenameScriptFolder={onRenameScriptFolder}
-              weaponFiles={weaponFiles}
-              activeWeaponFileId={activeWeaponFileId}
-              weaponFolders={weaponFolders}
-              onSelectWeaponFile={onSelectWeaponFile}
-              onCreateWeaponFile={onCreateWeaponFile}
-              onDeleteWeaponFile={onDeleteWeaponFile}
-              onRenameWeaponFile={onRenameWeaponFile}
-              onCreateWeaponFolder={onCreateWeaponFolder}
-              onDeleteWeaponFolder={onDeleteWeaponFolder}
-              onRenameWeaponFolder={onRenameWeaponFolder}
-              modifiedFileIds={modifiedFileIds}
-              accentColor={accentColor}
-            />
-          </div>
-        )}
-
         {/* Nodes Tab */}
         {activeTab === 'nodes' && activeFileType === 'script' && (
           <div className="h-full flex flex-col">

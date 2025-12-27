@@ -657,7 +657,7 @@ export default function ProjectSidebar({
       )}
 
       {/* File Tree */}
-      <div className="flex-1 overflow-y-auto py-1">
+      <div className="flex-1 overflow-y-auto py-1" style={{ minHeight: 220 }}>
         {/* Scripts Section */}
         {renderSection(
           'scripts',
