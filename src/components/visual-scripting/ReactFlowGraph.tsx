@@ -17,6 +17,7 @@ import {
   applyNodeChanges,
   NodeResizer,
   Panel,
+  useStoreApi,
 } from '@xyflow/react';
 import type {
   Connection,
@@ -26,6 +27,7 @@ import type {
   EdgeTypes,
   OnNodesChange,
   OnConnect,
+  OnConnectStart,
   NodeProps,
   EdgeProps,
   OnConnectEnd,
@@ -420,17 +422,18 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
       const y = typeof node.data.y === 'number' ? node.data.y : 0;
       const z = typeof node.data.z === 'number' ? node.data.z : 0;
       return (
-        <div className="flex gap-2">
+        <div className="grid grid-cols-3 gap-1">
           {(['x', 'y', 'z'] as const).map((axis) => (
-            <div key={axis} className="flex-1 flex flex-col gap-1">
-              <span className="text-[10px] text-gray-400 uppercase font-medium">{axis}</span>
+            <div key={axis} className="min-w-0 flex flex-col gap-1">
+              <span className="text-[9px] text-gray-400 uppercase font-medium">{axis}</span>
               <input
                 type="number"
                 step="0.1"
                 value={axis === 'x' ? x : axis === 'y' ? y : z}
                 onChange={(e) => onUpdate({ data: { ...node.data, [axis]: parseFloat(e.target.value) || 0 } })}
                 onMouseDown={(e) => e.stopPropagation()}
-                className={`w-full px-2 py-1.5 bg-[#121212] rounded text-xs text-gray-100 border-none outline-none ${focusRing} focus:ring-2`}
+                style={{ fontVariantNumeric: 'tabular-nums' }}
+                className={`w-full min-w-0 px-1 py-0.5 bg-[#121212] rounded text-[10px] text-left text-gray-100 border-none outline-none ${focusRing} focus:ring-2`}
               />
             </div>
           ))}
@@ -871,6 +874,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
 
   const hasInputs = node.inputs.length > 0;
   const hasOutputs = node.outputs.length > 0;
+  const isCompactVector = node.type === 'const-vector';
   const editableDataKeys = getEditableDataKeys();
   const hasEditableData = editableDataKeys.length > 0 || 
     node.type.startsWith('const-'); // const nodes always show their editors
@@ -879,7 +883,8 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
     <div
       className="rounded-lg select-none overflow-hidden"
       style={{
-        minWidth: 240,
+        minWidth: isCompactVector ? 210 : 240,
+        width: isCompactVector ? 210 : undefined,
         opacity: nodeOpacity / 100,
         backgroundColor: '#212121', // Material Grey 900
         border: 'none',
@@ -891,14 +896,14 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
     >
       {/* Node Header - Material style */}
       <div
-        className="px-4 py-3 flex items-center gap-2.5"
+        className={`${isCompactVector ? 'px-2 py-2 gap-2' : 'px-4 py-3 gap-2.5'} flex items-center`}
         style={{
           background: nodeColor,
           borderBottom: 'none',
         }}
       >
-        <span className="text-base opacity-90">{getNodeIcon()}</span>
-        <span className="text-sm font-medium text-white tracking-wide flex-1 truncate">
+        <span className={`${isCompactVector ? 'text-sm' : 'text-base'} opacity-90`}>{getNodeIcon()}</span>
+        <span className={`${isCompactVector ? 'text-xs' : 'text-sm'} font-medium text-white tracking-wide flex-1 truncate`}>
           {node.label.replace(/^(Event|Flow|Mod|Data|Action):\s*/, '')}
         </span>
         {selected && (
@@ -907,9 +912,9 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
               e.stopPropagation();
               onDelete();
             }}
-            className="p-1.5 hover:bg-white/20 rounded-full transition-colors"
+            className={`${isCompactVector ? 'p-1' : 'p-1.5'} hover:bg-white/20 rounded-full transition-colors`}
           >
-            <Trash2 size={16} className="text-white/90" />
+            <Trash2 size={isCompactVector ? 14 : 16} className="text-white/90" />
           </button>
         )}
       </div>
@@ -950,25 +955,25 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
 
       {/* Node Data Section - only show for fields without input ports */}
       {hasEditableData && (
-        <div className="px-4 py-3 border-t border-white/5">
+        <div className={`${isCompactVector ? 'px-2 py-2' : 'px-4 py-3'} border-t border-white/5`}>
           {renderInlineEditor()}
         </div>
       )}
 
       {/* OUTPUTS Section */}
       {hasOutputs && (
-        <div className="px-4 pt-2 pb-3 border-t border-white/5">
-          <div className="text-[11px] text-gray-400 uppercase tracking-wider font-medium mb-2.5 text-right">Outputs</div>
+        <div className={`${isCompactVector ? 'px-2 pt-1.5 pb-2' : 'px-4 pt-2 pb-3'} border-t border-white/5`}>
+          <div className={`${isCompactVector ? 'text-[10px] mb-2' : 'text-[11px] mb-2.5'} text-gray-400 uppercase tracking-wider font-medium text-right`}>Outputs</div>
           {node.outputs.map((output) => {
             const portColor = getPortColor(output.type, output.dataType);
             return (
-              <div key={output.id} className="flex items-center justify-end py-2 relative">
+              <div key={output.id} className={`${isCompactVector ? 'py-1.5' : 'py-2'} flex items-center justify-end relative`}>
                 {output.dataType && (
-                  <span className="mr-auto text-[11px] text-gray-500 bg-white/5 px-2 py-0.5 rounded">
+                  <span className={`${isCompactVector ? 'text-[10px] px-1.5' : 'text-[11px] px-2'} mr-auto text-gray-500 bg-white/5 py-0.5 rounded`}>
                     {getTypeLabel(output.dataType)}
                   </span>
                 )}
-                <span className="mr-3 text-sm text-gray-200">{output.label}</span>
+                <span className={`${isCompactVector ? 'text-xs mr-2' : 'text-sm mr-3'} text-gray-200`}>{output.label}</span>
                 <Handle
                   type="source"
                   position={Position.Right}
@@ -1448,6 +1453,16 @@ function ReactFlowGraphInner({
   // Debounce selection updates to reduce lag
   const selectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingSelectionRef = useRef<string[] | null>(null);
+  const lastMousePosRef = useRef<{ x: number; y: number } | null>(null);
+  const activeConnectRef = useRef<{
+    nodeId: string;
+    portId: string;
+    isInput: boolean;
+    portType: 'exec' | 'data';
+    dataType?: NodeDataType;
+  } | null>(null);
+  const suppressQuickMenuRef = useRef(false);
+  const store = useStoreApi();
 
   // Close context menu on outside click
   useEffect(() => {
@@ -1463,6 +1478,99 @@ function ReactFlowGraphInner({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [contextMenu]);
 
+  const addNodeByType = useCallback((nodeType: string) => {
+    const definition = getNodeDefinition(nodeType);
+    const container = containerRef.current;
+    if (!definition || !container) return;
+
+    const rect = container.getBoundingClientRect();
+    const mousePos = lastMousePosRef.current;
+    const anchorPos = mousePos
+      ? reactFlowInstance.screenToFlowPosition({ x: mousePos.x, y: mousePos.y })
+      : reactFlowInstance.screenToFlowPosition({
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+      });
+
+    const defaultWidth = 200;
+    const defaultHeight = 100;
+    const sourcePort = activeConnectRef.current;
+    const preSnapPos = sourcePort
+      ? {
+        x: sourcePort.isInput ? anchorPos.x - defaultWidth : anchorPos.x,
+        y: anchorPos.y - defaultHeight / 2,
+      }
+      : {
+        x: anchorPos.x - 90,
+        y: anchorPos.y - 30,
+      };
+
+    const snappedPos = snapToGrid ? {
+      x: Math.round(preSnapPos.x / gridSize) * gridSize,
+      y: Math.round(preSnapPos.y / gridSize) * gridSize,
+    } : preSnapPos;
+
+    const newNodeId = `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const newNode: ScriptNode = {
+      id: newNodeId,
+      type: definition.type,
+      category: definition.category,
+      label: definition.label,
+      position: snappedPos,
+      data: { ...definition.defaultData },
+      inputs: definition.inputs.map((input, idx) => ({
+        id: `input_${idx}`,
+        label: input.label,
+        type: input.type,
+        dataType: input.dataType,
+        isInput: true,
+        ...('defaultValue' in input && { defaultValue: (input as Record<string, unknown>).defaultValue }),
+        ...('options' in input && { options: (input as Record<string, unknown>).options }),
+      })),
+      outputs: definition.outputs.map((output, idx) => ({
+        id: `output_${idx}`,
+        label: output.label,
+        type: output.type,
+        dataType: output.dataType,
+        isInput: false,
+      })),
+    };
+
+    setDroppingNodeId(newNodeId);
+    setTimeout(() => setDroppingNodeId(null), 300);
+
+    onAddNode(newNode);
+
+    if (sourcePort) {
+      const targetPorts = sourcePort.isInput ? newNode.outputs : newNode.inputs;
+      const matchIndex = targetPorts.findIndex(port => {
+        if (port.type !== sourcePort.portType) return false;
+        if (port.type === 'exec') return true;
+        if (!sourcePort.dataType || !port.dataType) return true;
+        return port.dataType === sourcePort.dataType || port.dataType === 'any' || port.dataType === 'var' || sourcePort.dataType === 'any' || sourcePort.dataType === 'var';
+      });
+      const targetPort = targetPorts[matchIndex >= 0 ? matchIndex : 0];
+      if (targetPort) {
+        const connection: NodeConnection = {
+          id: `conn_${Date.now()}`,
+          from: sourcePort.isInput
+            ? { nodeId: newNodeId, portId: targetPort.id }
+            : { nodeId: sourcePort.nodeId, portId: sourcePort.portId },
+          to: sourcePort.isInput
+            ? { nodeId: sourcePort.nodeId, portId: sourcePort.portId }
+            : { nodeId: newNodeId, portId: targetPort.id },
+        };
+        onConnectProp(connection);
+      }
+      activeConnectRef.current = null;
+      suppressQuickMenuRef.current = true;
+      store.getState().cancelConnection();
+    }
+
+    onSelectNodes([newNodeId]);
+    onRequestHistorySnapshot?.();
+  }, [reactFlowInstance, snapToGrid, gridSize, onAddNode, onSelectNodes, onConnectProp, onRequestHistorySnapshot, store]);
+
   // ============================================================================
   // Keyboard Shortcuts
   // ============================================================================
@@ -1475,6 +1583,31 @@ function ReactFlowGraphInner({
       // Skip if in input/textarea
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+      const plainKey = !e.ctrlKey && !e.metaKey && !e.altKey;
+      const keyLower = e.key.toLowerCase();
+      if (plainKey) {
+        if (keyLower === 'r') {
+          e.preventDefault();
+          addNodeByType('reroute');
+          return;
+        }
+        if (keyLower === 'b') {
+          e.preventDefault();
+          addNodeByType('branch');
+          return;
+        }
+        if (e.key === '3') {
+          e.preventDefault();
+          addNodeByType('const-vector');
+          return;
+        }
+        if (e.key === '1') {
+          e.preventDefault();
+          addNodeByType('const-int');
+          return;
+        }
+      }
       
       // Delete selected nodes - Delete or Backspace
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNodeIds.length > 0) {
@@ -1649,7 +1782,7 @@ function ReactFlowGraphInner({
 
     container.addEventListener('keydown', handleKeyDown);
     return () => container.removeEventListener('keydown', handleKeyDown);
-  }, [selectedNodeIds, scriptNodes, connections, onDeleteNode, onSelectNodes, onAddNode, onConnectProp, onRequestHistorySnapshot, reactFlowInstance]);
+  }, [selectedNodeIds, scriptNodes, connections, onDeleteNode, onSelectNodes, onAddNode, onConnectProp, onRequestHistorySnapshot, reactFlowInstance, addNodeByType]);
 
   // Convert script nodes to React Flow nodes - memoized base conversion
   const baseFlowNodes = useMemo<Node<ScriptNodeData>[]>(() => {
@@ -1781,6 +1914,28 @@ function ReactFlowGraphInner({
     onConnectProp(newConnection);
   }, [onConnectProp]);
 
+  const onConnectStart: OnConnectStart = useCallback((event, params) => {
+    const nodeId = params.nodeId;
+    const handleId = params.handleId;
+    const handleType = params.handleType;
+    if (!nodeId || !handleId || !handleType) return;
+
+    const sourceNode = scriptNodes.find(n => n.id === nodeId);
+    if (!sourceNode) return;
+    const isOutput = handleType === 'source';
+    const portList = isOutput ? sourceNode.outputs : sourceNode.inputs;
+    const port = portList.find(p => p.id === handleId);
+    if (!port) return;
+
+    activeConnectRef.current = {
+      nodeId: sourceNode.id,
+      portId: port.id,
+      isInput: !isOutput,
+      portType: port.type,
+      dataType: port.dataType,
+    };
+  }, [scriptNodes]);
+
   // Handle edge deletion
   const onEdgesDelete = useCallback((edges: Edge[]) => {
     edges.forEach(edge => {
@@ -1790,6 +1945,11 @@ function ReactFlowGraphInner({
 
   // Handle dropping connection on empty space - show quick menu
   const onConnectEnd: OnConnectEnd = useCallback((event, connectionState) => {
+    if (suppressQuickMenuRef.current) {
+      suppressQuickMenuRef.current = false;
+      activeConnectRef.current = null;
+      return;
+    }
     if (!connectionState.fromNode || !connectionState.fromHandle) return;
 
     // Get mouse position
@@ -1828,6 +1988,7 @@ function ReactFlowGraphInner({
         },
       });
     }
+    activeConnectRef.current = null;
   }, [reactFlowInstance, scriptNodes]);
 
   // Handle quick node menu selection
@@ -2320,6 +2481,9 @@ function ReactFlowGraphInner({
       tabIndex={0}
       className="w-full h-full outline-none relative" 
       style={{ backgroundColor: theme === 'dark' ? '#121212' : '#fafafa' }}
+      onMouseMove={(e) => {
+        lastMousePosRef.current = { x: e.clientX, y: e.clientY };
+      }}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -2415,6 +2579,7 @@ function ReactFlowGraphInner({
         onNodeDrag={handleNodeDrag}
         onNodeDragStop={handleNodeDragStop}
         onConnect={handleConnect}
+        onConnectStart={onConnectStart}
         onConnectEnd={onConnectEnd}
         onEdgesDelete={onEdgesDelete}
         onSelectionChange={onSelectionChange}
