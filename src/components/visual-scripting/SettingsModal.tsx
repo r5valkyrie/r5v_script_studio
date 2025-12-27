@@ -85,6 +85,8 @@ export interface AppSettings {
     sidebarWidth: number;
     inspectorWidth: number;
     codePanelWidth: number;
+    minimapWidth: number;
+    minimapHeight: number;
     collapsedCategories: string[];
   };
   keybindings: Record<string, string>;
@@ -126,6 +128,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
     sidebarWidth: 280,
     inspectorWidth: 320,
     codePanelWidth: 500,
+    minimapWidth: 320,
+    minimapHeight: 260,
     collapsedCategories: [],
   },
   keybindings: { ...DEFAULT_KEYBINDINGS },

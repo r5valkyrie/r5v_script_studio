@@ -148,6 +148,10 @@ interface ReactFlowGraphProps {
   highlightConnections?: boolean;
   connectionAnimation?: 'none' | 'flow' | 'pulse' | 'dash' | 'glow';
   isDev?: boolean;
+  // Minimap settings
+  minimapWidth?: number;
+  minimapHeight?: number;
+  onMinimapResize?: (width: number, height: number) => void;
 }
 
 interface ScriptNodeData extends Record<string, unknown> {
@@ -333,20 +337,29 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
     return '◆';
   };
 
-  // Get data type label for display
+  // Get data type label for display - full names
   const getTypeLabel = (dataType?: string) => {
     if (!dataType) return '';
     const typeMap: Record<string, string> = {
-      'number': 'Num',
-      'string': 'Str',
-      'boolean': 'Bool',
-      'vector': 'Vec3',
-      'entity': 'Ent',
-      'weapon': 'Wpn',
-      'player': 'Plyr',
+      'number': 'Number',
+      'string': 'String',
+      'boolean': 'Boolean',
+      'vector': 'Vector3',
+      'entity': 'Entity',
+      'weapon': 'Weapon',
+      'player': 'Player',
       'any': 'Any',
+      'array': 'Array',
+      'object': 'Object',
+      'function': 'Function',
+      'void': 'Void',
+      'float': 'Float',
+      'int': 'Integer',
+      'table': 'Table',
+      'asset': 'Asset',
     };
-    return typeMap[dataType] || dataType.substring(0, 4);
+    // Return mapped name or capitalize the dataType
+    return typeMap[dataType] || dataType.charAt(0).toUpperCase() + dataType.slice(1);
   };
 
   // Inline editor for node data - Material Design styled
@@ -864,9 +877,9 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
 
   return (
     <div
-      className="rounded select-none overflow-hidden"
+      className="rounded-lg select-none overflow-hidden"
       style={{
-        minWidth: 200,
+        minWidth: 240,
         opacity: nodeOpacity / 100,
         backgroundColor: '#212121', // Material Grey 900
         border: 'none',
@@ -878,14 +891,14 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
     >
       {/* Node Header - Material style */}
       <div
-        className="px-3 py-2.5 flex items-center gap-2"
+        className="px-4 py-3 flex items-center gap-2.5"
         style={{
           background: nodeColor,
           borderBottom: 'none',
         }}
       >
-        <span className="text-sm opacity-90">{getNodeIcon()}</span>
-        <span className="text-xs font-medium text-white tracking-wide flex-1 truncate">
+        <span className="text-base opacity-90">{getNodeIcon()}</span>
+        <span className="text-sm font-medium text-white tracking-wide flex-1 truncate">
           {node.label.replace(/^(Event|Flow|Mod|Data|Action):\s*/, '')}
         </span>
         {selected && (
@@ -896,36 +909,36 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
             }}
             className="p-1.5 hover:bg-white/20 rounded-full transition-colors"
           >
-            <Trash2 size={14} className="text-white/90" />
+            <Trash2 size={16} className="text-white/90" />
           </button>
         )}
       </div>
 
       {/* INPUTS Section */}
       {hasInputs && (
-        <div className="px-3 pt-2.5 pb-1.5">
-          <div className="text-[10px] text-gray-400 uppercase tracking-wider font-medium mb-2">Inputs</div>
+        <div className="px-4 pt-3 pb-2">
+          <div className="text-[11px] text-gray-400 uppercase tracking-wider font-medium mb-2.5">Inputs</div>
           {node.inputs.map((input) => {
             const portColor = getPortColor(input.type, input.dataType);
             return (
-              <div key={input.id} className="flex items-center py-1.5 relative">
+              <div key={input.id} className="flex items-center py-2 relative">
                 <Handle
                   type="target"
                   position={Position.Left}
                   id={input.id}
-                  className="!border-0 !-left-[8px]"
+                  className="!border-0 !-left-[9px]"
                   style={{
-                    width: '12px',
-                    height: '12px',
+                    width: '14px',
+                    height: '14px',
                     backgroundColor: portColor,
                     borderRadius: input.type === 'exec' ? '2px' : '50%',
                     clipPath: input.type === 'exec' ? 'polygon(0 0, 100% 50%, 0 100%)' : undefined,
                     boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
                   }}
                 />
-                <span className="ml-2.5 text-xs text-gray-200">{input.label}</span>
+                <span className="ml-3 text-sm text-gray-200">{input.label}</span>
                 {input.dataType && (
-                  <span className="ml-auto text-[10px] text-gray-500 bg-white/5 px-1.5 py-0.5 rounded">
+                  <span className="ml-auto text-[11px] text-gray-500 bg-white/5 px-2 py-0.5 rounded">
                     {getTypeLabel(input.dataType)}
                   </span>
                 )}
@@ -937,33 +950,33 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
 
       {/* Node Data Section - only show for fields without input ports */}
       {hasEditableData && (
-        <div className="px-3 py-2.5 border-t border-white/5">
+        <div className="px-4 py-3 border-t border-white/5">
           {renderInlineEditor()}
         </div>
       )}
 
       {/* OUTPUTS Section */}
       {hasOutputs && (
-        <div className="px-3 pt-1.5 pb-2.5 border-t border-white/5">
-          <div className="text-[10px] text-gray-400 uppercase tracking-wider font-medium mb-2 text-right">Outputs</div>
+        <div className="px-4 pt-2 pb-3 border-t border-white/5">
+          <div className="text-[11px] text-gray-400 uppercase tracking-wider font-medium mb-2.5 text-right">Outputs</div>
           {node.outputs.map((output) => {
             const portColor = getPortColor(output.type, output.dataType);
             return (
-              <div key={output.id} className="flex items-center justify-end py-1.5 relative">
+              <div key={output.id} className="flex items-center justify-end py-2 relative">
                 {output.dataType && (
-                  <span className="mr-auto text-[10px] text-gray-500 bg-white/5 px-1.5 py-0.5 rounded">
+                  <span className="mr-auto text-[11px] text-gray-500 bg-white/5 px-2 py-0.5 rounded">
                     {getTypeLabel(output.dataType)}
                   </span>
                 )}
-                <span className="mr-2.5 text-xs text-gray-200">{output.label}</span>
+                <span className="mr-3 text-sm text-gray-200">{output.label}</span>
                 <Handle
                   type="source"
                   position={Position.Right}
                   id={output.id}
-                  className="!border-0 !-right-[8px]"
+                  className="!border-0 !-right-[9px]"
                   style={{
-                    width: '12px',
-                    height: '12px',
+                    width: '14px',
+                    height: '14px',
                     backgroundColor: portColor,
                     borderRadius: output.type === 'exec' ? '2px' : '50%',
                     clipPath: output.type === 'exec' ? 'polygon(0 0, 100% 50%, 0 100%)' : undefined,
@@ -1407,11 +1420,24 @@ function ReactFlowGraphInner({
   highlightConnections = true,
   connectionAnimation = 'none',
   isDev = false,
+  minimapWidth = 320,
+  minimapHeight = 260,
+  onMinimapResize,
 }: ReactFlowGraphProps) {
   const reactFlowInstance = useReactFlow();
   const [quickMenu, setQuickMenu] = useState<QuickMenuState | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Minimap resize state
+  const [localMinimapSize, setLocalMinimapSize] = useState({ width: minimapWidth, height: minimapHeight });
+  const minimapResizing = useRef(false);
+  const minimapResizeStart = useRef({ x: 0, y: 0, width: 0, height: 0 });
+  
+  // Sync local minimap size with props
+  useEffect(() => {
+    setLocalMinimapSize({ width: minimapWidth, height: minimapHeight });
+  }, [minimapWidth, minimapHeight]);
   
   // Track which nodes are currently being dragged
   const draggingRef = useRef<Set<string>>(new Set());
@@ -2053,10 +2079,131 @@ function ReactFlowGraphInner({
     });
   }, []);
 
-  // Drag state for drop animations
+  // Drag state for drop animations (from palette)
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [dropPreviewPos, setDropPreviewPos] = useState<{ x: number; y: number } | null>(null);
   const [droppingNodeId, setDroppingNodeId] = useState<string | null>(null);
+  
+  // Drag state for node movement within graph
+  const [draggingNodeIds, setDraggingNodeIds] = useState<Set<string>>(new Set());
+  const [droppedNodeIds, setDroppedNodeIds] = useState<Set<string>>(new Set());
+  
+  // Track nodes contained within a dragged comment (stores offsets from comment position)
+  const commentContainedNodesRef = useRef<{ nodeId: string; offsetX: number; offsetY: number }[]>([]);
+  const draggingCommentIdRef = useRef<string | null>(null);
+  
+  // Get nodes that are inside a comment's bounds
+  const getNodesInsideComment = useCallback((commentNode: Node<ScriptNodeData>, allNodes: Node<ScriptNodeData>[]) => {
+    const commentPos = commentNode.position;
+    const commentWidth = commentNode.measured?.width ?? commentNode.width ?? 200;
+    const commentHeight = commentNode.measured?.height ?? commentNode.height ?? 100;
+    
+    const containedNodes: { nodeId: string; offsetX: number; offsetY: number }[] = [];
+    
+    allNodes.forEach(node => {
+      // Don't include the comment itself or other comments
+      if (node.id === commentNode.id || node.type === 'commentNode') return;
+      
+      const nodeWidth = node.measured?.width ?? 240;
+      const nodeHeight = node.measured?.height ?? 60;
+      const nodeCenterX = node.position.x + nodeWidth / 2;
+      const nodeCenterY = node.position.y + nodeHeight / 2;
+      
+      // Check if node center is inside comment bounds
+      if (
+        nodeCenterX >= commentPos.x &&
+        nodeCenterX <= commentPos.x + commentWidth &&
+        nodeCenterY >= commentPos.y &&
+        nodeCenterY <= commentPos.y + commentHeight
+      ) {
+        containedNodes.push({
+          nodeId: node.id,
+          offsetX: node.position.x - commentPos.x,
+          offsetY: node.position.y - commentPos.y,
+        });
+      }
+    });
+    
+    return containedNodes;
+  }, []);
+  
+  // Handle node drag start (pickup)
+  const handleNodeDragStart = useCallback((_: React.MouseEvent, node: Node) => {
+    // Add this node and any selected nodes to dragging set
+    const draggedIds = new Set<string>();
+    draggedIds.add(node.id);
+    // If node is part of selection, include all selected nodes
+    flowNodes.forEach(n => {
+      if (n.selected) draggedIds.add(n.id);
+    });
+    setDraggingNodeIds(draggedIds);
+    setDroppedNodeIds(new Set());
+    
+    // If dragging a comment node, find all nodes inside it and store their offsets
+    if (node.type === 'commentNode') {
+      const flowNode = flowNodes.find(n => n.id === node.id);
+      if (flowNode) {
+        const containedNodes = getNodesInsideComment(flowNode, flowNodes);
+        commentContainedNodesRef.current = containedNodes;
+        draggingCommentIdRef.current = node.id;
+      }
+    }
+  }, [flowNodes, getNodesInsideComment]);
+  
+  // Handle node drag (continuous movement) - update internal state for smooth visuals
+  const handleNodeDrag = useCallback((_: React.MouseEvent, node: Node) => {
+    // If dragging a comment, move contained nodes along with it
+    if (node.type === 'commentNode' && draggingCommentIdRef.current === node.id) {
+      const containedNodes = commentContainedNodesRef.current;
+      if (containedNodes.length > 0) {
+        // Update internal nodes state to move contained nodes with the comment
+        setInternalNodes(prevNodes => {
+          return prevNodes.map(n => {
+            const contained = containedNodes.find(c => c.nodeId === n.id);
+            if (contained) {
+              return {
+                ...n,
+                position: {
+                  x: node.position.x + contained.offsetX,
+                  y: node.position.y + contained.offsetY,
+                },
+              };
+            }
+            return n;
+          });
+        });
+      }
+    }
+  }, []);
+  
+  // Handle node drag stop (drop) - sync to parent state
+  const handleNodeDragStop = useCallback((_: React.MouseEvent, node: Node) => {
+    // Move dragging nodes to dropped for animation
+    setDroppedNodeIds(draggingNodeIds);
+    setDraggingNodeIds(new Set());
+    
+    // If we were dragging a comment, sync contained node positions to parent
+    if (node.type === 'commentNode' && draggingCommentIdRef.current === node.id) {
+      const containedNodes = commentContainedNodesRef.current;
+      if (containedNodes.length > 0) {
+        // Update parent state with final positions
+        containedNodes.forEach(({ nodeId, offsetX, offsetY }) => {
+          onUpdateNode(nodeId, {
+            position: {
+              x: node.position.x + offsetX,
+              y: node.position.y + offsetY,
+            },
+          });
+        });
+      }
+      // Clear refs
+      commentContainedNodesRef.current = [];
+      draggingCommentIdRef.current = null;
+    }
+    
+    // Clear dropped state after animation
+    setTimeout(() => setDroppedNodeIds(new Set()), 200);
+  }, [draggingNodeIds]);
 
   // Handle drag over from palette
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -2201,21 +2348,13 @@ function ReactFlowGraphInner({
         </div>
       )}
       
-      {/* Drop animation styles - use filter and opacity to avoid transform conflicts with ReactFlow positioning */}
+      {/* Animation styles for node interactions */}
       <style>{`
+        /* Drop from palette animation */
         @keyframes nodeDropIn {
-          0% {
-            opacity: 0;
-            filter: blur(4px);
-          }
-          50% {
-            opacity: 1;
-            filter: blur(0px);
-          }
-          100% {
-            opacity: 1;
-            filter: blur(0px);
-          }
+          0% { opacity: 0; filter: blur(4px); }
+          50% { opacity: 1; filter: blur(0px); }
+          100% { opacity: 1; filter: blur(0px); }
         }
         .node-dropping {
           animation: nodeDropIn 0.25s ease-out forwards;
@@ -2224,27 +2363,57 @@ function ReactFlowGraphInner({
           animation: nodeScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
         @keyframes nodeScaleIn {
-          0% {
-            transform: scale(0.85);
-          }
-          50% {
-            transform: scale(1.03);
-          }
-          100% {
-            transform: scale(1);
-          }
+          0% { transform: scale(0.85); }
+          50% { transform: scale(1.03); }
+          100% { transform: scale(1); }
+        }
+        
+        /* Pickup animation when dragging nodes (not comments) */
+        .node-dragging:not(.comment-node) {
+          z-index: 1000 !important;
+          filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4));
+        }
+        .node-dragging:not(.comment-node) > div {
+          transform: scale(1.02);
+          transition: transform 0.15s ease-out;
+        }
+        
+        /* Comment nodes always stay behind */
+        .comment-node {
+          z-index: -1000 !important;
+        }
+        .comment-node.node-dragging {
+          z-index: -1000 !important;
+          filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+        }
+        
+        /* Place animation when dropping nodes */
+        .node-placed:not(.comment-node) > div {
+          animation: nodePlaceDown 0.2s ease-out forwards;
+        }
+        @keyframes nodePlaceDown {
+          0% { transform: scale(1.02); }
+          60% { transform: scale(0.98); }
+          100% { transform: scale(1); }
         }
       `}</style>
       
       <ReactFlow
-        nodes={flowNodes.map(n => ({
-          ...n,
-          className: droppingNodeId === n.id ? 'node-dropping' : n.className,
-        }))}
+        nodes={flowNodes.map(n => {
+          let className = n.className || '';
+          if (n.type === 'commentNode') className += ' comment-node';
+          if (droppingNodeId === n.id) className += ' node-dropping';
+          if (draggingNodeIds.has(n.id)) className += ' node-dragging';
+          if (droppedNodeIds.has(n.id)) className += ' node-placed';
+          return { ...n, className: className.trim() };
+        })}
         edges={flowEdges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
+        onNodeDragStart={handleNodeDragStart}
+        onNodeDrag={handleNodeDrag}
+        onNodeDragStop={handleNodeDragStop}
         onConnect={handleConnect}
         onConnectEnd={onConnectEnd}
         onEdgesDelete={onEdgesDelete}
@@ -2284,25 +2453,85 @@ function ReactFlowGraphInner({
           />
         )}
         <MiniMap
-          nodeStrokeWidth={1}
-          nodeStrokeColor={theme === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}
-          nodeBorderRadius={4}
+          nodeStrokeWidth={2}
+          nodeStrokeColor={(node) => {
+            const scriptNode = scriptNodes.find(n => n.id === node.id);
+            if (scriptNode?.type === 'comment') {
+              const color = typeof scriptNode.data.commentColor === 'string' ? scriptNode.data.commentColor : '#455A64';
+              return color;
+            }
+            return theme === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)';
+          }}
+          nodeBorderRadius={3}
           nodeColor={(node) => {
             const scriptNode = scriptNodes.find(n => n.id === node.id);
-            return scriptNode ? getNodeColor(scriptNode.type) : '#424242';
+            if (!scriptNode) return '#424242';
+            if (scriptNode.type === 'comment') {
+              const color = typeof scriptNode.data.commentColor === 'string' ? scriptNode.data.commentColor : '#455A64';
+              return `${color}40`; // Transparent fill for comments
+            }
+            return getNodeColor(scriptNode.type);
           }}
-          maskColor={theme === 'dark' ? 'rgba(0, 0, 0, 0.75)' : 'rgba(255, 255, 255, 0.8)'}
+          maskColor={theme === 'dark' ? 'rgba(0, 0, 0, 0.6)' : 'rgba(255, 255, 255, 0.7)'}
           pannable
           zoomable
+          zoomStep={2}
           style={{
             backgroundColor: theme === 'dark' ? '#1e1e1e' : '#f5f5f5',
-            width: 270,
-            height: 220,
+            width: localMinimapSize.width,
+            height: localMinimapSize.height,
             bottom: 50,
             right: 12,
+            border: theme === 'dark' ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)',
           }}
           position="bottom-right"
         />
+        
+        {/* Minimap resize handle */}
+        <Panel position="bottom-right" style={{ bottom: 50 + localMinimapSize.height - 16, right: 12 + localMinimapSize.width - 16 }}>
+          <div
+            className="w-4 h-4 cursor-nw-resize flex items-center justify-center bg-[#2d2d2d] rounded-tl border-l border-t border-white/10 hover:bg-[#3d3d3d] transition-colors"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              minimapResizing.current = true;
+              minimapResizeStart.current = {
+                x: e.clientX,
+                y: e.clientY,
+                width: localMinimapSize.width,
+                height: localMinimapSize.height,
+              };
+              
+              const handleMouseMove = (moveEvent: MouseEvent) => {
+                if (!minimapResizing.current) return;
+                
+                const deltaX = minimapResizeStart.current.x - moveEvent.clientX;
+                const deltaY = minimapResizeStart.current.y - moveEvent.clientY;
+                
+                const newWidth = Math.max(200, Math.min(600, minimapResizeStart.current.width + deltaX));
+                const newHeight = Math.max(150, Math.min(500, minimapResizeStart.current.height + deltaY));
+                
+                setLocalMinimapSize({ width: newWidth, height: newHeight });
+              };
+              
+              const handleMouseUp = () => {
+                if (minimapResizing.current) {
+                  minimapResizing.current = false;
+                  onMinimapResize?.(localMinimapSize.width, localMinimapSize.height);
+                }
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+              };
+              
+              document.addEventListener('mousemove', handleMouseMove);
+              document.addEventListener('mouseup', handleMouseUp);
+            }}
+          >
+            <svg width="8" height="8" viewBox="0 0 8 8" className="text-gray-500">
+              <path d="M0 8L8 0M3 8L8 3M6 8L8 6" stroke="currentColor" strokeWidth="1" fill="none"/>
+            </svg>
+          </div>
+        </Panel>
       </ReactFlow>
 
       {/* Quick Node Menu */}

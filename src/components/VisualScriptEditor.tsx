@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { PanelLeft, PanelRight, GitBranch, Code, Save, FolderOpen, FileDown, FileText, FilePlus, ChevronDown, ChevronLeft, ChevronRight, Folder, X, Settings, Package, Library, Crosshair } from 'lucide-react';
+import { Code, Save, FolderOpen, FileDown, FileText, FilePlus, ChevronDown, ChevronLeft, ChevronRight, Folder, X, Settings, Package, Crosshair } from 'lucide-react';
 import SettingsModal, { loadSettings, saveSettings, DEFAULT_SETTINGS } from './visual-scripting/SettingsModal';
 import ProjectSettingsModal from './visual-scripting/ProjectSettingsModal';
 import { NotificationContainer, ExportPathModal, useNotifications, useConfirmModal } from './visual-scripting/Notification';
@@ -7,18 +7,15 @@ import type { AppSettings } from './visual-scripting/SettingsModal';
 import type { ScriptNode, NodeConnection, NodeType, TemplateCategory } from '../types/visual-scripting';
 import type { ModSettings } from '../types/project';
 import ReactFlowGraph from './visual-scripting/ReactFlowGraph';
-import NodePalette from './visual-scripting/NodePalette';
 import NodeSpotlight from './visual-scripting/NodeSpotlight';
 import NodeDocModal from './visual-scripting/NodeDocModal';
 import CodeView from './visual-scripting/CodeView';
-import ProjectSidebar from './visual-scripting/ProjectSidebar';
 import WeaponEditor from './visual-scripting/WeaponEditor';
 import WelcomeScreen from './visual-scripting/WelcomeScreen';
-import TemplatesLibrary from './visual-scripting/TemplatesLibrary';
 import SaveTemplateModal from './visual-scripting/SaveTemplateModal';
 import UnifiedSidebar from './visual-scripting/UnifiedSidebar';
 import { generateCode } from '../utils/code-generator';
-import { getNodeDefinition, NODE_DEFINITIONS } from '../data/node-definitions';
+import { NODE_DEFINITIONS } from '../data/node-definitions';
 import { useProjectFiles } from '../hooks/useProjectFiles';
 import { saveSquirrelCode } from '../utils/file-system';
 import { generateCodeMetadata, embedProjectInCode } from '../utils/project-manager';
@@ -168,6 +165,7 @@ export default function VisualScriptEditor() {
       const newSettings = {
         ...appSettings,
         ui: {
+          ...appSettings.ui,
           isSidebarOpen,
           isProjectSectionExpanded,
           isNodesSectionExpanded,
@@ -1265,6 +1263,16 @@ export default function VisualScriptEditor() {
                     highlightConnections={appSettings.editor.highlightConnections}
                     connectionAnimation={appSettings.appearance.connectionAnimation}
                     isDev={import.meta.env.DEV}
+                    minimapWidth={appSettings.ui.minimapWidth}
+                    minimapHeight={appSettings.ui.minimapHeight}
+                    onMinimapResize={(width, height) => {
+                      const newSettings = {
+                        ...appSettings,
+                        ui: { ...appSettings.ui, minimapWidth: width, minimapHeight: height }
+                      };
+                      setAppSettings(newSettings);
+                      saveSettings(newSettings);
+                    }}
                   />
                 ) : (
                   <div className="h-full flex flex-col items-center justify-center bg-[#121212] text-center p-8">
