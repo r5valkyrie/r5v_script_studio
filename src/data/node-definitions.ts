@@ -8793,7 +8793,7 @@ void function OnPlayerDeath( entity player, var damageInfo )
     category: 'variables',
     label: 'String',
     description: 'String',
-    color: '#2ECC71',
+    color: '#3498DB',
     inputs: [],
     outputs: [
       { label: 'Value', type: 'data', dataType: 'string', isInput: false },
@@ -8805,7 +8805,7 @@ void function OnPlayerDeath( entity player, var damageInfo )
     category: 'variables',
     label: 'Float',
     description: 'Float',
-    color: '#95A5A6',
+    color: '#3498DB',
     inputs: [],
     outputs: [
       { label: 'Value', type: 'data', dataType: 'float', isInput: false },
@@ -8817,7 +8817,7 @@ void function OnPlayerDeath( entity player, var damageInfo )
     category: 'variables',
     label: 'Int',
     description: 'Integer',
-    color: '#95A5A6',
+    color: '#3498DB',
     inputs: [],
     outputs: [
       { label: 'Value', type: 'data', dataType: 'int', isInput: false },
@@ -8829,7 +8829,7 @@ void function OnPlayerDeath( entity player, var damageInfo )
     category: 'variables',
     label: 'Bool',
     description: 'Boolean',
-    color: '#95A5A6',
+    color: '#3498DB',
     inputs: [],
     outputs: [
       { label: 'Value', type: 'data', dataType: 'boolean', isInput: false },
@@ -8841,7 +8841,7 @@ void function OnPlayerDeath( entity player, var damageInfo )
     category: 'variables',
     label: 'Vector',
     description: 'Vector',
-    color: '#95A5A6',
+    color: '#3498DB',
     inputs: [],
     outputs: [
       { label: 'Value', type: 'data', dataType: 'vector', isInput: false },
@@ -8853,7 +8853,7 @@ void function OnPlayerDeath( entity player, var damageInfo )
     category: 'variables',
     label: 'Asset',
     description: 'Asset reference',
-    color: '#95A5A6',
+    color: '#3498DB',
     inputs: [],
     outputs: [
       { label: 'Asset', type: 'data', dataType: 'asset', isInput: false },
@@ -8865,7 +8865,7 @@ void function OnPlayerDeath( entity player, var damageInfo )
     category: 'variables',
     label: 'Loot Tier',
     description: 'Loot tier enum value',
-    color: '#95A5A6',
+    color: '#3498DB',
     inputs: [],
     outputs: [
       { label: 'Tier', type: 'data', dataType: 'number', isInput: false },
@@ -8877,7 +8877,7 @@ void function OnPlayerDeath( entity player, var damageInfo )
     category: 'variables',
     label: 'Supported Attachments',
     description: 'Weapon supported attachments list',
-    color: '#95A5A6',
+    color: '#3498DB',
     inputs: [],
     outputs: [
       { label: 'Attachments', type: 'data', dataType: 'array', isInput: false },
@@ -8889,7 +8889,7 @@ void function OnPlayerDeath( entity player, var damageInfo )
     category: 'variables',
     label: 'Weapon Type',
     description: 'Weapon type string',
-    color: '#95A5A6',
+    color: '#3498DB',
     inputs: [],
     outputs: [
       { label: 'Type', type: 'data', dataType: 'string', isInput: false },
@@ -8948,7 +8948,7 @@ void function OnPlayerDeath( entity player, var damageInfo )
     category: 'variables',
     label: 'Define Const',
     description: 'Define a constant value. Can be global or local. Generates: [global] const [type] NAME = value',
-    color: '#95A5A6',
+    color: '#3498DB',
     inputs: [],
     outputs: [
       { label: 'Value', type: 'data', dataType: 'any', isInput: false },

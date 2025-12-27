@@ -175,10 +175,6 @@ const reactFlowStyles = `
     backface-visibility: hidden;
   }
   
-  .react-flow__node.selected {
-    z-index: 1000 !important;
-  }
-  
   /* Force crisp text and edges in viewport */
   .react-flow__viewport {
     transform-style: preserve-3d;
@@ -193,6 +189,20 @@ const reactFlowStyles = `
   
   .react-flow__edge.selected path {
     stroke-width: 3px;
+  }
+  
+  /* Render edges on top of nodes for better visibility */
+  .react-flow__edges {
+    z-index: 5 !important;
+  }
+  
+  .react-flow__edge {
+    pointer-events: visibleStroke;
+  }
+  
+  /* Keep selected nodes above edges */
+  .react-flow__node.selected {
+    z-index: 1000 !important;
   }
   
   /* Handle transitions - no movement, just glow */
@@ -449,6 +459,12 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
   const { scriptNode: node, onUpdate, onDelete, accentColor, nodeOpacity } = data;
   const nodeColor = getNodeColor(node.type);
 
+  // Separate exec and data ports for Unreal-style layout
+  const execInputs = node.inputs.filter(p => p.type === 'exec');
+  const execOutputs = node.outputs.filter(p => p.type === 'exec');
+  const dataInputs = node.inputs.filter(p => p.type !== 'exec');
+  const dataOutputs = node.outputs.filter(p => p.type !== 'exec');
+
   // Get icon for node type
   const getNodeIcon = () => {
     if (node.type.startsWith('event-')) return '⚡';
@@ -459,6 +475,20 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
     if (node.type.startsWith('math-')) return '∑';
     if (node.type.startsWith('logic-')) return '⋈';
     return '◆';
+  };
+
+  // Get node category subtitle
+  const getNodeSubtitle = () => {
+    if (node.type.startsWith('event-')) return 'Event';
+    if (node.type.startsWith('flow-')) return 'Flow Control';
+    if (node.type.startsWith('action-')) return 'Action';
+    if (node.type.startsWith('mod-')) return 'Mod';
+    if (node.type.startsWith('const-')) return 'Constant';
+    if (node.type.startsWith('math-')) return 'Math';
+    if (node.type.startsWith('logic-')) return 'Logic';
+    if (node.type.startsWith('call-')) return 'Function';
+    if (node.type.startsWith('custom-')) return 'Custom';
+    return 'Node';
   };
 
   // Get data type label for display - full names
@@ -486,10 +516,10 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
     return typeMap[dataType] || dataType.charAt(0).toUpperCase() + dataType.slice(1);
   };
 
-  // Inline editor for node data - Material Design styled
+  // Inline editor for node data - Unreal style dark input boxes
   const renderInlineEditor = () => {
-    // Material Design filled input style
-    const inputClass = "w-full px-3 py-2 bg-white/[0.06] rounded-t rounded-b-none text-xs text-gray-100 border-b-2 border-white/20 outline-none transition-all duration-200 hover:bg-white/[0.08] focus:bg-white/[0.09] focus:border-[#2196F3]";
+    // Unreal-style dark input with subtle border
+    const inputClass = "w-full px-2 py-1.5 bg-black/40 rounded text-xs text-gray-100 border border-white/10 outline-none transition-all duration-200 hover:bg-black/50 focus:bg-black/60 focus:border-white/30";
 
     if (node.type === 'const-string') {
       const value = typeof node.data.value === 'string' ? node.data.value : '';
@@ -543,11 +573,12 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
       const x = typeof node.data.x === 'number' ? node.data.x : 0;
       const y = typeof node.data.y === 'number' ? node.data.y : 0;
       const z = typeof node.data.z === 'number' ? node.data.z : 0;
+      const vectorColor = '#FFEB3B'; // Yellow for vectors like Unreal
       return (
-        <div className="grid grid-cols-3 gap-1.5 w-full" style={{ minWidth: 0 }}>
+        <div className="flex items-center gap-1 w-full">
           {(['x', 'y', 'z'] as const).map((axis) => (
-            <div key={axis} className="min-w-0 flex flex-col gap-0.5">
-              <span className="text-[9px] text-gray-500 uppercase font-semibold tracking-wider">{axis}</span>
+            <div key={axis} className="flex-1 min-w-0 flex items-center">
+              <span className="text-[10px] text-gray-500 uppercase font-medium mr-1">{axis}</span>
               <input
                 type="number"
                 step="0.1"
@@ -555,7 +586,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
                 onChange={(e) => onUpdate({ data: { ...node.data, [axis]: parseFloat(e.target.value) || 0 } })}
                 onMouseDown={(e) => e.stopPropagation()}
                 style={{ fontVariantNumeric: 'tabular-nums' }}
-                className="w-full min-w-0 px-2 py-1.5 bg-white/[0.06] rounded-t rounded-b-none text-[11px] text-left text-gray-100 border-b-2 border-white/20 outline-none transition-all duration-200 hover:bg-white/[0.08] focus:bg-white/[0.09] focus:border-[#2196F3]"
+                className="w-full min-w-0 px-1.5 py-1 bg-black/40 text-[11px] text-center text-gray-100 outline-none transition-all duration-200 hover:bg-black/50 focus:bg-black/60"
               />
             </div>
           ))}
@@ -1030,49 +1061,59 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
   const hasEditableData = editableDataKeys.length > 0 || 
     node.type.startsWith('const-'); // const nodes always show their editors
 
-  // Calculate dynamic width based on content
+  // Calculate dynamic width based on content - adjusted for Unreal-style side-by-side layout
   const calculateNodeWidth = () => {
-    const MIN_WIDTH = 200;
-    const MAX_WIDTH = 420;
-    const CHAR_WIDTH = 8.5; // Approximate width per character for 14px font
-    const TYPE_CHAR_WIDTH = 7; // Smaller font for type labels
-    const BASE_PADDING = 50; // Base padding for handles and margins
-    const TYPE_BADGE_PADDING = 24; // Padding inside type badge
+    const MIN_WIDTH = 220;
+    const MAX_WIDTH = 480;
+    const CHAR_WIDTH = 8; // Approximate width per character for 13px font
+    const TYPE_CHAR_WIDTH = 6.5; // Smaller font for type labels
+    const SIDE_PADDING = 56; // Padding for both handle areas
+    const TYPE_BADGE_PADDING = 20; // Padding inside type badge
+    const CENTER_GAP = 40; // Gap between left and right ports
 
     // Measure node label (header)
     const cleanLabel = node.label.replace(/^(Event|Flow|Mod|Data|Action):\s*/, '');
-    const labelWidth = cleanLabel.length * CHAR_WIDTH + BASE_PADDING + 40; // Extra for icon
+    const labelWidth = cleanLabel.length * CHAR_WIDTH + SIDE_PADDING + 50; // Extra for icon
 
-    // Measure input labels (label + type badge + spacing)
-    const inputWidths = node.inputs.map(input => {
-      const labelLen = input.label.length * CHAR_WIDTH;
-      const typeLen = input.dataType ? (getTypeLabel(input.dataType).length * TYPE_CHAR_WIDTH + TYPE_BADGE_PADDING) : 0;
-      return labelLen + typeLen + BASE_PADDING + 24; // Extra gap between label and badge
-    });
+    // For side-by-side layout, we need to measure the combined width of matching rows
+    const maxPortRows = Math.max(dataInputs.length, dataOutputs.length);
+    let maxRowWidth = 0;
 
-    // Measure output labels (label + type badge + spacing)
-    const outputWidths = node.outputs.map(output => {
-      const labelLen = output.label.length * CHAR_WIDTH;
-      const typeLen = output.dataType ? (getTypeLabel(output.dataType).length * TYPE_CHAR_WIDTH + TYPE_BADGE_PADDING) : 0;
-      return labelLen + typeLen + BASE_PADDING + 24;
-    });
+    for (let i = 0; i < maxPortRows; i++) {
+      const input = dataInputs[i];
+      const output = dataOutputs[i];
+      
+      let leftWidth = 0;
+      let rightWidth = 0;
+      
+      if (input) {
+        leftWidth = input.label.length * CHAR_WIDTH;
+        if (input.dataType) leftWidth += (getTypeLabel(input.dataType).length * TYPE_CHAR_WIDTH + TYPE_BADGE_PADDING);
+      }
+      
+      if (output) {
+        rightWidth = output.label.length * CHAR_WIDTH;
+        if (output.dataType) rightWidth += (getTypeLabel(output.dataType).length * TYPE_CHAR_WIDTH + TYPE_BADGE_PADDING);
+      }
+      
+      maxRowWidth = Math.max(maxRowWidth, leftWidth + rightWidth + CENTER_GAP + SIDE_PADDING);
+    }
 
     // Special cases for nodes with inline editors
     let editorWidth = 0;
     if (node.type === 'custom-function') {
-      editorWidth = 260; // Compact but functional
+      editorWidth = 280;
     } else if (node.type === 'call-function') {
-      editorWidth = 220; // Streamlined call function
+      editorWidth = 240;
     } else if (node.type === 'const-vector') {
-      editorWidth = 260; // Vector needs space for 3 inputs
+      editorWidth = 280;
     } else if (node.type === 'const-supported-attachments') {
-      editorWidth = 240; // Grid layout needs space
+      editorWidth = 260;
     }
 
     const maxContentWidth = Math.max(
       labelWidth,
-      ...inputWidths,
-      ...outputWidths,
+      maxRowWidth,
       editorWidth
     );
 
@@ -1080,119 +1121,209 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
   };
 
   const nodeWidth = calculateNodeWidth();
+  const hasExecPorts = execInputs.length > 0 || execOutputs.length > 0;
 
   return (
     <div
-      className="rounded-lg select-none overflow-visible"
+      className="rounded select-none overflow-visible"
       style={{
         minWidth: nodeWidth,
         width: nodeWidth,
         opacity: nodeOpacity / 100,
-        backgroundColor: '#212121', // Material Grey 900
-        border: 'none',
+        backgroundColor: '#1a1a1a',
+        border: '1px solid #333',
         boxShadow: selected
-          ? `0 8px 10px -5px rgba(0,0,0,.2), 0 16px 24px 2px rgba(0,0,0,.14), 0 6px 30px 5px rgba(0,0,0,.12), 0 0 0 2px ${accentColor}`
-          : '0 3px 5px -1px rgba(0,0,0,.2), 0 6px 10px 0 rgba(0,0,0,.14), 0 1px 18px 0 rgba(0,0,0,.12)',
+          ? `0 8px 16px rgba(0,0,0,.4), 0 0 0 2px ${accentColor}`
+          : '0 4px 12px rgba(0,0,0,.3)',
         transition: 'box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
-      {/* Node Header - Material style */}
+      {/* Node Header - Unreal style with gradient */}
       <div
-        className="px-4 py-3 flex items-center gap-2.5 relative"
+        className="px-3 py-2 flex items-center gap-2 relative"
         style={{
-          background: nodeColor,
-          borderBottom: 'none',
+          background: `linear-gradient(180deg, ${nodeColor} 0%, ${nodeColor}dd 100%)`,
+          borderBottom: '1px solid rgba(0,0,0,0.3)',
+          borderRadius: '3px 3px 0 0',
         }}
       >
-        <span className="text-base opacity-90">{getNodeIcon()}</span>
-        <span className="text-sm font-medium text-white tracking-wide flex-1 truncate pr-6">
-          {node.label.replace(/^(Event|Flow|Mod|Data|Action):\s*/, '')}
-        </span>
+        <div className="flex flex-col flex-1 min-w-0">
+          <span className="text-[10px] text-white/60 uppercase tracking-wider font-medium">
+            {getNodeSubtitle()}
+          </span>
+          <span className="text-sm font-semibold text-white truncate">
+            {node.label.replace(/^(Event|Flow|Mod|Data|Action):\s*/, '')}
+          </span>
+        </div>
         {selected && (
           <button
             onClick={(e) => {
               e.stopPropagation();
               onDelete();
             }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-white/20 rounded-full transition-colors"
+            className="p-1 hover:bg-white/20 rounded transition-colors"
           >
-            <Trash2 size={16} className="text-white/90" />
+            <Trash2 size={14} className="text-white/80" />
           </button>
         )}
       </div>
 
-      {/* INPUTS Section */}
-      {hasInputs && (
-        <div className="px-4 pt-3 pb-2 overflow-visible">
-          <div className="text-[11px] text-gray-400 uppercase tracking-wider font-medium mb-2.5">Inputs</div>
-          {node.inputs.map((input) => {
-            const portColor = getPortColor(input.type, input.dataType);
-            return (
-              <div key={input.id} className="flex items-center py-2 relative">
+      {/* Exec Ports Row - Always at top like Unreal */}
+      {hasExecPorts && (
+        <div className="flex justify-between items-start px-3 py-2 border-b border-white/10">
+          {/* Exec Input(s) - typically just one */}
+          <div className="flex flex-col gap-2">
+            {execInputs.map((input) => (
+              <div key={input.id} className="flex items-center relative h-6">
                 <Handle
                   type="target"
                   position={Position.Left}
                   id={input.id}
-                  className="!border-0 !absolute !-left-4"
+                  className="!border-0"
                   style={{
                     width: '14px',
                     height: '14px',
-                    backgroundColor: portColor,
-                    borderRadius: input.type === 'exec' ? '2px' : '50%',
-                    clipPath: input.type === 'exec' ? 'polygon(0 0, 100% 50%, 0 100%)' : undefined,
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                    background: 'transparent',
+                    left: '8px',
                   }}
-                />
-                <span className="ml-5 text-sm text-gray-200">{input.label}</span>
-                {input.dataType && (
-                  <span className="ml-auto text-[11px] text-gray-500 bg-white/5 px-2 py-0.5 rounded">
-                    {getTypeLabel(input.dataType)}
-                  </span>
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" className="pointer-events-none">
+                    <polygon 
+                      points="0,0 14,7 0,14" 
+                      fill="none" 
+                      stroke="white" 
+                      strokeWidth="2"
+                    />
+                  </svg>
+                </Handle>
+                {input.label !== 'Exec' && (
+                  <span className="ml-8 text-xs text-gray-400">{input.label}</span>
                 )}
               </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Node Data Section - only show for fields without input ports */}
-      {hasEditableData && (
-        <div className='px-4 py-3 border-t border-white/5'>
-          {renderInlineEditor()}
-        </div>
-      )}
-
-      {/* OUTPUTS Section */}
-      {hasOutputs && (
-        <div className='px-4 pt-2 pb-3 border-t border-white/5 overflow-visible'>
-          <div className='text-[11px] mb-2.5 text-gray-400 uppercase tracking-wider font-medium text-right'>Outputs</div>
-          {node.outputs.map((output) => {
-            const portColor = getPortColor(output.type, output.dataType);
-            return (
-              <div key={output.id} className='py-2 flex flex-wrap items-center justify-end relative gap-x-2'>
-                {output.dataType && (
-                  <span className='text-[11px] px-2 text-gray-500 bg-white/5 py-0.5 rounded order-3'>
-                    {getTypeLabel(output.dataType)}
-                  </span>
+            ))}
+          </div>
+          
+          {/* Exec Output(s) - stacked vertically like Unreal's Branch True/False */}
+          <div className="flex flex-col gap-2">
+            {execOutputs.map((output) => (
+              <div key={output.id} className="flex items-center justify-end relative h-6">
+                {output.label !== 'Exec' && output.label !== 'Then' && (
+                  <span className="mr-8 text-xs text-gray-300">{output.label}</span>
                 )}
-                <span className='text-sm text-gray-200 order-2 mr-2'>{output.label}</span>
                 <Handle
                   type="source"
                   position={Position.Right}
                   id={output.id}
-                  className="!border-0 !absolute !-right-4 order-4"
+                  className="!border-0"
                   style={{
                     width: '14px',
                     height: '14px',
-                    backgroundColor: portColor,
-                    borderRadius: output.type === 'exec' ? '2px' : '50%',
-                    clipPath: output.type === 'exec' ? 'polygon(0 0, 100% 50%, 0 100%)' : undefined,
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                    background: 'transparent',
+                    right: '8px',
                   }}
-                />
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" className="pointer-events-none">
+                    <polygon 
+                      points="0,0 14,7 0,14" 
+                      fill="none" 
+                      stroke="white" 
+                      strokeWidth="2"
+                    />
+                  </svg>
+                </Handle>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Data Ports - Side by side layout like Unreal */}
+      {(dataInputs.length > 0 || dataOutputs.length > 0) && (
+        <div className="py-2 px-3">
+          {/* Render rows with inputs on left, outputs on right */}
+          {Array.from({ length: Math.max(dataInputs.length, dataOutputs.length) }).map((_, rowIndex) => {
+            const input = dataInputs[rowIndex];
+            const output = dataOutputs[rowIndex];
+            
+            return (
+              <div key={rowIndex} className="flex justify-between items-center py-1.5 min-h-[28px]">
+                {/* Left side - Input */}
+                <div className="flex items-center flex-1">
+                  {input && (
+                    <div className="flex items-center relative">
+                      <Handle
+                        type="target"
+                        position={Position.Left}
+                        id={input.id}
+                        className="!border-0"
+                        style={{
+                          width: '10px',
+                          height: '10px',
+                          backgroundColor: getPortColor(input.type, input.dataType),
+                          borderRadius: '50%',
+                          boxShadow: `0 0 4px ${getPortColor(input.type, input.dataType)}60`,
+                          left: '8px',
+                        }}
+                      />
+                      <span className="ml-5 text-xs text-gray-300">{input.label}</span>
+                      {input.dataType && (
+                        <span 
+                          className="ml-2 text-[10px] px-1.5 py-0.5 rounded"
+                          style={{ 
+                            color: getPortColor(input.type, input.dataType),
+                            backgroundColor: `${getPortColor(input.type, input.dataType)}15`,
+                          }}
+                        >
+                          {getTypeLabel(input.dataType)}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Right side - Output */}
+                <div className="flex items-center justify-end flex-1">
+                  {output && (
+                    <div className="flex items-center relative">
+                      {output.dataType && (
+                        <span 
+                          className="mr-2 text-[10px] px-1.5 py-0.5 rounded"
+                          style={{ 
+                            color: getPortColor(output.type, output.dataType),
+                            backgroundColor: `${getPortColor(output.type, output.dataType)}15`,
+                          }}
+                        >
+                          {getTypeLabel(output.dataType)}
+                        </span>
+                      )}
+                      <span className="mr-5 text-xs text-gray-300">{output.label}</span>
+                      <Handle
+                        type="source"
+                        position={Position.Right}
+                        id={output.id}
+                        className="!border-0"
+                        style={{
+                          width: '10px',
+                          height: '10px',
+                          backgroundColor: getPortColor(output.type, output.dataType),
+                          borderRadius: '50%',
+                          boxShadow: `0 0 4px ${getPortColor(output.type, output.dataType)}60`,
+                          right: '8px',
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Node Data Section - inline editors */}
+      {hasEditableData && (
+        <div className='px-3 py-3 border-t border-white/10'>
+          {renderInlineEditor()}
         </div>
       )}
     </div>
