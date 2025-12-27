@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { ScriptNode, NodeConnection } from '../types/visual-scripting';
-import type { ProjectData, ProjectMetadata, ScriptFile, ModSettings, WeaponFile, UIFile, UIFileType, ActiveFileType } from '../types/project';
+import type { ProjectData, ProjectMetadata, ScriptFile, ModSettings, WeaponFile, UIFile, UIFileType, ActiveFileType, LocalizationFile, LocalizationLanguage } from '../types/project';
 import { 
   serializeProject, 
   deserializeProject, 
@@ -8,7 +8,8 @@ import {
   createNewProject,
   createScriptFile,
   createWeaponFile,
-  createUIFile
+  createUIFile,
+  createLocalizationFile
 } from '../utils/project-manager';
 import { saveProjectFile, openProjectFile } from '../utils/file-system';
 
@@ -32,6 +33,11 @@ export interface UseProjectFilesReturn {
   uiFiles: UIFile[];
   activeUIFile: UIFile | null;
   uiFolders: string[];
+  
+  // Localization file state
+  localizationFiles: LocalizationFile[];
+  activeLocalizationFile: LocalizationFile | null;
+  localizationFolders: string[];
   
   // Project actions
   newProject: () => void;
@@ -70,6 +76,16 @@ export interface UseProjectFilesReturn {
   createUIFolder: (folderPath: string) => void;
   deleteUIFolder: (folderPath: string) => void;
   renameUIFolder: (oldPath: string, newPath: string) => void;
+  
+  // Localization file actions
+  createNewLocalizationFile: (name: string, language?: LocalizationLanguage) => void;
+  deleteLocalizationFile: (fileId: string) => void;
+  renameLocalizationFile: (fileId: string, newName: string) => void;
+  setActiveLocalizationFile: (fileId: string | null) => void;
+  updateLocalizationTokens: (fileId: string, tokens: Record<string, string>) => void;
+  createLocalizationFolder: (folderPath: string) => void;
+  deleteLocalizationFolder: (folderPath: string) => void;
+  renameLocalizationFolder: (oldPath: string, newPath: string) => void;
   
   // Folder actions
   createFolder: (folderPath: string) => void;
@@ -134,6 +150,12 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
   const activeUIFileId = projectData?.settings.activeUIFile;
   const activeUIFile = activeUIFileId ? (uiFiles.find(f => f.id === activeUIFileId) || null) : null;
   
+  // Localization file derived state
+  const localizationFiles = projectData?.localizationFiles || [];
+  const localizationFolders = projectData?.settings.localizationFolders || [];
+  const activeLocalizationFileId = projectData?.settings.activeLocalizationFile;
+  const activeLocalizationFile = activeLocalizationFileId ? (localizationFiles.find(f => f.id === activeLocalizationFileId) || null) : null;
+  
   const activeFileType: ActiveFileType = projectData?.settings.activeFileType || 'script';
 
   // Helper to save project data (used for auto-save after structural changes)
@@ -146,7 +168,8 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
         data.metadata,
         data.settings,
         data.weaponFiles,
-        data.uiFiles
+        data.uiFiles,
+        data.localizationFiles
       );
       
       if (window.electron) {
@@ -178,7 +201,8 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
         projectData.metadata,
         projectData.settings,
         projectData.weaponFiles,
-        projectData.uiFiles
+        projectData.uiFiles,
+        projectData.localizationFiles
       );
       
       let filePath = currentFilePath;
@@ -222,7 +246,8 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
         projectData.metadata,
         projectData.settings,
         projectData.weaponFiles,
-        projectData.uiFiles
+        projectData.uiFiles,
+        projectData.localizationFiles
       );
       
       const result = await saveProjectFile(jsonContent, {
@@ -289,7 +314,7 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
       }
 
       const result = await window.electron.readProjectFile(path);
-      if (!result.success) {
+      if (!result.success || !result.content) {
         throw new Error(result.error || 'Failed to read project file');
       }
       
@@ -1026,6 +1051,245 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
     });
   }, [currentFilePath, saveProjectData]);
 
+  // ===== LOCALIZATION FILE ACTIONS =====
+  
+  // Create new localization file
+  const createNewLocalizationFile = useCallback((name: string, language: LocalizationLanguage = 'english') => {
+    const newFile = createLocalizationFile(name, language);
+    setProjectData(prev => {
+      if (!prev) return prev;
+      const newData: ProjectData = {
+        ...prev,
+        localizationFiles: [...(prev.localizationFiles || []), newFile],
+        settings: {
+          ...prev.settings,
+          activeLocalizationFile: newFile.id,
+          activeFileType: 'localization',
+        },
+      };
+      
+      if (currentFilePath) {
+        setTimeout(() => {
+          saveProjectData(newData, currentFilePath).then(saved => {
+            if (saved) {
+              setHasUnsavedChanges(false);
+              setModifiedFileIds(new Set());
+            }
+          });
+        }, 0);
+      } else {
+        setHasUnsavedChanges(true);
+      }
+      
+      return newData;
+    });
+  }, [currentFilePath, saveProjectData]);
+
+  // Delete localization file
+  const deleteLocalizationFile = useCallback((fileId: string) => {
+    setProjectData(prev => {
+      if (!prev) return prev;
+      const filtered = (prev.localizationFiles || []).filter(f => f.id !== fileId);
+      const wasActive = prev.settings.activeLocalizationFile === fileId;
+      const newActiveId = wasActive ? (filtered[0]?.id || null) : prev.settings.activeLocalizationFile;
+      const newData: ProjectData = {
+        ...prev,
+        localizationFiles: filtered,
+        settings: {
+          ...prev.settings,
+          activeLocalizationFile: newActiveId || undefined,
+          activeFileType: wasActive && filtered.length === 0 ? 'script' : prev.settings.activeFileType,
+        },
+      };
+      
+      if (currentFilePath) {
+        setTimeout(() => {
+          saveProjectData(newData, currentFilePath).then(saved => {
+            if (saved) {
+              setHasUnsavedChanges(false);
+              setModifiedFileIds(new Set());
+            }
+          });
+        }, 0);
+      } else {
+        setHasUnsavedChanges(true);
+      }
+      
+      return newData;
+    });
+    
+    setModifiedFileIds(prev => {
+      const next = new Set(prev);
+      next.delete(fileId);
+      return next;
+    });
+  }, [currentFilePath, saveProjectData]);
+
+  // Rename localization file
+  const renameLocalizationFile = useCallback((fileId: string, newName: string) => {
+    setProjectData(prev => {
+      if (!prev) return prev;
+      const cleanName = newName.replace(/_[a-z]+\.txt$/, '').replace(/\.txt$/, '');
+      const updatedFiles = (prev.localizationFiles || []).map(f =>
+        f.id === fileId
+          ? { ...f, name: cleanName, modifiedAt: new Date().toISOString() }
+          : f
+      );
+      const newData: ProjectData = {
+        ...prev,
+        localizationFiles: updatedFiles,
+      };
+      
+      if (currentFilePath) {
+        setTimeout(() => {
+          saveProjectData(newData, currentFilePath).then(saved => {
+            if (saved) {
+              setHasUnsavedChanges(false);
+              setModifiedFileIds(new Set());
+            }
+          });
+        }, 0);
+      } else {
+        setHasUnsavedChanges(true);
+      }
+      
+      return newData;
+    });
+  }, [currentFilePath, saveProjectData]);
+
+  // Set active localization file
+  const setActiveLocalizationFile = useCallback((fileId: string | null) => {
+    setProjectData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        settings: {
+          ...prev.settings,
+          activeLocalizationFile: fileId || undefined,
+          activeFileType: 'localization',
+        },
+      };
+    });
+  }, []);
+
+  // Update localization tokens
+  const updateLocalizationTokens = useCallback((fileId: string, tokens: Record<string, string>) => {
+    setModifiedFileIds(prev => new Set(prev).add(fileId));
+    setProjectData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        localizationFiles: (prev.localizationFiles || []).map(f =>
+          f.id === fileId
+            ? { ...f, tokens, modifiedAt: new Date().toISOString() }
+            : f
+        ),
+      };
+    });
+    setHasUnsavedChanges(true);
+  }, []);
+
+  // Create localization folder
+  const createLocalizationFolder = useCallback((folderPath: string) => {
+    setProjectData(prev => {
+      if (!prev) return prev;
+      const currentFolders = prev.settings.localizationFolders || [];
+      if (currentFolders.includes(folderPath)) return prev;
+      const newData: ProjectData = {
+        ...prev,
+        settings: {
+          ...prev.settings,
+          localizationFolders: [...currentFolders, folderPath],
+        },
+      };
+      
+      if (currentFilePath) {
+        setTimeout(() => {
+          saveProjectData(newData, currentFilePath).then(saved => {
+            if (saved) {
+              setHasUnsavedChanges(false);
+              setModifiedFileIds(new Set());
+            }
+          });
+        }, 0);
+      } else {
+        setHasUnsavedChanges(true);
+      }
+      
+      return newData;
+    });
+  }, [currentFilePath, saveProjectData]);
+
+  // Delete localization folder
+  const deleteLocalizationFolder = useCallback((folderPath: string) => {
+    setProjectData(prev => {
+      if (!prev) return prev;
+      const filtered = (prev.localizationFiles || []).filter(f => !f.name.startsWith(`${folderPath}/`));
+      const newData: ProjectData = {
+        ...prev,
+        localizationFiles: filtered,
+        settings: {
+          ...prev.settings,
+          localizationFolders: (prev.settings.localizationFolders || []).filter(f => f !== folderPath && !f.startsWith(`${folderPath}/`)),
+        },
+      };
+      
+      if (currentFilePath) {
+        setTimeout(() => {
+          saveProjectData(newData, currentFilePath).then(saved => {
+            if (saved) {
+              setHasUnsavedChanges(false);
+              setModifiedFileIds(new Set());
+            }
+          });
+        }, 0);
+      } else {
+        setHasUnsavedChanges(true);
+      }
+      
+      return newData;
+    });
+  }, [currentFilePath, saveProjectData]);
+
+  // Rename localization folder
+  const renameLocalizationFolder = useCallback((oldPath: string, newPath: string) => {
+    setProjectData(prev => {
+      if (!prev) return prev;
+      const updatedFolders = (prev.settings.localizationFolders || []).map(f => 
+        f === oldPath ? newPath : f.startsWith(`${oldPath}/`) ? f.replace(oldPath, newPath) : f
+      );
+      const updatedFiles = (prev.localizationFiles || []).map(f => {
+        if (f.name.startsWith(`${oldPath}/`)) {
+          return { ...f, name: f.name.replace(`${oldPath}/`, `${newPath}/`), modifiedAt: new Date().toISOString() };
+        }
+        return f;
+      });
+      const newData: ProjectData = {
+        ...prev,
+        localizationFiles: updatedFiles,
+        settings: {
+          ...prev.settings,
+          localizationFolders: updatedFolders,
+        },
+      };
+      
+      if (currentFilePath) {
+        setTimeout(() => {
+          saveProjectData(newData, currentFilePath).then(saved => {
+            if (saved) {
+              setHasUnsavedChanges(false);
+              setModifiedFileIds(new Set());
+            }
+          });
+        }, 0);
+      } else {
+        setHasUnsavedChanges(true);
+      }
+      
+      return newData;
+    });
+  }, [currentFilePath, saveProjectData]);
+
   // Rename folder
   const renameFolder = useCallback((oldPath: string, newPath: string) => {
     setProjectData(prev => {
@@ -1097,6 +1361,11 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
     activeUIFile,
     uiFolders,
     
+    // Localization file state
+    localizationFiles,
+    activeLocalizationFile,
+    localizationFolders,
+    
     newProject,
     saveProject,
     saveProjectAs,
@@ -1131,6 +1400,16 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
     createUIFolder,
     deleteUIFolder,
     renameUIFolder,
+    
+    // Localization file actions
+    createNewLocalizationFile,
+    deleteLocalizationFile,
+    renameLocalizationFile,
+    setActiveLocalizationFile,
+    updateLocalizationTokens,
+    createLocalizationFolder,
+    deleteLocalizationFolder,
+    renameLocalizationFolder,
     
     createFolder,
     deleteFolder,

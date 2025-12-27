@@ -78,9 +78,44 @@ export interface UIFile {
 }
 
 /**
+ * Supported languages for localization files
+ */
+export const SUPPORTED_LANGUAGES = [
+  'english',
+  'french', 
+  'german',
+  'italian',
+  'japanese',
+  'korean',
+  'polish',
+  'portuguese',
+  'russian',
+  'schinese',  // Simplified Chinese
+  'spanish',
+  'tchinese',  // Traditional Chinese
+  'mspanish',  // Mexican Spanish
+] as const;
+
+export type LocalizationLanguage = typeof SUPPORTED_LANGUAGES[number];
+
+/**
+ * Localization file - Text files with key-value translation pairs
+ * Located in resource/localization/
+ * Uses %language% placeholder in mod.vdf that gets replaced with actual language
+ */
+export interface LocalizationFile {
+  id: string;
+  name: string;              // Base name without language suffix (e.g., "mymod" for "mymod_%language%.txt")
+  language: LocalizationLanguage;  // Which language this file is for
+  tokens: Record<string, string>;  // Key-value translation pairs
+  createdAt: string;
+  modifiedAt: string;
+}
+
+/**
  * Type of active file being edited
  */
-export type ActiveFileType = 'script' | 'weapon' | 'ui';
+export type ActiveFileType = 'script' | 'weapon' | 'ui' | 'localization';
 
 export interface ProjectSettings {
   canvasPosition?: { x: number; y: number };
@@ -89,10 +124,12 @@ export interface ProjectSettings {
   activeScriptFile?: string; // ID of currently open script file
   activeWeaponFile?: string; // ID of currently open weapon file
   activeUIFile?: string; // ID of currently open UI file
+  activeLocalizationFile?: string; // ID of currently open localization file
   activeFileType?: ActiveFileType; // Which type of file is currently active
   folders?: string[]; // Explicit folder paths for scripts (including empty folders)
   weaponFolders?: string[]; // Explicit folder paths for weapons
   uiFolders?: string[]; // Explicit folder paths for UI files
+  localizationFolders?: string[]; // Explicit folder paths for localization files
   
   // Mod export settings
   mod?: ModSettings;
@@ -104,6 +141,7 @@ export interface ProjectData {
   scriptFiles: ScriptFile[]; // Multiple script files
   weaponFiles: WeaponFile[]; // Weapon definition files
   uiFiles: UIFile[]; // VGUI UI files
+  localizationFiles: LocalizationFile[]; // Localization files
   nodes?: any[]; // Legacy support - will migrate to scriptFiles
   connections?: any[]; // Legacy support
 }

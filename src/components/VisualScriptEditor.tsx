@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Code, Save, FolderOpen, FileDown, FileText, FilePlus, ChevronDown, ChevronLeft, ChevronRight, Folder, X, Settings, Package, Crosshair, Layout } from 'lucide-react';
+import { Code, Save, FolderOpen, FileDown, FileText, FilePlus, ChevronDown, ChevronLeft, ChevronRight, Folder, X, Settings, Package, Crosshair, Layout, Languages } from 'lucide-react';
 import SettingsModal, { loadSettings, saveSettings, DEFAULT_SETTINGS } from './visual-scripting/SettingsModal';
 import ProjectSettingsModal from './visual-scripting/ProjectSettingsModal';
 import { NotificationContainer, ExportPathModal, useNotifications, useConfirmModal } from './visual-scripting/Notification';
@@ -12,6 +12,7 @@ import NodeDocModal from './visual-scripting/NodeDocModal';
 import CodeView from './visual-scripting/CodeView';
 import WeaponEditor from './visual-scripting/WeaponEditor';
 import UITextEditor from './visual-scripting/UITextEditor';
+import LocalizationEditor from './visual-scripting/LocalizationEditor';
 import WelcomeScreen from './visual-scripting/WelcomeScreen';
 import SaveTemplateModal from './visual-scripting/SaveTemplateModal';
 import UnifiedSidebar from './visual-scripting/UnifiedSidebar';
@@ -75,7 +76,7 @@ export default function VisualScriptEditor() {
   }, []);
 
   // Open file tabs - now stores file ID and type
-  type OpenTab = { id: string; type: 'script' | 'weapon' | 'ui' };
+  type OpenTab = { id: string; type: 'script' | 'weapon' | 'ui' | 'localization' };
   const [openFileTabs, setOpenFileTabs] = useState<OpenTab[]>([]);
   
   // Collapsed categories in node palette
@@ -102,6 +103,10 @@ export default function VisualScriptEditor() {
     uiFiles,
     activeUIFile,
     uiFolders,
+    // Localization file state
+    localizationFiles,
+    activeLocalizationFile,
+    localizationFolders,
     saveProject,
     saveProjectAs,
     loadProject,
@@ -134,6 +139,15 @@ export default function VisualScriptEditor() {
     createUIFolder,
     deleteUIFolder,
     renameUIFolder,
+    // Localization file actions
+    createNewLocalizationFile,
+    deleteLocalizationFile,
+    renameLocalizationFile,
+    setActiveLocalizationFile: setActiveLocalizationFileBase,
+    updateLocalizationTokens,
+    createLocalizationFolder,
+    deleteLocalizationFolder,
+    renameLocalizationFolder,
   } = useProjectFiles({ maxRecentProjects: appSettings.general.maxRecentProjects });
 
   // Wrapper to set active weapon file AND add tab simultaneously
@@ -165,6 +179,21 @@ export default function VisualScriptEditor() {
       });
     }
   }, [setActiveUIFileBase]);
+
+  // Wrapper to set active localization file AND add tab simultaneously
+  const setActiveLocalizationFile = useCallback((fileId: string | null) => {
+    setActiveLocalizationFileBase(fileId);
+    if (fileId) {
+      // Add tab immediately when selecting a localization file
+      setOpenFileTabs(prevTabs => {
+        const alreadyOpen = prevTabs.some(tab => tab.id === fileId && tab.type === 'localization');
+        if (!alreadyOpen) {
+          return [...prevTabs, { id: fileId, type: 'localization' as const }];
+        }
+        return prevTabs;
+      });
+    }
+  }, [setActiveLocalizationFileBase]);
 
   // Auto-save functionality
   useEffect(() => {
@@ -295,8 +324,21 @@ export default function VisualScriptEditor() {
     }
   }, [activeUIFile?.id]);
 
+  // Add localization file to tabs when loaded from saved project (backup for initial load)
+  useEffect(() => {
+    if (activeLocalizationFile && activeLocalizationFile.id) {
+      setOpenFileTabs(prevTabs => {
+        const alreadyOpen = prevTabs.some(tab => tab.id === activeLocalizationFile.id && tab.type === 'localization');
+        if (!alreadyOpen) {
+          return [...prevTabs, { id: activeLocalizationFile.id, type: 'localization' as const }];
+        }
+        return prevTabs;
+      });
+    }
+  }, [activeLocalizationFile?.id]);
+
   // Close a file tab
-  const handleCloseTab = useCallback((fileId: string, fileType: 'script' | 'weapon' | 'ui', e: React.MouseEvent) => {
+  const handleCloseTab = useCallback((fileId: string, fileType: 'script' | 'weapon' | 'ui' | 'localization', e: React.MouseEvent) => {
     e.stopPropagation();
     
     // Get the current tabs state to calculate new tabs
@@ -309,8 +351,9 @@ export default function VisualScriptEditor() {
         const isActiveScript = fileType === 'script' && activeScriptFile?.id === fileId;
         const isActiveWeapon = fileType === 'weapon' && activeWeaponFile?.id === fileId;
         const isActiveUI = fileType === 'ui' && activeUIFile?.id === fileId;
+        const isActiveLocalization = fileType === 'localization' && activeLocalizationFile?.id === fileId;
         
-        if (isActiveScript || isActiveWeapon || isActiveUI) {
+        if (isActiveScript || isActiveWeapon || isActiveUI || isActiveLocalization) {
           if (newTabs.length > 0) {
             // Switch to the previous tab or the first remaining tab
             const newActiveIndex = Math.min(closedIndex, newTabs.length - 1);
@@ -319,8 +362,10 @@ export default function VisualScriptEditor() {
               setActiveScriptFile(newActiveTab.id);
             } else if (newActiveTab.type === 'weapon') {
               setActiveWeaponFile(newActiveTab.id);
-            } else {
+            } else if (newActiveTab.type === 'ui') {
               setActiveUIFile(newActiveTab.id);
+            } else {
+              setActiveLocalizationFile(newActiveTab.id);
             }
           } else {
             // No more tabs, clear the active file and graph state
@@ -331,8 +376,10 @@ export default function VisualScriptEditor() {
               setSelectedNodeIds([]);
             } else if (isActiveWeapon) {
               setActiveWeaponFile(null);
-            } else {
+            } else if (isActiveUI) {
               setActiveUIFile(null);
+            } else {
+              setActiveLocalizationFile(null);
             }
           }
         }
@@ -340,7 +387,7 @@ export default function VisualScriptEditor() {
       
       return newTabs;
     });
-  }, [activeScriptFile?.id, activeWeaponFile?.id, activeUIFile?.id, setActiveScriptFile, setActiveWeaponFile, setActiveUIFile]);
+  }, [activeScriptFile?.id, activeWeaponFile?.id, activeUIFile?.id, activeLocalizationFile?.id, setActiveScriptFile, setActiveWeaponFile, setActiveUIFile, setActiveLocalizationFile]);
 
   // Update active script when nodes/connections change (but not during initial load)
   useEffect(() => {
@@ -1107,25 +1154,33 @@ export default function VisualScriptEditor() {
                 const isScript = tab.type === 'script';
                 const isWeapon = tab.type === 'weapon';
                 const isUI = tab.type === 'ui';
+                const isLocalization = tab.type === 'localization';
                 const file = isScript 
                   ? scriptFiles.find(f => f.id === tab.id)
                   : isWeapon
                     ? weaponFiles.find(f => f.id === tab.id)
-                    : uiFiles.find(f => f.id === tab.id);
+                    : isUI
+                      ? uiFiles.find(f => f.id === tab.id)
+                      : localizationFiles.find(f => f.id === tab.id);
                 if (!file) return null;
                 
                 const isActive = isScript 
                   ? (activeFileType === 'script' && activeScriptFile?.id === tab.id)
                   : isWeapon
                     ? (activeFileType === 'weapon' && activeWeaponFile?.id === tab.id)
-                    : (activeFileType === 'ui' && activeUIFile?.id === tab.id);
+                    : isUI
+                      ? (activeFileType === 'ui' && activeUIFile?.id === tab.id)
+                      : (activeFileType === 'localization' && activeLocalizationFile?.id === tab.id);
                 const isModified = modifiedFileIds.has(tab.id);
                 const uiFile = isUI ? (file as any) : null;
+                const locFile = isLocalization ? (file as any) : null;
                 const displayName = isScript 
                   ? file.name 
                   : isUI 
                     ? `${file.name}.${uiFile?.fileType || 'res'}`
-                    : `${file.name}.txt`;
+                    : isLocalization
+                      ? `${file.name}_${locFile?.language || 'english'}.txt`
+                      : `${file.name}.txt`;
                 
                 return (
                   <div
@@ -1135,25 +1190,31 @@ export default function VisualScriptEditor() {
                         ? 'bg-[#2d2d2d] text-white' 
                         : 'text-gray-500 hover:bg-[#2d2d2d]/50 hover:text-gray-300'
                     }`}
-                    onClick={() => isScript ? setActiveScriptFile(tab.id) : isWeapon ? setActiveWeaponFile(tab.id) : setActiveUIFile(tab.id)}
+                    onClick={() => isScript ? setActiveScriptFile(tab.id) : isWeapon ? setActiveWeaponFile(tab.id) : isUI ? setActiveUIFile(tab.id) : setActiveLocalizationFile(tab.id)}
                   >
                     {/* Active tab indicator line */}
                     {isActive && (
                       <div 
                         className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full"
-                        style={{ backgroundColor: isUI ? '#a855f7' : isWeapon ? '#f59e0b' : accentColor }}
+                        style={{ backgroundColor: isLocalization ? '#22c55e' : isUI ? '#a855f7' : isWeapon ? '#f59e0b' : '#3b82f6' }}
                       />
                     )}
                     {isScript ? (
                       <FileText 
                         size={13} 
-                        style={{ color: isActive ? accentColor : undefined }} 
+                        style={{ color: isActive ? '#3b82f6' : undefined }} 
                         className={`flex-shrink-0 ${isActive ? '' : 'text-gray-600'}`} 
                       />
                     ) : isUI ? (
                       <Layout 
                         size={13} 
                         style={{ color: isActive ? '#a855f7' : undefined }} 
+                        className={`flex-shrink-0 ${isActive ? '' : 'text-gray-600'}`} 
+                      />
+                    ) : isLocalization ? (
+                      <Languages 
+                        size={13} 
+                        style={{ color: isActive ? '#22c55e' : undefined }} 
                         className={`flex-shrink-0 ${isActive ? '' : 'text-gray-600'}`} 
                       />
                     ) : (
@@ -1220,6 +1281,16 @@ export default function VisualScriptEditor() {
                     onCreateUIFolder={createUIFolder}
                     onDeleteUIFolder={deleteUIFolder}
                     onRenameUIFolder={renameUIFolder}
+                    localizationFiles={localizationFiles}
+                    activeLocalizationFileId={activeLocalizationFile?.id || null}
+                    localizationFolders={localizationFolders}
+                    onSelectLocalizationFile={setActiveLocalizationFile}
+                    onCreateLocalizationFile={createNewLocalizationFile}
+                    onDeleteLocalizationFile={deleteLocalizationFile}
+                    onRenameLocalizationFile={renameLocalizationFile}
+                    onCreateLocalizationFolder={createLocalizationFolder}
+                    onDeleteLocalizationFolder={deleteLocalizationFolder}
+                    onRenameLocalizationFolder={renameLocalizationFolder}
                     modifiedFileIds={modifiedFileIds}
                     onAddNode={handleAddNode}
                     viewState={graphView}
@@ -1295,7 +1366,7 @@ export default function VisualScriptEditor() {
 
             {/* Main Canvas */}
             <div className="flex-1 h-full flex flex-col min-h-0">
-              {/* Node Graph, Weapon Editor, UI Editor, or Empty State */}
+              {/* Node Graph, Weapon Editor, UI Editor, Localization Editor, or Empty State */}
               <div className="flex-1 h-full min-h-0">
                 {activeFileType === 'weapon' && activeWeaponFile ? (
                   // Weapon Editor
@@ -1311,6 +1382,14 @@ export default function VisualScriptEditor() {
                     uiFile={activeUIFile}
                     onContentChange={updateUIContent}
                     isModified={modifiedFileIds.has(activeUIFile.id)}
+                    accentColor={accentColor}
+                  />
+                ) : activeFileType === 'localization' && activeLocalizationFile ? (
+                  // Localization Editor
+                  <LocalizationEditor
+                    localizationFile={activeLocalizationFile}
+                    onTokensChange={updateLocalizationTokens}
+                    isModified={modifiedFileIds.has(activeLocalizationFile.id)}
                     accentColor={accentColor}
                   />
                 ) : activeFileType === 'script' && activeScriptFile ? (

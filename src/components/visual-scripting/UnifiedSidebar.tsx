@@ -45,7 +45,7 @@ import type { ScriptNode, NodeType, NodeTemplate, TemplateCategory, NodeConnecti
 import { loadTemplates, deleteTemplate as deleteTemplateFromStorage, instantiateTemplate } from '../../utils/template-storage';
 import { BUILT_IN_TEMPLATES } from '../../data/built-in-templates';
 import ProjectSidebar from './ProjectSidebar';
-import type { ScriptFile, WeaponFile, UIFile, UIFileType } from '../../types/project';
+import type { ScriptFile, WeaponFile, UIFile, UIFileType, LocalizationFile, LocalizationLanguage } from '../../types/project';
 
 type SidebarTab = 'project' | 'nodes' | 'presets';
 
@@ -121,6 +121,18 @@ interface UnifiedSidebarProps {
   onDeleteUIFolder: (folderPath: string) => void;
   onRenameUIFolder?: (oldPath: string, newPath: string) => void;
   
+  // Localization files
+  localizationFiles: LocalizationFile[];
+  activeLocalizationFileId: string | null;
+  localizationFolders: string[];
+  onSelectLocalizationFile: (fileId: string) => void;
+  onCreateLocalizationFile: (fileName: string, language?: LocalizationLanguage) => void;
+  onDeleteLocalizationFile: (fileId: string) => void;
+  onRenameLocalizationFile: (fileId: string, newName: string) => void;
+  onCreateLocalizationFolder: (folderPath: string) => void;
+  onDeleteLocalizationFolder: (folderPath: string) => void;
+  onRenameLocalizationFolder?: (oldPath: string, newPath: string) => void;
+  
   modifiedFileIds: Set<string>;
   
   // Node palette props
@@ -137,7 +149,7 @@ interface UnifiedSidebarProps {
   
   // General
   accentColor: string;
-  activeFileType: 'script' | 'weapon' | 'ui';
+  activeFileType: 'script' | 'weapon' | 'ui' | 'localization';
   onClose: () => void;
 }
 
@@ -189,6 +201,16 @@ export default function UnifiedSidebar({
   onCreateUIFolder,
   onDeleteUIFolder,
   onRenameUIFolder,
+  localizationFiles,
+  activeLocalizationFileId,
+  localizationFolders,
+  onSelectLocalizationFile,
+  onCreateLocalizationFile,
+  onDeleteLocalizationFile,
+  onRenameLocalizationFile,
+  onCreateLocalizationFolder,
+  onDeleteLocalizationFolder,
+  onRenameLocalizationFolder,
   modifiedFileIds,
   onAddNode,
   viewState,
@@ -497,7 +519,18 @@ export default function UnifiedSidebar({
           onCreateUIFolder={onCreateUIFolder}
           onDeleteUIFolder={onDeleteUIFolder}
           onRenameUIFolder={onRenameUIFolder}
+          localizationFiles={localizationFiles}
+          activeLocalizationFileId={activeLocalizationFileId}
+          localizationFolders={localizationFolders}
+          onSelectLocalizationFile={onSelectLocalizationFile}
+          onCreateLocalizationFile={onCreateLocalizationFile}
+          onDeleteLocalizationFile={onDeleteLocalizationFile}
+          onRenameLocalizationFile={onRenameLocalizationFile}
+          onCreateLocalizationFolder={onCreateLocalizationFolder}
+          onDeleteLocalizationFolder={onDeleteLocalizationFolder}
+          onRenameLocalizationFolder={onRenameLocalizationFolder}
           modifiedFileIds={modifiedFileIds}
+          activeFileType={activeFileType}
           accentColor={accentColor}
         />
       </div>

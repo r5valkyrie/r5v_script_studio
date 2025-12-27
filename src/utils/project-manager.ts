@@ -1,5 +1,5 @@
 import type { ScriptNode, NodeConnection } from '../types/visual-scripting';
-import type { ProjectData, ProjectMetadata, SerializedProject, ScriptFile, WeaponFile, UIFile, UIFileType } from '../types/project';
+import type { ProjectData, ProjectMetadata, SerializedProject, ScriptFile, WeaponFile, UIFile, UIFileType, LocalizationFile, LocalizationLanguage } from '../types/project';
 
 const CURRENT_PROJECT_VERSION = '1.0.0';
 const EDITOR_VERSION = '0.1.0'; // From package.json
@@ -108,6 +108,95 @@ export function createUIFile(name: string, fileType: UIFileType = 'res'): UIFile
 }
 
 /**
+ * Creates a new localization file with default content
+ */
+export function createLocalizationFile(name: string, language: LocalizationLanguage = 'english'): LocalizationFile {
+  const now = new Date().toISOString();
+  // Remove any language suffix and extension if provided
+  const baseName = name.replace(/_[a-z]+\.txt$/, '').replace(/\.txt$/, '');
+  
+  return {
+    id: `loc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    name: baseName,
+    language,
+    tokens: {
+      // Default example tokens
+      [`${baseName.toUpperCase()}_NAME`]: `${baseName} Name`,
+      [`${baseName.toUpperCase()}_DESC`]: `${baseName} Description`,
+    },
+    createdAt: now,
+    modifiedAt: now,
+  };
+}
+
+/**
+ * Serializes localization tokens to the KeyValue file format
+ */
+export function serializeLocalizationFile(file: LocalizationFile): string {
+  const lines: string[] = [
+    '"lang"',
+    '{',
+    `    "Language" "${file.language}"`,
+    '    "Tokens"',
+    '    {',
+  ];
+  
+  // Add all tokens
+  for (const [key, value] of Object.entries(file.tokens)) {
+    // Escape quotes in values
+    const escapedValue = value.replace(/"/g, '\\"');
+    lines.push(`        "${key}"    "${escapedValue}"`);
+  }
+  
+  lines.push('    }');
+  lines.push('}');
+  
+  return lines.join('\n');
+}
+
+/**
+ * Parses a localization file from KeyValue format
+ */
+export function parseLocalizationFile(content: string): { language: string; tokens: Record<string, string> } {
+  const tokens: Record<string, string> = {};
+  let language = 'english';
+  
+  // Simple parser for the KeyValue format
+  const lines = content.split('\n');
+  let inTokens = false;
+  
+  for (const line of lines) {
+    const trimmed = line.trim();
+    
+    // Extract language
+    const langMatch = trimmed.match(/"Language"\s+"([^"]+)"/);
+    if (langMatch) {
+      language = langMatch[1];
+      continue;
+    }
+    
+    // Track if we're inside the Tokens block
+    if (trimmed === '"Tokens"') {
+      inTokens = true;
+      continue;
+    }
+    
+    // Parse token lines (key-value pairs)
+    if (inTokens && trimmed.startsWith('"')) {
+      // Match "key" "value" pattern with possible whitespace between
+      const tokenMatch = trimmed.match(/"([^"]+)"\s+"([^"]*(?:\\.[^"]*)*)"/);
+      if (tokenMatch) {
+        const key = tokenMatch[1];
+        const value = tokenMatch[2].replace(/\\"/g, '"'); // Unescape quotes
+        tokens[key] = value;
+      }
+    }
+  }
+  
+  return { language, tokens };
+}
+
+/**
  * Creates a new project with default metadata and one initial script file
  */
 export function createNewProject(name: string = 'Untitled Project'): ProjectData {
@@ -132,10 +221,12 @@ export function createNewProject(name: string = 'Untitled Project'): ProjectData
       folders: [],
       weaponFolders: [],
       uiFolders: [],
+      localizationFolders: [],
     },
     scriptFiles: [initialScript],
     weaponFiles: [],
     uiFiles: [],
+    localizationFiles: [],
   };
 }
 
@@ -147,7 +238,8 @@ export function serializeProject(
   metadata: Partial<ProjectMetadata> = {},
   settings: ProjectData['settings'] = {},
   weaponFiles: WeaponFile[] = [],
-  uiFiles: UIFile[] = []
+  uiFiles: UIFile[] = [],
+  localizationFiles: LocalizationFile[] = []
 ): string {
   const now = new Date().toISOString();
   
@@ -168,15 +260,18 @@ export function serializeProject(
       activeScriptFile: settings.activeScriptFile,
       activeWeaponFile: settings.activeWeaponFile,
       activeUIFile: settings.activeUIFile,
+      activeLocalizationFile: settings.activeLocalizationFile,
       activeFileType: settings.activeFileType || 'script',
       folders: settings.folders || [],
       weaponFolders: settings.weaponFolders || [],
       uiFolders: settings.uiFolders || [],
+      localizationFolders: settings.localizationFolders || [],
       mod: settings.mod,
     },
     scriptFiles,
     weaponFiles,
     uiFiles,
+    localizationFiles,
   };
 
   const serialized: SerializedProject = {
@@ -234,9 +329,19 @@ export function deserializeProject(jsonString: string): ProjectData {
       parsed.data.uiFiles = [];
     }
     
+    // Ensure localizationFiles exists (migration for older projects)
+    if (!parsed.data.localizationFiles) {
+      parsed.data.localizationFiles = [];
+    }
+    
     // Ensure uiFolders exists
     if (!parsed.data.settings.uiFolders) {
       parsed.data.settings.uiFolders = [];
+    }
+    
+    // Ensure localizationFolders exists
+    if (!parsed.data.settings.localizationFolders) {
+      parsed.data.settings.localizationFolders = [];
     }
     
     // Ensure activeFileType exists

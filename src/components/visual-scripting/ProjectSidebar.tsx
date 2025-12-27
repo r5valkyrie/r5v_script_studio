@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { FileCode, Crosshair, Plus, FolderPlus, Trash2, Edit2, Folder, FolderOpen, ChevronRight, ChevronDown, MoreVertical, Layout } from 'lucide-react';
-import type { ScriptFile, WeaponFile, UIFile, UIFileType } from '../../types/project';
+import { FileCode, Crosshair, Plus, FolderPlus, Trash2, Edit2, Folder, FolderOpen, ChevronRight, ChevronDown, MoreVertical, Layout, Languages } from 'lucide-react';
+import type { ScriptFile, WeaponFile, UIFile, UIFileType, LocalizationFile, LocalizationLanguage, SUPPORTED_LANGUAGES } from '../../types/project';
 import ConfirmDialog from './ConfirmDialog';
 
-type FileSection = 'scripts' | 'weapons' | 'ui';
+type FileSection = 'scripts' | 'weapons' | 'ui' | 'localization';
 
 interface ProjectSidebarProps {
   // Script files
@@ -42,8 +42,21 @@ interface ProjectSidebarProps {
   onDeleteUIFolder: (folderPath: string) => void;
   onRenameUIFolder?: (oldPath: string, newPath: string) => void;
   
+  // Localization files
+  localizationFiles: LocalizationFile[];
+  activeLocalizationFileId: string | null;
+  localizationFolders: string[];
+  onSelectLocalizationFile: (fileId: string) => void;
+  onCreateLocalizationFile: (fileName: string, language?: LocalizationLanguage) => void;
+  onDeleteLocalizationFile: (fileId: string) => void;
+  onRenameLocalizationFile: (fileId: string, newName: string) => void;
+  onCreateLocalizationFolder: (folderPath: string) => void;
+  onDeleteLocalizationFolder: (folderPath: string) => void;
+  onRenameLocalizationFolder?: (oldPath: string, newPath: string) => void;
+  
   // General
   modifiedFileIds: Set<string>;
+  activeFileType: 'script' | 'weapon' | 'ui' | 'localization' | null;
   accentColor?: string;
 }
 
@@ -64,6 +77,23 @@ const BASE_WEAPONS = [
 const UI_FILE_TYPES: { id: UIFileType; name: string }[] = [
   { id: 'res', name: 'Layout (.res)' },
   { id: 'menu', name: 'Menu (.menu)' },
+];
+
+// Localization language options
+const LANGUAGE_OPTIONS: { id: LocalizationLanguage; name: string }[] = [
+  { id: 'english', name: 'English' },
+  { id: 'french', name: 'French' },
+  { id: 'german', name: 'German' },
+  { id: 'italian', name: 'Italian' },
+  { id: 'japanese', name: 'Japanese' },
+  { id: 'korean', name: 'Korean' },
+  { id: 'polish', name: 'Polish' },
+  { id: 'portuguese', name: 'Portuguese' },
+  { id: 'russian', name: 'Russian' },
+  { id: 'schinese', name: 'Simplified Chinese' },
+  { id: 'spanish', name: 'Spanish' },
+  { id: 'tchinese', name: 'Traditional Chinese' },
+  { id: 'mspanish', name: 'Mexican Spanish' },
 ];
 
 export default function ProjectSidebar({
@@ -94,11 +124,19 @@ export default function ProjectSidebar({
   onRenameUIFile,
   onCreateUIFolder,
   onDeleteUIFolder,
-  modifiedFileIds,
-  accentColor = '#22d3ee',
+  localizationFiles,
+  activeLocalizationFileId,
+  localizationFolders,
+  onSelectLocalizationFile,
+  onCreateLocalizationFile,
+  onDeleteLocalizationFile,
+  onRenameLocalizationFile,
+  onCreateLocalizationFolder,
+  onDeleteLocalizationFolder,
+  modifiedFileIds,  activeFileType,  accentColor = '#22d3ee',
 }: ProjectSidebarProps) {
   // Expand all sections by default
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['scripts', 'weapons', 'ui']));
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['scripts', 'weapons', 'ui', 'localization']));
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['root']));
   
   // Creation state
@@ -112,6 +150,8 @@ export default function ProjectSidebar({
   const [showBaseWeaponDropdown, setShowBaseWeaponDropdown] = useState(false);
   const [selectedUIFileType, setSelectedUIFileType] = useState<UIFileType>('res');
   const [showUIFileTypeDropdown, setShowUIFileTypeDropdown] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState<LocalizationLanguage>('english');
+  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   
   // Rename state
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -172,6 +212,12 @@ export default function ProjectSidebar({
       } else {
         onDeleteUIFolder(deleteConfirm.id);
       }
+    } else if (deleteConfirm.section === 'localization') {
+      if (deleteConfirm.type === 'file') {
+        onDeleteLocalizationFile(deleteConfirm.id);
+      } else {
+        onDeleteLocalizationFolder(deleteConfirm.id);
+      }
     }
     setDeleteConfirm({ isOpen: false, type: 'file', id: '', name: '', section: 'scripts' });
   };
@@ -185,10 +231,13 @@ export default function ProjectSidebar({
         onCreateWeaponFile(fileName, selectedBaseWeapon || undefined);
       } else if (creatingIn.section === 'ui') {
         onCreateUIFile(fileName, selectedUIFileType);
+      } else if (creatingIn.section === 'localization') {
+        onCreateLocalizationFile(fileName, selectedLanguage);
       }
       setNewFileName('');
       setSelectedBaseWeapon('');
       setSelectedUIFileType('res');
+      setSelectedLanguage('english');
       setCreatingIn(null);
     }
   };
@@ -208,6 +257,8 @@ export default function ProjectSidebar({
         onCreateWeaponFolder(newFolderName.trim());
       } else if (creatingFolderIn === 'ui') {
         onCreateUIFolder(newFolderName.trim());
+      } else if (creatingFolderIn === 'localization') {
+        onCreateLocalizationFolder(newFolderName.trim());
       }
       setCreatingFolderIn(null);
       setNewFolderName('');
@@ -222,6 +273,8 @@ export default function ProjectSidebar({
         onRenameWeaponFile(fileId, renameValue.trim());
       } else if (section === 'ui') {
         onRenameUIFile(fileId, renameValue.trim());
+      } else if (section === 'localization') {
+        onRenameLocalizationFile(fileId, renameValue.trim());
       }
     }
     setRenamingId(null);
@@ -310,6 +363,7 @@ export default function ProjectSidebar({
   const scriptsByFolder = groupFilesByFolder(scriptFiles, scriptFolders);
   const weaponsByFolder = groupFilesByFolder(weaponFiles, weaponFolders);
   const uiByFolder = groupFilesByFolder(uiFiles, uiFolders);
+  const localizationByFolder = groupFilesByFolder(localizationFiles, localizationFolders);
 
   const getChildFolders = (parentPath: string, allFolders: string[]): string[] => {
     if (parentPath === 'root') {
@@ -324,19 +378,24 @@ export default function ProjectSidebar({
   };
 
   // Render a file item
-  const renderFile = (file: ScriptFile | WeaponFile | UIFile, section: FileSection, depth: number = 0) => {
+  const renderFile = (file: ScriptFile | WeaponFile | UIFile | LocalizationFile, section: FileSection, depth: number = 0) => {
     const fileName = file.name.split('/').pop() || file.name;
+    // Only highlight if this file is active AND we're viewing this file type
     const isActive = section === 'scripts' 
-      ? file.id === activeScriptFileId 
+      ? (file.id === activeScriptFileId && activeFileType === 'script')
       : section === 'weapons'
-        ? file.id === activeWeaponFileId
-        : file.id === activeUIFileId;
+        ? (file.id === activeWeaponFileId && activeFileType === 'weapon')
+        : section === 'ui'
+          ? (file.id === activeUIFileId && activeFileType === 'ui')
+          : (file.id === activeLocalizationFileId && activeFileType === 'localization');
     const isModified = modifiedFileIds.has(file.id);
     const isRenaming = renamingId === file.id;
     const isScript = section === 'scripts';
     const isUI = section === 'ui';
+    const isLocalization = section === 'localization';
     const uiFile = isUI ? (file as UIFile) : null;
-    const extension = isScript ? '.nut' : isUI ? `.${uiFile?.fileType || 'res'}` : '.txt';
+    const locFile = isLocalization ? (file as LocalizationFile) : null;
+    const extension = isScript ? '.nut' : isUI ? `.${uiFile?.fileType || 'res'}` : isLocalization ? `_${locFile?.language || 'english'}.txt` : '.txt';
 
     return (
       <div
@@ -355,6 +414,8 @@ export default function ProjectSidebar({
               onSelectWeaponFile(file.id);
             } else if (section === 'ui') {
               onSelectUIFile(file.id);
+            } else if (section === 'localization') {
+              onSelectLocalizationFile(file.id);
             }
           }
         }}
@@ -371,6 +432,8 @@ export default function ProjectSidebar({
           <FileCode size={14} className={isActive ? 'text-blue-400' : 'text-gray-500'} />
         ) : isUI ? (
           <Layout size={14} className={isActive ? 'text-purple-400' : 'text-gray-500'} />
+        ) : isLocalization ? (
+          <Languages size={14} className={isActive ? 'text-green-400' : 'text-gray-500'} />
         ) : (
           <Crosshair size={14} className={isActive ? 'text-orange-400' : 'text-gray-500'} />
         )}
@@ -421,7 +484,7 @@ export default function ProjectSidebar({
   };
 
   // Render a folder
-  const renderFolder = (folderPath: string, section: FileSection, filesByFolder: Record<string, (ScriptFile | WeaponFile)[]>, allFolders: string[], depth: number = 0) => {
+  const renderFolder = (folderPath: string, section: FileSection, filesByFolder: Record<string, (ScriptFile | WeaponFile | UIFile | LocalizationFile)[]>, allFolders: string[], depth: number = 0) => {
     const isExpanded = expandedFolders.has(folderPath);
     const folderName = folderPath.split('/').pop() || folderPath;
     const files = filesByFolder[folderPath] || [];
@@ -480,18 +543,21 @@ export default function ProjectSidebar({
     
     const isScript = section === 'scripts';
     const isUI = section === 'ui';
+    const isLocalization = section === 'localization';
     const icon = isScript 
       ? <FileCode size={14} className="text-blue-400" /> 
       : isUI 
         ? <Layout size={14} className="text-purple-400" />
-        : <Crosshair size={14} className="text-orange-400" />;
+        : isLocalization
+          ? <Languages size={14} className="text-green-400" />
+          : <Crosshair size={14} className="text-orange-400" />;
     
     return (
       <div className="flex items-center gap-1.5 py-1 pr-2" style={{ paddingLeft: '28px' }}>
         {icon}
         <input
           type="text"
-          placeholder={isScript ? 'script_name' : isUI ? 'ui_file_name' : 'weapon_name'}
+          placeholder={isScript ? 'script_name' : isUI ? 'ui_file_name' : isLocalization ? 'loc_name' : 'weapon_name'}
           value={newFileName}
           onChange={(e) => setNewFileName(e.target.value)}
           onKeyDown={(e) => {
@@ -501,6 +567,7 @@ export default function ProjectSidebar({
               setNewFileName('');
               setSelectedBaseWeapon('');
               setSelectedUIFileType('res');
+              setSelectedLanguage('english');
             }
           }}
           className="flex-1 bg-[#2d2d2d] border border-blue-500/50 rounded px-1.5 py-0.5 text-xs text-white outline-none"
@@ -532,6 +599,32 @@ export default function ProjectSidebar({
             )}
           </div>
         )}
+        {/* Language selector for localization files */}
+        {isLocalization && (
+          <div className="relative">
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowLanguageDropdown(!showLanguageDropdown); }}
+              className="px-2 py-0.5 text-[10px] bg-[#2d2d2d] border border-white/10 rounded text-gray-300 hover:text-white hover:border-white/20 transition-colors"
+            >
+              {selectedLanguage}
+            </button>
+            {showLanguageDropdown && (
+              <div className="absolute top-full right-0 mt-1 z-50 bg-[#2d2d2d] border border-white/10 rounded py-1 min-w-[120px] max-h-[200px] overflow-y-auto">
+                {LANGUAGE_OPTIONS.map(lang => (
+                  <button
+                    key={lang.id}
+                    onClick={(e) => { e.stopPropagation(); setSelectedLanguage(lang.id); setShowLanguageDropdown(false); }}
+                    className={`w-full text-left px-2 py-1 text-[10px] hover:bg-white/10 ${
+                      selectedLanguage === lang.id ? 'text-green-400' : 'text-gray-300'
+                    }`}
+                  >
+                    {lang.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         <button
           onClick={handleCreate}
           className="p-1 text-green-400 hover:text-green-300 hover:bg-green-500/20 rounded"
@@ -540,7 +633,7 @@ export default function ProjectSidebar({
           <Plus size={12} />
         </button>
         <button
-          onClick={() => { setCreatingIn(null); setNewFileName(''); setSelectedBaseWeapon(''); setSelectedUIFileType('res'); }}
+          onClick={() => { setCreatingIn(null); setNewFileName(''); setSelectedBaseWeapon(''); setSelectedUIFileType('res'); setSelectedLanguage('english'); }}
           className="p-1 text-gray-500 hover:text-gray-300 hover:bg-white/10 rounded"
           title="Cancel"
         >
@@ -595,15 +688,15 @@ export default function ProjectSidebar({
     section: FileSection,
     title: string,
     icon: React.ReactNode,
-    files: (ScriptFile | WeaponFile | UIFile)[],
+    files: (ScriptFile | WeaponFile | UIFile | LocalizationFile)[],
     folders: string[],
-    filesByFolder: Record<string, (ScriptFile | WeaponFile | UIFile)[]>
+    filesByFolder: Record<string, (ScriptFile | WeaponFile | UIFile | LocalizationFile)[]>
   ) => {
     const isExpanded = expandedSections.has(section);
     const rootFiles = filesByFolder['root'] || [];
     const rootFolders = getChildFolders('root', folders);
     const isRootDropTarget = dropTarget === 'root' && draggedFile?.section === section;
-    const folderColor = section === 'scripts' ? 'text-blue-500' : section === 'ui' ? 'text-purple-500' : 'text-orange-500';
+    const folderColor = section === 'scripts' ? 'text-blue-500' : section === 'ui' ? 'text-purple-500' : section === 'localization' ? 'text-green-500' : 'text-orange-500';
 
     return (
       <div>
@@ -636,7 +729,7 @@ export default function ProjectSidebar({
             <button
               onClick={(e) => { e.stopPropagation(); setCreatingIn({ section }); }}
               className="p-1 text-gray-500 hover:text-white hover:bg-white/10 rounded transition-colors"
-              title={`New ${section === 'scripts' ? 'script' : section === 'ui' ? 'UI file' : 'weapon'}`}
+              title={`New ${section === 'scripts' ? 'script' : section === 'ui' ? 'UI file' : section === 'localization' ? 'localization file' : 'weapon'}`}
             >
               <Plus size={12} />
             </button>
@@ -668,7 +761,7 @@ export default function ProjectSidebar({
                 onClick={() => setCreatingIn({ section })}
               >
                 <p className="text-[10px] text-gray-600">
-                  Click to add {section === 'scripts' ? 'a script' : section === 'ui' ? 'a UI file' : 'a weapon'}
+                  Click to add {section === 'scripts' ? 'a script' : section === 'ui' ? 'a UI file' : section === 'localization' ? 'a localization file' : 'a weapon'}
                 </p>
               </div>
             )}
@@ -743,7 +836,7 @@ export default function ProjectSidebar({
       )}
 
       {/* File Tree */}
-      <div className="flex-1 overflow-y-auto py-1" style={{ minHeight: 220 }}>
+      <div className="flex-1 overflow-y-auto py-1" style={{ minHeight: 320 }}>
         {/* Scripts Section */}
         {renderSection(
           'scripts',
@@ -773,11 +866,16 @@ export default function ProjectSidebar({
           uiFolders,
           uiByFolder
         )}
-      </div>
 
-      {/* Footer info */}
-      <div className="px-2 py-1.5 border-t border-white/5 text-[10px] text-gray-600">
-        Right-click for options
+        {/* Localization Section */}
+        {renderSection(
+          'localization',
+          'Localization',
+          <Languages size={14} />,
+          localizationFiles,
+          localizationFolders,
+          localizationByFolder
+        )}
       </div>
     </div>
   );

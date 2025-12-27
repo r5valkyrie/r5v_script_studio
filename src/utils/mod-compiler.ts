@@ -3,10 +3,10 @@
  * Compiles a project into a mod folder structure
  */
 
-import type { ProjectData, ModSettings, ScriptFile, WeaponFile, UIFile } from '../types/project';
+import type { ProjectData, ModSettings, ScriptFile, WeaponFile, UIFile, LocalizationFile } from '../types/project';
 import { DEFAULT_MOD_SETTINGS } from '../types/project';
 import { generateCode } from './code-generator';
-import { generateCodeMetadata, embedProjectInCode } from './project-manager';
+import { generateCodeMetadata, embedProjectInCode, serializeLocalizationFile } from './project-manager';
 
 export interface CompileResult {
   success: boolean;
@@ -22,8 +22,10 @@ export interface CompileOptions {
 
 /**
  * Generates the mod.vdf file content
+ * @param settings - Mod settings
+ * @param localizationFiles - Localization files from the project (for auto-including paths)
  */
-export function generateModVdf(settings: ModSettings): string {
+export function generateModVdf(settings: ModSettings, localizationFiles: LocalizationFile[] = []): string {
   const lines = [
     '"mod"',
     '{',
@@ -34,13 +36,39 @@ export function generateModVdf(settings: ModSettings): string {
     `        "author" "${settings.modAuthor}"`,
   ];
 
-  const enabledLocFiles = settings.localizationFiles.filter(f => f.enabled);
-  if (enabledLocFiles.length > 0) {
+  // Collect localization file paths from project's localization files
+  // Group by base name to generate %language% pattern
+  const locFileGroups = new Map<string, Set<string>>();
+  for (const file of localizationFiles) {
+    const baseName = file.name;
+    if (!locFileGroups.has(baseName)) {
+      locFileGroups.set(baseName, new Set());
+    }
+    locFileGroups.get(baseName)!.add(file.language);
+  }
+  
+  // Generate localization file entries with %language% pattern
+  const locPaths: string[] = [];
+  for (const [baseName, languages] of locFileGroups) {
+    // Use %language% pattern so game can load correct language
+    const path = `resource/localization/${baseName}_%language%.txt`;
+    locPaths.push(path);
+  }
+
+  // Also include any manually specified localization files from settings
+  const manualLocFiles = settings.localizationFiles.filter(f => f.enabled);
+  for (const file of manualLocFiles) {
+    if (!locPaths.includes(file.path)) {
+      locPaths.push(file.path);
+    }
+  }
+
+  if (locPaths.length > 0) {
     lines.push('');
     lines.push('        "LocalizationFiles"');
     lines.push('        {');
-    for (const file of enabledLocFiles) {
-      lines.push(`                "${file.path}" "1"`);
+    for (const path of locPaths) {
+      lines.push(`                "${path}" "1"`);
     }
     lines.push('        }');
   }
@@ -228,8 +256,18 @@ export async function compileProject(
       }
     }
     
-    // Create mod.vdf
-    const vdfContent = generateModVdf(modSettings);
+    // Create localization directory if we have localization files
+    const localizationFiles = project.localizationFiles || [];
+    const localizationDir = `${resourceDir}/localization`;
+    
+    if (localizationFiles.length > 0) {
+      // Ensure resource directory exists (may not exist if no UI files)
+      await window.electronAPI.createDirectory(resourceDir);
+      await window.electronAPI.createDirectory(localizationDir);
+    }
+    
+    // Create mod.vdf (pass localization files for auto-including paths)
+    const vdfContent = generateModVdf(modSettings, localizationFiles);
     const vdfResult = await window.electronAPI.writeFile(`${modDir}/mod.vdf`, vdfContent);
     if (!vdfResult.success) {
       return { success: false, error: `Failed to write mod.vdf: ${vdfResult.error}` };
@@ -324,6 +362,32 @@ export async function compileProject(
       
       // Write UI file
       const writeResult = await window.electronAPI.writeFile(filePath, uiFile.content);
+      if (!writeResult.success) {
+        return { success: false, error: `Failed to write ${fileName}: ${writeResult.error}` };
+      }
+      filesCreated.push(filePath);
+    }
+    
+    // Generate and write localization files
+    for (const locFile of localizationFiles) {
+      // Generate file name with language suffix: basename_language.txt
+      const baseName = locFile.name.replace(/\.txt$/, '');
+      const fileName = `${baseName}_${locFile.language}.txt`;
+      
+      // Serialize localization file content
+      const content = serializeLocalizationFile(locFile);
+      
+      // Handle nested paths (localization files typically don't have nested paths, but support it)
+      const filePath = `${localizationDir}/${fileName}`;
+      
+      // Create parent directories if needed
+      const parentDir = filePath.substring(0, filePath.lastIndexOf('/'));
+      if (parentDir !== localizationDir) {
+        await window.electronAPI.createDirectory(parentDir);
+      }
+      
+      // Write localization file
+      const writeResult = await window.electronAPI.writeFile(filePath, content);
       if (!writeResult.success) {
         return { success: false, error: `Failed to write ${fileName}: ${writeResult.error}` };
       }
