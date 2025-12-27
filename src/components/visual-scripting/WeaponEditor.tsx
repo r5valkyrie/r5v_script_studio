@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { ChevronRight, ChevronDown, Crosshair, Copy, Code, Eye, Search, RotateCcw, Plus, X, Settings, Zap, Box, Volume2, Sparkles, Target, Palette, Brain, Layers, Wand2, Trash2 } from 'lucide-react';
 import type { WeaponFile } from '../../types/project';
+import { VIEWKICK_PATTERNS, VIEWKICK_PATTERN_OPTIONS } from '../../data/viewkick-patterns';
 
 interface WeaponEditorProps {
   weaponFile: WeaponFile | null;
@@ -267,7 +268,7 @@ const PROPERTY_CATEGORIES: CategoryDef[] = [
     icon: <Zap size={14} />,
     description: 'View kick and recoil patterns',
     properties: [
-      { key: 'viewkick_pattern', label: 'Recoil Pattern', type: 'string', description: 'Named recoil pattern to use' },
+      { key: 'viewkick_pattern', label: 'Recoil Pattern', type: 'select', options: VIEWKICK_PATTERN_OPTIONS, description: 'Named recoil pattern to use' },
       { key: 'viewkick_spring', label: 'Recoil Spring', type: 'string', description: 'Recoil spring curve name' },
       { key: 'viewkick_pitch_base', label: 'Pitch Base', type: 'number', step: 0.1, description: 'Base vertical recoil' },
       { key: 'viewkick_pitch_random', label: 'Pitch Random', type: 'number', step: 0.1, description: 'Random vertical variation' },
@@ -288,6 +289,15 @@ const PROPERTY_CATEGORIES: CategoryDef[] = [
       { key: 'viewkick_air_scale_ads', label: 'Air Scale ADS', type: 'number', step: 0.1, description: 'Recoil scale multiplier for air' },
       { key: 'viewkick_scale_firstshot_hipfire', label: 'First Shot Hip', type: 'number', step: 0.1, description: 'First shot scale hipfire' },
       { key: 'viewkick_scale_firstshot_ads', label: 'First Shot ADS', type: 'number', step: 0.1, description: 'First shot scale ADS' },
+      { key: 'viewkick_scale_min_hipfire', label: 'Min Scale Hip', type: 'number', step: 0.1, description: 'Minimum scale hipfire' },
+      { key: 'viewkick_scale_max_hipfire', label: 'Max Scale Hip', type: 'number', step: 0.1, description: 'Maximum scale hipfire' },
+      { key: 'viewkick_scale_min_ads', label: 'Min Scale ADS', type: 'number', step: 0.1, description: 'Minimum scale ADS' },
+      { key: 'viewkick_scale_max_ads', label: 'Max Scale ADS', type: 'number', step: 0.1, description: 'Maximum scale ADS' },
+      { key: 'viewkick_scale_valuePerShot', label: 'Scale Value Per Shot', type: 'number', step: 0.01, description: 'Scale increase per shot' },
+      { key: 'viewkick_scale_pitch_valueLerpStart', label: 'Pitch Lerp Start', type: 'number', step: 0.1, description: 'Pitch scale lerp start' },
+      { key: 'viewkick_scale_pitch_valueLerpEnd', label: 'Pitch Lerp End', type: 'number', step: 0.1, description: 'Pitch scale lerp end' },
+      { key: 'viewkick_scale_yaw_valueLerpStart', label: 'Yaw Lerp Start', type: 'number', step: 0.1, description: 'Yaw scale lerp start' },
+      { key: 'viewkick_scale_yaw_valueLerpEnd', label: 'Yaw Lerp End', type: 'number', step: 0.1, description: 'Yaw scale lerp end' },
       { key: 'viewkick_scale_valueDecayDelay', label: 'Scale Decay Delay', type: 'number', step: 0.01, description: 'Delay before scale decay' },
       { key: 'viewkick_scale_valueDecayRate', label: 'Scale Decay Rate', type: 'number', description: 'Rate of scale decay' },
     ]
@@ -500,6 +510,32 @@ const PROPERTY_CATEGORIES: CategoryDef[] = [
 // Existing keys in PROPERTY_CATEGORIES for quick reference
 export const EXISTING_PROPERTY_KEYS = PROPERTY_CATEGORIES.flatMap(cat => cat.properties.map(p => p.key));
 
+const VIEWKICK_PATTERN_MAP = new Map(VIEWKICK_PATTERNS.map(pattern => [pattern.name, pattern]));
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function hashString(input: string): number {
+  let hash = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash << 5) - hash + input.charCodeAt(i);
+    hash |= 0;
+  }
+  return hash >>> 0;
+}
+
+function mulberry32(seed: number): () => number {
+  let t = seed;
+  return () => {
+    t += 0x6d2b79f5;
+    let x = t;
+    x = Math.imul(x ^ (x >>> 15), x | 1);
+    x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
+    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 // Parse KeyValue content into a structured object
 function parseKeyValues(content: string): Record<string, string> {
   const result: Record<string, string> = {};
@@ -700,6 +736,10 @@ export default function WeaponEditor({
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddSectionMenu, setShowAddSectionMenu] = useState(false);
   const [showAddBlockMenu, setShowAddBlockMenu] = useState(false);
+  const [recoilViewMode, setRecoilViewMode] = useState<'hipfire' | 'ads'>('ads');
+  const [recoilAirborne, setRecoilAirborne] = useState(false);
+  const [recoilVariantCount, setRecoilVariantCount] = useState(10);
+  const [recoilHighlightIndex, setRecoilHighlightIndex] = useState<number | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
 
@@ -709,6 +749,206 @@ export default function WeaponEditor({
   // Parse special blocks
   const parsedMods = useMemo(() => parseModsBlock(content), [content]);
   const parsedCrosshair = useMemo(() => parseRUICrosshairData(content), [content]);
+
+  const recoilPreview = useMemo(() => {
+    const readNumber = (key: string, fallback: number) => {
+      const raw = parsedProperties[key];
+      const parsed = raw !== undefined ? Number(raw) : Number.NaN;
+      return Number.isFinite(parsed) ? parsed : fallback;
+    };
+
+    const patternName = parsedProperties.viewkick_pattern;
+    const pattern = patternName ? VIEWKICK_PATTERN_MAP.get(patternName) : undefined;
+    if (!pattern) {
+      return {
+        patternName,
+        shots: 0,
+        points: [] as Array<{ x: number; y: number }>,
+        bounds: null as null | { minX: number; maxX: number; minY: number; maxY: number },
+      };
+    }
+
+    const shotCountRaw = Math.round(readNumber('ammo_clip_size', 30)) || 30;
+    const shots = clamp(shotCountRaw, 1, 60);
+    const fireRate = readNumber('fire_rate', 0);
+    const dt = fireRate > 0 ? 1 / fireRate : 0.1;
+
+    const pitchBase = readNumber('viewkick_pitch_base', 1);
+    const pitchRandom = readNumber('viewkick_pitch_random', 1);
+    const pitchSoft = readNumber('viewkick_pitch_softScale', 0);
+    const pitchHard = readNumber('viewkick_pitch_hardScale', 0);
+
+    const yawBase = readNumber('viewkick_yaw_base', 1);
+    const yawRandom = readNumber('viewkick_yaw_random', 1);
+    const yawInnerExclude = Math.max(0, readNumber('viewkick_yaw_random_innerexclude', 0));
+    const yawSoft = readNumber('viewkick_yaw_softScale', 0);
+    const yawHard = readNumber('viewkick_yaw_hardScale', 0);
+
+    const hipFraction = readNumber('viewkick_hipfire_weaponFraction', 1);
+    const adsFractionModifier = readNumber('viewkick_ads_weaponFraction', 0);
+    const airScale = recoilViewMode === 'ads' && recoilAirborne
+      ? readNumber('viewkick_air_scale_ads', 1)
+      : 1;
+    const hipFirstShotScale = readNumber('viewkick_scale_firstshot_hipfire', 1);
+    const adsFirstShotModifier = readNumber('viewkick_scale_firstshot_ads', 1);
+    const hipMinScale = readNumber('viewkick_scale_min_hipfire', 1);
+    const hipMaxScale = readNumber('viewkick_scale_max_hipfire', 1);
+    const adsMinModifier = readNumber('viewkick_scale_min_ads', 1);
+    const adsMaxModifier = readNumber('viewkick_scale_max_ads', 1);
+    const valuePerShot = readNumber('viewkick_scale_valuePerShot', 0);
+    const pitchLerpStart = readNumber('viewkick_scale_pitch_valueLerpStart', 0);
+    const pitchLerpEnd = readNumber('viewkick_scale_pitch_valueLerpEnd', 0);
+    const yawLerpStart = readNumber('viewkick_scale_yaw_valueLerpStart', 0);
+    const yawLerpEnd = readNumber('viewkick_scale_yaw_valueLerpEnd', 0);
+    const decayDelay = readNumber('viewkick_scale_valueDecayDelay', 0);
+    const decayRate = readNumber('viewkick_scale_valueDecayRate', 0);
+
+    const yawScale = yawSoft + yawHard;
+    const pitchScale = pitchSoft + pitchHard;
+    const fraction = recoilViewMode === 'ads'
+      ? hipFraction + adsFractionModifier
+      : hipFraction;
+    const firstShotScale = recoilViewMode === 'ads'
+      ? hipFirstShotScale * adsFirstShotModifier
+      : hipFirstShotScale;
+    const minScale = recoilViewMode === 'ads'
+      ? hipMinScale * adsMinModifier
+      : hipMinScale;
+    const maxScale = recoilViewMode === 'ads'
+      ? hipMaxScale * adsMaxModifier
+      : hipMaxScale;
+
+    const seed = hashString(`${pattern.name}:${recoilViewMode}:${recoilAirborne ? 'air' : 'ground'}:${shots}`);
+    const loopStart = Math.min(pattern.loopOffset, Math.max(0, pattern.bullets.length - 1));
+    const loopLength = Math.max(1, pattern.bullets.length - loopStart);
+
+    const simulate = (seedOffset: number, yawRandomScale: number, pitchRandomScale: number) => {
+      const rng = mulberry32(seed + seedOffset);
+      const points: Array<{ x: number; y: number }> = [];
+      let yaw = 0;
+      let pitch = 0;
+      let minX = 0;
+      let maxX = 0;
+      let minY = 0;
+      let maxY = 0;
+
+      for (let i = 0; i < shots; i += 1) {
+        const index = i < pattern.bullets.length
+          ? i
+          : loopStart + ((i - loopStart) % loopLength);
+        const [baseYaw, basePitch, yawRand, pitchRand] = pattern.bullets[index];
+
+        let randYaw = (rng() * 2 - 1) * yawRand * yawRandom * yawRandomScale;
+        if (yawInnerExclude > 0 && Math.abs(randYaw) < yawInnerExclude) {
+          randYaw = (randYaw < 0 ? -1 : 1) * yawInnerExclude;
+        }
+
+        const randPitch = (rng() * 2 - 1) * pitchRand * pitchRandom * pitchRandomScale;
+
+        const scaleValue = 1 + valuePerShot * i;
+        const clampedScale = clamp(scaleValue, minScale, maxScale);
+        const pitchLerp = pitchLerpEnd > pitchLerpStart
+          ? clamp((scaleValue - pitchLerpStart) / (pitchLerpEnd - pitchLerpStart), 0, 1)
+          : 1;
+        const yawLerp = yawLerpEnd > yawLerpStart
+          ? clamp((scaleValue - yawLerpStart) / (yawLerpEnd - yawLerpStart), 0, 1)
+          : 1;
+        const pitchAxisScale = pitchLerpEnd > pitchLerpStart
+          ? minScale + (maxScale - minScale) * pitchLerp
+          : clampedScale;
+        const yawAxisScale = yawLerpEnd > yawLerpStart
+          ? minScale + (maxScale - minScale) * yawLerp
+          : clampedScale;
+        const time = i * dt;
+        const decayScale = decayRate > 0 && time > decayDelay
+          ? Math.max(0, 1 - (time - decayDelay) * decayRate * 0.01)
+          : 1;
+        const firstShot = i === 0 ? firstShotScale : 1;
+        const shotScale = fraction * airScale * firstShot * decayScale;
+
+        const adjustedYaw = (baseYaw * yawBase + randYaw) * yawScale * yawAxisScale * shotScale;
+        const adjustedPitch = (basePitch * pitchBase + randPitch) * pitchScale * pitchAxisScale * shotScale;
+
+        yaw += adjustedYaw;
+        pitch += adjustedPitch;
+
+        const point = { x: yaw, y: -pitch };
+        points.push(point);
+
+        minX = Math.min(minX, point.x);
+        maxX = Math.max(maxX, point.x);
+        minY = Math.min(minY, point.y);
+        maxY = Math.max(maxY, point.y);
+      }
+
+      return {
+        points,
+        bounds: { minX, maxX, minY, maxY },
+      };
+    };
+
+    const clampedCount = clamp(Math.round(recoilVariantCount), 1, 10);
+    const main = simulate(0, 0.85, 0.85);
+    const variants = Array.from({ length: Math.max(0, clampedCount - 1) }, (_, idx) =>
+      simulate(idx + 1, 0.55, 0.7).points
+    );
+
+    return {
+      patternName: pattern.name,
+      shots,
+      points: main.points,
+      variants,
+      bounds: main.bounds,
+    };
+  }, [parsedProperties, recoilViewMode, recoilAirborne, recoilVariantCount]);
+
+  const recoilPlot = useMemo(() => {
+    if (!recoilPreview.bounds || recoilPreview.points.length === 0) return null;
+    const { minX, maxX, minY, maxY } = recoilPreview.bounds;
+    const padX = (maxX - minX) * 0.1 || 0.5;
+    const padY = (maxY - minY) * 0.1 || 0.5;
+    const viewMinX = minX - padX;
+    const viewMaxX = maxX + padX;
+    const viewMinY = minY - padY;
+    const viewMaxY = maxY + padY;
+    const width = 320;
+    const height = 420;
+    const scaleX = width / Math.max(1e-6, viewMaxX - viewMinX);
+    const scaleY = height / Math.max(1e-6, viewMaxY - viewMinY);
+
+    const toSvg = (point: { x: number; y: number }) => ({
+      x: (point.x - viewMinX) * scaleX,
+      y: height - (point.y - viewMinY) * scaleY,
+    });
+
+    const svgPoints = recoilPreview.points.map(toSvg);
+    const path = svgPoints
+      .map((point, idx) => `${idx === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
+      .join(' ');
+    const variantPaths = (recoilPreview.variants || []).map(points => {
+      const variantPoints = points.map(toSvg);
+      return variantPoints
+        .map((point, idx) => `${idx === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
+        .join(' ');
+    });
+    const colorRng = mulberry32(hashString(`${recoilPreview.patternName || 'none'}:${recoilPreview.shots}:variant-colors`));
+    const variantColors = variantPaths.map(() => {
+      const hue = 38 + (colorRng() - 0.5) * 16;
+      const light = 55 + (colorRng() - 0.5) * 12;
+      return `hsl(${hue.toFixed(1)} 90% ${light.toFixed(1)}%)`;
+    });
+    const origin = toSvg({ x: 0, y: 0 });
+
+    return {
+      width,
+      height,
+      path,
+      points: svgPoints,
+      variantPaths,
+      variantColors,
+      origin,
+    };
+  }, [recoilPreview]);
 
   // Detect which special blocks exist in content
   const existingBlocks = useMemo(() => {
@@ -871,6 +1111,9 @@ export default function WeaponEditor({
     const value = parsedProperties[prop.key] || '';
     
     if (prop.type === 'select' && prop.options) {
+      const options = value && !prop.options.includes(value)
+        ? [value, ...prop.options]
+        : prop.options;
       return (
         <select
           value={value}
@@ -878,7 +1121,7 @@ export default function WeaponEditor({
           className="flex-1 bg-[#0d1117] border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:border-amber-400 focus:outline-none"
         >
           <option value="">-- Select --</option>
-          {prop.options.map((opt: string) => (
+          {options.map((opt: string) => (
             <option key={opt} value={opt}>{opt}</option>
           ))}
         </select>
@@ -1214,33 +1457,303 @@ export default function WeaponEditor({
 
                     {/* Properties */}
                     {isExpanded && (
-                      <div className="px-4 pb-4 space-y-3 border-t border-white/5 pt-3">
-                        {category.properties.map(prop => (
-                          <div key={prop.key} className="flex items-start gap-3">
-                            <div className="w-36 flex-shrink-0 pt-1.5">
-                              <label className="text-xs font-medium text-gray-300 block">
-                                {prop.label}
-                              </label>
-                              {prop.description && (
-                                <span className="text-[10px] text-gray-500 block mt-0.5">
-                                  {prop.description}
-                                </span>
-                              )}
+                      <div className="px-4 pb-4 border-t border-white/5 pt-3">
+                        {category.id === 'recoil' ? (
+                          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_520px]">
+                            <div className="space-y-2.5">
+                              {(() => {
+                                const propMap = new Map(category.properties.map(prop => [prop.key, prop]));
+                                const renderProp = (key: string) => {
+                                  const prop = propMap.get(key);
+                                  if (!prop) return null;
+                                  return (
+                                    <div key={prop.key} className="rounded-lg border border-white/5 bg-[#0f1419] p-2.5">
+                                      <label className="text-[11px] font-medium text-gray-300 block">
+                                        {prop.label}
+                                      </label>
+                                      {prop.description && (
+                                        <span className="text-[9px] text-gray-500 block mt-0.5">
+                                          {prop.description}
+                                        </span>
+                                      )}
+                                      <div className="mt-2 flex items-center gap-2">
+                                        {renderPropertyInput(prop)}
+                                        {parsedProperties[prop.key] && (
+                                          <button
+                                            onClick={() => handlePropertyChange(prop.key, '')}
+                                            className="p-1 text-gray-500 hover:text-red-400 transition-colors"
+                                            title="Clear value"
+                                          >
+                                            <RotateCcw size={12} />
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                };
+
+                                const coreKeys = [
+                                  'viewkick_pattern',
+                                  'viewkick_spring',
+                                  'viewkick_pitch_base',
+                                  'viewkick_pitch_random',
+                                  'viewkick_pitch_softScale',
+                                  'viewkick_pitch_hardScale',
+                                ];
+                                const yawKeys = [
+                                  'viewkick_yaw_base',
+                                  'viewkick_yaw_random',
+                                  'viewkick_yaw_random_innerexclude',
+                                  'viewkick_yaw_softScale',
+                                  'viewkick_yaw_hardScale',
+                                ];
+                                const rollKeys = [
+                                  'viewkick_roll_base',
+                                  'viewkick_roll_randomMin',
+                                  'viewkick_roll_randomMax',
+                                  'viewkick_roll_softScale',
+                                  'viewkick_roll_hardScale',
+                                ];
+                                const scaleKeys = [
+                                  'viewkick_hipfire_weaponFraction',
+                                  'viewkick_ads_weaponFraction',
+                                  'viewkick_air_scale_ads',
+                                  'viewkick_scale_firstshot_hipfire',
+                                  'viewkick_scale_firstshot_ads',
+                                  'viewkick_scale_min_hipfire',
+                                  'viewkick_scale_max_hipfire',
+                                  'viewkick_scale_min_ads',
+                                  'viewkick_scale_max_ads',
+                                  'viewkick_scale_valuePerShot',
+                                  'viewkick_scale_pitch_valueLerpStart',
+                                  'viewkick_scale_pitch_valueLerpEnd',
+                                  'viewkick_scale_yaw_valueLerpStart',
+                                  'viewkick_scale_yaw_valueLerpEnd',
+                                  'viewkick_scale_valueDecayDelay',
+                                  'viewkick_scale_valueDecayRate',
+                                ];
+
+                                const renderSection = (title: string, keys: string[]) => (
+                                  <div className="rounded-lg border border-white/5 bg-[#0f1419]">
+                                    <div className="px-2.5 pt-2.5 pb-2 text-[11px] font-medium text-amber-400">
+                                      {title}
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-2.5 px-2.5 pb-2.5 md:grid-cols-2 xl:grid-cols-3">
+                                      {keys.map(renderProp)}
+                                    </div>
+                                  </div>
+                                );
+
+                                return (
+                                  <>
+                                    {renderSection('Core', coreKeys)}
+                                    {renderSection('Yaw Settings', yawKeys)}
+                                    {renderSection('Roll Settings', rollKeys)}
+                                    {renderSection('Scale Settings', scaleKeys)}
+                                  </>
+                                );
+                              })()}
                             </div>
-                            <div className="flex-1 flex items-center gap-2">
-                              {renderPropertyInput(prop)}
-                              {parsedProperties[prop.key] && (
-                                <button
-                                  onClick={() => handlePropertyChange(prop.key, '')}
-                                  className="p-1 text-gray-500 hover:text-red-400 transition-colors"
-                                  title="Clear value"
-                                >
-                                  <RotateCcw size={12} />
-                                </button>
+                            <div className="rounded-lg border border-amber-500/10 bg-[#0f1419] p-3">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2 text-xs text-amber-400">
+                                  <Target size={12} />
+                                  Recoil Visualizer
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <select
+                                    value={recoilViewMode}
+                                    onChange={(e) => setRecoilViewMode(e.target.value as 'hipfire' | 'ads')}
+                                    className="bg-[#0d1117] border border-white/10 rounded px-2 py-1 text-[10px] text-white focus:border-amber-400 focus:outline-none"
+                                  >
+                                    <option value="hipfire">Hipfire</option>
+                                    <option value="ads">ADS</option>
+                                  </select>
+                                  <label className="flex items-center gap-1 text-[10px] text-gray-400">
+                                    <input
+                                      type="checkbox"
+                                      checked={recoilAirborne}
+                                      onChange={(e) => setRecoilAirborne(e.target.checked)}
+                                      className="accent-amber-400"
+                                    />
+                                    Airborne
+                                  </label>
+                                </div>
+                              </div>
+                              {recoilPlot ? (
+                                <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_150px]">
+                                  <div className="bg-[#0d1117] border border-white/10 rounded-lg p-2">
+                                    <svg
+                                      viewBox={`0 0 ${recoilPlot.width} ${recoilPlot.height}`}
+                                      className="w-full h-96"
+                                    >
+                                      <rect
+                                        x="0"
+                                        y="0"
+                                        width={recoilPlot.width}
+                                        height={recoilPlot.height}
+                                        fill="none"
+                                        stroke="#1f2937"
+                                        strokeWidth="1"
+                                      />
+                                      <line
+                                        x1={recoilPlot.origin.x}
+                                        y1={0}
+                                        x2={recoilPlot.origin.x}
+                                        y2={recoilPlot.height}
+                                        stroke="#1f2937"
+                                        strokeWidth="1"
+                                      />
+                                      <line
+                                        x1={0}
+                                        y1={recoilPlot.origin.y}
+                                        x2={recoilPlot.width}
+                                        y2={recoilPlot.origin.y}
+                                        stroke="#1f2937"
+                                        strokeWidth="1"
+                                      />
+                                      {recoilPlot.variantPaths.map((variantPath, idx) => {
+                                        const lineIndex = idx + 1;
+                                        const isActive = recoilHighlightIndex === lineIndex;
+                                        return (
+                                          <path
+                                            key={idx}
+                                            d={variantPath}
+                                            fill="none"
+                                            stroke={recoilPlot.variantColors[idx] || '#f59e0b'}
+                                            strokeOpacity={isActive ? 0.5 : 0.06}
+                                            strokeWidth={isActive ? 2 : 1}
+                                            onMouseEnter={() => setRecoilHighlightIndex(lineIndex)}
+                                            onMouseLeave={() => setRecoilHighlightIndex(null)}
+                                            className="cursor-pointer"
+                                          />
+                                        );
+                                      })}
+                                      <path
+                                        d={recoilPlot.path}
+                                        fill="none"
+                                        stroke="#f59e0b"
+                                        strokeWidth={recoilHighlightIndex === 0 ? 2.2 : 1.5}
+                                        strokeOpacity={recoilHighlightIndex === null || recoilHighlightIndex === 0 ? 1 : 0.5}
+                                        onMouseEnter={() => setRecoilHighlightIndex(0)}
+                                        onMouseLeave={() => setRecoilHighlightIndex(null)}
+                                        className="cursor-pointer"
+                                      />
+                                      {recoilPlot.points.map((point, idx) => (
+                                        <circle
+                                          key={idx}
+                                          cx={point.x}
+                                          cy={point.y}
+                                          r={idx === 0 ? 2.6 : 2}
+                                          fill={idx === 0 ? '#f59e0b' : '#fcd34d'}
+                                        />
+                                      ))}
+                                    </svg>
+                                  </div>
+                                  <div className="text-[10px] text-gray-400 space-y-2">
+                                    <div>
+                                      <div className="text-[11px] text-white">Pattern</div>
+                                      <div className="text-amber-400">{recoilPreview.patternName}</div>
+                                    </div>
+                                    <div>
+                                      <div className="text-[11px] text-white">Shots</div>
+                                      <div>{recoilPreview.shots} (from `ammo_clip_size`)</div>
+                                    </div>
+                                    <div>
+                                      <div className="text-[11px] text-white">Scaling</div>
+                                      <div>Soft+Hard with base/random, fraction, first shot, decay</div>
+                                    </div>
+                                    <div>
+                                      <div className="text-[11px] text-white">Variant</div>
+                                      <div>
+                                        {recoilHighlightIndex === null
+                                          ? 'None'
+                                          : recoilHighlightIndex + 1}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="text-[11px] text-gray-500">
+                                  Select a `viewkick_pattern` to preview recoil.
+                                </div>
                               )}
+                              {recoilPlot && (
+                                <div className="mt-3 space-y-2">
+                                  <label className="text-[10px] text-gray-400">
+                                    Number of recoil patterns to show
+                                  </label>
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="range"
+                                      min={1}
+                                      max={10}
+                                      value={recoilVariantCount}
+                                      onChange={(e) => setRecoilVariantCount(Number(e.target.value))}
+                                      className="w-full accent-amber-400"
+                                    />
+                                    <span className="text-[10px] text-gray-300 w-6 text-right">
+                                      {recoilVariantCount}
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {Array.from({ length: recoilVariantCount }, (_, idx) => {
+                                      const isActive = recoilHighlightIndex === idx;
+                                      return (
+                                        <button
+                                          key={idx}
+                                          onClick={() => setRecoilHighlightIndex(idx)}
+                                          onMouseEnter={() => setRecoilHighlightIndex(idx)}
+                                          onMouseLeave={() => setRecoilHighlightIndex(null)}
+                                          className={`text-[10px] px-2 py-0.5 rounded border ${
+                                            isActive
+                                              ? 'border-amber-400 text-amber-300 bg-amber-500/10'
+                                              : 'border-white/10 text-gray-400 hover:text-white hover:border-white/30'
+                                          }`}
+                                          title={idx === 0 ? 'Main path' : `Variant ${idx + 1}`}
+                                        >
+                                          {idx + 1}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                              <div className="mt-3 text-[10px] text-gray-500">
+                                Preview is approximate and does not fully match engine-side recoil or randomization.
+                              </div>
                             </div>
                           </div>
-                        ))}
+                        ) : (
+                          <div className="space-y-3">
+                            {category.properties.map(prop => (
+                              <div key={prop.key} className="flex items-start gap-3">
+                                <div className="w-36 flex-shrink-0 pt-1.5">
+                                  <label className="text-xs font-medium text-gray-300 block">
+                                    {prop.label}
+                                  </label>
+                                  {prop.description && (
+                                    <span className="text-[10px] text-gray-500 block mt-0.5">
+                                      {prop.description}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex-1 flex items-center gap-2">
+                                  {renderPropertyInput(prop)}
+                                  {parsedProperties[prop.key] && (
+                                    <button
+                                      onClick={() => handlePropertyChange(prop.key, '')}
+                                      className="p-1 text-gray-500 hover:text-red-400 transition-colors"
+                                      title="Clear value"
+                                    >
+                                      <RotateCcw size={12} />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
