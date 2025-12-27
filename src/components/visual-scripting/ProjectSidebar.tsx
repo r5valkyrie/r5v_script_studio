@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileCode, Crosshair, Plus, FolderPlus, Trash2, Edit2, Folder, ChevronRight, ChevronDown, GripVertical, MoreVertical } from 'lucide-react';
+import { FileCode, Crosshair, Plus, FolderPlus, Trash2, Edit2, Folder, FolderOpen, ChevronRight, ChevronDown, MoreVertical } from 'lucide-react';
 import type { ScriptFile, WeaponFile } from '../../types/project';
 import ConfirmDialog from './ConfirmDialog';
 
@@ -77,6 +77,10 @@ export default function ProjectSidebar({
   // Creation state
   const [creatingIn, setCreatingIn] = useState<{ section: FileSection; folder?: string } | null>(null);
   const [newFileName, setNewFileName] = useState('');
+  
+  // Folder creation state
+  const [creatingFolderIn, setCreatingFolderIn] = useState<FileSection | null>(null);
+  const [newFolderName, setNewFolderName] = useState('');
   const [selectedBaseWeapon, setSelectedBaseWeapon] = useState<string>('');
   const [showBaseWeaponDropdown, setShowBaseWeaponDropdown] = useState(false);
   
@@ -152,15 +156,21 @@ export default function ProjectSidebar({
   };
 
   const handleCreateFolder = (section: FileSection) => {
-    const name = prompt('Enter folder name:');
-    if (name && name.trim()) {
-      if (section === 'scripts') {
-        onCreateScriptFolder(name.trim());
+    setCreatingFolderIn(section);
+    setNewFolderName('');
+    // Auto-expand the section
+    setExpandedSections(prev => new Set([...prev, section]));
+  };
+  
+  const confirmCreateFolder = () => {
+    if (newFolderName.trim() && creatingFolderIn) {
+      if (creatingFolderIn === 'scripts') {
+        onCreateScriptFolder(newFolderName.trim());
       } else {
-        onCreateWeaponFolder(name.trim());
+        onCreateWeaponFolder(newFolderName.trim());
       }
-      // Auto-expand the section
-      setExpandedSections(prev => new Set([...prev, section]));
+      setCreatingFolderIn(null);
+      setNewFolderName('');
     }
   };
 
@@ -282,18 +292,12 @@ export default function ProjectSidebar({
     return (
       <div
         key={file.id}
-        draggable={!isRenaming}
-        onDragStart={(e) => handleDragStart(e, file.id, section)}
-        onDragEnd={handleDragEnd}
-        className={`group flex items-center gap-2 px-3 py-2 rounded cursor-pointer transition-all ${
+        className={`group flex items-center gap-1.5 py-1 pr-2 cursor-pointer transition-colors ${
           isActive
-            ? 'bg-white/10 text-white'
-            : 'text-gray-400 hover:text-white hover:bg-white/5'
-        } ${draggedFile?.id === file.id ? 'opacity-50' : ''}`}
-        style={{
-          marginLeft: `${depth * 16}px`,
-          borderLeft: isActive ? `3px solid ${accentColor}` : '3px solid transparent',
-        }}
+            ? 'bg-blue-500/20 text-white'
+            : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+        }`}
+        style={{ paddingLeft: `${12 + depth * 16}px` }}
         onClick={() => {
           if (!isRenaming) {
             if (section === 'scripts') {
@@ -308,14 +312,14 @@ export default function ProjectSidebar({
           setContextMenu({ x: e.clientX, y: e.clientY, type: 'file', id: file.id, section });
         }}
       >
-        {/* Drag handle */}
-        <GripVertical size={14} className="text-gray-600 opacity-0 group-hover:opacity-100 cursor-grab flex-shrink-0" />
+        {/* Tree line spacer */}
+        <span className="w-3" />
         
         {/* Icon */}
         {isScript ? (
-          <FileCode size={16} style={{ color: isActive ? accentColor : undefined }} className="flex-shrink-0" />
+          <FileCode size={14} className={isActive ? 'text-blue-400' : 'text-gray-500'} />
         ) : (
-          <Crosshair size={16} style={{ color: isActive ? accentColor : undefined }} className="flex-shrink-0" />
+          <Crosshair size={14} className={isActive ? 'text-orange-400' : 'text-gray-500'} />
         )}
         
         {/* Name */}
@@ -332,19 +336,19 @@ export default function ProjectSidebar({
                 setRenameValue('');
               }
             }}
-            className="flex-1 bg-black/50 border border-white/20 rounded px-2 py-1 text-sm text-white outline-none focus:border-cyan-400"
+            className="flex-1 bg-[#2d2d2d] border border-blue-500/50 rounded px-1.5 py-0.5 text-xs text-white outline-none"
             autoFocus
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
-          <span className="text-sm truncate flex-1">
-            {fileName.replace(extension, '')}<span className="text-gray-500">{extension}</span>
+          <span className="text-xs truncate flex-1">
+            {fileName.replace(extension, '')}<span className="text-gray-600">{extension}</span>
           </span>
         )}
         
         {/* Modified indicator */}
         {isModified && !isRenaming && (
-          <span className="w-2 h-2 bg-amber-400 rounded-full flex-shrink-0" title="Unsaved changes" />
+          <span className="w-1.5 h-1.5 bg-amber-400 rounded-full flex-shrink-0" title="Unsaved changes" />
         )}
 
         {/* Actions */}
@@ -354,9 +358,9 @@ export default function ProjectSidebar({
               e.stopPropagation();
               setContextMenu({ x: e.clientX, y: e.clientY, type: 'file', id: file.id, section });
             }}
-            className="p-1 text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+            className="p-0.5 text-gray-600 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
           >
-            <MoreVertical size={16} />
+            <MoreVertical size={12} />
           </button>
         )}
       </div>
@@ -374,34 +378,41 @@ export default function ProjectSidebar({
     return (
       <div key={folderPath}>
         <div
-          className={`group flex items-center gap-2 px-3 py-2 rounded cursor-pointer text-gray-400 hover:text-white transition-all ${
-            isDropTarget ? 'bg-cyan-500/20 ring-1 ring-cyan-500/50' : 'hover:bg-white/5'
+          className={`group flex items-center gap-1.5 py-1 pr-2 cursor-pointer text-gray-400 hover:text-gray-200 transition-colors ${
+            isDropTarget ? 'bg-blue-500/20' : 'hover:bg-white/5'
           }`}
-          style={{ marginLeft: `${depth * 16}px` }}
+          style={{ paddingLeft: `${12 + depth * 16}px` }}
           onClick={() => toggleFolder(folderPath)}
           onDragOver={(e) => handleDragOver(e, folderPath, section)}
           onDragLeave={handleDragLeave}
           onDrop={(e) => handleDrop(e, folderPath, section)}
         >
-          {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-          <Folder size={16} className="text-amber-500" />
-          <span className="text-sm flex-1">{folderName}</span>
-          <span className="text-xs text-gray-600">{files.length}</span>
+          {isExpanded ? (
+            <ChevronDown size={12} className="text-gray-500" />
+          ) : (
+            <ChevronRight size={12} className="text-gray-500" />
+          )}
+          {isExpanded ? (
+            <FolderOpen size={14} className="text-yellow-600" />
+          ) : (
+            <Folder size={14} className="text-yellow-600" />
+          )}
+          <span className="text-xs flex-1">{folderName}</span>
           
           <button
             onClick={(e) => {
               e.stopPropagation();
               setDeleteConfirm({ isOpen: true, type: 'folder', id: folderPath, name: folderName, section });
             }}
-            className="p-1 text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="p-0.5 text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
             title="Delete folder"
           >
-            <Trash2 size={14} />
+            <Trash2 size={12} />
           </button>
         </div>
         
         {isExpanded && (
-          <div className="mt-0.5">
+          <div>
             {childFolders.map(child => renderFolder(child, section, filesByFolder, allFolders, depth + 1))}
             {files.map(file => renderFile(file, section, depth + 1))}
           </div>
@@ -410,15 +421,19 @@ export default function ProjectSidebar({
     );
   };
 
-  // Render creation form
+  // Render creation form (inline style like folder creation)
   const renderCreateForm = (section: FileSection) => {
     if (!creatingIn || creatingIn.section !== section) return null;
     
+    const isScript = section === 'scripts';
+    const icon = isScript ? <FileCode size={14} className="text-blue-400" /> : <Crosshair size={14} className="text-orange-400" />;
+    
     return (
-      <div className="mx-2 my-2 p-3 bg-[#1a1f28] rounded border border-white/10">
+      <div className="flex items-center gap-1.5 py-1 pr-2" style={{ paddingLeft: '28px' }}>
+        {icon}
         <input
           type="text"
-          placeholder={section === 'scripts' ? 'script_name' : 'mp_weapon_name'}
+          placeholder={isScript ? 'script_name' : 'weapon_name'}
           value={newFileName}
           onChange={(e) => setNewFileName(e.target.value)}
           onKeyDown={(e) => {
@@ -429,62 +444,68 @@ export default function ProjectSidebar({
               setSelectedBaseWeapon('');
             }
           }}
-          className="w-full bg-black/50 border border-white/20 rounded px-3 py-2 text-sm text-white outline-none focus:border-cyan-400 mb-2"
+          className="flex-1 bg-[#2d2d2d] border border-blue-500/50 rounded px-1.5 py-0.5 text-xs text-white outline-none"
           autoFocus
         />
-        
-        {section === 'weapons' && (
-          <div className="relative mb-2">
-            <button
-              onClick={() => setShowBaseWeaponDropdown(!showBaseWeaponDropdown)}
-              className="w-full flex items-center justify-between px-3 py-2 bg-black/50 border border-white/20 rounded text-sm text-gray-400 hover:text-white"
-            >
-              <span>{selectedBaseWeapon ? BASE_WEAPONS.find(b => b.id === selectedBaseWeapon)?.name : 'Base weapon (optional)'}</span>
-              <ChevronDown size={14} className={`transition-transform ${showBaseWeaponDropdown ? 'rotate-180' : ''}`} />
-            </button>
-            
-            {showBaseWeaponDropdown && (
-              <div className="absolute z-20 w-full mt-1 bg-[#1a1f28] border border-white/20 rounded shadow-xl max-h-48 overflow-y-auto">
-                <button
-                  onClick={() => { setSelectedBaseWeapon(''); setShowBaseWeaponDropdown(false); }}
-                  className="w-full px-3 py-2 text-sm text-left text-gray-400 hover:text-white hover:bg-white/10"
-                >
-                  None
-                </button>
-                {BASE_WEAPONS.map(base => (
-                  <button
-                    key={base.id}
-                    onClick={() => { setSelectedBaseWeapon(base.id); setShowBaseWeaponDropdown(false); }}
-                    className="w-full px-3 py-2 text-sm text-left text-gray-400 hover:text-white hover:bg-white/10"
-                  >
-                    {base.name}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-        
-        <div className="flex gap-2">
-          <button
-            onClick={handleCreate}
-            className="flex-1 px-3 py-2 text-sm font-medium text-white rounded"
-            style={{ backgroundColor: accentColor }}
-          >
-            Create
-          </button>
-          <button
-            onClick={() => { setCreatingIn(null); setNewFileName(''); setSelectedBaseWeapon(''); }}
-            className="px-3 py-2 text-sm text-gray-400 bg-white/10 rounded hover:bg-white/20"
-          >
-            Cancel
-          </button>
-        </div>
+        <button
+          onClick={handleCreate}
+          className="p-1 text-green-400 hover:text-green-300 hover:bg-green-500/20 rounded"
+          title="Create file"
+        >
+          <Plus size={12} />
+        </button>
+        <button
+          onClick={() => { setCreatingIn(null); setNewFileName(''); setSelectedBaseWeapon(''); }}
+          className="p-1 text-gray-500 hover:text-gray-300 hover:bg-white/10 rounded"
+          title="Cancel"
+        >
+          <Trash2 size={10} />
+        </button>
       </div>
     );
   };
 
-  // Render a section (Scripts or Weapons)
+  // Render folder creation form
+  const renderFolderCreateForm = (section: FileSection) => {
+    if (creatingFolderIn !== section) return null;
+    
+    return (
+      <div className="flex items-center gap-1.5 py-1 pr-2" style={{ paddingLeft: '28px' }}>
+        <Folder size={14} className="text-yellow-600" />
+        <input
+          type="text"
+          placeholder="folder_name"
+          value={newFolderName}
+          onChange={(e) => setNewFolderName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') confirmCreateFolder();
+            if (e.key === 'Escape') {
+              setCreatingFolderIn(null);
+              setNewFolderName('');
+            }
+          }}
+          className="flex-1 bg-[#2d2d2d] border border-blue-500/50 rounded px-1.5 py-0.5 text-xs text-white outline-none"
+          autoFocus
+        />
+        <button
+          onClick={confirmCreateFolder}
+          className="p-1 text-green-400 hover:text-green-300 hover:bg-green-500/20 rounded"
+          title="Create folder"
+        >
+          <Plus size={12} />
+        </button>
+        <button
+          onClick={() => { setCreatingFolderIn(null); setNewFolderName(''); }}
+          className="p-1 text-gray-500 hover:text-gray-300 hover:bg-white/10 rounded"
+          title="Cancel"
+        >
+          <Trash2 size={10} />
+        </button>
+      </div>
+    );
+  };
+
+  // Render a section (Scripts or Weapons) as a root folder
   const renderSection = (
     section: FileSection,
     title: string,
@@ -497,64 +518,73 @@ export default function ProjectSidebar({
     const rootFiles = filesByFolder['root'] || [];
     const rootFolders = getChildFolders('root', folders);
     const isRootDropTarget = dropTarget === 'root' && draggedFile?.section === section;
+    const folderColor = section === 'scripts' ? 'text-blue-500' : 'text-orange-500';
 
     return (
-      <div className="border-b border-white/5 last:border-b-0">
-        {/* Section Header */}
+      <div>
+        {/* Root Folder Header */}
         <div
-          className="flex items-center justify-between px-3 py-2.5 cursor-pointer hover:bg-white/5 transition-colors"
+          className={`group flex items-center gap-1.5 py-1.5 pr-2 cursor-pointer transition-colors hover:bg-white/5 ${
+            isRootDropTarget ? 'bg-blue-500/10' : ''
+          }`}
+          style={{ paddingLeft: '8px' }}
           onClick={() => toggleSection(section)}
+          onDragOver={(e) => handleDragOver(e, 'root', section)}
+          onDragLeave={handleDragLeave}
+          onDrop={(e) => handleDrop(e, 'root', section)}
         >
-          <div className="flex items-center gap-2.5">
-            {isExpanded ? <ChevronDown size={16} className="text-gray-500" /> : <ChevronRight size={16} className="text-gray-500" />}
-            <span className="text-gray-400">{icon}</span>
-            <span className="text-sm font-medium text-gray-300">{title}</span>
-            <span className="text-xs px-2 py-0.5 rounded bg-white/5 text-gray-500">{files.length}</span>
-          </div>
+          {isExpanded ? (
+            <ChevronDown size={12} className="text-gray-500" />
+          ) : (
+            <ChevronRight size={12} className="text-gray-500" />
+          )}
+          {isExpanded ? (
+            <FolderOpen size={14} className={folderColor} />
+          ) : (
+            <Folder size={14} className={folderColor} />
+          )}
+          <span className="text-xs font-medium text-gray-300 flex-1">{title}</span>
+          <span className="text-[10px] text-gray-600 mr-1">{files.length}</span>
           
           {/* Quick actions */}
-          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
             <button
-              onClick={() => setCreatingIn({ section })}
-              className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded transition-colors"
+              onClick={(e) => { e.stopPropagation(); setCreatingIn({ section }); }}
+              className="p-1 text-gray-500 hover:text-white hover:bg-white/10 rounded transition-colors"
               title={`New ${section === 'scripts' ? 'script' : 'weapon'}`}
             >
-              <Plus size={16} />
+              <Plus size={12} />
             </button>
             <button
-              onClick={() => handleCreateFolder(section)}
-              className="p-1.5 text-gray-500 hover:text-amber-400 hover:bg-white/10 rounded transition-colors"
+              onClick={(e) => { e.stopPropagation(); handleCreateFolder(section); }}
+              className="p-1 text-gray-500 hover:text-yellow-500 hover:bg-white/10 rounded transition-colors"
               title="New folder"
             >
-              <FolderPlus size={16} />
+              <FolderPlus size={12} />
             </button>
           </div>
         </div>
 
         {/* Section Content */}
         {isExpanded && (
-          <div 
-            className={`pb-1 ${isRootDropTarget ? 'bg-cyan-500/10' : ''}`}
-            onDragOver={(e) => handleDragOver(e, 'root', section)}
-            onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, 'root', section)}
-          >
+          <div>
             {renderCreateForm(section)}
+            {renderFolderCreateForm(section)}
             
             {/* Folders first, then root files */}
-            {rootFolders.map(folder => renderFolder(folder, section, filesByFolder, folders))}
-            {rootFiles.map(file => renderFile(file, section))}
+            {rootFolders.map(folder => renderFolder(folder, section, filesByFolder, folders, 1))}
+            {rootFiles.map(file => renderFile(file, section, 1))}
             
             {/* Empty state */}
-            {files.length === 0 && !creatingIn && (
-              <div className="px-4 py-6 text-center">
-                <p className="text-sm text-gray-600 mb-3">No {section} yet</p>
-                <button
-                  onClick={() => setCreatingIn({ section })}
-                  className="text-sm px-3 py-2 rounded bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
-                >
-                  Create your first {section === 'scripts' ? 'script' : 'weapon'}
-                </button>
+            {files.length === 0 && !creatingIn && !creatingFolderIn && (
+              <div 
+                className="py-3 text-center cursor-pointer hover:bg-white/5 transition-colors"
+                style={{ paddingLeft: '28px' }}
+                onClick={() => setCreatingIn({ section })}
+              >
+                <p className="text-[10px] text-gray-600">
+                  Click to add {section === 'scripts' ? 'a script' : 'a weapon'}
+                </p>
               </div>
             )}
           </div>
@@ -564,7 +594,7 @@ export default function ProjectSidebar({
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#0d1117] text-sm" onClick={() => setContextMenu(null)}>
+    <div className="flex flex-col h-full bg-[#121212] text-xs" onClick={() => setContextMenu(null)}>
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         isOpen={deleteConfirm.isOpen}
@@ -579,8 +609,12 @@ export default function ProjectSidebar({
       {/* Context Menu */}
       {contextMenu && (
         <div
-          className="fixed z-50 bg-[#1a1f28] border border-white/10 rounded-lg shadow-xl py-1.5 min-w-[160px]"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
+          className="fixed z-50 bg-[#2d2d2d] border border-white/10 rounded py-1 min-w-[140px]"
+          style={{ 
+            left: contextMenu.x, 
+            top: contextMenu.y,
+            boxShadow: '0 4px 12px rgba(0,0,0,.3)'
+          }}
           onClick={(e) => e.stopPropagation()}
         >
           <button
@@ -594,9 +628,9 @@ export default function ProjectSidebar({
               }
               setContextMenu(null);
             }}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/10"
+            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-300 hover:text-white hover:bg-white/10"
           >
-            <Edit2 size={16} />
+            <Edit2 size={12} />
             Rename
           </button>
           <button
@@ -614,37 +648,40 @@ export default function ProjectSidebar({
               }
               setContextMenu(null);
             }}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10"
+            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10"
           >
-            <Trash2 size={16} />
+            <Trash2 size={12} />
             Delete
           </button>
         </div>
       )}
 
-      {/* Scripts Section */}
-      {renderSection(
-        'scripts',
-        'Scripts',
-        <FileCode size={18} />,
-        scriptFiles,
-        scriptFolders,
-        scriptsByFolder
-      )}
+      {/* File Tree */}
+      <div className="flex-1 overflow-y-auto py-1">
+        {/* Scripts Section */}
+        {renderSection(
+          'scripts',
+          'Scripts',
+          <FileCode size={14} />,
+          scriptFiles,
+          scriptFolders,
+          scriptsByFolder
+        )}
 
-      {/* Weapons Section */}
-      {renderSection(
-        'weapons',
-        'Weapons',
-        <Crosshair size={18} />,
-        weaponFiles,
-        weaponFolders,
-        weaponsByFolder
-      )}
+        {/* Weapons Section */}
+        {renderSection(
+          'weapons',
+          'Weapons',
+          <Crosshair size={14} />,
+          weaponFiles,
+          weaponFolders,
+          weaponsByFolder
+        )}
+      </div>
 
       {/* Footer info */}
-      <div className="mt-auto px-3 py-2 border-t border-white/5 text-xs text-gray-600">
-        Drag files to move • Right-click for options
+      <div className="px-2 py-1.5 border-t border-white/5 text-[10px] text-gray-600">
+        Right-click for options
       </div>
     </div>
   );

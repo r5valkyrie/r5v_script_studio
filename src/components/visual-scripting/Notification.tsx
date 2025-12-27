@@ -157,9 +157,12 @@ export function ExportPathModal({ isOpen, onClose, onSelect, accentColor = '#8B5
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg bg-[#1a1f28] rounded-xl shadow-2xl border border-white/10 overflow-hidden">
+      <div 
+        className="relative w-full max-w-lg bg-[#2d2d2d] rounded overflow-hidden"
+        style={{ boxShadow: '0 11px 15px -7px rgba(0,0,0,.2), 0 24px 38px 3px rgba(0,0,0,.14), 0 9px 46px 8px rgba(0,0,0,.12)' }}
+      >
         {/* Header */}
-        <div className="flex items-center gap-3 px-6 py-4 border-b border-white/10">
+        <div className="flex items-center gap-3 px-6 py-4 border-b border-white/8">
           <FolderOpen size={24} style={{ color: accentColor }} />
           <div>
             <h2 className="text-lg font-semibold text-white">Set Export Path</h2>
@@ -172,7 +175,7 @@ export function ExportPathModal({ isOpen, onClose, onSelect, accentColor = '#8B5
           <p className="text-sm text-gray-300">
             Please select the folder where your mods should be exported. This is typically located at:
           </p>
-          <code className="block px-3 py-2 bg-black/30 rounded-lg text-sm text-purple-400 font-mono">
+          <code className="block px-3 py-2 bg-black/30 rounded-lg text-sm text-[#64B5F6] font-mono">
             R5VLibrary/LIVE/mods/
           </code>
 
@@ -181,7 +184,7 @@ export function ExportPathModal({ isOpen, onClose, onSelect, accentColor = '#8B5
               type="text"
               value={selectedPath}
               placeholder="No folder selected..."
-              className="flex-1 px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 text-sm"
+              className="flex-1 px-3 py-2 bg-black/30 border border-white/8 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 text-sm"
               readOnly
             />
             <button
@@ -199,7 +202,7 @@ export function ExportPathModal({ isOpen, onClose, onSelect, accentColor = '#8B5
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/10 bg-black/20">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/8 bg-black/20">
           <button
             onClick={onClose}
             className="px-4 py-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
@@ -273,7 +276,7 @@ export function ConfirmModal({
     info: {
       icon: <AlertCircle size={24} style={{ color: accentColor }} />,
       buttonBg: 'hover:brightness-110',
-      iconBg: `bg-purple-500/20`,
+      iconBg: `bg-[#2196F3]/20`,
     },
   };
 
@@ -285,7 +288,10 @@ export function ConfirmModal({
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onCancel} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md bg-[#1a1f28] rounded-xl shadow-2xl border border-white/10 overflow-hidden animate-scale-in">
+      <div 
+        className="relative w-full max-w-md bg-[#2d2d2d] rounded overflow-hidden animate-scale-in"
+        style={{ boxShadow: '0 11px 15px -7px rgba(0,0,0,.2), 0 24px 38px 3px rgba(0,0,0,.14), 0 9px 46px 8px rgba(0,0,0,.12)' }}
+      >
         {/* Content */}
         <div className="p-6">
           <div className="flex items-start gap-4">
@@ -300,7 +306,7 @@ export function ConfirmModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/10 bg-black/20">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/8 bg-black/20">
           <button
             onClick={onCancel}
             className="px-4 py-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"

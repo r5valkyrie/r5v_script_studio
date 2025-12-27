@@ -62,7 +62,7 @@ export interface AppSettings {
     accentColor: string;
     fontSize: 'small' | 'medium' | 'large';
     showGridLines: boolean;
-    gridStyle: 'dots' | 'lines' | 'crosshatch' | 'hexagons' | 'isometric' | 'blueprint' | 'diamonds' | 'triangles' | 'graph' | 'waves';
+    gridStyle: 'dots' | 'lines' | 'cross';
     coloredGrid: boolean;
     gridSize: number;
     nodeOpacity: number;
@@ -100,7 +100,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   },
   appearance: {
     theme: 'dark',
-    accentColor: '#8B5CF6', // purple-500
+    accentColor: '#2196F3', // Material Blue 500
     fontSize: 'medium',
     showGridLines: true,
     gridStyle: 'dots',
@@ -298,10 +298,13 @@ export default function SettingsModal({
   ];
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/70">
-      <div className="bg-[#1a1f28] rounded-xl shadow-2xl w-[1000px] max-w-[90vw] h-[800px] max-h-[85vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/60">
+      <div 
+        className="bg-[#2d2d2d] rounded w-[1000px] max-w-[90vw] h-[800px] max-h-[85vh] flex flex-col overflow-hidden"
+        style={{ boxShadow: '0 11px 15px -7px rgba(0,0,0,.2), 0 24px 38px 3px rgba(0,0,0,.14), 0 9px 46px 8px rgba(0,0,0,.12)' }}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/8">
           <div className="flex items-center gap-3">
             <Settings size={20} style={{ color: localSettings.appearance.accentColor }} />
             <h2 className="text-lg font-semibold text-white">Settings</h2>
@@ -317,7 +320,7 @@ export default function SettingsModal({
         {/* Content */}
         <div className="flex-1 flex overflow-hidden">
           {/* Sidebar */}
-          <div className="w-48 border-r border-white/10 p-3 flex flex-col gap-1">
+          <div className="w-48 border-r border-white/8 p-3 flex flex-col gap-1 bg-[#212121]">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -354,12 +357,12 @@ export default function SettingsModal({
                       type="checkbox"
                       checked={localSettings.general.autoSave}
                       onChange={(e) => updateSettings('general', 'autoSave', e.target.checked)}
-                      className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-purple-500"
+                      className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-[#2196F3]"
                     />
                   </label>
 
                   {localSettings.general.autoSave && (
-                    <div className="ml-4 pl-4 border-l border-white/10">
+                    <div className="ml-4 pl-4 border-l border-white/8">
                       <label className="flex items-center justify-between">
                         <span className="text-sm text-gray-300">Auto Save Interval (minutes)</span>
                         <input
@@ -368,7 +371,7 @@ export default function SettingsModal({
                           max={60}
                           value={localSettings.general.autoSaveInterval}
                           onChange={(e) => updateSettings('general', 'autoSaveInterval', parseInt(e.target.value) || 5)}
-                          className="w-20 px-3 py-1.5 bg-black/30 border border-white/10 rounded text-sm text-white focus:outline-none focus:border-purple-500"
+                          className="w-20 px-3 py-1.5 bg-black/30 border border-white/8 rounded text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50"
                         />
                       </label>
                     </div>
@@ -383,7 +386,7 @@ export default function SettingsModal({
                       type="checkbox"
                       checked={localSettings.general.confirmOnDelete}
                       onChange={(e) => updateSettings('general', 'confirmOnDelete', e.target.checked)}
-                      className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-purple-500"
+                      className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-[#2196F3]"
                     />
                   </label>
 
@@ -395,11 +398,11 @@ export default function SettingsModal({
                       max={20}
                       value={localSettings.general.maxRecentProjects}
                       onChange={(e) => updateSettings('general', 'maxRecentProjects', parseInt(e.target.value) || 10)}
-                      className="w-20 px-3 py-1.5 bg-black/30 border border-white/10 rounded text-sm text-white focus:outline-none focus:border-purple-500"
+                      className="w-20 px-3 py-1.5 bg-black/30 border border-white/8 rounded text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50"
                     />
                   </label>
 
-                  <div className="pt-4 border-t border-white/10">
+                  <div className="pt-4 border-t border-white/8">
                     <label className="block">
                       <span className="text-sm text-white mb-2 block">Default Export Path</span>
                       <p className="text-xs text-gray-500 mb-2">Folder where compiled mods will be exported (e.g., R5VLibrary/LIVE/mods/)</p>
@@ -408,7 +411,7 @@ export default function SettingsModal({
                           type="text"
                           value={localSettings.general.exportPath}
                           placeholder="e.g., /path/to/R5VLibrary/LIVE/mods/"
-                          className="flex-1 px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 text-sm"
+                          className="flex-1 px-3 py-2 bg-black/30 border border-white/8 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 text-sm"
                           readOnly
                         />
                         <button
@@ -467,7 +470,7 @@ export default function SettingsModal({
                           onClick={() => updateSettings('appearance', 'accentColor', color.value)}
                           className={`w-8 h-8 rounded-full transition-transform ${
                             localSettings.appearance.accentColor === color.value
-                              ? 'ring-2 ring-white ring-offset-2 ring-offset-[#1a1f28] scale-110'
+                              ? 'ring-2 ring-white ring-offset-2 ring-offset-[#2d2d2d] scale-110'
                               : 'hover:scale-110'
                           }`}
                           style={{ backgroundColor: color.value }}
@@ -508,15 +511,15 @@ export default function SettingsModal({
                       type="checkbox"
                       checked={localSettings.appearance.showGridLines}
                       onChange={(e) => updateSettings('appearance', 'showGridLines', e.target.checked)}
-                      className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-purple-500"
+                      className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-[#2196F3]"
                     />
                   </label>
 
                   {localSettings.appearance.showGridLines && (
                     <div>
                       <label className="text-sm text-white mb-2 block">Grid Style</label>
-                      <div className="grid grid-cols-5 gap-2">
-                        {(['dots', 'lines', 'crosshatch', 'hexagons', 'isometric', 'blueprint', 'diamonds', 'triangles', 'graph', 'waves'] as const).map((style) => (
+                      <div className="grid grid-cols-3 gap-2">
+                        {(['dots', 'lines', 'cross'] as const).map((style) => (
                           <button
                             key={style}
                             onClick={() => updateSettings('appearance', 'gridStyle', style)}
@@ -531,7 +534,7 @@ export default function SettingsModal({
                             } : undefined}
                           >
                             {/* Grid style preview */}
-                            <div className="w-7 h-7 rounded border border-white/20 bg-[#1a1f28] overflow-hidden">
+                            <div className="w-7 h-7 rounded border border-white/20 bg-[#212121] overflow-hidden">
                               {style === 'dots' && (
                                 <svg viewBox="0 0 24 24" className="w-full h-full">
                                   {[4, 12, 20].map(x => [4, 12, 20].map(y => (
@@ -549,76 +552,14 @@ export default function SettingsModal({
                                   ))}
                                 </svg>
                               )}
-                              {style === 'crosshatch' && (
+                              {style === 'cross' && (
                                 <svg viewBox="0 0 24 24" className="w-full h-full">
                                   {[8, 16].map(pos => (
                                     <g key={pos}>
-                                      <line x1={pos} y1="0" x2={pos} y2="24" stroke="#4b5563" strokeWidth="0.5" />
-                                      <line x1="0" y1={pos} x2="24" y2={pos} stroke="#4b5563" strokeWidth="0.5" />
+                                      <line x1={pos-2} y1={pos} x2={pos+2} y2={pos} stroke="#4b5563" strokeWidth="0.5" />
+                                      <line x1={pos} y1={pos-2} x2={pos} y2={pos+2} stroke="#4b5563" strokeWidth="0.5" />
                                     </g>
                                   ))}
-                                  <line x1="0" y1="0" x2="24" y2="24" stroke="#374151" strokeWidth="0.3" />
-                                  <line x1="24" y1="0" x2="0" y2="24" stroke="#374151" strokeWidth="0.3" />
-                                </svg>
-                              )}
-                              {style === 'hexagons' && (
-                                <svg viewBox="0 0 24 24" className="w-full h-full">
-                                  <path d="M12 2 L20 6 L20 14 L12 18 L4 14 L4 6 Z" fill="none" stroke="#4b5563" strokeWidth="0.5" />
-                                  <path d="M12 18 L12 24" stroke="#4b5563" strokeWidth="0.5" />
-                                  <path d="M4 6 L0 4" stroke="#4b5563" strokeWidth="0.5" />
-                                  <path d="M20 6 L24 4" stroke="#4b5563" strokeWidth="0.5" />
-                                </svg>
-                              )}
-                              {style === 'isometric' && (
-                                <svg viewBox="0 0 24 24" className="w-full h-full">
-                                  <line x1="0" y1="12" x2="24" y2="0" stroke="#4b5563" strokeWidth="0.5" />
-                                  <line x1="0" y1="12" x2="24" y2="24" stroke="#4b5563" strokeWidth="0.5" />
-                                  <line x1="0" y1="24" x2="24" y2="12" stroke="#4b5563" strokeWidth="0.5" />
-                                  <line x1="12" y1="0" x2="12" y2="24" stroke="#374151" strokeWidth="0.3" />
-                                </svg>
-                              )}
-                              {style === 'blueprint' && (
-                                <svg viewBox="0 0 24 24" className="w-full h-full">
-                                  <rect x="0" y="0" width="24" height="24" fill="#1a365d" />
-                                  {[6, 12, 18].map(pos => (
-                                    <g key={pos}>
-                                      <line x1={pos} y1="0" x2={pos} y2="24" stroke="#2c5282" strokeWidth="0.5" />
-                                      <line x1="0" y1={pos} x2="24" y2={pos} stroke="#2c5282" strokeWidth="0.5" />
-                                    </g>
-                                  ))}
-                                  <line x1="12" y1="0" x2="12" y2="24" stroke="#3182ce" strokeWidth="0.8" />
-                                  <line x1="0" y1="12" x2="24" y2="12" stroke="#3182ce" strokeWidth="0.8" />
-                                </svg>
-                              )}
-                              {style === 'diamonds' && (
-                                <svg viewBox="0 0 24 24" className="w-full h-full">
-                                  <path d="M12 0 L24 12 L12 24 L0 12 Z" fill="none" stroke="#4b5563" strokeWidth="0.5" />
-                                  <path d="M6 6 L18 6 L18 18 L6 18 Z" fill="none" stroke="#374151" strokeWidth="0.3" transform="rotate(45 12 12)" />
-                                </svg>
-                              )}
-                              {style === 'triangles' && (
-                                <svg viewBox="0 0 24 24" className="w-full h-full">
-                                  <path d="M12 2 L22 20 L2 20 Z" fill="none" stroke="#4b5563" strokeWidth="0.5" />
-                                  <path d="M12 20 L2 4 L22 4 Z" fill="none" stroke="#374151" strokeWidth="0.3" />
-                                </svg>
-                              )}
-                              {style === 'graph' && (
-                                <svg viewBox="0 0 24 24" className="w-full h-full">
-                                  {[4, 8, 12, 16, 20].map(pos => (
-                                    <g key={pos}>
-                                      <line x1={pos} y1="0" x2={pos} y2="24" stroke="#374151" strokeWidth="0.3" />
-                                      <line x1="0" y1={pos} x2="24" y2={pos} stroke="#374151" strokeWidth="0.3" />
-                                    </g>
-                                  ))}
-                                  <line x1="12" y1="0" x2="12" y2="24" stroke="#4b5563" strokeWidth="0.6" />
-                                  <line x1="0" y1="12" x2="24" y2="12" stroke="#4b5563" strokeWidth="0.6" />
-                                </svg>
-                              )}
-                              {style === 'waves' && (
-                                <svg viewBox="0 0 24 24" className="w-full h-full">
-                                  <path d="M0 6 Q6 2, 12 6 T24 6" fill="none" stroke="#4b5563" strokeWidth="0.5" />
-                                  <path d="M0 12 Q6 8, 12 12 T24 12" fill="none" stroke="#4b5563" strokeWidth="0.5" />
-                                  <path d="M0 18 Q6 14, 12 18 T24 18" fill="none" stroke="#4b5563" strokeWidth="0.5" />
                                 </svg>
                               )}
                             </div>
@@ -639,7 +580,7 @@ export default function SettingsModal({
                         type="checkbox"
                         checked={localSettings.appearance.coloredGrid}
                         onChange={(e) => updateSettings('appearance', 'coloredGrid', e.target.checked)}
-                        className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-purple-500"
+                        className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-[#2196F3]"
                       />
                     </label>
                   )}
@@ -652,7 +593,7 @@ export default function SettingsModal({
                       max={50}
                       value={localSettings.appearance.gridSize}
                       onChange={(e) => updateSettings('appearance', 'gridSize', parseInt(e.target.value) || 20)}
-                      className="w-20 px-3 py-1.5 bg-black/30 border border-white/10 rounded text-sm text-white focus:outline-none focus:border-purple-500"
+                      className="w-20 px-3 py-1.5 bg-black/30 border border-white/8 rounded text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50"
                     />
                   </label>
 
@@ -690,7 +631,7 @@ export default function SettingsModal({
                           } : undefined}
                         >
                           {/* Connection style preview */}
-                          <div className="w-10 h-7 rounded border border-white/20 bg-[#1a1f28] overflow-hidden">
+                          <div className="w-10 h-7 rounded border border-white/20 bg-[#212121] overflow-hidden">
                             {style === 'bezier' && (
                               <svg viewBox="0 0 40 28" className="w-full h-full">
                                 <path d="M4 14 C16 14, 16 6, 36 6" fill="none" stroke={localSettings.appearance.connectionStyle === style ? localSettings.appearance.accentColor : '#4b5563'} strokeWidth="1.5" />
@@ -799,7 +740,7 @@ export default function SettingsModal({
                       type="checkbox"
                       checked={localSettings.editor.snapToGrid}
                       onChange={(e) => updateSettings('editor', 'snapToGrid', e.target.checked)}
-                      className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-purple-500"
+                      className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-[#2196F3]"
                     />
                   </label>
 
@@ -812,7 +753,7 @@ export default function SettingsModal({
                       type="checkbox"
                       checked={localSettings.editor.showNodeLabels}
                       onChange={(e) => updateSettings('editor', 'showNodeLabels', e.target.checked)}
-                      className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-purple-500"
+                      className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-[#2196F3]"
                     />
                   </label>
 
@@ -825,7 +766,7 @@ export default function SettingsModal({
                       type="checkbox"
                       checked={localSettings.editor.autoConnect}
                       onChange={(e) => updateSettings('editor', 'autoConnect', e.target.checked)}
-                      className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-purple-500"
+                      className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-[#2196F3]"
                     />
                   </label>
 
@@ -838,7 +779,7 @@ export default function SettingsModal({
                       type="checkbox"
                       checked={localSettings.editor.highlightConnections}
                       onChange={(e) => updateSettings('editor', 'highlightConnections', e.target.checked)}
-                      className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-purple-500"
+                      className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-[#2196F3]"
                     />
                   </label>
 
@@ -851,7 +792,7 @@ export default function SettingsModal({
                       type="checkbox"
                       checked={localSettings.editor.connectionsBehindNodes}
                       onChange={(e) => updateSettings('editor', 'connectionsBehindNodes', e.target.checked)}
-                      className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-purple-500"
+                      className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-[#2196F3]"
                     />
                   </label>
 
@@ -917,7 +858,7 @@ export default function SettingsModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-white/10 bg-[#0f1419]">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-white/8 bg-[#212121]">
           <button
             onClick={handleReset}
             className="flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"

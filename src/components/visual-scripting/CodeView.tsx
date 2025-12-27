@@ -91,7 +91,7 @@ function highlightCode(code: string): string {
         const isMethod = i > 0 && line[i - 1] === '.';
 
         if (keywords.has(word)) {
-          result.push(`<span class="text-purple-400 font-semibold">${word}</span>`);
+          result.push(`<span class="text-[#64B5F6] font-semibold">${word}</span>`);
         } else if (types.has(word)) {
           result.push(`<span class="text-sky-400 font-medium">${word}</span>`);
         } else if (builtins.has(word)) {
@@ -278,9 +278,9 @@ export default function CodeView({ code, onClose }: CodeViewProps) {
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#0d1117]">
+    <div className="h-full flex flex-col bg-[#121212]">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-[#161b22] to-[#1c222b] border-b border-white/10">
+      <div className="flex items-center justify-between px-3 py-2 bg-[#1e1e1e] border-b border-white/8">
         <div className="flex items-center gap-2">
           <FileCode size={16} style={{ color: 'var(--accent-color)' }} />
           <span className="text-sm font-medium text-gray-200">Generated Code</span>
@@ -300,7 +300,7 @@ export default function CodeView({ code, onClose }: CodeViewProps) {
           </button>
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs bg-white/5 hover:bg-white/10 border border-white/10 rounded transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs bg-white/5 hover:bg-white/10 border border-white/8 rounded transition-colors"
             title="Copy to clipboard"
           >
             {copied ? (
@@ -340,7 +340,7 @@ export default function CodeView({ code, onClose }: CodeViewProps) {
 
       {/* Search Bar */}
       {searchOpen && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-[#1c222b] border-b border-white/10">
+        <div className="flex items-center gap-2 px-3 py-2 bg-[#212121] border-b border-white/8">
           <Search size={14} className="text-gray-500" />
           <input
             ref={searchInputRef}
@@ -395,7 +395,7 @@ export default function CodeView({ code, onClose }: CodeViewProps) {
       <div ref={codeRef} className="flex-1 overflow-auto">
         <div className="flex min-h-full">
           {/* Line Numbers & Fold Indicators */}
-          <div className="flex-shrink-0 py-3 bg-[#0d1117] border-r border-white/5 select-none sticky left-0 z-10">
+          <div className="flex-shrink-0 py-3 bg-[#121212] border-r border-white/5 select-none sticky left-0 z-10">
             {codeLines.map((_, idx) => {
               if (!isLineVisible(idx)) return null;
               const block = getBlockForLine(idx);
@@ -512,7 +512,7 @@ export default function CodeView({ code, onClose }: CodeViewProps) {
       </div>
 
       {/* Status Bar */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-gradient-to-r from-[#161b22] to-[#1c222b] border-t border-white/10 text-xs">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-[#1e1e1e] border-t border-white/8 text-xs">
         <div className="flex items-center gap-3">
           <span className="text-gray-500">{codeLines.length} lines</span>
           <span className="text-gray-600">•</span>

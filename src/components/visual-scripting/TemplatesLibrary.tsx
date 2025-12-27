@@ -44,7 +44,7 @@ const CATEGORY_ICONS: Record<TemplateCategory, React.ReactNode> = {
 };
 
 const COLOR_CLASSES: Record<string, { bg: string; border: string; text: string; hover: string }> = {
-  purple: { bg: 'bg-purple-500/10', border: 'border-purple-500/50', text: 'text-purple-400', hover: 'hover:bg-purple-500/20 hover:border-purple-500' },
+  purple: { bg: 'bg-[#2196F3]/10', border: 'border-purple-500/50', text: 'text-[#64B5F6]', hover: 'hover:bg-[#2196F3]/20 hover:border-purple-500' },
   yellow: { bg: 'bg-yellow-500/10', border: 'border-yellow-500/50', text: 'text-yellow-400', hover: 'hover:bg-yellow-500/20 hover:border-yellow-500' },
   blue: { bg: 'bg-blue-500/10', border: 'border-blue-500/50', text: 'text-blue-400', hover: 'hover:bg-blue-500/20 hover:border-blue-500' },
   red: { bg: 'bg-red-500/10', border: 'border-red-500/50', text: 'text-red-400', hover: 'hover:bg-red-500/20 hover:border-red-500' },
@@ -268,7 +268,7 @@ export default function TemplatesLibrary({
       {isEmbedded && (
         <button
           onClick={onToggleExpanded}
-          className="w-full flex items-center justify-between px-3 py-2.5 bg-[#0f1419] hover:bg-[#1a1f28] transition-colors border-b border-white/10 flex-shrink-0"
+          className="w-full flex items-center justify-between px-3 py-2.5 bg-[#1e1e1e] hover:bg-[#2d2d2d] transition-colors border-b border-white/8 flex-shrink-0"
         >
           <div className="flex items-center gap-2">
             <div className="p-1 rounded" style={{ backgroundColor: 'var(--accent-color-bg)' }}>
@@ -290,7 +290,7 @@ export default function TemplatesLibrary({
 
       {/* Content */}
       {(isExpanded || !isEmbedded) && (
-        <div className="flex-1 flex flex-col overflow-hidden bg-gradient-to-b from-[#151a21] to-[#0f1419]">
+        <div className="flex-1 flex flex-col overflow-hidden bg-[#1e1e1e]">
           {/* Search + Save Button */}
           <div className="flex-shrink-0 p-2 border-b border-white/5 space-y-2">
             <div className="relative">
@@ -300,7 +300,7 @@ export default function TemplatesLibrary({
                 placeholder="Search templates..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-black/30 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none transition-all"
+                className="w-full pl-9 pr-3 py-2 bg-black/30 border border-white/8 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none transition-all"
                 onFocus={e => {
                   e.currentTarget.style.borderColor = 'var(--accent-color-dim)';
                   e.currentTarget.style.boxShadow = '0 0 0 2px var(--accent-color-bg)';
@@ -328,7 +328,7 @@ export default function TemplatesLibrary({
                 className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                   hasSelection
                     ? 'hover:brightness-110'
-                    : 'bg-white/5 text-gray-600 cursor-not-allowed border border-white/10'
+                    : 'bg-white/5 text-gray-600 cursor-not-allowed border border-white/8'
                 }`}
                 style={hasSelection ? {
                   backgroundColor: `${accentColor}20`,

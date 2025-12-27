@@ -16,6 +16,7 @@ import WeaponEditor from './visual-scripting/WeaponEditor';
 import WelcomeScreen from './visual-scripting/WelcomeScreen';
 import TemplatesLibrary from './visual-scripting/TemplatesLibrary';
 import SaveTemplateModal from './visual-scripting/SaveTemplateModal';
+import UnifiedSidebar from './visual-scripting/UnifiedSidebar';
 import { generateCode } from '../utils/code-generator';
 import { getNodeDefinition, NODE_DEFINITIONS } from '../data/node-definitions';
 import { useProjectFiles } from '../hooks/useProjectFiles';
@@ -875,7 +876,7 @@ export default function VisualScriptEditor() {
       className={`w-screen h-screen flex flex-col ${
         effectiveTheme === 'light' 
           ? 'bg-gray-100 text-gray-900' 
-          : 'bg-[#0f1419] text-white'
+          : 'bg-[#121212] text-white'
       }`}
       data-theme={effectiveTheme}
       data-font-size={fontSize}
@@ -902,7 +903,7 @@ export default function VisualScriptEditor() {
       ) : (
         <>
           {/* Menu Bar */}
-          <div className="flex items-center justify-between bg-gradient-to-r from-[#0a0d10] via-[#0d1117] to-[#0a0d10] border-b border-white/5 px-3 h-10">
+          <div className="flex items-center justify-between bg-[#1e1e1e] border-b border-white/8 px-3 h-10">
         <div className="flex items-center gap-1">
           {/* File Menu */}
           <div className="relative" ref={fileMenuRef}>
@@ -918,7 +919,10 @@ export default function VisualScriptEditor() {
 
             {/* Dropdown Menu */}
             {isFileMenuOpen && (
-              <div className="absolute top-full left-0 mt-1.5 w-72 bg-[#1a1f28]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 py-1.5 overflow-hidden">
+              <div 
+                className="absolute top-full left-0 mt-1.5 w-72 bg-[#2d2d2d] rounded z-50 py-2 overflow-hidden"
+                style={{ boxShadow: '0 8px 10px -5px rgba(0,0,0,.2), 0 16px 24px 2px rgba(0,0,0,.14), 0 6px 30px 5px rgba(0,0,0,.12)' }}
+              >
                 <button
                   onClick={() => {
                     newProject();
@@ -1015,7 +1019,7 @@ export default function VisualScriptEditor() {
         </div>
 
         {/* Status Bar */}
-        <div className="flex items-center gap-3 px-4 h-7 bg-[#0a0d10]/80 border-t border-white/5">
+        <div className="flex items-center gap-3 px-4 h-7 bg-[#1e1e1e]">
           <div className="flex items-center gap-3 text-[10px] text-gray-500">
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accentColor }} />
@@ -1053,7 +1057,7 @@ export default function VisualScriptEditor() {
       <div className="flex-1 flex flex-col overflow-hidden">
           {/* File Tabs - spans full width */}
           {openFileTabs.length > 0 && (
-            <div className="flex-shrink-0 flex items-center bg-gradient-to-b from-[#0f1419] to-[#151a21] border-b border-white/5 overflow-x-auto px-1 gap-1 h-9">
+            <div className="flex-shrink-0 flex items-center bg-[#1e1e1e] border-b border-white/8 overflow-x-auto px-1 gap-1 h-9">
               {openFileTabs.map(tab => {
                 const isScript = tab.type === 'script';
                 const file = isScript 
@@ -1072,8 +1076,8 @@ export default function VisualScriptEditor() {
                     key={`${tab.type}-${tab.id}`}
                     className={`relative flex items-center gap-2 px-3 py-1.5 cursor-pointer group rounded-t-lg transition-all duration-200 ${
                       isActive 
-                        ? 'bg-[#1a1f28] text-white shadow-lg' 
-                        : 'text-gray-500 hover:bg-[#1a1f28]/50 hover:text-gray-300'
+                        ? 'bg-[#2d2d2d] text-white' 
+                        : 'text-gray-500 hover:bg-[#2d2d2d]/50 hover:text-gray-300'
                     }`}
                     onClick={() => isScript ? setActiveScriptFile(tab.id) : setActiveWeaponFile(tab.id)}
                   >
@@ -1118,122 +1122,53 @@ export default function VisualScriptEditor() {
 
           {/* Content area below tabs */}
           <div className="flex-1 flex overflow-hidden">
-            {/* Unified Sidebar - Project + Nodes */}
+            {/* Unified Sidebar with Tabs */}
             {isSidebarOpen && (
               <div className="flex h-full flex-shrink-0" style={{ width: sidebarWidth }}>
-                <div className="flex-1 h-full flex flex-col bg-[#151a21] overflow-hidden">
-                  {/* Sidebar Header with minimize button */}
-                  <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-[#161b22] to-[#1c222b] border-b border-white/10 flex-shrink-0">
-                    <div className="flex items-center gap-2">
-                    </div>
-                    <button
-                      onClick={() => setSidebarOpen(false)}
-                      className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors"
-                      title="Close Sidebar"
-                    >
-                      <PanelLeft size={14} />
-                    </button>
-                  </div>
-
-                  {/* Project Section - Collapsible */}
-                  <div className="flex-shrink-0 border-b border-white/10">
-                    {/* Project Header */}
-                    <button
-                      onClick={() => setProjectSectionExpanded(!isProjectSectionExpanded)}
-                      className="w-full flex items-center justify-between px-3 py-2.5 bg-[#0f1419] hover:bg-[#1a1f28] transition-colors"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="p-1 rounded" style={{ backgroundColor: `${accentColor}20` }}>
-                          <Folder size={14} style={{ color: accentColor }} />
-                        </div>
-                        <div className="flex flex-col items-start">
-                          <span className="text-[9px] font-semibold tracking-wider text-gray-500 uppercase">Project</span>
-                          <span className="text-xs font-medium text-white truncate max-w-[140px]">{projectData?.metadata.name || 'Untitled'}</span>
-                        </div>
-                      </div>
-                      <ChevronDown size={14} className={`text-gray-400 transition-transform ${isProjectSectionExpanded ? '' : '-rotate-90'}`} />
-                    </button>
-                    
-                    {/* Project Content - New Sidebar with Script/Weapon tabs */}
-                    {isProjectSectionExpanded && (
-                      <div className="max-h-[550px] overflow-y-auto">
-                        <ProjectSidebar
-                          scriptFiles={scriptFiles}
-                          activeScriptFileId={activeScriptFile?.id || null}
-                          scriptFolders={folders}
-                          onSelectScriptFile={setActiveScriptFile}
-                          onCreateScriptFile={createNewScriptFile}
-                          onDeleteScriptFile={deleteScriptFile}
-                          onRenameScriptFile={renameScriptFile}
-                          onCreateScriptFolder={createFolder}
-                          onDeleteScriptFolder={deleteFolder}
-                          onRenameScriptFolder={renameFolder}
-                          weaponFiles={weaponFiles}
-                          activeWeaponFileId={activeWeaponFile?.id || null}
-                          weaponFolders={weaponFolders}
-                          onSelectWeaponFile={setActiveWeaponFile}
-                          onCreateWeaponFile={createNewWeaponFile}
-                          onDeleteWeaponFile={deleteWeaponFile}
-                          onRenameWeaponFile={renameWeaponFile}
-                          onCreateWeaponFolder={createWeaponFolder}
-                          onDeleteWeaponFolder={deleteWeaponFolder}
-                          onRenameWeaponFolder={renameWeaponFolder}
-                          modifiedFileIds={modifiedFileIds}
-                          accentColor={accentColor}
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Node Palette Section - only show for script files */}
-                  {activeFileType === 'script' && (
-                  <div className={`${isNodesSectionExpanded && !isTemplatesSectionExpanded ? 'flex-1' : 'flex-shrink-0'} overflow-hidden border-b border-white/10`}>
-                    <NodePalette
-                      onAddNode={handleAddNode}
-                      onClose={() => setSidebarOpen(false)}
-                      collapsedCategories={collapsedCategories}
-                      onToggleCategory={(category) => {
-                        setCollapsedCategories(prev => 
-                          prev.includes(category) 
-                            ? prev.filter(c => c !== category)
-                            : [...prev, category]
-                        );
-                      }}
-                      isExpanded={isNodesSectionExpanded}
-                      onToggleExpanded={() => setNodesSectionExpanded(!isNodesSectionExpanded)}
-                      isEmbedded={true}
-                      viewState={graphView}
-                      canvasSize={canvasSize}
-                      onShowNodeDoc={setDocNodeType}
-                    />
-                  </div>
-                  )}
-
-                  {/* Templates Library Section - only show for script files */}
-                  {activeFileType === 'script' && (
-                  <div className={`${isTemplatesSectionExpanded ? 'flex-1' : 'flex-shrink-0'} overflow-hidden`}>
-                    <TemplatesLibrary
-                      onInsertTemplate={handleInsertTemplate}
-                      onSaveTemplate={() => {
-                        setSaveTemplateNodeIds(selectedNodeIds);
-                        setSaveTemplateModalOpen(true);
-                      }}
-                      hasSelection={selectedNodeIds.length > 0}
-                      viewState={graphView}
-                      canvasSize={canvasSize}
-                      isExpanded={isTemplatesSectionExpanded}
-                      onToggleExpanded={() => setTemplatesSectionExpanded(!isTemplatesSectionExpanded)}
-                      isEmbedded={true}
-                      refreshKey={templateRefreshKey}
-                      accentColor={accentColor}
-                    />
-                  </div>
-                  )}
+                <div className="flex-1 h-full overflow-hidden">
+                  <UnifiedSidebar
+                    projectName={projectData?.metadata.name || 'Untitled'}
+                    scriptFiles={scriptFiles}
+                    activeScriptFileId={activeScriptFile?.id || null}
+                    scriptFolders={folders}
+                    onSelectScriptFile={setActiveScriptFile}
+                    onCreateScriptFile={createNewScriptFile}
+                    onDeleteScriptFile={deleteScriptFile}
+                    onRenameScriptFile={renameScriptFile}
+                    onCreateScriptFolder={createFolder}
+                    onDeleteScriptFolder={deleteFolder}
+                    onRenameScriptFolder={renameFolder}
+                    weaponFiles={weaponFiles}
+                    activeWeaponFileId={activeWeaponFile?.id || null}
+                    weaponFolders={weaponFolders}
+                    onSelectWeaponFile={setActiveWeaponFile}
+                    onCreateWeaponFile={createNewWeaponFile}
+                    onDeleteWeaponFile={deleteWeaponFile}
+                    onRenameWeaponFile={renameWeaponFile}
+                    onCreateWeaponFolder={createWeaponFolder}
+                    onDeleteWeaponFolder={deleteWeaponFolder}
+                    onRenameWeaponFolder={renameWeaponFolder}
+                    modifiedFileIds={modifiedFileIds}
+                    onAddNode={handleAddNode}
+                    viewState={graphView}
+                    canvasSize={canvasSize}
+                    onShowNodeDoc={setDocNodeType}
+                    onInsertTemplate={handleInsertTemplate}
+                    onSaveTemplate={() => {
+                      setSaveTemplateNodeIds(selectedNodeIds);
+                      setSaveTemplateModalOpen(true);
+                    }}
+                    hasSelection={selectedNodeIds.length > 0}
+                    templateRefreshKey={templateRefreshKey}
+                    accentColor={accentColor}
+                    activeFileType={activeFileType}
+                    onClose={() => setSidebarOpen(false)}
+                  />
                 </div>
                 {/* Resize Handle */}
                 <div
-                  className="w-1 h-full cursor-col-resize transition-colors flex-shrink-0"
-                  style={{ backgroundColor: `${accentColor}50` }}
+                  className="w-1.5 h-full cursor-col-resize flex-shrink-0 hover:bg-[#2196F3] transition-colors"
+                  style={{ backgroundColor: `${accentColor}40` }}
                   onMouseDown={(e) => {
                     e.preventDefault();
                     sidebarDraggingRef.current = true;
@@ -1246,7 +1181,7 @@ export default function VisualScriptEditor() {
             {!isSidebarOpen && (
               <div
                 onClick={() => setSidebarOpen(true)}
-                className="flex-shrink-0 h-full w-10 bg-gradient-to-r from-[#0f1419] via-[#151a21] to-[#1a1f28] hover:from-[#151a21] hover:via-[#1a1f28] hover:to-[#1e242c] transition-all duration-300 flex flex-col items-center py-4 group cursor-pointer relative overflow-hidden"
+                className="flex-shrink-0 h-full w-10 bg-[#1e1e1e] hover:bg-[#2d2d2d] transition-all duration-200 flex flex-col items-center py-4 group cursor-pointer relative overflow-hidden"
                 style={{ borderRight: `2px solid ${accentColor}40` }}
                 title="Show Sidebar"
               >
@@ -1332,7 +1267,7 @@ export default function VisualScriptEditor() {
                     isDev={import.meta.env.DEV}
                   />
                 ) : (
-                  <div className="h-full flex flex-col items-center justify-center bg-[#0f1419] text-center p-8">
+                  <div className="h-full flex flex-col items-center justify-center bg-[#121212] text-center p-8">
                     <div className="p-4 rounded-full mb-4" style={{ backgroundColor: `${accentColor}20` }}>
                       <FileText size={48} style={{ color: `${accentColor}80` }} />
                     </div>
@@ -1359,7 +1294,7 @@ export default function VisualScriptEditor() {
                     codePanelDraggingRef.current = true;
                   }}
                 />
-                <div className="flex-1 h-full flex flex-col bg-[#1a1f26] overflow-hidden">
+                <div className="flex-1 h-full flex flex-col bg-[#1e1e1e] overflow-hidden">
                   <CodeView code={generatedCode} onClose={() => setCodePanelOpen(false)} />
                 </div>
               </div>
@@ -1368,7 +1303,7 @@ export default function VisualScriptEditor() {
             {/* Code Panel Toggle Button (when closed) - only show for script files */}
             {activeFileType === 'script' && !isCodePanelOpen && (
               <div 
-                className="flex-shrink-0 h-full w-10 bg-gradient-to-l from-[#0f1419] via-[#151a21] to-[#1a1f28] hover:from-[#151a21] hover:via-[#1a1f28] hover:to-[#1e242c] transition-all duration-300 flex flex-col items-center py-4 group cursor-pointer relative overflow-hidden"
+                className="flex-shrink-0 h-full w-10 bg-[#1e1e1e] hover:bg-[#2d2d2d] transition-all duration-200 flex flex-col items-center py-4 group cursor-pointer relative overflow-hidden"
                 style={{ borderLeft: `2px solid ${accentColor}40` }}
                 onClick={() => setCodePanelOpen(true)}
                 title="Show Generated Code (Ctrl+Shift+C)"

@@ -7,7 +7,7 @@ interface RecentProject {
   lastOpened: number;
 }
 
-type GridStyle = 'dots' | 'lines' | 'crosshatch' | 'hexagons' | 'isometric' | 'blueprint' | 'diamonds' | 'triangles' | 'graph' | 'waves';
+type GridStyle = 'dots' | 'lines' | 'cross';
 
 interface WelcomeScreenProps {
   onNewProject: () => void;
@@ -37,7 +37,7 @@ function lightenColor(hex: string, amount: number): string {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-// Generate grid background styles matching NodeGraph
+// Generate grid background styles matching React Flow
 function getGridStyles(
   gridStyle: GridStyle,
   gridSize: number,
@@ -49,27 +49,9 @@ function getGridStyles(
   const gridColor = coloredGrid 
     ? (theme === 'light' ? `${accentColor}25` : `${accentColor}40`)
     : (theme === 'light' ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)');
-  const gridColorLight = coloredGrid
-    ? (theme === 'light' ? `${accentColor}15` : `${accentColor}25`)
-    : (theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.03)');
-  const gridColorStrong = coloredGrid
-    ? (theme === 'light' ? `${accentColor}35` : `${accentColor}50`)
-    : (theme === 'light' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.08)');
   const dotColor = coloredGrid
     ? (theme === 'light' ? `${accentColor}40` : `${accentColor}60`)
     : (theme === 'light' ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.12)');
-  const svgStrokeColor = coloredGrid
-    ? encodeURIComponent(accentColor)
-    : (theme === 'light' ? '%23000' : '%23fff');
-  const svgStrokeOpacity = coloredGrid
-    ? (theme === 'light' ? '0.2' : '0.35')
-    : (theme === 'light' ? '0.08' : '0.15');
-  const hexStrokeColor = coloredGrid
-    ? accentColor
-    : (theme === 'light' ? '#000' : '#555');
-  const hexStrokeOpacity = coloredGrid
-    ? (theme === 'light' ? '0.25' : '0.4')
-    : (theme === 'light' ? '0.08' : '0.2');
 
   let backgroundImage: string;
   let backgroundSize: string;
@@ -84,54 +66,19 @@ function getGridStyles(
                          linear-gradient(to bottom, ${gridColor} 1px, transparent 1px)`;
       backgroundSize = `${gridSize}px ${gridSize}px`;
       break;
-    case 'crosshatch':
-      backgroundImage = `linear-gradient(to right, ${gridColor} 1px, transparent 1px),
-                         linear-gradient(to bottom, ${gridColor} 1px, transparent 1px),
-                         repeating-linear-gradient(45deg, transparent, transparent 10px, ${gridColorLight} 10px, ${gridColorLight} 11px),
-                         repeating-linear-gradient(-45deg, transparent, transparent 10px, ${gridColorLight} 10px, ${gridColorLight} 11px)`;
-      backgroundSize = `${gridSize}px ${gridSize}px, ${gridSize}px ${gridSize}px, auto, auto`;
-      break;
-    case 'hexagons':
-      backgroundImage = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='50' height='86.6' viewBox='0 0 50 86.6'><polygon fill='none' stroke='${hexStrokeColor}' stroke-width='1' stroke-opacity='${hexStrokeOpacity}' points='25,0 50,14.43 50,43.3 25,57.74 0,43.3 0,14.43'/><polygon fill='none' stroke='${hexStrokeColor}' stroke-width='1' stroke-opacity='${hexStrokeOpacity}' points='50,43.3 75,57.74 75,86.6 50,101.04 25,86.6 25,57.74'/><polygon fill='none' stroke='${hexStrokeColor}' stroke-width='1' stroke-opacity='${hexStrokeOpacity}' points='0,43.3 25,57.74 25,86.6 0,101.04 -25,86.6 -25,57.74'/></svg>`)}")`;
-      backgroundSize = `50px 86.6px`;
-      break;
-    case 'isometric':
-      backgroundImage = `repeating-linear-gradient(30deg, ${gridColor} 0px, ${gridColor} 1px, transparent 1px, transparent 20px),
-                         repeating-linear-gradient(150deg, ${gridColor} 0px, ${gridColor} 1px, transparent 1px, transparent 20px),
-                         repeating-linear-gradient(90deg, ${gridColorLight} 0px, ${gridColorLight} 1px, transparent 1px, transparent 20px)`;
-      backgroundSize = 'auto';
-      break;
-    case 'blueprint':
-      backgroundImage = `linear-gradient(to right, ${accentColor}25 1px, transparent 1px),
-                         linear-gradient(to bottom, ${accentColor}25 1px, transparent 1px),
-                         linear-gradient(to right, ${accentColor}50 1px, transparent 1px),
-                         linear-gradient(to bottom, ${accentColor}50 1px, transparent 1px)`;
-      backgroundSize = `${gridSize}px ${gridSize}px, ${gridSize}px ${gridSize}px, ${gridSize * 5}px ${gridSize * 5}px, ${gridSize * 5}px ${gridSize * 5}px`;
-      break;
-    case 'diamonds':
-      backgroundImage = `repeating-linear-gradient(45deg, ${gridColor} 0px, ${gridColor} 1px, transparent 1px, transparent 14px),
-                         repeating-linear-gradient(-45deg, ${gridColor} 0px, ${gridColor} 1px, transparent 1px, transparent 14px)`;
-      backgroundSize = 'auto';
-      break;
-    case 'triangles':
-      backgroundImage = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='35' viewBox='0 0 40 35'%3E%3Cpath fill='none' stroke='${svgStrokeColor}' stroke-width='0.5' stroke-opacity='${svgStrokeOpacity}' d='M20 0 L40 35 L0 35 Z M0 0 L20 35 L40 0'/%3E%3C/svg%3E")`;
-      backgroundSize = `40px 35px`;
-      break;
-    case 'graph':
-      backgroundImage = `linear-gradient(to right, ${gridColorLight} 1px, transparent 1px),
-                         linear-gradient(to bottom, ${gridColorLight} 1px, transparent 1px),
-                         linear-gradient(to right, ${gridColorStrong} 1px, transparent 1px),
-                         linear-gradient(to bottom, ${gridColorStrong} 1px, transparent 1px)`;
-      backgroundSize = `${gridSize}px ${gridSize}px, ${gridSize}px ${gridSize}px, ${gridSize * 5}px ${gridSize * 5}px, ${gridSize * 5}px ${gridSize * 5}px`;
-      break;
-    case 'waves':
+    case 'cross':
     default:
-      backgroundImage = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='20' viewBox='0 0 40 20'%3E%3Cpath fill='none' stroke='${svgStrokeColor}' stroke-width='0.5' stroke-opacity='${coloredGrid ? (theme === 'light' ? '0.2' : '0.35') : (theme === 'light' ? '0.08' : '0.25')}' d='M0 10 Q10 0, 20 10 T40 10'/%3E%3C/svg%3E")`;
-      backgroundSize = `40px 20px`;
+      // Cross pattern - small + marks at grid intersections
+      const crossSize = 4;
+      backgroundImage = `
+        linear-gradient(to right, ${gridColor} 1px, transparent 1px),
+        linear-gradient(to bottom, ${gridColor} 1px, transparent 1px)
+      `;
+      backgroundSize = `${gridSize}px ${gridSize}px`;
       break;
   }
 
-  const bgTint = coloredGrid || gridStyle === 'blueprint'
+  const bgTint = coloredGrid
     ? (theme === 'light' ? `${accentColor}08` : `${accentColor}10`)
     : undefined;
 
@@ -148,7 +95,7 @@ export default function WelcomeScreen({
   onOpenProject, 
   onOpenRecent,
   recentProjects,
-  accentColor = '#8B5CF6',
+  accentColor = '#2196F3',
   gridStyle = 'dots',
   gridSize = 20,
   coloredGrid = false,
@@ -223,7 +170,7 @@ export default function WelcomeScreen({
         <div className="text-center mb-16">
           <div className="flex items-center justify-center gap-4 mb-6">
             <div 
-              className="p-3 rounded-xl"
+              className="p-3 rounded"
               style={{ 
                 backgroundColor: hexToRgba(accentColor, 0.15),
                 boxShadow: `0 0 30px ${hexToRgba(accentColor, 0.3)}, inset 0 1px 0 rgba(255,255,255,0.1)`
@@ -242,7 +189,7 @@ export default function WelcomeScreen({
         <div className="grid grid-cols-2 gap-6 mb-10">
           <button
             onClick={onNewProject}
-            className="group glass relative overflow-hidden rounded-xl p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl"
+            className="group glass relative overflow-hidden rounded p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl"
             style={{
               borderColor: hexToRgba(accentColor, 0.2),
             }}
@@ -264,7 +211,7 @@ export default function WelcomeScreen({
             />
             <div className="relative flex items-center gap-5">
               <div 
-                className="p-4 rounded-xl transition-all duration-300 group-hover:scale-110"
+                className="p-4 rounded transition-all duration-300 group-hover:scale-110"
                 style={{ 
                   backgroundColor: hexToRgba(accentColor, 0.15),
                   boxShadow: `inset 0 1px 0 rgba(255,255,255,0.1)`
@@ -294,7 +241,7 @@ export default function WelcomeScreen({
 
           <button
             onClick={onOpenProject}
-            className="group glass relative overflow-hidden rounded-xl p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl"
+            className="group glass relative overflow-hidden rounded p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl"
             style={{
               borderColor: 'rgba(59, 130, 246, 0.2)',
             }}
@@ -316,7 +263,7 @@ export default function WelcomeScreen({
             />
             <div className="relative flex items-center gap-5">
               <div 
-                className="p-4 rounded-xl transition-all duration-300 group-hover:scale-110"
+                className="p-4 rounded transition-all duration-300 group-hover:scale-110"
                 style={{ 
                   backgroundColor: 'rgba(59, 130, 246, 0.15)',
                   boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)'
@@ -347,8 +294,8 @@ export default function WelcomeScreen({
 
         {/* Recent Projects */}
         {recentProjects.length > 0 && (
-          <div className="glass rounded-xl overflow-hidden">
-            <div className="flex items-center gap-2 px-5 py-4 border-b border-white/10">
+          <div className="glass rounded overflow-hidden">
+            <div className="flex items-center gap-2 px-5 py-4 border-b border-white/8">
               <Clock size={16} className="text-gray-400" />
               <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Recent Projects</h2>
             </div>
@@ -392,7 +339,7 @@ export default function WelcomeScreen({
 
         {/* Empty state if no recent projects */}
         {recentProjects.length === 0 && (
-          <div className="glass rounded-xl p-8 text-center">
+          <div className="glass rounded p-8 text-center">
             <div className="text-gray-500 mb-2">
               <Clock size={32} className="mx-auto mb-3 opacity-50" />
               <p className="text-sm">No recent projects</p>
@@ -404,11 +351,11 @@ export default function WelcomeScreen({
         {/* Footer Tips */}
         <div className="mt-10 text-center">
           <p className="text-xs text-gray-600">
-            <kbd className="px-2 py-1 bg-white/5 border border-white/10 rounded text-[10px] text-gray-400 font-mono">Ctrl+S</kbd>
+            <kbd className="px-2 py-1 bg-white/5 border border-white/8 rounded text-[10px] text-gray-400 font-mono">Ctrl+S</kbd>
             <span className="mx-2 text-gray-700">save</span>
-            <kbd className="px-2 py-1 bg-white/5 border border-white/10 rounded text-[10px] text-gray-400 font-mono">Ctrl+Shift+S</kbd>
+            <kbd className="px-2 py-1 bg-white/5 border border-white/8 rounded text-[10px] text-gray-400 font-mono">Ctrl+Shift+S</kbd>
             <span className="mx-2 text-gray-700">export</span>
-            <kbd className="px-2 py-1 bg-white/5 border border-white/10 rounded text-[10px] text-gray-400 font-mono">Ctrl+Space</kbd>
+            <kbd className="px-2 py-1 bg-white/5 border border-white/8 rounded text-[10px] text-gray-400 font-mono">Ctrl+Space</kbd>
             <span className="mx-2 text-gray-700">spotlight</span>
           </p>
         </div>

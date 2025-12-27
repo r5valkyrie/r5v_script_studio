@@ -27,7 +27,7 @@ interface NodeGraphProps {
   connectionsBehindNodes?: boolean;
   accentColor?: string;
   theme?: 'light' | 'dark';
-  gridStyle?: 'dots' | 'lines' | 'crosshatch' | 'hexagons' | 'isometric' | 'blueprint' | 'diamonds' | 'triangles' | 'graph' | 'waves';
+  gridStyle?: 'dots' | 'lines' | 'cross';
   coloredGrid?: boolean;
   // Editor settings
   snapToGrid?: boolean;
@@ -334,7 +334,7 @@ export default function NodeGraph({
       entity: 'bg-teal-400 border-teal-400 hover:shadow-[0_0_8px_#2dd4bf]',
       player: 'bg-cyan-400 border-cyan-400 hover:shadow-[0_0_8px_#22d3ee]',
       weapon: 'bg-amber-400 border-amber-400 hover:shadow-[0_0_8px_#fbbf24]',
-      array: 'bg-purple-500 border-purple-500 hover:shadow-[0_0_8px_#a855f7]',
+      array: 'bg-[#2196F3] border-purple-500 hover:shadow-[0_0_8px_#a855f7]',
       table: 'bg-indigo-500 border-indigo-500 hover:shadow-[0_0_8px_#6366f1]',
       asset: 'bg-lime-500 border-lime-500 hover:shadow-[0_0_8px_#84cc16]',
       function: 'bg-slate-400 border-slate-400 hover:shadow-[0_0_8px_#94a3b8]',
@@ -656,7 +656,7 @@ export default function NodeGraph({
           value={value}
           onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, value: e.target.value } })}
           onMouseDown={(e) => e.stopPropagation()}
-          className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+          className="w-full px-2 py-1 bg-[#121212] rounded text-[11px] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none transition-colors"
         />
       );
     }
@@ -669,7 +669,7 @@ export default function NodeGraph({
           value={value}
           onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, value: e.target.value } })}
           onMouseDown={(e) => e.stopPropagation()}
-          className="w-full px-2 py-1 bg-black/30 border border-white/10 rounded text-[11px] text-gray-200 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
+          className="w-full px-2 py-1 bg-black/30 border border-white/8 rounded text-[11px] text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 focus:ring-2 focus:ring-[#2196F3]/20"
         />
       );
     }
@@ -684,7 +684,7 @@ export default function NodeGraph({
           step={step}
           onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, value: parseFloat(e.target.value) || 0 } })}
           onMouseDown={(e) => e.stopPropagation()}
-          className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+          className="w-full px-2 py-1 bg-[#121212] rounded text-[11px] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none transition-colors"
         />
       );
     }
@@ -698,7 +698,7 @@ export default function NodeGraph({
             checked={value}
             onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, value: e.target.checked } })}
             onMouseDown={(e) => e.stopPropagation()}
-            className="w-3 h-3 rounded border-white/10 bg-black/30 text-purple-600 focus:ring-purple-500 focus:ring-offset-0"
+            className="w-3 h-3 rounded border-white/8 bg-black/30 text-purple-600 focus:ring-[#2196F3] focus:ring-offset-0"
           />
           {value ? 'True' : 'False'}
         </label>
@@ -724,7 +724,7 @@ export default function NodeGraph({
               value={axis === 'x' ? x : axis === 'y' ? y : z}
               onChange={(e) => updateAxis(axis, parseFloat(e.target.value) || 0)}
               onMouseDown={(e) => e.stopPropagation()}
-              className="w-full px-1 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+              className="w-full px-1 py-1 bg-[#121212] rounded text-[11px] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none transition-colors"
             />
           ))}
         </div>
@@ -761,7 +761,7 @@ export default function NodeGraph({
                 checked={selected.includes(attachment)}
                 onChange={(e) => toggle(attachment, e.target.checked)}
                 onMouseDown={(e) => e.stopPropagation()}
-                className="w-3 h-3 rounded border-white/10 bg-black/30 text-purple-600 focus:ring-purple-500 focus:ring-offset-0"
+                className="w-3 h-3 rounded border-white/8 bg-black/30 text-purple-600 focus:ring-[#2196F3] focus:ring-offset-0"
               />
               {attachment}
             </label>
@@ -835,7 +835,7 @@ export default function NodeGraph({
               checked={isGlobal}
               onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, isGlobal: e.target.checked } })}
               onMouseDown={(e) => e.stopPropagation()}
-              className="w-3 h-3 rounded border-white/10 bg-black/30 text-purple-600 focus:ring-purple-500 focus:ring-offset-0"
+              className="w-3 h-3 rounded border-white/8 bg-black/30 text-purple-600 focus:ring-[#2196F3] focus:ring-offset-0"
             />
             Global
           </label>
@@ -852,7 +852,7 @@ export default function NodeGraph({
             placeholder="Name"
             onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, constName: e.target.value } })}
             onMouseDown={(e) => e.stopPropagation()}
-            className="w-full px-2 py-1 bg-black/30 border border-white/10 rounded text-[11px] text-gray-200 focus:outline-none focus:border-purple-500"
+            className="w-full px-2 py-1 bg-black/30 border border-white/8 rounded text-[11px] text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50"
           />
           {/* Value input */}
           <input
@@ -861,7 +861,7 @@ export default function NodeGraph({
             placeholder="Value"
             onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, constValue: e.target.value } })}
             onMouseDown={(e) => e.stopPropagation()}
-            className="w-full px-2 py-1 bg-black/30 border border-white/10 rounded text-[11px] text-gray-200 focus:outline-none focus:border-purple-500"
+            className="w-full px-2 py-1 bg-black/30 border border-white/8 rounded text-[11px] text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50"
           />
         </div>
       );
@@ -922,7 +922,7 @@ export default function NodeGraph({
               checked={threaded}
               onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, threaded: e.target.checked } })}
               onMouseDown={(e) => e.stopPropagation()}
-              className="w-3 h-3 rounded bg-[#1a1f28] border border-white/10 accent-purple-500"
+              className="w-3 h-3 rounded bg-[#121212] border-none"
             />
             <span className="text-[9px] text-gray-500">Threaded</span>
           </label>
@@ -965,7 +965,7 @@ export default function NodeGraph({
           value={portalName}
           onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, portalName: e.target.value } })}
           onMouseDown={(e) => e.stopPropagation()}
-          className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+          className="w-full px-2 py-1 bg-[#121212] rounded text-[11px] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none transition-colors"
           placeholder="PortalName"
         />
       );
@@ -983,7 +983,7 @@ export default function NodeGraph({
             value={functionName}
             onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, functionName: e.target.value } })}
             onMouseDown={(e) => e.stopPropagation()}
-            className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+            className="w-full px-2 py-1 bg-[#121212] rounded text-[11px] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none transition-colors"
             placeholder="MyCallback"
           />
         </div>
@@ -1077,7 +1077,7 @@ export default function NodeGraph({
             value={functionName}
             onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, functionName: e.target.value } })}
             onMouseDown={(e) => e.stopPropagation()}
-            className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+            className="w-full px-2 py-1 bg-[#121212] rounded text-[11px] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none transition-colors"
             placeholder="FunctionName"
           />
           <div className="flex items-center gap-2">
@@ -1096,7 +1096,7 @@ export default function NodeGraph({
               checked={isGlobal}
               onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, isGlobal: e.target.checked } })}
               onMouseDown={(e) => e.stopPropagation()}
-              className="w-3 h-3 rounded bg-[#1a1f28] border border-white/10 accent-purple-500"
+              className="w-3 h-3 rounded bg-[#121212] border-none"
             />
             <span className="text-[9px] text-gray-500">Global Function</span>
           </label>
@@ -1113,7 +1113,7 @@ export default function NodeGraph({
                     onChange={(e) => updateParamName(i, e.target.value)}
                     onMouseDown={(e) => e.stopPropagation()}
                     placeholder={`arg${i + 1}`}
-                    className="flex-1 px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+                    className="flex-1 px-1.5 py-0.5 bg-[#121212] rounded text-[10px] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none"
                   />
                   <CustomSelect
                     value={paramTypes[i] || 'var'}
@@ -1203,7 +1203,7 @@ export default function NodeGraph({
               value={structName}
               onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, structName: e.target.value } })}
               onMouseDown={(e) => e.stopPropagation()}
-              className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+              className="w-full px-2 py-1 bg-[#121212] rounded text-[11px] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none transition-colors"
               placeholder="MyStruct"
             />
           </div>
@@ -1216,7 +1216,7 @@ export default function NodeGraph({
               value={accessorName}
               onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, accessorName: e.target.value } })}
               onMouseDown={(e) => e.stopPropagation()}
-              className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+              className="w-full px-2 py-1 bg-[#121212] rounded text-[11px] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none transition-colors"
               placeholder="(none)"
             />
           </div>
@@ -1227,7 +1227,7 @@ export default function NodeGraph({
               checked={isGlobal}
               onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, isGlobal: e.target.checked } })}
               onMouseDown={(e) => e.stopPropagation()}
-              className="w-3 h-3 rounded bg-[#1a1f28] border border-white/10 accent-purple-500"
+              className="w-3 h-3 rounded bg-[#121212] border-none"
             />
             <span className="text-[9px] text-gray-500">Global Struct</span>
           </label>
@@ -1268,7 +1268,7 @@ export default function NodeGraph({
                         }}
                         onMouseDown={(e) => e.stopPropagation()}
                         placeholder={`field${i + 1}`}
-                        className="flex-1 px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+                        className="flex-1 px-1.5 py-0.5 bg-[#121212] rounded text-[10px] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none"
                       />
                     </div>
                     {showDefault && (
@@ -1282,7 +1282,7 @@ export default function NodeGraph({
                         }}
                         onMouseDown={(e) => e.stopPropagation()}
                         placeholder="default value (optional)"
-                        className="w-full px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-400 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+                        className="w-full px-1.5 py-0.5 bg-[#121212] rounded text-[10px] text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none"
                       />
                     )}
                   </div>
@@ -1347,7 +1347,7 @@ export default function NodeGraph({
             value={enumName}
             onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, enumName: e.target.value } })}
             onMouseDown={(e) => e.stopPropagation()}
-            className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+            className="w-full px-2 py-1 bg-[#121212] rounded text-[11px] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none transition-colors"
             placeholder="EnumName"
           />
           <label className="flex items-center gap-2 cursor-pointer">
@@ -1356,7 +1356,7 @@ export default function NodeGraph({
               checked={isGlobal}
               onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, isGlobal: e.target.checked } })}
               onMouseDown={(e) => e.stopPropagation()}
-              className="w-3 h-3 rounded bg-[#1a1f28] border border-white/10 accent-purple-500"
+              className="w-3 h-3 rounded bg-[#121212] border-none"
             />
             <span className="text-[9px] text-gray-500">Global Enum</span>
           </label>
@@ -1377,7 +1377,7 @@ export default function NodeGraph({
                     }}
                     onMouseDown={(e) => e.stopPropagation()}
                     placeholder={`VALUE_${i}`}
-                    className="flex-1 px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+                    className="flex-1 px-1.5 py-0.5 bg-[#121212] rounded text-[10px] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none"
                   />
                   <input
                     type="text"
@@ -1389,7 +1389,7 @@ export default function NodeGraph({
                     }}
                     onMouseDown={(e) => e.stopPropagation()}
                     placeholder="auto"
-                    className="w-12 px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10 text-center"
+                    className="w-12 px-1.5 py-0.5 bg-[#121212] rounded text-[10px] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none text-center"
                   />
                 </div>
               ))}
@@ -1448,7 +1448,7 @@ export default function NodeGraph({
               onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, varName: e.target.value } })}
               onMouseDown={(e) => e.stopPropagation()}
               placeholder="auto"
-              className="w-full px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+              className="w-full px-1.5 py-0.5 bg-[#121212] rounded text-[10px] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none"
             />
           </div>
 
@@ -1479,7 +1479,7 @@ export default function NodeGraph({
                   }}
                   onMouseDown={(e) => e.stopPropagation()}
                   placeholder={`value ${i}`}
-                  className="w-full px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+                  className="w-full px-1.5 py-0.5 bg-[#121212] rounded text-[10px] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none"
                 />
               ))}
             </div>
@@ -1542,7 +1542,7 @@ export default function NodeGraph({
               onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, varName: e.target.value } })}
               onMouseDown={(e) => e.stopPropagation()}
               placeholder="auto"
-              className="w-full px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+              className="w-full px-1.5 py-0.5 bg-[#121212] rounded text-[10px] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none"
             />
           </div>
 
@@ -1583,7 +1583,7 @@ export default function NodeGraph({
                     }}
                     onMouseDown={(e) => e.stopPropagation()}
                     placeholder="key"
-                    className="flex-1 px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+                    className="flex-1 px-1.5 py-0.5 bg-[#121212] rounded text-[10px] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none"
                   />
                   <input
                     type="text"
@@ -1595,7 +1595,7 @@ export default function NodeGraph({
                     }}
                     onMouseDown={(e) => e.stopPropagation()}
                     placeholder="value"
-                    className="flex-1 px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+                    className="flex-1 px-1.5 py-0.5 bg-[#121212] rounded text-[10px] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none"
                   />
                 </div>
               ))}
@@ -1636,7 +1636,7 @@ export default function NodeGraph({
             value={value}
             onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, functionName: e.target.value } })}
             onMouseDown={(e) => e.stopPropagation()}
-            className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+            className="w-full px-2 py-1 bg-[#121212] rounded text-[11px] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none transition-colors"
             placeholder="ThreadFunc"
           />
         </div>
@@ -1666,7 +1666,7 @@ export default function NodeGraph({
               Edit Code
             </button>
           </div>
-          <div className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[9px] text-gray-400 font-mono max-h-[60px] overflow-hidden whitespace-pre-wrap">
+          <div className="w-full px-2 py-1 bg-[#212121] rounded text-[9px] text-gray-400 font-mono max-h-[60px] overflow-hidden whitespace-pre-wrap">
             {preview || '// Click Edit Code to write your code'}
           </div>
         </div>
@@ -1874,7 +1874,7 @@ export default function NodeGraph({
                     checked={value}
                     onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, [key]: e.target.checked } })}
                     onMouseDown={(e) => e.stopPropagation()}
-                    className="w-3 h-3 rounded bg-[#1a1f28] border border-white/10 accent-purple-500"
+                    className="w-3 h-3 rounded bg-[#121212] border-none"
                   />
                   <span className="text-[9px] text-gray-500">{labelText}</span>
                 </label>
@@ -1893,7 +1893,7 @@ export default function NodeGraph({
                     step={isFloat ? '0.1' : '1'}
                     onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, [key]: parseFloat(e.target.value) || 0 } })}
                     onMouseDown={(e) => e.stopPropagation()}
-                    className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+                    className="w-full px-2 py-1 bg-[#121212] rounded text-[11px] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none transition-colors"
                   />
                 </div>
               );
@@ -1909,7 +1909,7 @@ export default function NodeGraph({
                     value={value}
                     onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, [key]: e.target.value } })}
                     onMouseDown={(e) => e.stopPropagation()}
-                    className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+                    className="w-full px-2 py-1 bg-[#121212] rounded text-[11px] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none transition-colors"
                     placeholder={labelText}
                   />
                 </div>
@@ -1932,7 +1932,7 @@ export default function NodeGraph({
                         onUpdateNodeRef.current(node.id, { data: { ...node.data, [key]: newArr } });
                       }}
                       onMouseDown={(e) => e.stopPropagation()}
-                      className="w-full px-1.5 py-0.5 bg-[#1a1f28] rounded text-[10px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors border border-white/10"
+                      className="w-full px-1.5 py-0.5 bg-[#121212] rounded text-[10px] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none"
                     />
                   ))}
                 </div>
@@ -1948,7 +1948,7 @@ export default function NodeGraph({
                   value={String(value ?? '')}
                   onChange={(e) => onUpdateNodeRef.current(node.id, { data: { ...node.data, [key]: e.target.value } })}
                   onMouseDown={(e) => e.stopPropagation()}
-                  className="w-full px-2 py-1 bg-[#1a1f28] rounded text-[11px] text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50 hover:bg-[#151a21] transition-colors"
+                  className="w-full px-2 py-1 bg-[#121212] rounded text-[11px] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 border-none transition-colors"
                 />
               </div>
             );
@@ -3391,7 +3391,7 @@ ${connectionsCode}
     <div
       ref={canvasRef}
       tabIndex={-1}
-      className="node-graph-container relative w-full h-full bg-[#1a1f28] overflow-hidden outline-none"
+      className="node-graph-container relative w-full h-full bg-[#212121] overflow-hidden outline-none"
       onClick={handleCanvasClick}
       onMouseDown={handleCanvasMouseDown}
       onMouseDownCapture={handleSelectionStart}
@@ -3564,7 +3564,7 @@ ${connectionsCode}
               >
                 {/* Comment background */}
                 <div
-                  className="absolute inset-0 rounded-xl border-2"
+                  className="absolute inset-0 rounded border-2"
                   style={{
                     backgroundColor: `${commentColor}15`,
                     borderColor: `${commentColor}50`,
@@ -3620,13 +3620,13 @@ ${connectionsCode}
 
                 {/* Resize handle - right edge */}
                 <div
-                  className="absolute top-8 bottom-2 right-0 w-4 cursor-ew-resize hover:bg-purple-500/30 transition-colors"
+                  className="absolute top-8 bottom-2 right-0 w-4 cursor-ew-resize hover:bg-[#2196F3]/30 transition-colors"
                   onMouseDown={(e) => handleCommentResizeStart(e, node, 'right')}
                 />
 
                 {/* Resize handle - bottom edge */}
                 <div
-                  className="absolute bottom-0 left-0 right-2 h-4 cursor-ns-resize hover:bg-purple-500/30 transition-colors"
+                  className="absolute bottom-0 left-0 right-2 h-4 cursor-ns-resize hover:bg-[#2196F3]/30 transition-colors"
                   onMouseDown={(e) => handleCommentResizeStart(e, node, 'bottom')}
                 />
 
@@ -3636,7 +3636,7 @@ ${connectionsCode}
                   onMouseDown={(e) => handleCommentResizeStart(e, node, 'corner')}
                 >
                   <svg
-                    className="w-5 h-5 mb-1 mr-1 text-white/40 group-hover:text-purple-400 transition-colors"
+                    className="w-5 h-5 mb-1 mr-1 text-white/40 group-hover:text-[#64B5F6] transition-colors"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -3805,7 +3805,7 @@ ${connectionsCode}
             <div
               key={node.id}
               ref={measureNodeSize}
-              className="node-root absolute bg-[#1a1f28] rounded-xl select-none border border-white/10"
+              className="node-root absolute bg-[#212121] rounded select-none border border-white/8"
               data-node-id={node.id}
               style={{
                 left: node.position.x,
@@ -3990,7 +3990,7 @@ ${connectionsCode}
       {contextMenu && (
         <div
           data-context-menu="true"
-          className="absolute z-[1100] bg-[#1a1f28] border border-white/20 rounded-md shadow-xl text-sm text-white min-w-[160px] py-1"
+          className="absolute z-[1100] bg-[#212121] border border-white/20 rounded-md shadow-xl text-sm text-white min-w-[160px] py-1"
           style={{ 
             left: contextMenu.x - (canvasRef.current?.getBoundingClientRect().left ?? 0), 
             top: contextMenu.y - (canvasRef.current?.getBoundingClientRect().top ?? 0) 
@@ -4003,7 +4003,7 @@ ${connectionsCode}
                 className="px-3 py-2 hover:bg-white/10 w-full text-left flex items-center gap-2"
                 onClick={() => contextMenu.canvasPos && handleOpenQuickMenu(contextMenu.canvasPos, { x: contextMenu.x, y: contextMenu.y })}
               >
-                <span className="text-purple-400">+</span> Add Node
+                <span className="text-[#64B5F6]">+</span> Add Node
               </button>
               {clipboard.nodes.length > 0 && (
                 <button
@@ -4034,7 +4034,7 @@ ${connectionsCode}
               >
                 Cut
               </button>
-              <div className="border-t border-white/10 my-1" />
+              <div className="border-t border-white/8 my-1" />
               <button
                 className="px-3 py-2 hover:bg-red-500/20 w-full text-left flex items-center gap-2 text-red-400"
                 onClick={() => handleDeleteNodes([contextMenu.nodeId!])}
@@ -4062,7 +4062,7 @@ ${connectionsCode}
               >
                 Cut {contextMenu.nodeIds.length} Nodes
               </button>
-              <div className="border-t border-white/10 my-1" />
+              <div className="border-t border-white/8 my-1" />
               {onSaveAsTemplate && (
                 <button
                   className="px-3 py-2 w-full text-left flex items-center gap-2 transition-colors"
@@ -4080,7 +4080,7 @@ ${connectionsCode}
               )}
               
               {isDev && (
-              <div className="border-t border-white/10 my-1" />
+              <div className="border-t border-white/8 my-1" />
               )}
 
               {isDev && (
@@ -4097,7 +4097,7 @@ ${connectionsCode}
                   [Dev] Copy Template Code
                 </button>
               )}
-              <div className="border-t border-white/10 my-1" />
+              <div className="border-t border-white/8 my-1" />
               <button
                 className="px-3 py-2 hover:bg-red-500/20 w-full text-left flex items-center gap-2 text-red-400"
                 onClick={() => handleDeleteNodes(contextMenu.nodeIds!)}
@@ -4139,11 +4139,11 @@ ${connectionsCode}
           onClick={() => setCodeEditorModal(null)}
         >
           <div 
-            className="bg-[#1a1f28] rounded-lg shadow-2xl w-[800px] h-[40vh] max-w-[90vw] flex flex-col"
+            className="bg-[#212121] rounded-lg shadow-2xl w-[800px] h-[40vh] max-w-[90vw] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/8">
               <h3 className="text-white font-semibold">Custom Code Editor</h3>
               <button
                 onClick={() => setCodeEditorModal(null)}
@@ -4158,7 +4158,7 @@ ${connectionsCode}
               <textarea
                 value={codeEditorModal.code}
                 onChange={(e) => setCodeEditorModal({ ...codeEditorModal, code: e.target.value })}
-                className="w-full h-full bg-[#0f1419] text-gray-200 font-mono text-sm p-4 rounded border border-white/10 focus:outline-none focus:border-purple-500 resize-none"
+                className="w-full h-full bg-[#121212] text-gray-200 font-mono text-sm p-4 rounded border border-white/8 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 resize-none"
                 placeholder="// Write your Squirrel code here&#10;// This will be inserted directly into the generated script"
                 spellCheck={false}
                 autoFocus
@@ -4166,7 +4166,7 @@ ${connectionsCode}
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between px-4 py-3 border-t border-white/10">
+            <div className="flex items-center justify-between px-4 py-3 border-t border-white/8">
               <span className="text-xs text-gray-500">
                 {codeEditorModal.code.split('\n').length} lines • {codeEditorModal.code.length} characters
               </span>
@@ -4184,7 +4184,7 @@ ${connectionsCode}
                     });
                     setCodeEditorModal(null);
                   }}
-                  className="px-4 py-2 rounded bg-purple-600 hover:bg-purple-500 text-white text-sm transition-colors"
+                  className="px-4 py-2 rounded bg-purple-600 hover:bg-[#2196F3] text-white text-sm transition-colors"
                 >
                   Save
                 </button>

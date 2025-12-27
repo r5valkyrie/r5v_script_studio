@@ -1118,7 +1118,7 @@ export default function WeaponEditor({
         <select
           value={value}
           onChange={(e) => handlePropertyChange(prop.key, e.target.value)}
-          className="flex-1 bg-[#0d1117] border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:border-amber-400 focus:outline-none"
+          className="flex-1 bg-[#121212] border border-white/8 rounded px-2 py-1.5 text-xs text-white focus:border-[#2196F3] focus:ring-1 focus:ring-[#2196F3]/30 focus:outline-none"
         >
           <option value="">-- Select --</option>
           {options.map((opt: string) => (
@@ -1135,7 +1135,7 @@ export default function WeaponEditor({
           value={value}
           step={prop.step || 1}
           onChange={(e) => handlePropertyChange(prop.key, e.target.value)}
-          className="flex-1 bg-[#0d1117] border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:border-amber-400 focus:outline-none"
+          className="flex-1 bg-[#121212] border border-white/8 rounded px-2 py-1.5 text-xs text-white focus:border-[#2196F3] focus:ring-1 focus:ring-[#2196F3]/30 focus:outline-none"
           placeholder="0"
         />
       );
@@ -1146,7 +1146,7 @@ export default function WeaponEditor({
         type="text"
         value={value}
         onChange={(e) => handlePropertyChange(prop.key, e.target.value)}
-        className="flex-1 bg-[#0d1117] border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:border-amber-400 focus:outline-none"
+        className="flex-1 bg-[#121212] border border-white/8 rounded px-2 py-1.5 text-xs text-white focus:border-[#2196F3] focus:ring-1 focus:ring-[#2196F3]/30 focus:outline-none"
         placeholder={prop.description || ''}
       />
     );
@@ -1160,7 +1160,7 @@ export default function WeaponEditor({
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/(\/\/.*$)/gm, '<span class="text-gray-500">$1</span>')
-      .replace(/(#base\s+"[^"]*")/g, '<span class="text-purple-400">$1</span>')
+      .replace(/(#base\s+"[^"]*")/g, '<span class="text-[#64B5F6]">$1</span>')
       .replace(/^(\s*)(WeaponData|Mods)(\s*$)/gm, '$1<span class="text-yellow-400 font-semibold">$2</span>$3')
       .replace(/([{}])/g, '<span class="text-gray-400">$1</span>')
       .replace(/"([^"]+)"(\s+)("[^"]*"|[\d.]+)/g, 
@@ -1169,7 +1169,7 @@ export default function WeaponEditor({
 
   if (!weaponFile) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-[#0d1117] text-gray-400">
+      <div className="flex-1 flex flex-col items-center justify-center bg-[#121212] text-gray-400">
         <Crosshair size={48} className="mb-4 opacity-30" />
         <p className="text-lg">No weapon file selected</p>
         <p className="text-sm mt-2">Create or select a weapon file to edit</p>
@@ -1178,9 +1178,9 @@ export default function WeaponEditor({
   }
 
   return (
-    <div className="h-full flex flex-col bg-[#0d1117]">
+    <div className="h-full flex flex-col bg-[#121212]">
       {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-[#161b22] border-b border-white/10">
+      <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-[#1e1e1e] border-b border-white/8">
         <div className="flex items-center gap-3">
           <div className="p-1.5 rounded" style={{ backgroundColor: '#f59e0b20' }}>
             <Crosshair size={16} className="text-amber-500" />
@@ -1202,7 +1202,7 @@ export default function WeaponEditor({
         
         {/* Mode Toggle */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center bg-[#0d1117] rounded-lg p-0.5 border border-white/10">
+          <div className="flex items-center bg-[#121212] rounded-lg p-0.5 border border-white/8">
             <button
               onClick={() => setIsRawMode(false)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
@@ -1242,7 +1242,7 @@ export default function WeaponEditor({
           /* Raw Text Editor */
           <div className="flex-1 relative overflow-hidden">
             {/* Line numbers */}
-            <div className="absolute left-0 top-0 bottom-0 w-12 bg-[#0a0d12] border-r border-white/5 overflow-hidden pointer-events-none z-10">
+            <div className="absolute left-0 top-0 bottom-0 w-12 bg-[#121212] border-r border-white/8 overflow-hidden pointer-events-none z-10">
               <div className="pt-3 text-right pr-2">
                 {content.split('\n').map((_, i) => (
                   <div key={i} className="text-xs text-gray-600 leading-5 h-5">
@@ -1274,7 +1274,7 @@ export default function WeaponEditor({
           /* Visual Property Editor */
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* Toolbar */}
-            <div className="flex-shrink-0 px-4 py-3 border-b border-white/10 bg-[#0f1419]">
+            <div className="flex-shrink-0 px-4 py-3 border-b border-white/8 bg-[#1e1e1e]">
               <div className="flex items-center gap-3">
                 {/* Search */}
                 <div className="relative flex-1">
@@ -1284,7 +1284,7 @@ export default function WeaponEditor({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search properties..."
-                    className="w-full bg-[#0d1117] border border-white/10 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:border-amber-400/50 focus:outline-none"
+                    className="w-full bg-[#121212] border border-white/8 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:border-[#2196F3]/50 focus:ring-1 focus:ring-[#2196F3]/30 focus:outline-none"
                   />
                 </div>
                 
@@ -1299,8 +1299,8 @@ export default function WeaponEditor({
                   </button>
                   
                   {showAddSectionMenu && availableSections.length > 0 && (
-                    <div className="absolute right-0 top-full mt-1 w-64 bg-[#1c2128] border border-white/10 rounded-lg shadow-xl z-50 max-h-80 overflow-y-auto">
-                      <div className="p-2 border-b border-white/10">
+                    <div className="absolute right-0 top-full mt-1 w-64 bg-[#212121] border border-white/8 rounded-lg shadow-xl z-50 max-h-80 overflow-y-auto">
+                      <div className="p-2 border-b border-white/8">
                         <span className="text-xs text-gray-400">Add property section</span>
                       </div>
                       {availableSections.map(section => (
@@ -1324,15 +1324,15 @@ export default function WeaponEditor({
                 <div className="relative" data-menu>
                   <button
                     onClick={() => { setShowAddBlockMenu(!showAddBlockMenu); setShowAddSectionMenu(false); }}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 rounded-lg text-xs font-medium transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-2 bg-[#2196F3]/10 hover:bg-[#2196F3]/20 text-[#64B5F6] rounded-lg text-xs font-medium transition-colors"
                   >
                     <Plus size={14} />
                     Add Block
                   </button>
                   
                   {showAddBlockMenu && availableBlocks.length > 0 && (
-                    <div className="absolute right-0 top-full mt-1 w-64 bg-[#1c2128] border border-white/10 rounded-lg shadow-xl z-50">
-                      <div className="p-2 border-b border-white/10">
+                    <div className="absolute right-0 top-full mt-1 w-64 bg-[#212121] border border-white/8 rounded-lg shadow-xl z-50">
+                      <div className="p-2 border-b border-white/8">
                         <span className="text-xs text-gray-400">Add special block</span>
                       </div>
                       {availableBlocks.map(block => (
@@ -1341,7 +1341,7 @@ export default function WeaponEditor({
                           onClick={() => addSpecialBlock(block.id)}
                           className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/5 transition-colors text-left"
                         >
-                          <span className="text-purple-400">{block.icon}</span>
+                          <span className="text-[#64B5F6]">{block.icon}</span>
                           <div>
                             <div className="text-sm text-white">{block.name}</div>
                             <div className="text-xs text-gray-500">{block.description}</div>
@@ -1352,7 +1352,7 @@ export default function WeaponEditor({
                   )}
                   
                   {showAddBlockMenu && availableBlocks.length === 0 && (
-                    <div className="absolute right-0 top-full mt-1 w-64 bg-[#1c2128] border border-white/10 rounded-lg shadow-xl z-50 p-3">
+                    <div className="absolute right-0 top-full mt-1 w-64 bg-[#212121] border border-white/8 rounded-lg shadow-xl z-50 p-3">
                       <span className="text-xs text-gray-400">All blocks already added</span>
                     </div>
                   )}
@@ -1393,9 +1393,9 @@ export default function WeaponEditor({
                     return (
                       <div
                         key={blockId}
-                        className="flex items-center gap-1.5 px-2 py-1 bg-purple-500/10 rounded-full text-xs"
+                        className="flex items-center gap-1.5 px-2 py-1 bg-[#2196F3]/10 rounded-full text-xs"
                       >
-                        <span className="text-purple-400">{block.icon}</span>
+                        <span className="text-[#64B5F6]">{block.icon}</span>
                         <span className="text-purple-300">{block.name}</span>
                       </div>
                     );
@@ -1421,7 +1421,7 @@ export default function WeaponEditor({
                 return (
                   <div 
                     key={category.id} 
-                    className="bg-[#161b22] rounded-lg border border-white/5 overflow-hidden"
+                    className="bg-[#1e1e1e] rounded-lg border border-white/5 overflow-hidden"
                   >
                     {/* Category Header */}
                     <div className="flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors">
@@ -1467,7 +1467,7 @@ export default function WeaponEditor({
                                   const prop = propMap.get(key);
                                   if (!prop) return null;
                                   return (
-                                    <div key={prop.key} className="rounded-lg border border-white/5 bg-[#0f1419] p-2.5">
+                                    <div key={prop.key} className="rounded border border-white/5 bg-[#212121] p-2.5">
                                       <label className="text-[11px] font-medium text-gray-300 block">
                                         {prop.label}
                                       </label>
@@ -1534,7 +1534,7 @@ export default function WeaponEditor({
                                 ];
 
                                 const renderSection = (title: string, keys: string[]) => (
-                                  <div className="rounded-lg border border-white/5 bg-[#0f1419]">
+                                  <div className="rounded border border-white/5 bg-[#212121]">
                                     <div className="px-2.5 pt-2.5 pb-2 text-[11px] font-medium text-amber-400">
                                       {title}
                                     </div>
@@ -1554,7 +1554,7 @@ export default function WeaponEditor({
                                 );
                               })()}
                             </div>
-                            <div className="rounded-lg border border-amber-500/10 bg-[#0f1419] p-3">
+                            <div className="rounded border border-amber-500/10 bg-[#212121] p-3">
                               <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2 text-xs text-amber-400">
                                   <Target size={12} />
@@ -1564,7 +1564,7 @@ export default function WeaponEditor({
                                   <select
                                     value={recoilViewMode}
                                     onChange={(e) => setRecoilViewMode(e.target.value as 'hipfire' | 'ads')}
-                                    className="bg-[#0d1117] border border-white/10 rounded px-2 py-1 text-[10px] text-white focus:border-amber-400 focus:outline-none"
+                                    className="bg-[#121212] border border-white/8 rounded px-2 py-1 text-[10px] text-white focus:border-[#2196F3] focus:outline-none"
                                   >
                                     <option value="hipfire">Hipfire</option>
                                     <option value="ads">ADS</option>
@@ -1582,7 +1582,7 @@ export default function WeaponEditor({
                               </div>
                               {recoilPlot ? (
                                 <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_150px]">
-                                  <div className="bg-[#0d1117] border border-white/10 rounded-lg p-2">
+                                  <div className="bg-[#121212] border border-white/8 rounded-lg p-2">
                                     <svg
                                       viewBox={`0 0 ${recoilPlot.width} ${recoilPlot.height}`}
                                       className="w-full h-96"
@@ -1708,7 +1708,7 @@ export default function WeaponEditor({
                                           className={`text-[10px] px-2 py-0.5 rounded border ${
                                             isActive
                                               ? 'border-amber-400 text-amber-300 bg-amber-500/10'
-                                              : 'border-white/10 text-gray-400 hover:text-white hover:border-white/30'
+                                              : 'border-white/8 text-gray-400 hover:text-white hover:border-white/30'
                                           }`}
                                           title={idx === 0 ? 'Main path' : `Variant ${idx + 1}`}
                                         >
@@ -1764,7 +1764,7 @@ export default function WeaponEditor({
               {Object.keys(parsedProperties).filter(key => 
                 !PROPERTY_CATEGORIES.some(cat => cat.properties.some(p => p.key === key))
               ).length > 0 && (
-                <div className="bg-[#161b22] rounded-lg border border-white/5 overflow-hidden">
+                <div className="bg-[#1e1e1e] rounded-lg border border-white/5 overflow-hidden">
                   <button
                     onClick={() => toggleCategory('other')}
                     className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors"
@@ -1795,7 +1795,7 @@ export default function WeaponEditor({
                               type="text"
                               value={value}
                               onChange={(e) => handlePropertyChange(key, e.target.value)}
-                              className="flex-1 bg-[#0d1117] border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:border-amber-400 focus:outline-none font-mono"
+                              className="flex-1 bg-[#121212] border border-white/8 rounded px-2 py-1.5 text-xs text-white focus:border-[#2196F3] focus:outline-none font-mono"
                             />
                           </div>
                         ))}
@@ -1806,17 +1806,17 @@ export default function WeaponEditor({
 
               {/* Visual Mods Block Editor */}
               {existingBlocks.has('mods') && parsedMods.length > 0 && (
-                <div className="bg-[#161b22] rounded-lg border border-purple-500/20 overflow-hidden">
+                <div className="bg-[#1e1e1e] rounded-lg border border-[#2196F3]/20 overflow-hidden">
                   <button
                     onClick={() => toggleCategory('mods_visual')}
                     className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="text-purple-400"><Wand2 size={14} /></span>
+                      <span className="text-[#64B5F6]"><Wand2 size={14} /></span>
                       <div className="text-left">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-white">Mods</span>
-                          <span className="text-xs bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded">{parsedMods.length} mods</span>
+                          <span className="text-xs bg-[#2196F3]/20 text-purple-300 px-1.5 py-0.5 rounded">{parsedMods.length} mods</span>
                         </div>
                         <span className="text-xs text-gray-500 block">Weapon modifications and attachments</span>
                       </div>
@@ -1828,11 +1828,11 @@ export default function WeaponEditor({
                   </button>
                   
                   {expandedCategories.has('mods_visual') && (
-                    <div className="px-4 pb-4 space-y-2 border-t border-purple-500/10 pt-3">
+                    <div className="px-4 pb-4 space-y-2 border-t border-[#2196F3]/10 pt-3">
                       {parsedMods.map((mod, idx) => (
-                        <div key={idx} className="bg-[#0d1117] rounded-lg border border-white/5 p-3">
+                        <div key={idx} className="bg-[#121212] rounded-lg border border-white/5 p-3">
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="text-xs font-medium text-purple-400">{mod.name}</span>
+                            <span className="text-xs font-medium text-[#64B5F6]">{mod.name}</span>
                             {Object.keys(mod.properties).length > 0 && (
                               <span className="text-[10px] bg-white/5 text-gray-400 px-1.5 py-0.5 rounded">
                                 {Object.keys(mod.properties).length} properties
@@ -1863,17 +1863,17 @@ export default function WeaponEditor({
 
               {/* Visual RUI_CrosshairData Block Editor */}
               {existingBlocks.has('rui_crosshair') && parsedCrosshair && (
-                <div className="bg-[#161b22] rounded-lg border border-purple-500/20 overflow-hidden">
+                <div className="bg-[#1e1e1e] rounded-lg border border-[#2196F3]/20 overflow-hidden">
                   <button
                     onClick={() => toggleCategory('crosshair_visual')}
                     className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="text-purple-400"><Target size={14} /></span>
+                      <span className="text-[#64B5F6]"><Target size={14} /></span>
                       <div className="text-left">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-white">RUI_CrosshairData</span>
-                          <span className="text-xs bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded">
+                          <span className="text-xs bg-[#2196F3]/20 text-purple-300 px-1.5 py-0.5 rounded">
                             {parsedCrosshair.crosshairs.length} crosshair{parsedCrosshair.crosshairs.length !== 1 ? 's' : ''}
                           </span>
                         </div>
@@ -1890,7 +1890,7 @@ export default function WeaponEditor({
                     <div className="px-4 pb-4 space-y-3 border-t border-purple-500/10 pt-3">
                       {/* DefaultArgs */}
                       {Object.keys(parsedCrosshair.defaultArgs).length > 0 && (
-                        <div className="bg-[#0d1117] rounded-lg border border-white/5 p-3">
+                        <div className="bg-[#121212] rounded-lg border border-white/5 p-3">
                           <div className="flex items-center gap-2 mb-2">
                             <span className="text-xs font-medium text-yellow-400">DefaultArgs</span>
                           </div>
@@ -1907,9 +1907,9 @@ export default function WeaponEditor({
                       
                       {/* Crosshairs */}
                       {parsedCrosshair.crosshairs.map((crosshair, idx) => (
-                        <div key={idx} className="bg-[#0d1117] rounded-lg border border-white/5 p-3">
+                        <div key={idx} className="bg-[#121212] rounded-lg border border-white/5 p-3">
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="text-xs font-medium text-purple-400">{crosshair.name}</span>
+                            <span className="text-xs font-medium text-[#64B5F6]">{crosshair.name}</span>
                           </div>
                           <div className="space-y-1.5">
                             {crosshair.ui && (
@@ -1951,7 +1951,7 @@ export default function WeaponEditor({
       </div>
 
       {/* Status Bar */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 py-1.5 bg-[#161b22] border-t border-white/10 text-xs text-gray-500">
+      <div className="flex-shrink-0 flex items-center justify-between px-4 py-1.5 bg-[#1e1e1e] border-t border-white/8 text-xs text-gray-500">
         <div className="flex items-center gap-4">
           <span>Properties: {Object.keys(parsedProperties).length}</span>
           <span>Sections: {enabledSections.size}</span>

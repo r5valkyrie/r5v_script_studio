@@ -133,7 +133,7 @@ const getCategoryInfo = (categoryId: string) => {
 };
 
 const COLOR_CLASSES: Record<string, { bg: string; border: string; text: string; hover: string }> = {
-  purple: { bg: 'bg-purple-500/10', border: 'border-purple-500/50', text: 'text-purple-400', hover: 'hover:bg-purple-500/20 hover:border-purple-500' },
+  purple: { bg: 'bg-[#2196F3]/10', border: 'border-purple-500/50', text: 'text-[#64B5F6]', hover: 'hover:bg-[#2196F3]/20 hover:border-purple-500' },
   yellow: { bg: 'bg-yellow-500/10', border: 'border-yellow-500/50', text: 'text-yellow-400', hover: 'hover:bg-yellow-500/20 hover:border-yellow-500' },
   blue: { bg: 'bg-blue-500/10', border: 'border-blue-500/50', text: 'text-blue-400', hover: 'hover:bg-blue-500/20 hover:border-blue-500' },
   red: { bg: 'bg-red-500/10', border: 'border-red-500/50', text: 'text-red-400', hover: 'hover:bg-red-500/20 hover:border-red-500' },
@@ -278,7 +278,7 @@ function CategorySection({ title, category, icon, color, onAddNode, defaultOpen 
             onShowNodeDoc?.(node.type);
           }}
           className={`p-1 mr-2 rounded hover:bg-white/10 transition-all flex-shrink-0 opacity-0 group-hover/node:opacity-100 ${
-            hasDoc ? 'text-purple-400' : 'text-gray-600 hover:text-purple-400'
+            hasDoc ? 'text-[#64B5F6]' : 'text-gray-600 hover:text-[#64B5F6]'
           }`}
           title={hasDoc ? "View documentation" : "View node info"}
         >
@@ -323,7 +323,7 @@ function CategorySection({ title, category, icon, color, onAddNode, defaultOpen 
 
       {/* Nodes List */}
       {isExpanded && (
-        <div className="ml-3 border-l border-white/10 pl-1">
+        <div className="ml-3 border-l border-white/8 pl-1">
           {Object.keys(groupedNodes).length === 1 && groupedNodes['_all'] ? (
             // No subcategories
             groupedNodes['_all'].map(renderNodeItem)
@@ -363,12 +363,12 @@ export default function NodePalette({ onAddNode, onClose, collapsedCategories = 
   const totalNodes = categories.reduce((acc, cat) => acc + getNodesByCategory(cat.category).length, 0);
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden bg-[#0f1419]">
+    <div className="w-full h-full flex flex-col overflow-hidden bg-[#1e1e1e]">
       {/* Collapsible Header - matching Project style */}
       {isEmbedded && (
         <button
           onClick={onToggleExpanded}
-          className="w-full flex items-center justify-between px-3 py-2.5 bg-[#0f1419] hover:bg-[#1a1f28] transition-colors border-b border-white/10 flex-shrink-0"
+          className="w-full flex items-center justify-between px-3 py-2.5 bg-[#1e1e1e] hover:bg-[#2d2d2d] transition-colors border-b border-white/8 flex-shrink-0"
         >
           <div className="flex items-center gap-2">
             <div className="p-1 rounded" style={{ backgroundColor: 'var(--accent-color-bg)' }}>
@@ -388,7 +388,7 @@ export default function NodePalette({ onAddNode, onClose, collapsedCategories = 
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Non-embedded header */}
           {!isEmbedded && (
-            <div className="flex-shrink-0 px-3 py-3 border-b border-white/10 bg-[#0a0d10] flex items-center justify-between">
+            <div className="flex-shrink-0 px-3 py-3 border-b border-white/8 bg-[#212121] flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded" style={{ backgroundColor: 'var(--accent-color-bg)' }}>
                   <Workflow size={14} style={{ color: 'var(--accent-color)' }} />
@@ -414,7 +414,7 @@ export default function NodePalette({ onAddNode, onClose, collapsedCategories = 
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-8 py-2 bg-[#1a1f28] border border-white/10 rounded-lg text-[11px] text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 transition-all"
+                className="w-full pl-9 pr-8 py-2 bg-[#121212] border-none rounded text-[11px] text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 transition-all"
               />
               {searchTerm && (
                 <button
@@ -457,7 +457,7 @@ export default function NodePalette({ onAddNode, onClose, collapsedCategories = 
           </div>
 
           {/* Footer hint */}
-          <div className="flex-shrink-0 px-3 py-2 border-t border-white/5 bg-[#0a0d10]">
+          <div className="flex-shrink-0 px-3 py-2 border-t border-white/5 bg-[#1e1e1e]">
             <p className="text-[9px] text-gray-600 text-center">
               Click or drag nodes to canvas
             </p>

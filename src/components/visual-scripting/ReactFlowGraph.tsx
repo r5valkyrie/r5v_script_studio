@@ -37,28 +37,28 @@ import type { ScriptNode, NodeConnection, NodeDataType, NodePort } from '../../t
 import { getNodeDefinition } from '../../data/node-definitions';
 import QuickNodeMenu from './QuickNodeMenu';
 
-// Custom styles for React Flow controls and minimap
+// Material Design styles for React Flow controls and minimap
 const reactFlowStyles = `
   .react-flow__controls {
-    background: rgba(15, 20, 25, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    background: #1e1e1e;
+    border: none;
+    border-radius: 4px;
+    box-shadow: 0 3px 5px -1px rgba(0,0,0,.2), 0 6px 10px 0 rgba(0,0,0,.14), 0 1px 18px 0 rgba(0,0,0,.12);
     overflow: hidden;
   }
   
   .react-flow__controls-button {
     background: transparent;
     border: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    width: 28px;
-    height: 28px;
-    padding: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    width: 36px;
+    height: 36px;
+    padding: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: background 0.15s ease;
+    transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   .react-flow__controls-button:last-child {
@@ -66,34 +66,38 @@ const reactFlowStyles = `
   }
   
   .react-flow__controls-button:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
+  }
+  
+  .react-flow__controls-button:active {
+    background: rgba(255, 255, 255, 0.12);
   }
   
   .react-flow__controls-button svg {
     fill: rgba(255, 255, 255, 0.7);
-    width: 14px;
-    height: 14px;
+    width: 18px;
+    height: 18px;
   }
   
   .react-flow__controls-button:hover svg {
-    fill: rgba(255, 255, 255, 0.95);
+    fill: rgba(255, 255, 255, 0.87);
   }
   
   .react-flow__minimap {
-    background: rgba(15, 20, 25, 0.95) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    background: #1e1e1e !important;
+    border: none;
+    border-radius: 4px;
+    box-shadow: 0 3px 5px -1px rgba(0,0,0,.2), 0 6px 10px 0 rgba(0,0,0,.14), 0 1px 18px 0 rgba(0,0,0,.12);
     overflow: hidden;
   }
   
   .react-flow__minimap-mask {
-    fill: rgba(0, 0, 0, 0.7);
+    fill: rgba(0, 0, 0, 0.6);
   }
   
   .react-flow__minimap-node {
-    fill-opacity: 0.8;
-    stroke-width: 1;
+    fill-opacity: 0.9;
+    stroke-width: 0;
     rx: 2;
     ry: 2;
   }
@@ -136,7 +140,7 @@ interface ReactFlowGraphProps {
   connectionsBehindNodes?: boolean;
   accentColor?: string;
   theme?: 'light' | 'dark';
-  gridStyle?: 'dots' | 'lines' | 'crosshatch' | 'hexagons' | 'isometric' | 'blueprint' | 'diamonds' | 'triangles' | 'graph' | 'waves';
+  gridStyle?: 'dots' | 'lines' | 'cross';
   coloredGrid?: boolean;
   // Editor settings
   snapToGrid?: boolean;
@@ -168,27 +172,28 @@ interface ScriptEdgeData extends Record<string, unknown> {
 // ============================================================================
 
 const getLineColor = (portType: 'exec' | 'data', dataType?: NodeDataType): string => {
-  if (portType === 'exec') return '#ffffff';
+  if (portType === 'exec') return '#FFFFFF';
 
+  // Material Design color palette
   const colorMap: Record<string, string> = {
-    int: '#3b82f6',
-    float: '#22c55e',
-    number: '#22c55e',
-    string: '#ec4899',
-    vector: '#facc15',
-    rotation: '#f97316',
-    boolean: '#ef4444',
-    entity: '#2dd4bf',
-    player: '#22d3ee',
-    weapon: '#fbbf24',
-    array: '#a855f7',
-    table: '#6366f1',
-    asset: '#84cc16',
-    function: '#94a3b8',
-    any: '#ffffff',
+    int: '#2196F3',      // Blue 500
+    float: '#4CAF50',    // Green 500
+    number: '#4CAF50',   // Green 500
+    string: '#E91E63',   // Pink 500
+    vector: '#FFEB3B',   // Yellow 500
+    rotation: '#FF9800', // Orange 500
+    boolean: '#F44336',  // Red 500
+    entity: '#009688',   // Teal 500
+    player: '#00BCD4',   // Cyan 500
+    weapon: '#FFC107',   // Amber 500
+    array: '#9C27B0',    // Purple 500
+    table: '#3F51B5',    // Indigo 500
+    asset: '#8BC34A',    // Light Green 500
+    function: '#607D8B', // Blue Grey 500
+    any: '#9E9E9E',      // Grey 500
   };
 
-  return colorMap[dataType || 'any'] || '#ffffff';
+  return colorMap[dataType || 'any'] || '#9E9E9E';
 };
 
 const getPortColor = (portType: 'exec' | 'data', dataType?: NodeDataType): string => {
@@ -344,8 +349,12 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
     return typeMap[dataType] || dataType.substring(0, 4);
   };
 
-  // Inline editor for node data
+  // Inline editor for node data - Material Design styled
   const renderInlineEditor = () => {
+    // Material input base class
+    const inputClass = "w-full px-3 py-2 bg-[#121212] rounded text-xs text-gray-100 border-none outline-none focus:ring-2 focus:ring-offset-0 transition-shadow";
+    const focusRing = "focus:ring-[#2196F3]/50";
+
     if (node.type === 'const-string') {
       const value = typeof node.data.value === 'string' ? node.data.value : '';
       return (
@@ -354,7 +363,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
           value={value}
           onChange={(e) => onUpdate({ data: { ...node.data, value: e.target.value } })}
           onMouseDown={(e) => e.stopPropagation()}
-          className="w-full px-2.5 py-1.5 bg-[#0d1117] rounded-md text-[11px] text-gray-200 border border-white/10 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50"
+          className={`${inputClass} ${focusRing}`}
           placeholder="Enter text..."
         />
       );
@@ -369,7 +378,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
           step={node.type === 'const-float' ? '0.1' : '1'}
           onChange={(e) => onUpdate({ data: { ...node.data, value: parseFloat(e.target.value) || 0 } })}
           onMouseDown={(e) => e.stopPropagation()}
-          className="w-full px-2.5 py-1.5 bg-[#0d1117] rounded-md text-[11px] text-gray-200 border border-white/10 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50"
+          className={`${inputClass} ${focusRing}`}
         />
       );
     }
@@ -377,15 +386,18 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
     if (node.type === 'const-bool') {
       const value = !!node.data.value;
       return (
-        <label className="flex items-center gap-2 px-2.5 py-1.5 bg-[#0d1117] rounded-md border border-white/10 cursor-pointer hover:bg-[#161b22]">
+        <label className="flex items-center gap-3 px-3 py-2 bg-[#121212] rounded cursor-pointer hover:bg-[#1a1a1a] transition-colors">
+          <div className={`w-4 h-4 rounded flex items-center justify-center ${value ? 'bg-[#2196F3]' : 'bg-gray-700'} transition-colors`}>
+            {value && <span className="text-white text-[10px]">✓</span>}
+          </div>
           <input
             type="checkbox"
             checked={value}
             onChange={(e) => onUpdate({ data: { ...node.data, value: e.target.checked } })}
             onMouseDown={(e) => e.stopPropagation()}
-            className="w-3.5 h-3.5 rounded accent-purple-500"
+            className="sr-only"
           />
-          <span className="text-[11px] text-gray-300">{value ? 'True' : 'False'}</span>
+          <span className="text-xs text-gray-200">{value ? 'True' : 'False'}</span>
         </label>
       );
     }
@@ -395,17 +407,17 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
       const y = typeof node.data.y === 'number' ? node.data.y : 0;
       const z = typeof node.data.z === 'number' ? node.data.z : 0;
       return (
-        <div className="flex gap-1.5">
+        <div className="flex gap-2">
           {(['x', 'y', 'z'] as const).map((axis) => (
-            <div key={axis} className="flex-1 flex flex-col gap-0.5">
-              <span className="text-[9px] text-gray-500 uppercase font-medium">{axis}</span>
+            <div key={axis} className="flex-1 flex flex-col gap-1">
+              <span className="text-[10px] text-gray-400 uppercase font-medium">{axis}</span>
               <input
                 type="number"
                 step="0.1"
                 value={axis === 'x' ? x : axis === 'y' ? y : z}
                 onChange={(e) => onUpdate({ data: { ...node.data, [axis]: parseFloat(e.target.value) || 0 } })}
                 onMouseDown={(e) => e.stopPropagation()}
-                className="w-full px-1.5 py-1 bg-[#0d1117] rounded text-[10px] text-gray-200 border border-white/10 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
+                className={`w-full px-2 py-1.5 bg-[#121212] rounded text-xs text-gray-100 border-none outline-none ${focusRing} focus:ring-2`}
               />
             </div>
           ))}
@@ -415,8 +427,8 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
 
     // Call Function node - special handling for dynamic arguments
     if (node.type === 'call-function') {
-      const returnType = typeof node.data.returnType === 'string' ? node.data.returnType : 'entity';
-      const returnTypes = ['entity', 'int', 'float', 'bool', 'string', 'vector', 'array', 'var'];
+      const returnType = typeof node.data.returnType === 'string' ? node.data.returnType : 'none';
+      const returnTypes = ['none', 'entity', 'int', 'float', 'bool', 'string', 'vector', 'array', 'var'];
       const argCount = typeof node.data.argCount === 'number' ? node.data.argCount : 1;
       const threaded = typeof node.data.threaded === 'boolean' ? node.data.threaded : false;
       
@@ -447,20 +459,20 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
       };
       
       return (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2.5">
           <div className="flex flex-col gap-1">
-            <span className="text-[9px] text-gray-500 uppercase font-medium tracking-wide">Return Type</span>
+            <span className="text-[10px] text-gray-400 uppercase font-medium tracking-wide">Return Type</span>
             <select
               value={returnType}
               onChange={(e) => onUpdate({ data: { ...node.data, returnType: e.target.value } })}
               onMouseDown={(e) => e.stopPropagation()}
-              className="w-full px-2 py-1.5 bg-[#0d1117] rounded-md text-[11px] text-gray-200 border border-white/10 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
+              className="w-full px-3 py-2 bg-[#121212] rounded text-xs text-gray-100 border-none outline-none focus:ring-2 focus:ring-[#2196F3]/50 cursor-pointer"
             >
               {returnTypes.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
           <div className="flex flex-col gap-1">
-            <span className="text-[9px] text-gray-500 uppercase font-medium tracking-wide">Arg Count</span>
+            <span className="text-[10px] text-gray-400 uppercase font-medium tracking-wide">Arguments</span>
             <div className="flex items-center gap-2">
               <input
                 type="number"
@@ -486,34 +498,37 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
                   });
                 }}
                 onMouseDown={(e) => e.stopPropagation()}
-                className="flex-1 px-2 py-1.5 bg-[#0d1117] rounded-md text-[11px] text-gray-200 border border-white/10 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
+                className="flex-1 px-3 py-2 bg-[#121212] rounded text-xs text-gray-100 border-none outline-none focus:ring-2 focus:ring-[#2196F3]/50"
               />
               <button
                 onClick={(e) => { e.stopPropagation(); removeArg(); }}
                 onMouseDown={(e) => e.stopPropagation()}
                 disabled={argCount <= 0}
-                className="w-6 h-6 flex items-center justify-center rounded bg-red-500/20 hover:bg-red-500/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-red-400 text-sm font-bold"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-[#F44336]/20 hover:bg-[#F44336]/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-[#F44336] text-lg font-medium"
               >
                 −
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); addArg(); }}
                 onMouseDown={(e) => e.stopPropagation()}
-                className="w-6 h-6 flex items-center justify-center rounded bg-green-500/20 hover:bg-green-500/40 transition-colors text-green-400 text-sm font-bold"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-[#4CAF50]/20 hover:bg-[#4CAF50]/30 transition-colors text-[#4CAF50] text-lg font-medium"
               >
                 +
               </button>
             </div>
           </div>
-          <label className="flex items-center gap-2 px-2.5 py-1.5 bg-[#0d1117] rounded-md border border-white/10 cursor-pointer hover:bg-[#161b22]">
+          <label className="flex items-center gap-3 px-3 py-2 bg-[#121212] rounded cursor-pointer hover:bg-[#1a1a1a] transition-colors">
+            <div className={`w-4 h-4 rounded flex items-center justify-center ${threaded ? 'bg-[#2196F3]' : 'bg-gray-700'} transition-colors`}>
+              {threaded && <span className="text-white text-[10px]">✓</span>}
+            </div>
             <input
               type="checkbox"
               checked={threaded}
               onChange={(e) => onUpdate({ data: { ...node.data, threaded: e.target.checked } })}
               onMouseDown={(e) => e.stopPropagation()}
-              className="w-3.5 h-3.5 rounded accent-purple-500"
+              className="sr-only"
             />
-            <span className="text-[10px] text-gray-400">threaded</span>
+            <span className="text-xs text-gray-300">Threaded</span>
           </label>
         </div>
       );
@@ -593,66 +608,66 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
       };
       
       return (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2.5">
           <div className="flex flex-col gap-1">
-            <span className="text-[9px] text-gray-500 uppercase font-medium tracking-wide">Function Name</span>
+            <span className="text-[10px] text-gray-400 uppercase font-medium tracking-wide">Function Name</span>
             <input
               type="text"
               value={functionName}
               onChange={(e) => onUpdate({ data: { ...node.data, functionName: e.target.value } })}
               onMouseDown={(e) => e.stopPropagation()}
-              className="w-full px-2 py-1.5 bg-[#0d1117] rounded-md text-[11px] text-gray-200 border border-white/10 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
+              className="w-full px-3 py-2 bg-[#121212] rounded text-xs text-gray-100 border-none outline-none focus:ring-2 focus:ring-[#2196F3]/50"
             />
           </div>
           <div className="flex flex-col gap-1">
-            <span className="text-[9px] text-gray-500 uppercase font-medium tracking-wide">Return Type</span>
+            <span className="text-[10px] text-gray-400 uppercase font-medium tracking-wide">Return Type</span>
             <select
               value={returnType}
               onChange={(e) => onUpdate({ data: { ...node.data, returnType: e.target.value } })}
               onMouseDown={(e) => e.stopPropagation()}
-              className="w-full px-2 py-1.5 bg-[#0d1117] rounded-md text-[11px] text-gray-200 border border-white/10 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
+              className="w-full px-3 py-2 bg-[#121212] rounded text-xs text-gray-100 border-none outline-none focus:ring-2 focus:ring-[#2196F3]/50 cursor-pointer"
             >
               {returnTypes.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
-              <span className="text-[9px] text-gray-500 uppercase font-medium tracking-wide">Parameters</span>
+              <span className="text-[10px] text-gray-400 uppercase font-medium tracking-wide">Parameters</span>
               <div className="flex-1" />
               <button
                 onClick={(e) => { e.stopPropagation(); removeParam(); }}
                 onMouseDown={(e) => e.stopPropagation()}
                 disabled={paramCount <= 0}
-                className="w-6 h-6 flex items-center justify-center rounded bg-red-500/20 hover:bg-red-500/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-red-400 text-sm font-bold"
+                className="w-7 h-7 flex items-center justify-center rounded-full bg-[#F44336]/20 hover:bg-[#F44336]/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-[#F44336] text-base font-medium"
               >
                 −
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); addParam(); }}
                 onMouseDown={(e) => e.stopPropagation()}
-                className="w-6 h-6 flex items-center justify-center rounded bg-green-500/20 hover:bg-green-500/40 transition-colors text-green-400 text-sm font-bold"
+                className="w-7 h-7 flex items-center justify-center rounded-full bg-[#4CAF50]/20 hover:bg-[#4CAF50]/30 transition-colors text-[#4CAF50] text-base font-medium"
               >
                 +
               </button>
             </div>
             {/* Parameter list with name and type editors */}
             {paramCount > 0 && (
-              <div className="flex flex-col gap-1 mt-1 max-h-32 overflow-y-auto">
+              <div className="flex flex-col gap-1.5 mt-1.5 max-h-32 overflow-y-auto">
                 {Array.from({ length: paramCount }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-1">
+                  <div key={i} className="flex items-center gap-1.5">
                     <input
                       type="text"
                       value={paramNames[i] || `param${i + 1}`}
                       onChange={(e) => updateParamName(i, e.target.value)}
                       onMouseDown={(e) => e.stopPropagation()}
-                      className="flex-1 px-1.5 py-1 bg-[#0d1117] rounded text-[10px] text-gray-200 border border-white/10 focus:outline-none focus:ring-1 focus:ring-purple-500/50 min-w-0"
+                      className="flex-1 px-2 py-1.5 bg-[#121212] rounded text-xs text-gray-100 border-none outline-none focus:ring-2 focus:ring-[#2196F3]/50 min-w-0"
                       placeholder={`param${i + 1}`}
                     />
                     <select
                       value={paramTypes[i] || 'var'}
                       onChange={(e) => updateParamType(i, e.target.value)}
                       onMouseDown={(e) => e.stopPropagation()}
-                      className="w-16 px-1 py-1 bg-[#0d1117] rounded text-[10px] text-gray-200 border border-white/10 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
+                      className="w-18 px-2 py-1.5 bg-[#121212] rounded text-xs text-gray-100 border-none outline-none focus:ring-2 focus:ring-[#2196F3]/50 cursor-pointer"
                     >
                       {dataTypes.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
@@ -661,17 +676,86 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
               </div>
             )}
           </div>
-          <label className="flex items-center gap-2 px-2.5 py-1.5 bg-[#0d1117] rounded-md border border-white/10 cursor-pointer hover:bg-[#161b22]">
+          <label className="flex items-center gap-3 px-3 py-2 bg-[#121212] rounded cursor-pointer hover:bg-[#1a1a1a] transition-colors">
+            <div className={`w-4 h-4 rounded flex items-center justify-center ${isGlobal ? 'bg-[#2196F3]' : 'bg-gray-700'} transition-colors`}>
+              {isGlobal && <span className="text-white text-[10px]">✓</span>}
+            </div>
             <input
               type="checkbox"
               checked={isGlobal}
               onChange={(e) => onUpdate({ data: { ...node.data, isGlobal: e.target.checked } })}
               onMouseDown={(e) => e.stopPropagation()}
-              className="w-3.5 h-3.5 rounded accent-purple-500"
+              className="sr-only"
             />
-            <span className="text-[10px] text-gray-400">Global (accessible from other scripts)</span>
+            <span className="text-xs text-gray-300">Global (accessible from other scripts)</span>
           </label>
         </div>
+      );
+    }
+
+    // Loot Tier selector
+    if (node.type === 'const-loot-tier') {
+      const value = typeof node.data.tier === 'string' ? node.data.tier : 'COMMON';
+      const options = ['NONE', 'COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'HEIRLOOM'];
+      return (
+        <select
+          value={value}
+          onChange={(e) => onUpdate({ data: { ...node.data, tier: e.target.value } })}
+          onMouseDown={(e) => e.stopPropagation()}
+          className={`${inputClass} ${focusRing} cursor-pointer`}
+        >
+          {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+        </select>
+      );
+    }
+
+    // Supported Attachments multi-select
+    if (node.type === 'const-supported-attachments') {
+      const options = ['barrel', 'mag', 'sight', 'grip', 'hopup'];
+      const selected = Array.isArray(node.data.attachments) ? node.data.attachments : [];
+      const toggle = (attachment: string, checked: boolean) => {
+        const next = checked
+          ? Array.from(new Set([...selected, attachment]))
+          : selected.filter((item) => item !== attachment);
+        onUpdate({ data: { ...node.data, attachments: next } });
+      };
+      return (
+        <div className="grid grid-cols-2 gap-1.5">
+          {options.map((attachment) => (
+            <label 
+              key={attachment} 
+              className="flex items-center gap-2 px-2 py-1.5 bg-[#121212] rounded cursor-pointer hover:bg-[#1a1a1a] transition-colors"
+            >
+              <div className={`w-3.5 h-3.5 rounded flex items-center justify-center ${selected.includes(attachment) ? 'bg-[#2196F3]' : 'bg-gray-700'} transition-colors`}>
+                {selected.includes(attachment) && <span className="text-white text-[8px]">✓</span>}
+              </div>
+              <input
+                type="checkbox"
+                checked={selected.includes(attachment)}
+                onChange={(e) => toggle(attachment, e.target.checked)}
+                onMouseDown={(e) => e.stopPropagation()}
+                className="sr-only"
+              />
+              <span className="text-[10px] text-gray-300 capitalize">{attachment}</span>
+            </label>
+          ))}
+        </div>
+      );
+    }
+
+    // Weapon Type selector
+    if (node.type === 'const-weapon-type') {
+      const value = typeof node.data.weaponType === 'string' ? node.data.weaponType : 'pistol';
+      const options = ['assault', 'smg', 'lmg', 'sniper', 'shotgun', 'pistol', 'marksman', 'bow'];
+      return (
+        <select
+          value={value}
+          onChange={(e) => onUpdate({ data: { ...node.data, weaponType: e.target.value } })}
+          onMouseDown={(e) => e.stopPropagation()}
+          className={`${inputClass} ${focusRing} cursor-pointer`}
+        >
+          {options.map(opt => <option key={opt} value={opt} className="capitalize">{opt}</option>)}
+        </select>
       );
     }
 
@@ -703,7 +787,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
 
             if (typeof value === 'boolean') {
               return (
-                <label key={key} className="flex items-center gap-2 px-2.5 py-1.5 bg-[#0d1117] rounded-md border border-white/10 cursor-pointer hover:bg-[#161b22]">
+                <label key={key} className="flex items-center gap-2 px-2.5 py-1.5 bg-[#0d1117] rounded-md border border-white/8 cursor-pointer hover:bg-[#161b22]">
                   <input
                     type="checkbox"
                     checked={value}
@@ -726,7 +810,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
                     step="0.1"
                     onChange={(e) => onUpdate({ data: { ...node.data, [key]: parseFloat(e.target.value) || 0 } })}
                     onMouseDown={(e) => e.stopPropagation()}
-                    className="w-full px-2.5 py-1.5 bg-[#0d1117] rounded-md text-[11px] text-gray-200 border border-white/10 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
+                    className="w-full px-2.5 py-1.5 bg-[#0d1117] rounded-md text-[11px] text-gray-200 border border-white/8 focus:outline-none focus:ring-1 focus:ring-[#2196F3]/50"
                   />
                 </div>
               );
@@ -741,7 +825,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
                     value={value}
                     onChange={(e) => onUpdate({ data: { ...node.data, [key]: e.target.value } })}
                     onMouseDown={(e) => e.stopPropagation()}
-                    className="w-full px-2.5 py-1.5 bg-[#0d1117] rounded-md text-[11px] text-gray-200 border border-white/10 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
+                    className="w-full px-2.5 py-1.5 bg-[#0d1117] rounded-md text-[11px] text-gray-200 border border-white/8 focus:outline-none focus:ring-1 focus:ring-[#2196F3]/50"
                   />
                 </div>
               );
@@ -780,27 +864,28 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
 
   return (
     <div
-      className="rounded-lg select-none overflow-hidden"
+      className="rounded select-none overflow-hidden"
       style={{
         minWidth: 200,
         opacity: nodeOpacity / 100,
-        backgroundColor: '#1e2328',
-        border: selected ? `2px solid ${accentColor}` : '1px solid rgba(255,255,255,0.08)',
+        backgroundColor: '#212121', // Material Grey 900
+        border: 'none',
         boxShadow: selected
-          ? `0 0 20px ${accentColor}40, 0 8px 24px rgba(0, 0, 0, 0.4)`
-          : '0 4px 16px rgba(0, 0, 0, 0.3)',
+          ? `0 8px 10px -5px rgba(0,0,0,.2), 0 16px 24px 2px rgba(0,0,0,.14), 0 6px 30px 5px rgba(0,0,0,.12), 0 0 0 2px ${accentColor}`
+          : '0 3px 5px -1px rgba(0,0,0,.2), 0 6px 10px 0 rgba(0,0,0,.14), 0 1px 18px 0 rgba(0,0,0,.12)',
+        transition: 'box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
-      {/* Node Header */}
+      {/* Node Header - Material style */}
       <div
-        className="px-3 py-2 flex items-center gap-2"
+        className="px-3 py-2.5 flex items-center gap-2"
         style={{
-          background: `linear-gradient(135deg, ${nodeColor}e0 0%, ${nodeColor}90 100%)`,
-          borderBottom: '1px solid rgba(0,0,0,0.3)',
+          background: nodeColor,
+          borderBottom: 'none',
         }}
       >
-        <span className="text-sm opacity-80">{getNodeIcon()}</span>
-        <span className="text-[11px] font-semibold text-white uppercase tracking-wide flex-1 truncate">
+        <span className="text-sm opacity-90">{getNodeIcon()}</span>
+        <span className="text-xs font-medium text-white tracking-wide flex-1 truncate">
           {node.label.replace(/^(Event|Flow|Mod|Data|Action):\s*/, '')}
         </span>
         {selected && (
@@ -809,38 +894,38 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
               e.stopPropagation();
               onDelete();
             }}
-            className="p-1 hover:bg-white/20 rounded transition-colors"
+            className="p-1.5 hover:bg-white/20 rounded-full transition-colors"
           >
-            <Trash2 size={11} className="text-white/80" />
+            <Trash2 size={14} className="text-white/90" />
           </button>
         )}
       </div>
 
       {/* INPUTS Section */}
       {hasInputs && (
-        <div className="px-3 pt-2 pb-1">
-          <div className="text-[9px] text-gray-500 uppercase tracking-wider font-medium mb-1.5">Inputs</div>
+        <div className="px-3 pt-2.5 pb-1.5">
+          <div className="text-[10px] text-gray-400 uppercase tracking-wider font-medium mb-2">Inputs</div>
           {node.inputs.map((input) => {
             const portColor = getPortColor(input.type, input.dataType);
             return (
-              <div key={input.id} className="flex items-center py-1 relative">
+              <div key={input.id} className="flex items-center py-1.5 relative">
                 <Handle
                   type="target"
                   position={Position.Left}
                   id={input.id}
-                  className="!border-2 !-left-[9px]"
+                  className="!border-0 !-left-[8px]"
                   style={{
                     width: '12px',
                     height: '12px',
                     backgroundColor: portColor,
-                    borderColor: '#1e2328',
                     borderRadius: input.type === 'exec' ? '2px' : '50%',
                     clipPath: input.type === 'exec' ? 'polygon(0 0, 100% 50%, 0 100%)' : undefined,
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
                   }}
                 />
-                <span className="ml-2 text-[11px] text-gray-300">{input.label}</span>
+                <span className="ml-2.5 text-xs text-gray-200">{input.label}</span>
                 {input.dataType && (
-                  <span className="ml-auto text-[9px] text-gray-500 bg-black/30 px-1.5 py-0.5 rounded">
+                  <span className="ml-auto text-[10px] text-gray-500 bg-white/5 px-1.5 py-0.5 rounded">
                     {getTypeLabel(input.dataType)}
                   </span>
                 )}
@@ -852,37 +937,37 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
 
       {/* Node Data Section - only show for fields without input ports */}
       {hasEditableData && (
-        <div className="px-3 py-2 border-t border-white/5">
+        <div className="px-3 py-2.5 border-t border-white/5">
           {renderInlineEditor()}
         </div>
       )}
 
       {/* OUTPUTS Section */}
       {hasOutputs && (
-        <div className="px-3 pt-1 pb-2 border-t border-white/5">
-          <div className="text-[9px] text-gray-500 uppercase tracking-wider font-medium mb-1.5 text-right">Outputs</div>
+        <div className="px-3 pt-1.5 pb-2.5 border-t border-white/5">
+          <div className="text-[10px] text-gray-400 uppercase tracking-wider font-medium mb-2 text-right">Outputs</div>
           {node.outputs.map((output) => {
             const portColor = getPortColor(output.type, output.dataType);
             return (
-              <div key={output.id} className="flex items-center justify-end py-1 relative">
+              <div key={output.id} className="flex items-center justify-end py-1.5 relative">
                 {output.dataType && (
-                  <span className="mr-auto text-[9px] text-gray-500 bg-black/30 px-1.5 py-0.5 rounded">
+                  <span className="mr-auto text-[10px] text-gray-500 bg-white/5 px-1.5 py-0.5 rounded">
                     {getTypeLabel(output.dataType)}
                   </span>
                 )}
-                <span className="mr-2 text-[11px] text-gray-300">{output.label}</span>
+                <span className="mr-2.5 text-xs text-gray-200">{output.label}</span>
                 <Handle
                   type="source"
                   position={Position.Right}
                   id={output.id}
-                  className="!border-2 !-right-[9px]"
+                  className="!border-0 !-right-[8px]"
                   style={{
                     width: '12px',
                     height: '12px',
                     backgroundColor: portColor,
-                    borderColor: '#1e2328',
                     borderRadius: output.type === 'exec' ? '2px' : '50%',
                     clipPath: output.type === 'exec' ? 'polygon(0 0, 100% 50%, 0 100%)' : undefined,
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
                   }}
                 />
               </div>
@@ -896,15 +981,25 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
 ScriptNodeComponent.displayName = 'ScriptNodeComponent';
 
 // ============================================================================
-// Comment Node Component
+// Comment Node Component (Material Design Style)
 // ============================================================================
 
-const COMMENT_COLORS = ['#6C7A89', '#E74C3C', '#E67E22', '#F1C40F', '#27AE60', '#3498DB', '#9B59B6', '#1ABC9C'];
+// Material design color palette
+const COMMENT_COLORS = [
+  '#455A64', // Blue Grey
+  '#D32F2F', // Red
+  '#F57C00', // Orange  
+  '#FBC02D', // Yellow
+  '#388E3C', // Green
+  '#1976D2', // Blue
+  '#7B1FA2', // Purple
+  '#00796B', // Teal
+];
 
 const CommentNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeData>>) => {
   const { scriptNode: node, onUpdate, onDelete, accentColor, nodeOpacity } = data;
   const commentText = typeof node.data.comment === 'string' ? node.data.comment : 'Comment';
-  const commentColor = typeof node.data.commentColor === 'string' ? node.data.commentColor : '#374151';
+  const commentColor = typeof node.data.commentColor === 'string' ? node.data.commentColor : '#455A64';
 
   return (
     <>
@@ -914,33 +1009,37 @@ const CommentNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNode
         minHeight={80}
         isVisible={selected}
         lineClassName="!border-transparent"
-        handleClassName="!w-3 !h-3 !bg-white/60 !border-white/80 !rounded-sm"
+        handleClassName="!w-2.5 !h-2.5 !bg-white !border-0 !rounded-full !shadow-md"
       />
       
-      {/* Group node container - uses 100% to fill the React Flow node dimensions */}
+      {/* Material card container */}
       <div
-        className="w-full h-full rounded-lg select-none border-2 border-dashed overflow-hidden"
+        className="w-full h-full rounded-md select-none overflow-hidden"
         style={{
-          backgroundColor: `${commentColor}40`,
-          borderColor: `${commentColor}80`,
+          backgroundColor: `${commentColor}15`,
           opacity: nodeOpacity / 100,
           boxShadow: selected
-            ? `0 0 0 2px ${accentColor}`
-            : undefined,
+            ? `0 8px 16px rgba(0,0,0,0.2), 0 0 0 2px ${commentColor}`
+            : '0 2px 4px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)',
+          border: `1px solid ${commentColor}30`,
         }}
       >
-        {/* Header bar with title input */}
+        {/* Material header bar */}
         <div 
           className="flex items-center gap-2 px-3 py-2"
-          style={{ backgroundColor: `${commentColor}60` }}
+          style={{ 
+            backgroundColor: commentColor,
+            borderBottom: `1px solid ${commentColor}`,
+          }}
         >
           <input
             type="text"
             value={commentText}
             onChange={(e) => onUpdate({ data: { ...node.data, comment: e.target.value } })}
             onMouseDown={(e) => e.stopPropagation()}
-            className="bg-transparent text-white text-sm font-semibold outline-none flex-1 min-w-0 nodrag"
+            className="bg-transparent text-white text-sm font-medium outline-none flex-1 min-w-0 nodrag placeholder:text-white/60"
             placeholder="Comment"
+            style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
           />
           {selected && (
             <button
@@ -949,16 +1048,16 @@ const CommentNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNode
                 onDelete();
               }}
               onMouseDown={(e) => e.stopPropagation()}
-              className="p-0.5 hover:bg-black/20 rounded transition-colors nodrag"
+              className="p-1 hover:bg-white/20 rounded-full transition-colors nodrag"
             >
-              <Trash2 size={12} className="text-white" />
+              <Trash2 size={14} className="text-white/90" />
             </button>
           )}
         </div>
 
-        {/* Color picker - only shown when selected */}
+        {/* Color picker chips - Material style */}
         {selected && (
-          <div className="absolute top-10 left-2 flex gap-1 z-10">
+          <div className="absolute top-11 left-2 flex gap-1.5 p-1.5 bg-gray-900/90 rounded-lg shadow-lg z-10 backdrop-blur-sm">
             {COMMENT_COLORS.map((color) => (
               <button
                 key={color}
@@ -967,8 +1066,15 @@ const CommentNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNode
                   onUpdate({ data: { ...node.data, commentColor: color } });
                 }}
                 onMouseDown={(e) => e.stopPropagation()}
-                className={`w-4 h-4 rounded-full border-2 transition-transform hover:scale-110 nodrag ${color === commentColor ? 'border-white' : 'border-transparent'}`}
-                style={{ backgroundColor: color }}
+                className={`w-5 h-5 rounded-full transition-all duration-150 nodrag ${
+                  color === commentColor 
+                    ? 'ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110' 
+                    : 'hover:scale-110 hover:shadow-md'
+                }`}
+                style={{ 
+                  backgroundColor: color,
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                }}
               />
             ))}
           </div>
@@ -980,7 +1086,7 @@ const CommentNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNode
 CommentNodeComponent.displayName = 'CommentNodeComponent';
 
 // ============================================================================
-// Reroute Node Component
+// Reroute Node Component (Material Design)
 // ============================================================================
 
 const RerouteNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeData>>) => {
@@ -991,34 +1097,39 @@ const RerouteNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNode
 
   return (
     <div
-      className="w-9 h-9 rounded-full flex items-center justify-center"
+      className="w-8 h-8 rounded-full flex items-center justify-center"
       style={{
-        backgroundColor: '#1a1f28',
-        border: `2px solid ${color}`,
+        backgroundColor: '#212121',
         opacity: nodeOpacity / 100,
         boxShadow: selected
-          ? `0 0 0 2px ${accentColor}`
-          : '0 2px 8px rgba(0, 0, 0, 0.3)',
+          ? `0 4px 8px rgba(0,0,0,.3), 0 0 0 2px ${accentColor}`
+          : '0 2px 4px rgba(0,0,0,.2), 0 1px 2px rgba(0,0,0,.1)',
+        transition: 'box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
+      {/* Center dot */}
+      <div 
+        className="w-3 h-3 rounded-full"
+        style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}60` }}
+      />
       <Handle
         type="target"
         position={Position.Left}
         id={node.inputs[0]?.id || 'input_0'}
-        className="!w-3 !h-3 !border-2 !-left-1.5"
+        className="!w-2.5 !h-2.5 !border-0 !-left-1"
         style={{
           backgroundColor: color,
-          borderColor: color,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
         }}
       />
       <Handle
         type="source"
         position={Position.Right}
         id={node.outputs[0]?.id || 'output_0'}
-        className="!w-3 !h-3 !border-2 !-right-1.5"
+        className="!w-2.5 !h-2.5 !border-0 !-right-1"
         style={{
           backgroundColor: color,
-          borderColor: color,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
         }}
       />
     </div>
@@ -1942,6 +2053,95 @@ function ReactFlowGraphInner({
     });
   }, []);
 
+  // Drag state for drop animations
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [dropPreviewPos, setDropPreviewPos] = useState<{ x: number; y: number } | null>(null);
+  const [droppingNodeId, setDroppingNodeId] = useState<string | null>(null);
+
+  // Handle drag over from palette
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes('node-type')) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      setIsDraggingOver(true);
+      
+      // Update drop preview position
+      const pos = reactFlowInstance.screenToFlowPosition({
+        x: e.clientX,
+        y: e.clientY,
+      });
+      setDropPreviewPos(pos);
+    }
+  }, [reactFlowInstance]);
+
+  const handleDragLeave = useCallback(() => {
+    setIsDraggingOver(false);
+    setDropPreviewPos(null);
+  }, []);
+
+  // Handle drop from palette with animation
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    const nodeType = e.dataTransfer.getData('node-type');
+    if (!nodeType) return;
+    
+    e.preventDefault();
+    setIsDraggingOver(false);
+    setDropPreviewPos(null);
+
+    const definition = getNodeDefinition(nodeType);
+    if (!definition) return;
+
+    // Get drop position
+    const pos = reactFlowInstance.screenToFlowPosition({
+      x: e.clientX,
+      y: e.clientY,
+    });
+
+    // Snap to grid if enabled
+    const snappedPos = snapToGrid ? {
+      x: Math.round((pos.x - 90) / gridSize) * gridSize,
+      y: Math.round((pos.y - 30) / gridSize) * gridSize,
+    } : {
+      x: pos.x - 90,
+      y: pos.y - 30,
+    };
+
+    // Create the new node
+    const newNodeId = `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const newNode: ScriptNode = {
+      id: newNodeId,
+      type: definition.type,
+      category: definition.category,
+      label: definition.label,
+      position: snappedPos,
+      data: { ...definition.defaultData },
+      inputs: definition.inputs.map((input, idx) => ({
+        id: `input_${idx}`,
+        label: input.label,
+        type: input.type,
+        dataType: input.dataType,
+        isInput: true,
+        ...('defaultValue' in input && { defaultValue: (input as Record<string, unknown>).defaultValue }),
+        ...('options' in input && { options: (input as Record<string, unknown>).options }),
+      })),
+      outputs: definition.outputs.map((output, idx) => ({
+        id: `output_${idx}`,
+        label: output.label,
+        type: output.type,
+        dataType: output.dataType,
+        isInput: false,
+      })),
+    };
+
+    // Trigger drop animation
+    setDroppingNodeId(newNodeId);
+    setTimeout(() => setDroppingNodeId(null), 300);
+
+    onAddNode(newNode);
+    onSelectNodes([newNodeId]);
+    onRequestHistorySnapshot?.();
+  }, [reactFlowInstance, snapToGrid, gridSize, onAddNode, onSelectNodes, onRequestHistorySnapshot]);
+
   // Handle view changes
   const onMoveEnd = useCallback((_: unknown, viewport: { x: number; y: number; zoom: number }) => {
     onViewChange?.({
@@ -1951,22 +2151,14 @@ function ReactFlowGraphInner({
     });
   }, [onViewChange]);
 
-  // Determine background variant - React Flow only supports dots, lines, cross
-  // Map additional styles to closest React Flow equivalent
+  // Determine background variant
   const backgroundVariant = (() => {
     switch (gridStyle) {
       case 'dots':
         return BackgroundVariant.Dots;
       case 'lines':
-      case 'graph':
-      case 'blueprint':
         return BackgroundVariant.Lines;
-      case 'crosshatch':
-      case 'diamonds':
-      case 'triangles':
-      case 'hexagons':
-      case 'isometric':
-      case 'waves':
+      case 'cross':
         return BackgroundVariant.Cross;
       default:
         return BackgroundVariant.Dots;
@@ -1978,10 +2170,56 @@ function ReactFlowGraphInner({
       ref={containerRef}
       tabIndex={0}
       className="w-full h-full outline-none" 
-      style={{ backgroundColor: theme === 'dark' ? '#1a1f28' : '#f5f5f5' }}
+      style={{ backgroundColor: theme === 'dark' ? '#121212' : '#fafafa' }}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
+      {/* Drop preview indicator */}
+      {isDraggingOver && dropPreviewPos && (
+        <div 
+          className="absolute z-50 pointer-events-none"
+          style={{
+            left: `calc(50% + ${dropPreviewPos.x}px)`,
+            top: `calc(50% + ${dropPreviewPos.y}px)`,
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          <div 
+            className="w-44 h-16 rounded-lg border-2 border-dashed animate-pulse"
+            style={{ 
+              borderColor: accentColor,
+              backgroundColor: `${accentColor}20`,
+            }}
+          />
+        </div>
+      )}
+      
+      {/* Drop animation styles */}
+      <style>{`
+        @keyframes nodeDropIn {
+          0% {
+            opacity: 0;
+            transform: scale(0.8) translateY(-20px);
+          }
+          50% {
+            transform: scale(1.05) translateY(0);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+        .node-dropping {
+          animation: nodeDropIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+      `}</style>
+      
       <ReactFlow
-        nodes={flowNodes}
+        nodes={flowNodes.map(n => ({
+          ...n,
+          className: droppingNodeId === n.id ? 'node-dropping' : n.className,
+        }))}
         edges={flowEdges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
@@ -2013,7 +2251,7 @@ function ReactFlowGraphInner({
         selectionMode={SelectionMode.Partial} // Select nodes that are partially in the box
         proOptions={{ hideAttribution: true }}
         style={{
-          backgroundColor: theme === 'dark' ? '#1a1f28' : '#f5f5f5',
+          backgroundColor: theme === 'dark' ? '#121212' : '#fafafa',
         }}
       >
         {showGridLines && (
@@ -2021,22 +2259,22 @@ function ReactFlowGraphInner({
             variant={backgroundVariant}
             gap={gridSize}
             size={gridStyle === 'dots' ? 1 : undefined}
-            color={coloredGrid ? accentColor : (theme === 'dark' ? '#2a2e38' : '#ddd')}
+            color={coloredGrid ? accentColor : (theme === 'dark' ? '#2d2d2d' : '#e0e0e0')}
           />
         )}
         <MiniMap
           nodeStrokeWidth={1}
-          nodeStrokeColor={theme === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'}
+          nodeStrokeColor={theme === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}
           nodeBorderRadius={4}
           nodeColor={(node) => {
             const scriptNode = scriptNodes.find(n => n.id === node.id);
-            return scriptNode ? getNodeColor(scriptNode.type) : '#555';
+            return scriptNode ? getNodeColor(scriptNode.type) : '#424242';
           }}
-          maskColor={theme === 'dark' ? 'rgba(0, 0, 0, 0.7)' : 'rgba(255, 255, 255, 0.7)'}
+          maskColor={theme === 'dark' ? 'rgba(0, 0, 0, 0.75)' : 'rgba(255, 255, 255, 0.8)'}
           pannable
           zoomable
           style={{
-            backgroundColor: theme === 'dark' ? 'rgba(15, 20, 25, 0.95)' : '#e5e5e5',
+            backgroundColor: theme === 'dark' ? '#1e1e1e' : '#f5f5f5',
             width: 270,
             height: 220,
             bottom: 50,
@@ -2056,28 +2294,33 @@ function ReactFlowGraphInner({
         />
       )}
 
-      {/* Context Menu */}
+      {/* Context Menu - Material Design */}
       {contextMenu && (
         <div
           data-context-menu="true"
-          className="fixed z-[1100] bg-[#1a1f28] border border-white/20 rounded-lg shadow-xl text-sm text-white min-w-[160px] py-1"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
+          className="fixed z-[1100] bg-[#2d2d2d] rounded shadow-lg text-sm text-white min-w-[180px] py-2 overflow-hidden"
+          style={{ 
+            left: contextMenu.x, 
+            top: contextMenu.y,
+            boxShadow: '0 8px 10px -5px rgba(0,0,0,.2), 0 16px 24px 2px rgba(0,0,0,.14), 0 6px 30px 5px rgba(0,0,0,.12)',
+          }}
         >
           {/* Canvas context menu */}
           {contextMenu.type === 'canvas' && (
             <>
               <button
-                className="px-3 py-2 hover:bg-white/10 w-full text-left flex items-center gap-2"
+                className="px-4 py-2.5 hover:bg-white/8 w-full text-left flex items-center gap-3 transition-colors"
                 onClick={() => contextMenu.canvasPos && handleOpenQuickMenu(contextMenu.canvasPos, { x: contextMenu.x, y: contextMenu.y })}
               >
-                <span className="text-purple-400">+</span> Add Node
+                <span className="text-[#2196F3] text-lg">+</span> 
+                <span className="text-gray-100">Add Node</span>
               </button>
               {clipboardRef.current && clipboardRef.current.nodes.length > 0 && (
                 <button
-                  className="px-3 py-2 hover:bg-white/10 w-full text-left flex items-center gap-2"
+                  className="px-4 py-2.5 hover:bg-white/8 w-full text-left flex items-center gap-3 transition-colors"
                   onClick={() => handlePasteNodes(contextMenu.canvasPos)}
                 >
-                  Paste ({clipboardRef.current.nodes.length} node{clipboardRef.current.nodes.length > 1 ? 's' : ''})
+                  <span className="text-gray-100">Paste ({clipboardRef.current.nodes.length} node{clipboardRef.current.nodes.length > 1 ? 's' : ''})</span>
                 </button>
               )}
             </>
@@ -2087,13 +2330,13 @@ function ReactFlowGraphInner({
           {contextMenu.type === 'node' && contextMenu.nodeId && (
             <>
               <button
-                className="px-3 py-2 hover:bg-white/10 w-full text-left flex items-center gap-2"
+                className="px-4 py-2.5 hover:bg-white/8 w-full text-left flex items-center gap-3 transition-colors text-gray-100"
                 onClick={() => handleCopyNodes([contextMenu.nodeId!])}
               >
                 Copy
               </button>
               <button
-                className="px-3 py-2 hover:bg-white/10 w-full text-left flex items-center gap-2"
+                className="px-4 py-2.5 hover:bg-white/8 w-full text-left flex items-center gap-3 transition-colors text-gray-100"
                 onClick={() => {
                   handleCopyNodes([contextMenu.nodeId!]);
                   handleDeleteNodes([contextMenu.nodeId!]);
@@ -2102,7 +2345,7 @@ function ReactFlowGraphInner({
                 Cut
               </button>
               <button
-                className="px-3 py-2 hover:bg-white/10 w-full text-left flex items-center gap-2"
+                className="px-4 py-2.5 hover:bg-white/8 w-full text-left flex items-center gap-3 transition-colors text-gray-100"
                 onClick={() => {
                   // Duplicate node
                   const node = scriptNodes.find(n => n.id === contextMenu.nodeId);
@@ -2125,9 +2368,9 @@ function ReactFlowGraphInner({
               >
                 Duplicate
               </button>
-              <div className="border-t border-white/10 my-1" />
+              <div className="border-t border-white/8 my-1" />
               <button
-                className="px-3 py-2 hover:bg-red-500/20 w-full text-left flex items-center gap-2 text-red-400"
+                className="px-4 py-2.5 hover:bg-[#F44336]/10 w-full text-left flex items-center gap-3 transition-colors text-[#EF5350]"
                 onClick={() => handleDeleteNodes([contextMenu.nodeId!])}
               >
                 Delete
@@ -2139,13 +2382,13 @@ function ReactFlowGraphInner({
           {contextMenu.type === 'nodes' && contextMenu.nodeIds && (
             <>
               <button
-                className="px-3 py-2 hover:bg-white/10 w-full text-left flex items-center gap-2"
+                className="px-4 py-2.5 hover:bg-white/8 w-full text-left flex items-center gap-3 transition-colors text-gray-100"
                 onClick={() => handleCopyNodes(contextMenu.nodeIds!)}
               >
                 Copy {contextMenu.nodeIds.length} Nodes
               </button>
               <button
-                className="px-3 py-2 hover:bg-white/10 w-full text-left flex items-center gap-2"
+                className="px-4 py-2.5 hover:bg-white/8 w-full text-left flex items-center gap-3 transition-colors text-gray-100"
                 onClick={() => {
                   handleCopyNodes(contextMenu.nodeIds!);
                   handleDeleteNodes(contextMenu.nodeIds!);
@@ -2153,10 +2396,10 @@ function ReactFlowGraphInner({
               >
                 Cut {contextMenu.nodeIds.length} Nodes
               </button>
-              <div className="border-t border-white/10 my-1" />
+              <div className="border-t border-white/8 my-1" />
               {onSaveAsTemplate && (
                 <button
-                  className="px-3 py-2 hover:bg-white/10 w-full text-left flex items-center gap-2"
+                  className="px-4 py-2.5 hover:bg-white/8 w-full text-left flex items-center gap-3 transition-colors text-gray-100"
                   onClick={() => {
                     onSaveAsTemplate(contextMenu.nodeIds!);
                     setContextMenu(null);
@@ -2165,9 +2408,9 @@ function ReactFlowGraphInner({
                   Save as Template
                 </button>
               )}
-              <div className="border-t border-white/10 my-1" />
+              <div className="border-t border-white/8 my-1" />
               <button
-                className="px-3 py-2 hover:bg-red-500/20 w-full text-left flex items-center gap-2 text-red-400"
+                className="px-4 py-2.5 hover:bg-[#F44336]/10 w-full text-left flex items-center gap-3 transition-colors text-[#EF5350]"
                 onClick={() => handleDeleteNodes(contextMenu.nodeIds!)}
               >
                 Delete {contextMenu.nodeIds.length} Nodes
@@ -2178,7 +2421,7 @@ function ReactFlowGraphInner({
           {/* Connection context menu */}
           {contextMenu.type === 'connection' && contextMenu.connectionId && (
             <button
-              className="px-3 py-2 hover:bg-red-500/20 w-full text-left flex items-center gap-2 text-red-400"
+              className="px-4 py-2.5 hover:bg-[#F44336]/10 w-full text-left flex items-center gap-3 transition-colors text-[#EF5350]"
               onClick={() => handleBreakConnection(contextMenu.connectionId!)}
             >
               Break Connection

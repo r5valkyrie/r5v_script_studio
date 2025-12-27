@@ -71,10 +71,13 @@ export default function SaveTemplateModal({
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative bg-[#1a1f28] border border-white/10 rounded-xl shadow-2xl w-full max-w-md mx-4">
+      <div 
+        className="relative bg-[#2d2d2d] rounded w-full max-w-md mx-4"
+        style={{ boxShadow: '0 11px 15px -7px rgba(0,0,0,.2), 0 24px 38px 3px rgba(0,0,0,.14), 0 9px 46px 8px rgba(0,0,0,.12)' }}
+      >
         {/* Header */}
         <div
-          className="flex items-center justify-between px-5 py-4 border-b border-white/10"
+          className="flex items-center justify-between px-5 py-4 border-b border-white/8"
           style={{ background: `linear-gradient(to right, ${accentColor}10, transparent)` }}
         >
           <div className="flex items-center gap-3">
@@ -109,7 +112,7 @@ export default function SaveTemplateModal({
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="e.g., Player Spawn Setup"
-              className="w-full px-3 py-2.5 bg-black/30 border border-white/10 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none transition-all"
+              className="w-full px-3 py-2.5 bg-black/30 border border-white/8 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none transition-all"
               style={{
                 ['--tw-ring-color' as string]: `${accentColor}20`,
               }}
@@ -135,7 +138,7 @@ export default function SaveTemplateModal({
               onChange={e => setDescription(e.target.value)}
               placeholder="Briefly describe what this template does..."
               rows={2}
-              className="w-full px-3 py-2.5 bg-black/30 border border-white/10 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none transition-all resize-none"
+              className="w-full px-3 py-2.5 bg-black/30 border border-white/8 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none transition-all resize-none"
               onFocus={(e) => {
                 e.target.style.borderColor = `${accentColor}50`;
                 e.target.style.boxShadow = `0 0 0 2px ${accentColor}20`;
@@ -174,7 +177,7 @@ export default function SaveTemplateModal({
               value={tagsInput}
               onChange={e => setTagsInput(e.target.value)}
               placeholder="e.g., spawn, player, callback"
-              className="w-full px-3 py-2.5 bg-black/30 border border-white/10 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none transition-all"
+              className="w-full px-3 py-2.5 bg-black/30 border border-white/8 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none transition-all"
               onFocus={(e) => {
                 e.target.style.borderColor = `${accentColor}50`;
                 e.target.style.boxShadow = `0 0 0 2px ${accentColor}20`;

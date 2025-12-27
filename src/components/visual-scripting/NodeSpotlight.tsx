@@ -135,9 +135,9 @@ export default function NodeSpotlight({ isOpen, onClose, onAddNode, viewState, c
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       
       {/* Spotlight Modal */}
-      <div className="relative w-[500px] max-w-[90vw] bg-[#1a1d24] border border-white/10 rounded-xl shadow-2xl overflow-hidden">
+      <div className="relative w-[500px] max-w-[90vw] bg-[#1a1d24] border border-white/8 rounded shadow-2xl overflow-hidden">
         {/* Search Input */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-white/8">
           <Search size={18} className="text-white/40" />
           <input
             ref={inputRef}
@@ -216,7 +216,7 @@ export default function NodeSpotlight({ isOpen, onClose, onAddNode, viewState, c
         </div>
 
         {/* Footer hint */}
-        <div className="px-4 py-2 border-t border-white/10 bg-white/5">
+        <div className="px-4 py-2 border-t border-white/8 bg-white/5">
           <div className="flex items-center justify-between text-[10px] text-white/40">
             <div className="flex items-center gap-3">
               <span>↑↓ Navigate</span>

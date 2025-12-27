@@ -78,10 +78,11 @@ export default function ConfirmDialog({
       {/* Dialog */}
       <div
         ref={dialogRef}
-        className="relative bg-[#1a1f28] border border-white/10 rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        className="relative bg-[#2d2d2d] rounded w-full max-w-sm mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        style={{ boxShadow: '0 11px 15px -7px rgba(0,0,0,.2), 0 24px 38px 3px rgba(0,0,0,.14), 0 9px 46px 8px rgba(0,0,0,.12)' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-lg ${styles.iconBg}`}>
               {styles.icon}

@@ -36,15 +36,16 @@ function MiniNode({
   
   return (
     <div 
-      className={`absolute bg-[#1a1f28] border rounded-lg px-3 py-2 text-xs shadow-lg transition-all ${
+      className={`absolute bg-[#2d2d2d] rounded px-3 py-2 text-xs transition-all ${
         isHighlighted 
-          ? 'border-blue-400 ring-2 ring-blue-400/30' 
-          : 'border-white/20'
+          ? 'ring-2 ring-[#2196F3]/50' 
+          : ''
       }`}
       style={{ 
         left: node.position.x, 
         top: node.position.y,
-        minWidth: 100
+        minWidth: 100,
+        boxShadow: '0 3px 5px -1px rgba(0,0,0,.2), 0 6px 10px 0 rgba(0,0,0,.14), 0 1px 18px 0 rgba(0,0,0,.12)',
       }}
     >
       <div 
@@ -76,13 +77,13 @@ function ExampleDiagram({
   }, [diagram]);
 
   return (
-    <div className="bg-[#0a0d10] rounded-lg border border-white/10 p-3">
+    <div className="bg-[#212121] rounded p-3">
       <div className="text-[10px] text-gray-400 mb-2 flex items-center gap-1">
-        <GitBranch size={10} className="text-purple-400" />
+        <GitBranch size={10} className="text-[#2196F3]" />
         <span>{diagram.description}</span>
       </div>
       <div 
-        className="relative bg-[#0f1419] rounded overflow-hidden"
+        className="relative bg-[#121212] rounded overflow-hidden"
         style={{ height: Math.min(bounds.height, 200) }}
       >
         <svg className="absolute inset-0 w-full h-full pointer-events-none">
@@ -173,11 +174,12 @@ export default function NodeDocModal({ nodeType, onClose, onAddNode }: NodeDocMo
       
       {/* Modal */}
       <div 
-        className="relative bg-[#0f1419] rounded-xl border border-white/10 shadow-2xl w-full max-w-[40vh] max-h-[80vh] flex flex-col overflow-hidden"
+        className="relative bg-[#2d2d2d] rounded w-full max-w-[40vh] max-h-[80vh] flex flex-col overflow-hidden"
+        style={{ boxShadow: '0 11px 15px -7px rgba(0,0,0,.2), 0 24px 38px 3px rgba(0,0,0,.14), 0 9px 46px 8px rgba(0,0,0,.12)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex-shrink-0 p-4 border-b border-white/10 bg-[#0a0d10]">
+        <div className="flex-shrink-0 p-4 border-b border-white/8 bg-[#212121]">
           <div className="flex items-start gap-3">
             <div 
               className="w-1 self-stretch rounded-full"
@@ -185,7 +187,7 @@ export default function NodeDocModal({ nodeType, onClose, onAddNode }: NodeDocMo
             />
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <BookOpen size={16} className="text-purple-400" />
+                <BookOpen size={16} className="text-[#64B5F6]" />
                 <h2 className="text-lg font-bold text-white">{definition.label}</h2>
               </div>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -202,7 +204,7 @@ export default function NodeDocModal({ nodeType, onClose, onAddNode }: NodeDocMo
                   <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400">CLIENT</span>
                 )}
                 {definition.uiOnly && (
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400">UI</span>
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#2196F3]/20 text-[#64B5F6]">UI</span>
                 )}
               </div>
             </div>
@@ -218,7 +220,7 @@ export default function NodeDocModal({ nodeType, onClose, onAddNode }: NodeDocMo
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
           {/* Description */}
-          <div className="bg-[#1a1f28] rounded-lg p-3 border border-white/10">
+          <div className="bg-[#212121] rounded p-3">
             <div className="flex items-center gap-2 text-xs font-medium text-white mb-1">
               <Info size={12} className="text-blue-400" />
               Description
@@ -231,7 +233,7 @@ export default function NodeDocModal({ nodeType, onClose, onAddNode }: NodeDocMo
 
           {/* Inputs & Outputs - Compact */}
           <div className="grid grid-cols-2 gap-2">
-            <div className="bg-[#1a1f28] rounded-lg p-3 border border-white/10">
+            <div className="bg-[#212121] rounded p-3">
               <div className="text-xs font-medium text-white mb-2">Inputs</div>
               {definition.inputs.length === 0 ? (
                 <div className="text-[10px] text-gray-500 italic">No inputs</div>
@@ -251,7 +253,7 @@ export default function NodeDocModal({ nodeType, onClose, onAddNode }: NodeDocMo
               )}
             </div>
             
-            <div className="bg-[#1a1f28] rounded-lg p-3 border border-white/10">
+            <div className="bg-[#212121] rounded p-3">
               <div className="text-xs font-medium text-white mb-2">Outputs</div>
               {definition.outputs.length === 0 ? (
                 <div className="text-[10px] text-gray-500 italic">No outputs</div>
@@ -274,8 +276,8 @@ export default function NodeDocModal({ nodeType, onClose, onAddNode }: NodeDocMo
 
           {/* Code Example */}
           {doc?.codeExample && (
-            <div className="bg-[#1a1f28] rounded-lg border border-white/10 overflow-hidden">
-              <div className="flex items-center justify-between px-3 py-2 bg-[#0a0d10] border-b border-white/10">
+            <div className="bg-[#212121] rounded overflow-hidden">
+              <div className="flex items-center justify-between px-3 py-2 bg-[#1e1e1e] border-b border-white/8">
                 <div className="flex items-center gap-1.5 text-xs font-medium text-white">
                   <Code size={12} className="text-green-400" />
                   Code Example
@@ -313,7 +315,7 @@ export default function NodeDocModal({ nodeType, onClose, onAddNode }: NodeDocMo
 
           {/* Use Cases */}
           {doc?.useCases && doc.useCases.length > 0 && (
-            <div className="bg-[#1a1f28] rounded-lg p-3 border border-white/10">
+            <div className="bg-[#212121] rounded p-3">
               <div className="flex items-center gap-1.5 text-xs font-medium text-white mb-2">
                 <Target size={12} className="text-cyan-400" />
                 Use Cases
@@ -331,7 +333,7 @@ export default function NodeDocModal({ nodeType, onClose, onAddNode }: NodeDocMo
 
           {/* Related Nodes */}
           {relatedNodes.length > 0 && (
-            <div className="bg-[#1a1f28] rounded-lg p-3 border border-white/10">
+            <div className="bg-[#212121] rounded p-3">
               <div className="flex items-center gap-1.5 text-xs font-medium text-white mb-2">
                 <Link2 size={12} className="text-blue-400" />
                 Related Nodes
@@ -356,12 +358,12 @@ export default function NodeDocModal({ nodeType, onClose, onAddNode }: NodeDocMo
         </div>
 
         {/* Footer */}
-        <div className="flex-shrink-0 p-3 border-t border-white/10 bg-[#0a0d10] flex items-center justify-between">
+        <div className="flex-shrink-0 p-3 border-t border-white/8 bg-[#212121] flex items-center justify-between">
           <span className="text-[10px] text-gray-500">Press Esc to close</span>
           {onAddNode && (
             <button
               onClick={handleAddToCanvas}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors flex items-center gap-1.5"
+              className="px-3 py-1.5 text-xs font-medium rounded bg-[#2196F3]/20 text-[#2196F3] hover:bg-[#2196F3]/30 transition-colors flex items-center gap-1.5"
             >
               <Zap size={12} />
               Add to Canvas

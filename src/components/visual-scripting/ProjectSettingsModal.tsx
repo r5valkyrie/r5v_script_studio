@@ -77,9 +77,12 @@ export default function ProjectSettingsModal({
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-2xl max-h-[85vh] bg-[#1a1f28] rounded-xl shadow-2xl border border-white/10 flex flex-col overflow-hidden">
+      <div 
+        className="relative w-full max-w-2xl max-h-[85vh] bg-[#2d2d2d] rounded flex flex-col overflow-hidden"
+        style={{ boxShadow: '0 11px 15px -7px rgba(0,0,0,.2), 0 24px 38px 3px rgba(0,0,0,.14), 0 9px 46px 8px rgba(0,0,0,.12)' }}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/8">
           <div className="flex items-center gap-3">
             <Folder size={20} style={{ color: accentColor }} />
             <h2 className="text-lg font-semibold text-white">Project Settings</h2>
@@ -106,7 +109,7 @@ export default function ProjectSettingsModal({
                   value={localSettings.modId}
                   onChange={(e) => updateField('modId', e.target.value.replace(/\s+/g, '_').toLowerCase())}
                   placeholder="my_mod"
-                  className="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                  className="w-full px-3 py-2 bg-black/30 border border-white/8 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50"
                 />
                 <p className="text-xs text-gray-500">Unique identifier (no spaces)</p>
               </div>
@@ -118,7 +121,7 @@ export default function ProjectSettingsModal({
                   value={localSettings.modName}
                   onChange={(e) => updateField('modName', e.target.value)}
                   placeholder="My Awesome Mod"
-                  className="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                  className="w-full px-3 py-2 bg-black/30 border border-white/8 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50"
                 />
                 <p className="text-xs text-gray-500">Display name for the mod</p>
               </div>
@@ -132,7 +135,7 @@ export default function ProjectSettingsModal({
                   value={localSettings.modVersion}
                   onChange={(e) => updateField('modVersion', e.target.value)}
                   placeholder="1.0.0"
-                  className="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                  className="w-full px-3 py-2 bg-black/30 border border-white/8 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50"
                 />
               </div>
 
@@ -143,7 +146,7 @@ export default function ProjectSettingsModal({
                   value={localSettings.modAuthor}
                   onChange={(e) => updateField('modAuthor', e.target.value)}
                   placeholder="Your Name"
-                  className="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                  className="w-full px-3 py-2 bg-black/30 border border-white/8 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50"
                 />
               </div>
             </div>
@@ -155,7 +158,7 @@ export default function ProjectSettingsModal({
                 onChange={(e) => updateField('modDescription', e.target.value)}
                 placeholder="A brief description of your mod..."
                 rows={3}
-                className="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 resize-none"
+                className="w-full px-3 py-2 bg-black/30 border border-white/8 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 resize-none"
               />
             </div>
           </div>
@@ -174,7 +177,7 @@ export default function ProjectSettingsModal({
                 value={newLocPath}
                 onChange={(e) => setNewLocPath(e.target.value)}
                 placeholder="resource/localization/mymod_%language%.txt"
-                className="flex-1 px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 text-sm"
+                className="flex-1 px-3 py-2 bg-black/30 border border-white/8 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2196F3]/50 text-sm"
                 onKeyDown={(e) => e.key === 'Enter' && addLocalizationFile()}
               />
               <button
@@ -198,7 +201,7 @@ export default function ProjectSettingsModal({
                       type="checkbox"
                       checked={file.enabled}
                       onChange={() => toggleLocalizationFile(index)}
-                      className="w-4 h-4 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-purple-500"
+                      className="w-4 h-4 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-[#2196F3]"
                     />
                     <FileText size={14} className="text-gray-500" />
                     <span className={`flex-1 text-sm font-mono ${file.enabled ? 'text-gray-300' : 'text-gray-500 line-through'}`}>
@@ -223,7 +226,7 @@ export default function ProjectSettingsModal({
           {/* Preview Section */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">mod.vdf Preview</h3>
-            <pre className="p-4 bg-black/40 border border-white/10 rounded-lg text-xs text-gray-300 font-mono overflow-x-auto">
+            <pre className="p-4 bg-black/40 border border-white/8 rounded-lg text-xs text-gray-300 font-mono overflow-x-auto">
 {`"mod"
 {
         "name" "${localSettings.modName}"
@@ -242,7 +245,7 @@ ${localSettings.localizationFiles.filter(f => f.enabled).map(f => `             
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/10 bg-black/20">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/8 bg-black/20">
           <button
             onClick={onClose}
             className="px-4 py-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"

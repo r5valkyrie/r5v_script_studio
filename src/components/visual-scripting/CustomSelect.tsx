@@ -67,7 +67,7 @@ export default function CustomSelect({ value, options, onChange, className = '',
           setIsOpen(!isOpen);
         }}
         onMouseDown={(e) => e.stopPropagation()}
-        className={`w-full ${sizeClasses} bg-black/30 ${roundedClass} text-gray-200 cursor-pointer hover:bg-black/40 transition-colors flex items-center justify-between gap-2 border border-white/10`}
+        className={`w-full ${sizeClasses} bg-black/30 ${roundedClass} text-gray-200 cursor-pointer hover:bg-black/40 transition-colors flex items-center justify-between gap-2 border border-white/8`}
       >
         <span className="truncate">{displayLabel}</span>
         <ChevronDown 
@@ -79,7 +79,8 @@ export default function CustomSelect({ value, options, onChange, className = '',
       {/* Dropdown menu */}
       {isOpen && (
         <div 
-          className={`absolute left-0 right-0 mt-1 bg-[#1a1f28] border border-white/10 ${roundedClass} shadow-xl z-50 overflow-hidden max-h-48 overflow-y-auto`}
+          className={`absolute left-0 right-0 mt-1 bg-[#2d2d2d] ${roundedClass} z-50 overflow-hidden max-h-48 overflow-y-auto`}
+          style={{ boxShadow: '0 8px 10px -5px rgba(0,0,0,.2), 0 16px 24px 2px rgba(0,0,0,.14), 0 6px 30px 5px rgba(0,0,0,.12)' }}
           onMouseDown={(e) => e.stopPropagation()}
         >
           {normalizedOptions.map((option) => (
