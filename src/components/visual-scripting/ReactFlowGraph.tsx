@@ -38,6 +38,7 @@ import { Trash2 } from 'lucide-react';
 import type { ScriptNode, NodeConnection, NodeDataType, NodePort } from '../../types/visual-scripting';
 import { getNodeDefinition } from '../../data/node-definitions';
 import QuickNodeMenu from './QuickNodeMenu';
+import CustomSelect from './CustomSelect';
 
 // Material Design styles for React Flow controls and minimap
 const reactFlowStyles = `
@@ -153,13 +154,22 @@ const reactFlowStyles = `
   
   /* Crisp node rendering - prevent blur on zoom */
   .react-flow__node {
-    transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: none !important;
     transform: translateZ(0);
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
     -webkit-font-smoothing: subpixel-antialiased;
   }
   
+  /* Disable all animations on nodes */
+  .react-flow__node,
+  .react-flow__node.dragging,
+  .react-flow__node.selected,
+  .react-flow__node > div {
+    transition: none !important;
+    animation: none !important;
+  }
+
   .react-flow__node > div {
     transform: translateZ(0);
     backface-visibility: hidden;
@@ -480,7 +490,6 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
   const renderInlineEditor = () => {
     // Material Design filled input style
     const inputClass = "w-full px-3 py-2 bg-white/[0.06] rounded-t rounded-b-none text-xs text-gray-100 border-b-2 border-white/20 outline-none transition-all duration-200 hover:bg-white/[0.08] focus:bg-white/[0.09] focus:border-[#2196F3]";
-    const selectClass = "w-full px-3 py-2 bg-white/[0.06] rounded text-xs text-gray-100 border border-white/10 outline-none transition-all duration-200 hover:bg-white/[0.08] focus:bg-white/[0.09] focus:border-[#2196F3] cursor-pointer appearance-none";
 
     if (node.type === 'const-string') {
       const value = typeof node.data.value === 'string' ? node.data.value : '';
@@ -638,14 +647,13 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
           {/* Return type row */}
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium w-14">Return</span>
-            <select
+            <CustomSelect
               value={returnType}
-              onChange={(e) => updateReturnType(e.target.value)}
-              onMouseDown={(e) => e.stopPropagation()}
-              className={selectClass}
-            >
-              {returnTypes.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
+              options={returnTypes}
+              onChange={(val) => updateReturnType(val)}
+              size="sm"
+              className="flex-1"
+            />
           </div>
           {/* Args row with +/- buttons */}
           <div className="flex items-center gap-2">
@@ -774,14 +782,13 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
           {/* Return type row */}
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium w-12">Return</span>
-            <select
+            <CustomSelect
               value={returnType}
-              onChange={(e) => onUpdate({ data: { ...node.data, returnType: e.target.value } })}
-              onMouseDown={(e) => e.stopPropagation()}
-              className={selectClass}
-            >
-              {returnTypes.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
+              options={returnTypes}
+              onChange={(val) => onUpdate({ data: { ...node.data, returnType: val } })}
+              size="sm"
+              className="flex-1"
+            />
           </div>
           {/* Parameters header with +/- */}
           <div className="flex items-center gap-2">
@@ -805,7 +812,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
           </div>
           {/* Parameter list */}
           {paramCount > 0 && (
-            <div className="flex flex-col gap-1.5 max-h-28 overflow-y-auto">
+            <div className="flex flex-col gap-1.5">
               {Array.from({ length: paramCount }).map((_, i) => (
                 <div key={i} className="flex items-center gap-1.5">
                   <input
@@ -816,14 +823,13 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
                     className="flex-1 px-2 py-1.5 bg-white/[0.06] rounded-t rounded-b-none text-[11px] text-gray-100 border-b-2 border-white/20 outline-none transition-all duration-200 hover:bg-white/[0.08] focus:bg-white/[0.09] focus:border-[#2196F3] min-w-0"
                     placeholder={`param${i + 1}`}
                   />
-                  <select
+                  <CustomSelect
                     value={paramTypes[i] || 'var'}
-                    onChange={(e) => updateParamType(i, e.target.value)}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    className="w-18 px-2 py-1.5 bg-white/[0.06] rounded text-[11px] text-gray-100 border border-white/10 outline-none transition-all duration-200 hover:bg-white/[0.08] focus:border-[#2196F3] cursor-pointer"
-                  >
-                    {dataTypes.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
+                    options={dataTypes}
+                    onChange={(val) => updateParamType(i, val)}
+                    size="sm"
+                    className="w-20"
+                  />
                 </div>
               ))}
             </div>
@@ -849,16 +855,14 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
     // Loot Tier selector
     if (node.type === 'const-loot-tier') {
       const value = typeof node.data.tier === 'string' ? node.data.tier : 'COMMON';
-      const options = ['NONE', 'COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'HEIRLOOM'];
+      const tierOptions = ['NONE', 'COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'HEIRLOOM'];
       return (
-        <select
+        <CustomSelect
           value={value}
-          onChange={(e) => onUpdate({ data: { ...node.data, tier: e.target.value } })}
-          onMouseDown={(e) => e.stopPropagation()}
-          className={selectClass}
-        >
-          {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-        </select>
+          options={tierOptions}
+          onChange={(val) => onUpdate({ data: { ...node.data, tier: val } })}
+          size="md"
+        />
       );
     }
 
@@ -899,16 +903,23 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
     // Weapon Type selector
     if (node.type === 'const-weapon-type') {
       const value = typeof node.data.weaponType === 'string' ? node.data.weaponType : 'pistol';
-      const options = ['assault', 'smg', 'lmg', 'sniper', 'shotgun', 'pistol', 'marksman', 'bow'];
+      const weaponOptions = [
+        { value: 'assault', label: 'Assault' },
+        { value: 'smg', label: 'SMG' },
+        { value: 'lmg', label: 'LMG' },
+        { value: 'sniper', label: 'Sniper' },
+        { value: 'shotgun', label: 'Shotgun' },
+        { value: 'pistol', label: 'Pistol' },
+        { value: 'marksman', label: 'Marksman' },
+        { value: 'bow', label: 'Bow' }
+      ];
       return (
-        <select
+        <CustomSelect
           value={value}
-          onChange={(e) => onUpdate({ data: { ...node.data, weaponType: e.target.value } })}
-          onMouseDown={(e) => e.stopPropagation()}
-          className={selectClass}
-        >
-          {options.map(opt => <option key={opt} value={opt} className="capitalize">{opt}</option>)}
-        </select>
+          options={weaponOptions}
+          onChange={(val) => onUpdate({ data: { ...node.data, weaponType: val } })}
+          size="md"
+        />
       );
     }
 
@@ -1072,7 +1083,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
 
   return (
     <div
-      className="rounded-lg select-none overflow-hidden"
+      className="rounded-lg select-none overflow-visible"
       style={{
         minWidth: nodeWidth,
         width: nodeWidth,
@@ -1112,7 +1123,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
 
       {/* INPUTS Section */}
       {hasInputs && (
-        <div className="px-4 pt-3 pb-2">
+        <div className="px-4 pt-3 pb-2 overflow-visible">
           <div className="text-[11px] text-gray-400 uppercase tracking-wider font-medium mb-2.5">Inputs</div>
           {node.inputs.map((input) => {
             const portColor = getPortColor(input.type, input.dataType);
@@ -1122,7 +1133,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
                   type="target"
                   position={Position.Left}
                   id={input.id}
-                  className="!border-0 !-left-[9px]"
+                  className="!border-0 !absolute !-left-4"
                   style={{
                     width: '14px',
                     height: '14px',
@@ -1132,7 +1143,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
                     boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
                   }}
                 />
-                <span className="ml-3 text-sm text-gray-200">{input.label}</span>
+                <span className="ml-5 text-sm text-gray-200">{input.label}</span>
                 {input.dataType && (
                   <span className="ml-auto text-[11px] text-gray-500 bg-white/5 px-2 py-0.5 rounded">
                     {getTypeLabel(input.dataType)}
@@ -1153,7 +1164,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
 
       {/* OUTPUTS Section */}
       {hasOutputs && (
-        <div className='px-4 pt-2 pb-3 border-t border-white/5'>
+        <div className='px-4 pt-2 pb-3 border-t border-white/5 overflow-visible'>
           <div className='text-[11px] mb-2.5 text-gray-400 uppercase tracking-wider font-medium text-right'>Outputs</div>
           {node.outputs.map((output) => {
             const portColor = getPortColor(output.type, output.dataType);
@@ -1164,12 +1175,12 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
                     {getTypeLabel(output.dataType)}
                   </span>
                 )}
-                <span className='text-sm text-gray-200 order-2'>{output.label}</span>
+                <span className='text-sm text-gray-200 order-2 mr-2'>{output.label}</span>
                 <Handle
                   type="source"
                   position={Position.Right}
                   id={output.id}
-                  className="!border-0 !-right-[9px] order-4"
+                  className="!border-0 !absolute !-right-4 order-4"
                   style={{
                     width: '14px',
                     height: '14px',
@@ -2484,9 +2495,7 @@ function ReactFlowGraphInner({
   const [dropPreviewPos, setDropPreviewPos] = useState<{ x: number; y: number } | null>(null);
   const [droppingNodeId, setDroppingNodeId] = useState<string | null>(null);
   
-  // Drag state for node movement within graph
-  const [draggingNodeIds, setDraggingNodeIds] = useState<Set<string>>(new Set());
-  const [droppedNodeIds, setDroppedNodeIds] = useState<Set<string>>(new Set());
+  // Drag state for node movement within graph (comment container tracking)
   
   // Track nodes contained within a dragged comment (stores offsets from comment position)
   const commentContainedNodesRef = useRef<{ nodeId: string; offsetX: number; offsetY: number }[]>([]);
@@ -2529,16 +2538,6 @@ function ReactFlowGraphInner({
   
   // Handle node drag start (pickup)
   const handleNodeDragStart = useCallback((_: React.MouseEvent, node: Node) => {
-    // Add this node and any selected nodes to dragging set
-    const draggedIds = new Set<string>();
-    draggedIds.add(node.id);
-    // If node is part of selection, include all selected nodes
-    flowNodes.forEach(n => {
-      if (n.selected) draggedIds.add(n.id);
-    });
-    setDraggingNodeIds(draggedIds);
-    setDroppedNodeIds(new Set());
-    
     // If dragging a comment node, find all nodes inside it and store their offsets
     if (node.type === 'commentNode') {
       const flowNode = flowNodes.find(n => n.id === node.id);
@@ -2578,10 +2577,6 @@ function ReactFlowGraphInner({
   
   // Handle node drag stop (drop) - sync to parent state
   const handleNodeDragStop = useCallback((_: React.MouseEvent, node: Node) => {
-    // Move dragging nodes to dropped for animation
-    setDroppedNodeIds(draggingNodeIds);
-    setDraggingNodeIds(new Set());
-    
     // If we were dragging a comment, sync contained node positions to parent
     if (node.type === 'commentNode' && draggingCommentIdRef.current === node.id) {
       const containedNodes = commentContainedNodesRef.current;
@@ -2600,10 +2595,7 @@ function ReactFlowGraphInner({
       commentContainedNodesRef.current = [];
       draggingCommentIdRef.current = null;
     }
-    
-    // Clear dropped state after animation
-    setTimeout(() => setDroppedNodeIds(new Set()), 200);
-  }, [draggingNodeIds]);
+  }, []);
 
   // Handle drag over from palette
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -2808,33 +2800,9 @@ function ReactFlowGraphInner({
           100% { transform: scale(1); }
         }
         
-        /* Pickup animation when dragging nodes (not comments) */
-        .node-dragging:not(.comment-node) {
-          z-index: 1000 !important;
-          filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4));
-        }
-        .node-dragging:not(.comment-node) > div {
-          transform: scale(1.02);
-          transition: transform 0.15s ease-out;
-        }
-        
         /* Comment nodes always stay behind */
         .comment-node {
           z-index: -1000 !important;
-        }
-        .comment-node.node-dragging {
-          z-index: -1000 !important;
-          filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
-        }
-        
-        /* Place animation when dropping nodes */
-        .node-placed:not(.comment-node) > div {
-          animation: nodePlaceDown 0.2s ease-out forwards;
-        }
-        @keyframes nodePlaceDown {
-          0% { transform: scale(1.02); }
-          60% { transform: scale(0.98); }
-          100% { transform: scale(1); }
         }
       `}</style>
       
@@ -2843,8 +2811,6 @@ function ReactFlowGraphInner({
           let className = n.className || '';
           if (n.type === 'commentNode') className += ' comment-node';
           if (droppingNodeId === n.id) className += ' node-dropping';
-          if (draggingNodeIds.has(n.id)) className += ' node-dragging';
-          if (droppedNodeIds.has(n.id)) className += ' node-placed';
           return { ...n, className: className.trim() };
         })}
         edges={flowEdges}

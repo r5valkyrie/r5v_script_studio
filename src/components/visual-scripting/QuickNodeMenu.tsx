@@ -44,7 +44,7 @@ export default function QuickNodeMenu({
   sourcePort,
   onSelectNode,
   onClose,
-  accentColor = '#8B5CF6',
+  accentColor = '#2196F3',
 }: QuickNodeMenuProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -302,17 +302,17 @@ export default function QuickNodeMenu({
     <div
       ref={menuRef}
       data-quick-node-menu="true"
-      className="fixed z-[1000] w-[340px] bg-[#2d2d2d] rounded overflow-hidden"
+      className="fixed z-[1000] w-[340px] bg-[#252525] rounded-xl overflow-hidden"
       style={{
         ...menuStyle,
-        boxShadow: '0 8px 10px -5px rgba(0,0,0,.2), 0 16px 24px 2px rgba(0,0,0,.14), 0 6px 30px 5px rgba(0,0,0,.12)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)',
       }}
       onWheel={(e) => e.stopPropagation()}
       onKeyDown={handleKeyDown}
     >
-      {/* Search Input */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-white/8">
-        <Search size={16} className="text-gray-400" />
+      {/* Search Input - Material Design filled style */}
+      <div className="flex items-center gap-3 px-4 py-3.5 bg-[#2a2a2a]">
+        <Search size={16} className="text-gray-500" />
         <input
           ref={searchRef}
           type="text"
@@ -323,7 +323,8 @@ export default function QuickNodeMenu({
         />
         {sourcePort && (
           <div 
-            className="px-2 py-0.5 rounded text-[10px] bg-[#212121] text-gray-400"
+            className="px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide"
+            style={{ backgroundColor: `${accentColor}20`, color: accentColor }}
           >
             {sourcePort.portType === 'exec' ? 'exec' : sourcePort.dataType || 'data'}
           </div>
@@ -349,7 +350,7 @@ export default function QuickNodeMenu({
               <div key={category}>
                 {/* Category Header */}
                 <div
-                  className="px-4 py-1.5 text-[10px] font-medium uppercase tracking-wider sticky top-0 bg-[#2d2d2d] border-b border-white/5"
+                  className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider sticky top-0 bg-[#252525] border-b border-white/[0.03]"
                   style={{ color: getCategoryColor(category) }}
                 >
                   {getCategoryLabel(category)}
@@ -366,24 +367,23 @@ export default function QuickNodeMenu({
                       data-node-item
                       onClick={() => handleNodeClick(node)}
                       onMouseEnter={() => setSelectedIndex(globalIdx)}
-                      className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${
-                        isSelected ? '' : 'hover:bg-white/8'
+                      className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors duration-100 ${
+                        isSelected ? 'bg-white/[0.08]' : 'hover:bg-white/[0.04]'
                       }`}
-                      style={isSelected ? { backgroundColor: '#2196F320' } : undefined}
                     >
                       {/* Node color indicator */}
                       <div 
-                        className="w-3 h-3 rounded-sm flex-shrink-0"
+                        className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
                         style={{ backgroundColor: getCategoryColor(node.category) }}
                       />
                       
                       {/* Node info */}
                       <div className="flex-1 min-w-0">
-                        <div className="text-gray-100 text-sm font-medium truncate">
+                        <div className="text-gray-200 text-[13px] font-medium truncate">
                           {node.label}
                         </div>
                         {node.description && (
-                          <div className="text-gray-500 text-xs truncate mt-0.5">
+                          <div className="text-gray-500 text-[11px] truncate mt-0.5">
                             {node.description}
                           </div>
                         )}
@@ -391,8 +391,8 @@ export default function QuickNodeMenu({
 
                       {/* Keyboard hint for selected */}
                       {isSelected && (
-                        <div className="text-[10px] text-gray-500 flex-shrink-0">
-                          Enter ↵
+                        <div className="text-[10px] text-gray-600 flex-shrink-0 font-medium">
+                          ↵
                         </div>
                       )}
                     </div>
@@ -405,14 +405,14 @@ export default function QuickNodeMenu({
       </div>
 
       {/* Footer hint */}
-      <div className="px-4 py-2 border-t border-white/8 bg-[#212121]">
+      <div className="px-4 py-2.5 bg-[#1f1f1f]">
         <div className="flex items-center justify-between text-[10px] text-gray-500">
           <div className="flex items-center gap-3">
-            <span>↑↓ Navigate</span>
-            <span>Enter Select</span>
-            <span>Esc Close</span>
+            <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 bg-white/[0.08] rounded text-[9px] text-gray-400">↑↓</kbd> Navigate</span>
+            <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 bg-white/[0.08] rounded text-[9px] text-gray-400">↵</kbd> Select</span>
+            <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 bg-white/[0.08] rounded text-[9px] text-gray-400">Esc</kbd> Close</span>
           </div>
-          <span>{flatNodeList.length} nodes</span>
+          <span className="text-gray-600">{flatNodeList.length}</span>
         </div>
       </div>
     </div>

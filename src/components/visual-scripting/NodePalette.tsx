@@ -260,7 +260,7 @@ function CategorySection({ title, category, icon, color, onAddNode, defaultOpen 
             e.dataTransfer.setData('node-type', node.type);
             e.dataTransfer.effectAllowed = 'copy';
           }}
-          className="flex-1 flex items-center gap-2 px-3 py-1.5 text-left text-[11px] text-gray-400 
+          className="flex-1 flex items-center gap-2 pl-5 pr-3 py-1.5 text-left text-[11px] text-gray-400 
             hover:bg-white/5 hover:text-white transition-all cursor-grab active:cursor-grabbing rounded-md mx-1"
           title={node.description}
         >
@@ -277,12 +277,12 @@ function CategorySection({ title, category, icon, color, onAddNode, defaultOpen 
             e.stopPropagation();
             onShowNodeDoc?.(node.type);
           }}
-          className={`p-1 mr-2 rounded hover:bg-white/10 transition-all flex-shrink-0 opacity-0 group-hover/node:opacity-100 ${
+          className={`p-2 -m-1 mr-1 rounded hover:bg-white/10 transition-all flex-shrink-0 opacity-0 group-hover/node:opacity-100 ${
             hasDoc ? 'text-[#64B5F6]' : 'text-gray-600 hover:text-[#64B5F6]'
           }`}
           title={hasDoc ? "View documentation" : "View node info"}
         >
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"/>
             <path d="M12 16v-4"/>
             <path d="M12 8h.01"/>

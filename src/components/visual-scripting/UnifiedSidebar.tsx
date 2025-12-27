@@ -404,10 +404,10 @@ export default function UnifiedSidebar({
             e.stopPropagation();
             onShowNodeDoc?.(node.type);
           }}
-          className="p-0.5 rounded transition-all opacity-0 group-hover/card:opacity-100 text-gray-500 hover:text-blue-400 hover:bg-blue-500/20"
+          className="p-1.5 -m-1 rounded transition-all opacity-0 group-hover/card:opacity-100 text-gray-500 hover:text-blue-400 hover:bg-blue-500/20"
           title="View documentation"
         >
-          <Info size={10} />
+          <Info size={12} />
         </button>
         
         {/* Favorite button */}
@@ -416,11 +416,11 @@ export default function UnifiedSidebar({
             e.stopPropagation();
             toggleFavorite(node.type);
           }}
-          className={`p-0.5 rounded transition-all opacity-0 group-hover/card:opacity-100 ${
+          className={`p-1.5 -m-1 rounded transition-all opacity-0 group-hover/card:opacity-100 ${
             isFavorite ? 'text-yellow-400 opacity-100' : 'text-gray-500 hover:text-yellow-400'
           }`}
         >
-          <Star size={10} fill={isFavorite ? 'currentColor' : 'none'} />
+          <Star size={12} fill={isFavorite ? 'currentColor' : 'none'} />
         </button>
       </div>
     );

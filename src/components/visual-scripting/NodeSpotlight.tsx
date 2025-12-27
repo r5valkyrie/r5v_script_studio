@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, Command } from 'lucide-react';
+import { Search, Command, Star } from 'lucide-react';
 import { NODE_DEFINITIONS } from '../../data/node-definitions';
 import { CATEGORY_INFO } from '../../types/visual-scripting';
 import type { ScriptNode, NodePort, NodeDefinition } from '../../types/visual-scripting';
@@ -18,28 +18,63 @@ const getCategoryInfo = (categoryId: string) => {
   return CATEGORY_INFO.find(c => c.id === categoryId);
 };
 
-export default function NodeSpotlight({ isOpen, onClose, onAddNode, viewState, canvasSize, accentColor = '#ef4444' }: NodeSpotlightProps) {
+// Storage key for favorites (same as UnifiedSidebar)
+const FAVORITES_KEY = 'r5v_node_favorites';
+
+function loadFavorites(): string[] {
+  try {
+    const stored = localStorage.getItem(FAVORITES_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+export default function NodeSpotlight({ isOpen, onClose, onAddNode, viewState, canvasSize, accentColor = '#2196F3' }: NodeSpotlightProps) {
   const [search, setSearch] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [favorites, setFavorites] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Filter nodes based on search
+  // Load favorites when opened
+  useEffect(() => {
+    if (isOpen) {
+      setFavorites(loadFavorites());
+    }
+  }, [isOpen]);
+
+  // Filter nodes based on search, with favorites at top
   const filteredNodes = useMemo(() => {
+    let nodes: NodeDefinition[];
+    
     if (!search.trim()) {
-      // Show a curated list of common nodes when no search
-      return NODE_DEFINITIONS.slice(0, 15);
+      // Show favorites first, then a curated list
+      const favoriteNodes = NODE_DEFINITIONS.filter(n => favorites.includes(n.type));
+      const otherNodes = NODE_DEFINITIONS.filter(n => !favorites.includes(n.type)).slice(0, 15 - favoriteNodes.length);
+      nodes = [...favoriteNodes, ...otherNodes];
+    } else {
+      const term = search.toLowerCase();
+      const matchedNodes = NODE_DEFINITIONS.filter(node => {
+        const labelMatch = node.label.toLowerCase().includes(term);
+        const typeMatch = node.type.toLowerCase().includes(term);
+        const categoryMatch = node.category.toLowerCase().includes(term);
+        const descMatch = node.description?.toLowerCase().includes(term);
+        return labelMatch || typeMatch || categoryMatch || descMatch;
+      });
+      
+      // Sort favorites to top within search results
+      nodes = matchedNodes.sort((a, b) => {
+        const aFav = favorites.includes(a.type);
+        const bFav = favorites.includes(b.type);
+        if (aFav && !bFav) return -1;
+        if (!aFav && bFav) return 1;
+        return 0;
+      }).slice(0, 20);
     }
     
-    const term = search.toLowerCase();
-    return NODE_DEFINITIONS.filter(node => {
-      const labelMatch = node.label.toLowerCase().includes(term);
-      const typeMatch = node.type.toLowerCase().includes(term);
-      const categoryMatch = node.category.toLowerCase().includes(term);
-      const descMatch = node.description?.toLowerCase().includes(term);
-      return labelMatch || typeMatch || categoryMatch || descMatch;
-    }).slice(0, 20); // Limit results for performance
-  }, [search]);
+    return nodes;
+  }, [search, favorites]);
 
   // Focus input when opened
   useEffect(() => {
@@ -132,13 +167,16 @@ export default function NodeSpotlight({ isOpen, onClose, onAddNode, viewState, c
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       
-      {/* Spotlight Modal */}
-      <div className="relative w-[500px] max-w-[90vw] bg-[#1a1d24] border border-white/8 rounded shadow-2xl overflow-hidden">
-        {/* Search Input */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-white/8">
-          <Search size={18} className="text-white/40" />
+      {/* Spotlight Modal - Material Design */}
+      <div 
+        className="relative w-[600px] max-w-[90vw] bg-[#252525] rounded-xl overflow-hidden"
+        style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)' }}
+      >
+        {/* Search Input - Material Design filled style */}
+        <div className="flex items-center gap-3 px-4 py-4 bg-[#2a2a2a]">
+          <Search size={18} className="text-gray-500" />
           <input
             ref={inputRef}
             type="text"
@@ -148,12 +186,12 @@ export default function NodeSpotlight({ isOpen, onClose, onAddNode, viewState, c
               setSelectedIndex(0);
             }}
             onKeyDown={handleKeyDown}
-            placeholder="Search nodes... (e.g., 'init', 'print', 'event')"
-            className="flex-1 bg-transparent text-white text-sm placeholder-white/40 outline-none"
+            placeholder="Search nodes..."
+            className="flex-1 bg-transparent text-white text-sm placeholder-gray-500 outline-none"
             autoComplete="off"
             spellCheck={false}
           />
-          <div className="flex items-center gap-1 px-2 py-0.5 bg-white/5 rounded text-[10px] text-white/40">
+          <div className="flex items-center gap-1 px-2 py-1 bg-white/[0.08] rounded text-[10px] text-gray-400 font-medium">
             <Command size={10} />
             <span>Space</span>
           </div>
@@ -162,68 +200,82 @@ export default function NodeSpotlight({ isOpen, onClose, onAddNode, viewState, c
         {/* Results List */}
         <div 
           ref={listRef}
-          className="max-h-[400px] overflow-y-auto"
+          className="max-h-[500px] overflow-y-auto"
         >
           {filteredNodes.length === 0 ? (
-            <div className="px-4 py-8 text-center text-white/40 text-sm">
+            <div className="px-4 py-12 text-center text-gray-500 text-sm">
               No nodes found for "{search}"
             </div>
           ) : (
-            filteredNodes.map((node, index) => (
-              <div
-                key={node.type}
-                onClick={() => handleSelectNode(node)}
-                onMouseEnter={() => setSelectedIndex(index)}
-                className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${
-                  index === selectedIndex 
-                    ? '' 
-                    : 'hover:bg-white/5'
-                }`}
-                style={index === selectedIndex ? { backgroundColor: `${accentColor}20` } : undefined}
-              >
-                {/* Node color indicator */}
-                <div 
-                  className="w-3 h-3 rounded-sm flex-shrink-0"
-                  style={{ backgroundColor: node.color }}
-                />
-                
-                {/* Node info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-white text-sm font-medium truncate">
-                      {node.label}
-                    </span>
-                    <span className={`text-[10px] ${getCategoryInfo(node.category)?.textClass || 'text-white/40'}`}>
-                      {getCategoryInfo(node.category)?.label || node.category}
-                    </span>
+            filteredNodes.map((node, index) => {
+              const categoryInfo = getCategoryInfo(node.category);
+              const isFavorite = favorites.includes(node.type);
+              return (
+                <div
+                  key={node.type}
+                  onClick={() => handleSelectNode(node)}
+                  onMouseEnter={() => setSelectedIndex(index)}
+                  className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors duration-100 ${
+                    index === selectedIndex 
+                      ? 'bg-white/[0.08]' 
+                      : 'hover:bg-white/[0.04]'
+                  }`}
+                >
+                  {/* Favorite indicator */}
+                  {isFavorite && (
+                    <Star size={12} className="text-yellow-400 flex-shrink-0" fill="currentColor" />
+                  )}
+                  
+                  {/* Node color indicator */}
+                  <div 
+                    className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
+                    style={{ backgroundColor: node.color }}
+                  />
+                  
+                  {/* Node info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-200 text-[13px] font-medium truncate">
+                        {node.label}
+                      </span>
+                      <span 
+                        className="text-[10px] font-medium px-1.5 py-0.5 rounded"
+                        style={{ 
+                          backgroundColor: `${categoryInfo?.color || '#6B7280'}15`,
+                          color: categoryInfo?.color || '#6B7280'
+                        }}
+                      >
+                        {categoryInfo?.label || node.category}
+                      </span>
+                    </div>
+                    {node.description && (
+                      <div className="text-gray-500 text-[11px] truncate mt-0.5">
+                        {node.description}
+                      </div>
+                    )}
                   </div>
-                  {node.description && (
-                    <div className="text-white/40 text-xs truncate mt-0.5">
-                      {node.description}
+
+                  {/* Keyboard hint for selected */}
+                  {index === selectedIndex && (
+                    <div className="text-[10px] text-gray-600 flex-shrink-0 font-medium">
+                      ↵
                     </div>
                   )}
                 </div>
-
-                {/* Keyboard hint for selected */}
-                {index === selectedIndex && (
-                  <div className="text-[10px] text-white/30 flex-shrink-0">
-                    Enter ↵
-                  </div>
-                )}
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
         {/* Footer hint */}
-        <div className="px-4 py-2 border-t border-white/8 bg-white/5">
-          <div className="flex items-center justify-between text-[10px] text-white/40">
+        <div className="px-4 py-2.5 bg-[#1f1f1f]">
+          <div className="flex items-center justify-between text-[10px] text-gray-500">
             <div className="flex items-center gap-3">
-              <span>↑↓ Navigate</span>
-              <span>Enter Select</span>
-              <span>Esc Close</span>
+              <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 bg-white/[0.08] rounded text-[9px] text-gray-400">↑↓</kbd> Navigate</span>
+              <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 bg-white/[0.08] rounded text-[9px] text-gray-400">↵</kbd> Select</span>
+              <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 bg-white/[0.08] rounded text-[9px] text-gray-400">Esc</kbd> Close</span>
             </div>
-            <span>{filteredNodes.length} nodes</span>
+            <span className="text-gray-600">{filteredNodes.length} nodes</span>
           </div>
         </div>
       </div>
