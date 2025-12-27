@@ -16,6 +16,7 @@ import {
   BaseEdge,
   applyNodeChanges,
   NodeResizer,
+  Panel,
 } from '@xyflow/react';
 import type {
   Connection,
@@ -905,81 +906,75 @@ const CommentNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNode
   const commentText = typeof node.data.comment === 'string' ? node.data.comment : 'Comment';
   const commentColor = typeof node.data.commentColor === 'string' ? node.data.commentColor : '#374151';
 
-  const width = node.size?.width || 300;
-  const height = node.size?.height || 150;
-
   return (
-    <div
-      className="rounded-lg select-none border-2 border-dashed relative"
-      style={{
-        width,
-        height,
-        backgroundColor: `${commentColor}40`,
-        borderColor: `${commentColor}80`,
-        opacity: nodeOpacity / 100,
-        boxShadow: selected
-          ? `0 0 0 2px ${accentColor}`
-          : undefined,
-        zIndex: -1, // Behind other nodes
-      }}
-    >
-      {/* NodeResizer handles resize via React Flow's internal system */}
+    <>
+      {/* NodeResizer - no callbacks, React Flow handles via onNodesChange dimensions */}
       <NodeResizer
         minWidth={150}
         minHeight={80}
         isVisible={selected}
-        lineClassName="!border-white/30"
-        handleClassName="!w-3 !h-3 !bg-white/60 !border-white"
-        onResize={(_, params) => {
-          onUpdate({ size: { width: params.width, height: params.height } });
-        }}
+        lineClassName="!border-transparent"
+        handleClassName="!w-3 !h-3 !bg-white/60 !border-white/80 !rounded-sm"
       />
-
-      {/* Header bar with title input */}
-      <div 
-        className="flex items-center gap-2 px-3 py-2 rounded-t-lg"
-        style={{ backgroundColor: `${commentColor}60` }}
+      
+      {/* Group node container - uses 100% to fill the React Flow node dimensions */}
+      <div
+        className="w-full h-full rounded-lg select-none border-2 border-dashed overflow-hidden"
+        style={{
+          backgroundColor: `${commentColor}40`,
+          borderColor: `${commentColor}80`,
+          opacity: nodeOpacity / 100,
+          boxShadow: selected
+            ? `0 0 0 2px ${accentColor}`
+            : undefined,
+        }}
       >
-        <input
-          type="text"
-          value={commentText}
-          onChange={(e) => onUpdate({ data: { ...node.data, comment: e.target.value } })}
-          onMouseDown={(e) => e.stopPropagation()}
-          className="bg-transparent text-white text-sm font-semibold outline-none flex-1 min-w-0"
-          placeholder="Comment"
-        />
-        {selected && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
+        {/* Header bar with title input */}
+        <div 
+          className="flex items-center gap-2 px-3 py-2"
+          style={{ backgroundColor: `${commentColor}60` }}
+        >
+          <input
+            type="text"
+            value={commentText}
+            onChange={(e) => onUpdate({ data: { ...node.data, comment: e.target.value } })}
             onMouseDown={(e) => e.stopPropagation()}
-            className="p-0.5 hover:bg-black/20 rounded transition-colors"
-          >
-            <Trash2 size={12} className="text-white" />
-          </button>
-        )}
-      </div>
-
-      {/* Color picker - only shown when selected */}
-      {selected && (
-        <div className="absolute top-10 left-2 flex gap-1 z-10">
-          {COMMENT_COLORS.map((color) => (
+            className="bg-transparent text-white text-sm font-semibold outline-none flex-1 min-w-0 nodrag"
+            placeholder="Comment"
+          />
+          {selected && (
             <button
-              key={color}
               onClick={(e) => {
                 e.stopPropagation();
-                onUpdate({ data: { ...node.data, commentColor: color } });
+                onDelete();
               }}
               onMouseDown={(e) => e.stopPropagation()}
-              className={`w-4 h-4 rounded-full border-2 transition-transform hover:scale-110 ${color === commentColor ? 'border-white' : 'border-transparent'}`}
-              style={{ backgroundColor: color }}
-            />
-          ))}
+              className="p-0.5 hover:bg-black/20 rounded transition-colors nodrag"
+            >
+              <Trash2 size={12} className="text-white" />
+            </button>
+          )}
         </div>
-      )}
-    </div>
+
+        {/* Color picker - only shown when selected */}
+        {selected && (
+          <div className="absolute top-10 left-2 flex gap-1 z-10">
+            {COMMENT_COLORS.map((color) => (
+              <button
+                key={color}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onUpdate({ data: { ...node.data, commentColor: color } });
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
+                className={`w-4 h-4 rounded-full border-2 transition-transform hover:scale-110 nodrag ${color === commentColor ? 'border-white' : 'border-transparent'}`}
+                style={{ backgroundColor: color }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </>
   );
 });
 CommentNodeComponent.displayName = 'CommentNodeComponent';
@@ -1597,7 +1592,7 @@ function ReactFlowGraphInner({
     };
   }, []);
 
-  // Handle node position changes - apply changes for smooth dragging
+  // Handle node position and dimension changes - apply changes for smooth dragging/resizing
   const onNodesChange: OnNodesChange = useCallback((changes: NodeChange[]) => {
     // Apply changes to internal state for smooth visual updates
     setInternalNodes((nodes) => applyNodeChanges(changes, nodes) as Node<ScriptNodeData>[]);
@@ -1616,6 +1611,14 @@ function ReactFlowGraphInner({
             onRequestHistorySnapshot?.();
           }
         }
+      }
+      // Handle resize dimension changes (from NodeResizer)
+      if (change.type === 'dimensions' && change.resizing === false && change.dimensions) {
+        // Resize ended - sync dimensions to parent
+        onUpdateNode(change.id, { 
+          size: { width: change.dimensions.width, height: change.dimensions.height } 
+        });
+        onRequestHistorySnapshot?.();
       }
     }
   }, [onUpdateNode, onRequestHistorySnapshot]);
