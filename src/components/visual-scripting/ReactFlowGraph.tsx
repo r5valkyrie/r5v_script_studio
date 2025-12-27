@@ -151,14 +151,29 @@ const reactFlowStyles = `
     display: none !important;
   }
   
-  /* Smooth node selection transitions */
+  /* Crisp node rendering - prevent blur on zoom */
   .react-flow__node {
     transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    will-change: transform, box-shadow;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    -webkit-font-smoothing: subpixel-antialiased;
+  }
+  
+  .react-flow__node > div {
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
   
   .react-flow__node.selected {
     z-index: 1000 !important;
+  }
+  
+  /* Force crisp text and edges in viewport */
+  .react-flow__viewport {
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
   }
   
   /* Smooth edge transitions */
@@ -170,18 +185,33 @@ const reactFlowStyles = `
     stroke-width: 3px;
   }
   
-  /* Handle transitions */
+  /* Handle transitions - no movement, just glow */
   .react-flow__handle {
-    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: filter 0.15s ease-out !important;
+    transform: translate(-50%, -50%) !important;
   }
   
   .react-flow__handle:hover {
-    transform: scale(1.2);
+    filter: brightness(1.4) drop-shadow(0 0 4px rgba(255,255,255,0.5));
+    transform: translate(-50%, -50%) !important;
   }
   
-  /* Viewport pane - GPU accelerated */
-  .react-flow__viewport {
-    will-change: transform;
+  /* Ensure handles stay in place */
+  .react-flow__handle-left {
+    transform: translate(-50%, -50%) !important;
+  }
+  
+  .react-flow__handle-right {
+    transform: translate(50%, -50%) !important;
+  }
+  
+  .react-flow__handle-left:hover,
+  .react-flow__handle-right:hover {
+    transform: translate(-50%, -50%) !important;
+  }
+  
+  .react-flow__handle-right:hover {
+    transform: translate(50%, -50%) !important;
   }
   
   /* Selection rectangle while dragging */
@@ -387,7 +417,7 @@ const PortHandle = memo(({ port, nodeId, isInput, index }: PortHandleProps) => {
       }}
     >
       <div
-        className={`w-4 h-4 border-2 transition-transform hover:scale-125 cursor-crosshair ${
+        className={`w-4 h-4 border-2 cursor-crosshair ${
           isExec ? 'rounded-sm' : 'rounded-full'
         }`}
         style={{
@@ -448,9 +478,9 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
 
   // Inline editor for node data - Material Design styled
   const renderInlineEditor = () => {
-    // Material input base class
-    const inputClass = "w-full px-3 py-2 bg-[#121212] rounded text-xs text-gray-100 border-none outline-none focus:ring-2 focus:ring-offset-0 transition-shadow";
-    const focusRing = "focus:ring-[#2196F3]/50";
+    // Material Design filled input style
+    const inputClass = "w-full px-3 py-2 bg-white/[0.06] rounded-t rounded-b-none text-xs text-gray-100 border-b-2 border-white/20 outline-none transition-all duration-200 hover:bg-white/[0.08] focus:bg-white/[0.09] focus:border-[#2196F3]";
+    const selectClass = "w-full px-3 py-2 bg-white/[0.06] rounded text-xs text-gray-100 border border-white/10 outline-none transition-all duration-200 hover:bg-white/[0.08] focus:bg-white/[0.09] focus:border-[#2196F3] cursor-pointer appearance-none";
 
     if (node.type === 'const-string') {
       const value = typeof node.data.value === 'string' ? node.data.value : '';
@@ -460,7 +490,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
           value={value}
           onChange={(e) => onUpdate({ data: { ...node.data, value: e.target.value } })}
           onMouseDown={(e) => e.stopPropagation()}
-          className={`${inputClass} ${focusRing}`}
+          className={inputClass}
           placeholder="Enter text..."
         />
       );
@@ -475,7 +505,8 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
           step={node.type === 'const-float' ? '0.1' : '1'}
           onChange={(e) => onUpdate({ data: { ...node.data, value: parseFloat(e.target.value) || 0 } })}
           onMouseDown={(e) => e.stopPropagation()}
-          className={`${inputClass} ${focusRing}`}
+          className={inputClass}
+          style={{ fontVariantNumeric: 'tabular-nums' }}
         />
       );
     }
@@ -483,9 +514,9 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
     if (node.type === 'const-bool') {
       const value = !!node.data.value;
       return (
-        <label className="flex items-center gap-3 px-3 py-2 bg-[#121212] rounded cursor-pointer hover:bg-[#1a1a1a] transition-colors">
-          <div className={`w-4 h-4 rounded flex items-center justify-center ${value ? 'bg-[#2196F3]' : 'bg-gray-700'} transition-colors`}>
-            {value && <span className="text-white text-[10px]">✓</span>}
+        <label className="flex items-center gap-3 px-3 py-2.5 bg-white/[0.06] rounded cursor-pointer hover:bg-white/[0.09] transition-all duration-200 border border-transparent hover:border-white/10">
+          <div className={`w-4 h-4 rounded-sm flex items-center justify-center transition-all duration-200 ${value ? 'bg-[#2196F3] shadow-[0_0_8px_rgba(33,150,243,0.4)]' : 'bg-white/10 border border-white/20'}`}>
+            {value && <span className="text-white text-[10px] font-bold">✓</span>}
           </div>
           <input
             type="checkbox"
@@ -494,7 +525,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
             onMouseDown={(e) => e.stopPropagation()}
             className="sr-only"
           />
-          <span className="text-xs text-gray-200">{value ? 'True' : 'False'}</span>
+          <span className="text-xs text-gray-200 font-medium">{value ? 'True' : 'False'}</span>
         </label>
       );
     }
@@ -504,10 +535,10 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
       const y = typeof node.data.y === 'number' ? node.data.y : 0;
       const z = typeof node.data.z === 'number' ? node.data.z : 0;
       return (
-        <div className="grid grid-cols-3 gap-1 w-full" style={{ minWidth: 0 }}>
+        <div className="grid grid-cols-3 gap-1.5 w-full" style={{ minWidth: 0 }}>
           {(['x', 'y', 'z'] as const).map((axis) => (
-            <div key={axis} className="min-w-0 flex flex-col gap-1">
-              <span className="text-[9px] text-gray-400 uppercase font-medium">{axis}</span>
+            <div key={axis} className="min-w-0 flex flex-col gap-0.5">
+              <span className="text-[9px] text-gray-500 uppercase font-semibold tracking-wider">{axis}</span>
               <input
                 type="number"
                 step="0.1"
@@ -515,7 +546,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
                 onChange={(e) => onUpdate({ data: { ...node.data, [axis]: parseFloat(e.target.value) || 0 } })}
                 onMouseDown={(e) => e.stopPropagation()}
                 style={{ fontVariantNumeric: 'tabular-nums' }}
-                className={`w-full min-w-0 px-1 py-0.5 bg-[#121212] rounded text-[10px] text-left text-gray-100 border-none outline-none ${focusRing} focus:ring-2`}
+                className="w-full min-w-0 px-2 py-1.5 bg-white/[0.06] rounded-t rounded-b-none text-[11px] text-left text-gray-100 border-b-2 border-white/20 outline-none transition-all duration-200 hover:bg-white/[0.08] focus:bg-white/[0.09] focus:border-[#2196F3]"
               />
             </div>
           ))}
@@ -556,68 +587,92 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
         });
       };
       
+      const updateReturnType = (newReturnType: string) => {
+        // Get the exec output (always first)
+        const execOutput = node.outputs.find(o => o.type === 'exec') || node.outputs[0];
+        
+        if (newReturnType === 'none') {
+          // Remove Return output, keep only exec
+          onUpdate({
+            data: { ...node.data, returnType: newReturnType },
+            outputs: execOutput ? [execOutput] : [],
+          });
+        } else {
+          // Check if Return output already exists
+          const existingReturn = node.outputs.find(o => o.label === 'Return' || o.id === 'output_1');
+          
+          if (existingReturn) {
+            // Update existing Return output's dataType
+            const newOutputs = node.outputs.map(output => {
+              if (output.label === 'Return' || output.id === 'output_1') {
+                return { ...output, dataType: newReturnType as NodeDataType };
+              }
+              return output;
+            });
+            onUpdate({
+              data: { ...node.data, returnType: newReturnType },
+              outputs: newOutputs,
+            });
+          } else {
+            // Add Return output
+            const newOutputs = [
+              ...(execOutput ? [execOutput] : []),
+              {
+                id: 'output_1',
+                label: 'Return',
+                type: 'data' as const,
+                dataType: newReturnType as NodeDataType,
+                isInput: false,
+              },
+            ];
+            onUpdate({
+              data: { ...node.data, returnType: newReturnType },
+              outputs: newOutputs,
+            });
+          }
+        }
+      };
+
       return (
         <div className="flex flex-col gap-2.5">
-          <div className="flex flex-col gap-1">
-            <span className="text-[10px] text-gray-400 uppercase font-medium tracking-wide">Return Type</span>
+          {/* Return type row */}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium w-14">Return</span>
             <select
               value={returnType}
-              onChange={(e) => onUpdate({ data: { ...node.data, returnType: e.target.value } })}
+              onChange={(e) => updateReturnType(e.target.value)}
               onMouseDown={(e) => e.stopPropagation()}
-              className="w-full px-3 py-2 bg-[#121212] rounded text-xs text-gray-100 border-none outline-none focus:ring-2 focus:ring-[#2196F3]/50 cursor-pointer"
+              className={selectClass}
             >
               {returnTypes.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
-          <div className="flex flex-col gap-1">
-            <span className="text-[10px] text-gray-400 uppercase font-medium tracking-wide">Arguments</span>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                value={argCount}
-                min={0}
-                onChange={(e) => {
-                  const newCount = Math.max(0, parseInt(e.target.value) || 0);
-                  // Adjust inputs based on new count
-                  const baseInputs = node.inputs.slice(0, 2); // Keep exec and function inputs
-                  const argInputs: NodePort[] = [];
-                  for (let i = 0; i < newCount; i++) {
-                    argInputs.push({
-                      id: `input_${i + 2}`,
-                      label: `Arg ${i + 1}`,
-                      type: 'data',
-                      dataType: 'any',
-                      isInput: true,
-                    });
-                  }
-                  onUpdate({
-                    data: { ...node.data, argCount: newCount },
-                    inputs: [...baseInputs, ...argInputs],
-                  });
-                }}
-                onMouseDown={(e) => e.stopPropagation()}
-                className="flex-1 px-3 py-2 bg-[#121212] rounded text-xs text-gray-100 border-none outline-none focus:ring-2 focus:ring-[#2196F3]/50"
-              />
+          {/* Args row with +/- buttons */}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium w-14">Args</span>
+            <div className="flex-1 flex items-center gap-1.5">
               <button
                 onClick={(e) => { e.stopPropagation(); removeArg(); }}
                 onMouseDown={(e) => e.stopPropagation()}
                 disabled={argCount <= 0}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-[#F44336]/20 hover:bg-[#F44336]/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-[#F44336] text-lg font-medium"
+                className="w-7 h-7 flex items-center justify-center rounded bg-white/[0.06] hover:bg-[#F44336]/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 text-gray-400 hover:text-[#F44336] text-sm font-medium border border-transparent hover:border-[#F44336]/30"
               >
                 −
               </button>
+              <span className="w-8 text-center text-xs text-gray-200 tabular-nums font-medium">{argCount}</span>
               <button
                 onClick={(e) => { e.stopPropagation(); addArg(); }}
                 onMouseDown={(e) => e.stopPropagation()}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-[#4CAF50]/20 hover:bg-[#4CAF50]/30 transition-colors text-[#4CAF50] text-lg font-medium"
+                className="w-7 h-7 flex items-center justify-center rounded bg-white/[0.06] hover:bg-[#4CAF50]/20 transition-all duration-200 text-gray-400 hover:text-[#4CAF50] text-sm font-medium border border-transparent hover:border-[#4CAF50]/30"
               >
                 +
               </button>
             </div>
           </div>
-          <label className="flex items-center gap-3 px-3 py-2 bg-[#121212] rounded cursor-pointer hover:bg-[#1a1a1a] transition-colors">
-            <div className={`w-4 h-4 rounded flex items-center justify-center ${threaded ? 'bg-[#2196F3]' : 'bg-gray-700'} transition-colors`}>
-              {threaded && <span className="text-white text-[10px]">✓</span>}
+          {/* Threaded checkbox - more compact */}
+          <label className="flex items-center gap-2.5 cursor-pointer hover:bg-white/[0.04] rounded-lg px-2 py-1.5 -mx-1 transition-all duration-200">
+            <div className={`w-4 h-4 rounded-sm flex items-center justify-center transition-all duration-200 ${threaded ? 'bg-[#2196F3] shadow-[0_0_8px_rgba(33,150,243,0.3)]' : 'bg-white/[0.08] border border-white/20'}`}>
+              {threaded && <span className="text-white text-[10px] font-bold">✓</span>}
             </div>
             <input
               type="checkbox"
@@ -626,7 +681,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
               onMouseDown={(e) => e.stopPropagation()}
               className="sr-only"
             />
-            <span className="text-xs text-gray-300">Threaded</span>
+            <span className="text-[11px] text-gray-300">Threaded</span>
           </label>
         </div>
       );
@@ -707,76 +762,76 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
       
       return (
         <div className="flex flex-col gap-2.5">
-          <div className="flex flex-col gap-1">
-            <span className="text-[10px] text-gray-400 uppercase font-medium tracking-wide">Function Name</span>
-            <input
-              type="text"
-              value={functionName}
-              onChange={(e) => onUpdate({ data: { ...node.data, functionName: e.target.value } })}
-              onMouseDown={(e) => e.stopPropagation()}
-              className="w-full px-3 py-2 bg-[#121212] rounded text-xs text-gray-100 border-none outline-none focus:ring-2 focus:ring-[#2196F3]/50"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <span className="text-[10px] text-gray-400 uppercase font-medium tracking-wide">Return Type</span>
+          {/* Function name input */}
+          <input
+            type="text"
+            value={functionName}
+            onChange={(e) => onUpdate({ data: { ...node.data, functionName: e.target.value } })}
+            onMouseDown={(e) => e.stopPropagation()}
+            placeholder="Function name"
+            className={inputClass}
+          />
+          {/* Return type row */}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium w-12">Return</span>
             <select
               value={returnType}
               onChange={(e) => onUpdate({ data: { ...node.data, returnType: e.target.value } })}
               onMouseDown={(e) => e.stopPropagation()}
-              className="w-full px-3 py-2 bg-[#121212] rounded text-xs text-gray-100 border-none outline-none focus:ring-2 focus:ring-[#2196F3]/50 cursor-pointer"
+              className={selectClass}
             >
               {returnTypes.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-gray-400 uppercase font-medium tracking-wide">Parameters</span>
-              <div className="flex-1" />
-              <button
-                onClick={(e) => { e.stopPropagation(); removeParam(); }}
-                onMouseDown={(e) => e.stopPropagation()}
-                disabled={paramCount <= 0}
-                className="w-7 h-7 flex items-center justify-center rounded-full bg-[#F44336]/20 hover:bg-[#F44336]/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-[#F44336] text-base font-medium"
-              >
-                −
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); addParam(); }}
-                onMouseDown={(e) => e.stopPropagation()}
-                className="w-7 h-7 flex items-center justify-center rounded-full bg-[#4CAF50]/20 hover:bg-[#4CAF50]/30 transition-colors text-[#4CAF50] text-base font-medium"
-              >
-                +
-              </button>
-            </div>
-            {/* Parameter list with name and type editors */}
-            {paramCount > 0 && (
-              <div className="flex flex-col gap-1.5 mt-1.5 max-h-32 overflow-y-auto">
-                {Array.from({ length: paramCount }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-1.5">
-                    <input
-                      type="text"
-                      value={paramNames[i] || `param${i + 1}`}
-                      onChange={(e) => updateParamName(i, e.target.value)}
-                      onMouseDown={(e) => e.stopPropagation()}
-                      className="flex-1 px-2 py-1.5 bg-[#121212] rounded text-xs text-gray-100 border-none outline-none focus:ring-2 focus:ring-[#2196F3]/50 min-w-0"
-                      placeholder={`param${i + 1}`}
-                    />
-                    <select
-                      value={paramTypes[i] || 'var'}
-                      onChange={(e) => updateParamType(i, e.target.value)}
-                      onMouseDown={(e) => e.stopPropagation()}
-                      className="w-18 px-2 py-1.5 bg-[#121212] rounded text-xs text-gray-100 border-none outline-none focus:ring-2 focus:ring-[#2196F3]/50 cursor-pointer"
-                    >
-                      {dataTypes.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </div>
-                ))}
-              </div>
-            )}
+          {/* Parameters header with +/- */}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Params</span>
+            <div className="flex-1" />
+            <button
+              onClick={(e) => { e.stopPropagation(); removeParam(); }}
+              onMouseDown={(e) => e.stopPropagation()}
+              disabled={paramCount <= 0}
+              className="w-6 h-6 flex items-center justify-center rounded bg-white/[0.06] hover:bg-[#F44336]/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 text-gray-400 hover:text-[#F44336] text-xs font-medium border border-transparent hover:border-[#F44336]/30"
+            >
+              −
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); addParam(); }}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="w-6 h-6 flex items-center justify-center rounded bg-white/[0.06] hover:bg-[#4CAF50]/20 transition-all duration-200 text-gray-400 hover:text-[#4CAF50] text-xs font-medium border border-transparent hover:border-[#4CAF50]/30"
+            >
+              +
+            </button>
           </div>
-          <label className="flex items-center gap-3 px-3 py-2 bg-[#121212] rounded cursor-pointer hover:bg-[#1a1a1a] transition-colors">
-            <div className={`w-4 h-4 rounded flex items-center justify-center ${isGlobal ? 'bg-[#2196F3]' : 'bg-gray-700'} transition-colors`}>
-              {isGlobal && <span className="text-white text-[10px]">✓</span>}
+          {/* Parameter list */}
+          {paramCount > 0 && (
+            <div className="flex flex-col gap-1.5 max-h-28 overflow-y-auto">
+              {Array.from({ length: paramCount }).map((_, i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    value={paramNames[i] || `param${i + 1}`}
+                    onChange={(e) => updateParamName(i, e.target.value)}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    className="flex-1 px-2 py-1.5 bg-white/[0.06] rounded-t rounded-b-none text-[11px] text-gray-100 border-b-2 border-white/20 outline-none transition-all duration-200 hover:bg-white/[0.08] focus:bg-white/[0.09] focus:border-[#2196F3] min-w-0"
+                    placeholder={`param${i + 1}`}
+                  />
+                  <select
+                    value={paramTypes[i] || 'var'}
+                    onChange={(e) => updateParamType(i, e.target.value)}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    className="w-18 px-2 py-1.5 bg-white/[0.06] rounded text-[11px] text-gray-100 border border-white/10 outline-none transition-all duration-200 hover:bg-white/[0.08] focus:border-[#2196F3] cursor-pointer"
+                  >
+                    {dataTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Global checkbox - compact */}
+          <label className="flex items-center gap-2.5 cursor-pointer hover:bg-white/[0.04] rounded-lg px-2 py-1.5 -mx-1 transition-all duration-200">
+            <div className={`w-4 h-4 rounded-sm flex items-center justify-center transition-all duration-200 ${isGlobal ? 'bg-[#2196F3] shadow-[0_0_8px_rgba(33,150,243,0.3)]' : 'bg-white/[0.08] border border-white/20'}`}>
+              {isGlobal && <span className="text-white text-[10px] font-bold">✓</span>}
             </div>
             <input
               type="checkbox"
@@ -785,7 +840,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
               onMouseDown={(e) => e.stopPropagation()}
               className="sr-only"
             />
-            <span className="text-xs text-gray-300">Global (accessible from other scripts)</span>
+            <span className="text-[11px] text-gray-300">Global</span>
           </label>
         </div>
       );
@@ -800,7 +855,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
           value={value}
           onChange={(e) => onUpdate({ data: { ...node.data, tier: e.target.value } })}
           onMouseDown={(e) => e.stopPropagation()}
-          className={`${inputClass} ${focusRing} cursor-pointer`}
+          className={selectClass}
         >
           {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
         </select>
@@ -818,14 +873,14 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
         onUpdate({ data: { ...node.data, attachments: next } });
       };
       return (
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-2 gap-2">
           {options.map((attachment) => (
             <label 
               key={attachment} 
-              className="flex items-center gap-2 px-2 py-1.5 bg-[#121212] rounded cursor-pointer hover:bg-[#1a1a1a] transition-colors"
+              className="flex items-center gap-2 px-2.5 py-2 bg-white/[0.06] rounded cursor-pointer hover:bg-white/[0.09] transition-all duration-200 border border-transparent hover:border-white/10"
             >
-              <div className={`w-3.5 h-3.5 rounded flex items-center justify-center ${selected.includes(attachment) ? 'bg-[#2196F3]' : 'bg-gray-700'} transition-colors`}>
-                {selected.includes(attachment) && <span className="text-white text-[8px]">✓</span>}
+              <div className={`w-3.5 h-3.5 rounded-sm flex items-center justify-center transition-all duration-200 ${selected.includes(attachment) ? 'bg-[#2196F3] shadow-[0_0_6px_rgba(33,150,243,0.3)]' : 'bg-white/[0.08] border border-white/20'}`}>
+                {selected.includes(attachment) && <span className="text-white text-[8px] font-bold">✓</span>}
               </div>
               <input
                 type="checkbox"
@@ -834,7 +889,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
                 onMouseDown={(e) => e.stopPropagation()}
                 className="sr-only"
               />
-              <span className="text-[10px] text-gray-300 capitalize">{attachment}</span>
+              <span className="text-[10px] text-gray-200 capitalize font-medium">{attachment}</span>
             </label>
           ))}
         </div>
@@ -850,7 +905,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
           value={value}
           onChange={(e) => onUpdate({ data: { ...node.data, weaponType: e.target.value } })}
           onMouseDown={(e) => e.stopPropagation()}
-          className={`${inputClass} ${focusRing} cursor-pointer`}
+          className={selectClass}
         >
           {options.map(opt => <option key={opt} value={opt} className="capitalize">{opt}</option>)}
         </select>
@@ -878,37 +933,41 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
 
     if (dataKeys.length > 0) {
       return (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2.5">
           {dataKeys.slice(0, 3).map((key) => {
             const value = node.data[key];
             const labelText = key.replace(/([A-Z])/g, ' $1').trim();
 
             if (typeof value === 'boolean') {
               return (
-                <label key={key} className="flex items-center gap-2 px-2.5 py-1.5 bg-[#0d1117] rounded-md border border-white/8 cursor-pointer hover:bg-[#161b22]">
+                <label key={key} className="flex items-center gap-2.5 px-2.5 py-2 bg-white/[0.06] rounded cursor-pointer hover:bg-white/[0.09] transition-all duration-200 border border-transparent hover:border-white/10">
+                  <div className={`w-4 h-4 rounded-sm flex items-center justify-center transition-all duration-200 ${value ? 'bg-[#2196F3] shadow-[0_0_8px_rgba(33,150,243,0.3)]' : 'bg-white/[0.08] border border-white/20'}`}>
+                    {value && <span className="text-white text-[10px] font-bold">✓</span>}
+                  </div>
                   <input
                     type="checkbox"
                     checked={value}
                     onChange={(e) => onUpdate({ data: { ...node.data, [key]: e.target.checked } })}
                     onMouseDown={(e) => e.stopPropagation()}
-                    className="w-3.5 h-3.5 rounded accent-purple-500"
+                    className="sr-only"
                   />
-                  <span className="text-[10px] text-gray-400">{labelText}</span>
+                  <span className="text-[11px] text-gray-300 capitalize">{labelText}</span>
                 </label>
               );
             }
 
             if (typeof value === 'number') {
               return (
-                <div key={key} className="flex flex-col gap-1">
-                  <span className="text-[9px] text-gray-500 uppercase font-medium tracking-wide">{labelText}</span>
+                <div key={key} className="flex flex-col gap-0.5">
+                  <span className="text-[9px] text-gray-500 uppercase font-semibold tracking-wider">{labelText}</span>
                   <input
                     type="number"
                     value={value}
                     step="0.1"
                     onChange={(e) => onUpdate({ data: { ...node.data, [key]: parseFloat(e.target.value) || 0 } })}
                     onMouseDown={(e) => e.stopPropagation()}
-                    className="w-full px-2.5 py-1.5 bg-[#0d1117] rounded-md text-[11px] text-gray-200 border border-white/8 focus:outline-none focus:ring-1 focus:ring-[#2196F3]/50"
+                    className="w-full px-3 py-2 bg-white/[0.06] rounded-t rounded-b-none text-[11px] text-gray-100 border-b-2 border-white/20 outline-none transition-all duration-200 hover:bg-white/[0.08] focus:bg-white/[0.09] focus:border-[#2196F3]"
+                    style={{ fontVariantNumeric: 'tabular-nums' }}
                   />
                 </div>
               );
@@ -916,14 +975,14 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
 
             if (typeof value === 'string') {
               return (
-                <div key={key} className="flex flex-col gap-1">
-                  <span className="text-[9px] text-gray-500 uppercase font-medium tracking-wide">{labelText}</span>
+                <div key={key} className="flex flex-col gap-0.5">
+                  <span className="text-[9px] text-gray-500 uppercase font-semibold tracking-wider">{labelText}</span>
                   <input
                     type="text"
                     value={value}
                     onChange={(e) => onUpdate({ data: { ...node.data, [key]: e.target.value } })}
                     onMouseDown={(e) => e.stopPropagation()}
-                    className="w-full px-2.5 py-1.5 bg-[#0d1117] rounded-md text-[11px] text-gray-200 border border-white/8 focus:outline-none focus:ring-1 focus:ring-[#2196F3]/50"
+                    className="w-full px-3 py-2 bg-white/[0.06] rounded-t rounded-b-none text-[11px] text-gray-100 border-b-2 border-white/20 outline-none transition-all duration-200 hover:bg-white/[0.08] focus:bg-white/[0.09] focus:border-[#2196F3]"
                   />
                 </div>
               );
@@ -960,13 +1019,63 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
   const hasEditableData = editableDataKeys.length > 0 || 
     node.type.startsWith('const-'); // const nodes always show their editors
 
+  // Calculate dynamic width based on content
+  const calculateNodeWidth = () => {
+    const MIN_WIDTH = 200;
+    const MAX_WIDTH = 420;
+    const CHAR_WIDTH = 8.5; // Approximate width per character for 14px font
+    const TYPE_CHAR_WIDTH = 7; // Smaller font for type labels
+    const BASE_PADDING = 50; // Base padding for handles and margins
+    const TYPE_BADGE_PADDING = 24; // Padding inside type badge
+
+    // Measure node label (header)
+    const cleanLabel = node.label.replace(/^(Event|Flow|Mod|Data|Action):\s*/, '');
+    const labelWidth = cleanLabel.length * CHAR_WIDTH + BASE_PADDING + 40; // Extra for icon
+
+    // Measure input labels (label + type badge + spacing)
+    const inputWidths = node.inputs.map(input => {
+      const labelLen = input.label.length * CHAR_WIDTH;
+      const typeLen = input.dataType ? (getTypeLabel(input.dataType).length * TYPE_CHAR_WIDTH + TYPE_BADGE_PADDING) : 0;
+      return labelLen + typeLen + BASE_PADDING + 24; // Extra gap between label and badge
+    });
+
+    // Measure output labels (label + type badge + spacing)
+    const outputWidths = node.outputs.map(output => {
+      const labelLen = output.label.length * CHAR_WIDTH;
+      const typeLen = output.dataType ? (getTypeLabel(output.dataType).length * TYPE_CHAR_WIDTH + TYPE_BADGE_PADDING) : 0;
+      return labelLen + typeLen + BASE_PADDING + 24;
+    });
+
+    // Special cases for nodes with inline editors
+    let editorWidth = 0;
+    if (node.type === 'custom-function') {
+      editorWidth = 260; // Compact but functional
+    } else if (node.type === 'call-function') {
+      editorWidth = 220; // Streamlined call function
+    } else if (node.type === 'const-vector') {
+      editorWidth = 260; // Vector needs space for 3 inputs
+    } else if (node.type === 'const-supported-attachments') {
+      editorWidth = 240; // Grid layout needs space
+    }
+
+    const maxContentWidth = Math.max(
+      labelWidth,
+      ...inputWidths,
+      ...outputWidths,
+      editorWidth
+    );
+
+    return Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, Math.ceil(maxContentWidth)));
+  };
+
+  const nodeWidth = calculateNodeWidth();
+
   return (
     <div
       className="rounded-lg select-none overflow-hidden"
       style={{
-        minWidth: 240,
-        width: 240,
-        maxWidth: 240,
+        minWidth: nodeWidth,
+        width: nodeWidth,
         opacity: nodeOpacity / 100,
         backgroundColor: '#212121', // Material Grey 900
         border: 'none',
