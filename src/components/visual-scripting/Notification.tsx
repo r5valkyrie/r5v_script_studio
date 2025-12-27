@@ -27,17 +27,17 @@ function Notification({ notification, onDismiss }: NotificationProps) {
   }, [notification, onDismiss]);
 
   const icons = {
-    success: <CheckCircle size={20} className="text-green-400" />,
-    error: <XCircle size={20} className="text-red-400" />,
-    warning: <AlertCircle size={20} className="text-yellow-400" />,
-    info: <AlertCircle size={20} className="text-blue-400" />,
+    success: <CheckCircle size={20} className="text-[#4CAF50]" />,
+    error: <XCircle size={20} className="text-[#F44336]" />,
+    warning: <AlertCircle size={20} className="text-[#FF9800]" />,
+    info: <AlertCircle size={20} className="text-[#2196F3]" />,
   };
 
   const bgColors = {
-    success: 'bg-green-500/10 border-green-500/30',
-    error: 'bg-red-500/10 border-red-500/30',
-    warning: 'bg-yellow-500/10 border-yellow-500/30',
-    info: 'bg-blue-500/10 border-blue-500/30',
+    success: 'bg-[#4CAF50]/10 border-[#4CAF50]/30',
+    error: 'bg-[#F44336]/10 border-[#F44336]/30',
+    warning: 'bg-[#FF9800]/10 border-[#FF9800]/30',
+    info: 'bg-[#2196F3]/10 border-[#2196F3]/30',
   };
 
   return (

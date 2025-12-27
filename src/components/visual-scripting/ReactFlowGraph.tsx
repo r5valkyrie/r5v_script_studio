@@ -103,6 +103,91 @@ const reactFlowStyles = `
     rx: 2;
     ry: 2;
   }
+  
+  /* Material Design selection box */
+  .react-flow__selection {
+    background: rgba(33, 150, 243, 0.08) !important;
+    border: 1px solid rgba(33, 150, 243, 0.5) !important;
+    border-radius: 4px;
+    will-change: transform, width, height;
+    transform: translateZ(0);
+  }
+  
+  /* Hide ALL selection rectangles - the persistent one that appears after selection */
+  .react-flow__nodesselection-rect,
+  .react-flow__selection-rect,
+  .react-flow__selectionbox,
+  .react-flow__selectionpane {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    position: absolute !important;
+    left: -9999px !important;
+    top: -9999px !important;
+  }
+  
+  /* Hide selection rect in viewport */
+  .react-flow__viewport .react-flow__selection-rect,
+  .react-flow__viewport .react-flow__nodesselection-rect,
+  .react-flow__viewport .react-flow__selectionbox,
+  .react-flow__viewport .react-flow__selectionpane {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    position: absolute !important;
+    left: -9999px !important;
+    top: -9999px !important;
+  }
+  
+  /* Hide in selection pane */
+  .react-flow__selectionpane .react-flow__selection-rect,
+  .react-flow__selectionpane .react-flow__nodesselection-rect {
+    display: none !important;
+  }
+  
+  /* Smooth node selection transitions */
+  .react-flow__node {
+    transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform, box-shadow;
+  }
+  
+  .react-flow__node.selected {
+    z-index: 1000 !important;
+  }
+  
+  /* Smooth edge transitions */
+  .react-flow__edge path {
+    transition: stroke 0.2s cubic-bezier(0.4, 0, 0.2, 1), stroke-width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .react-flow__edge.selected path {
+    stroke-width: 3px;
+  }
+  
+  /* Handle transitions */
+  .react-flow__handle {
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .react-flow__handle:hover {
+    transform: scale(1.2);
+  }
+  
+  /* Viewport pane - GPU accelerated */
+  .react-flow__viewport {
+    will-change: transform;
+  }
+  
+  /* Selection rectangle while dragging */
+  .react-flow__selectionpane {
+    will-change: transform;
+  }
 `;
 
 // Inject styles once
@@ -139,15 +224,12 @@ interface ReactFlowGraphProps {
   gridSize?: number;
   nodeOpacity?: number;
   connectionStyle?: 'bezier' | 'straight' | 'step' | 'smooth-step' | 'metro' | 'quadratic';
-  connectionsBehindNodes?: boolean;
   accentColor?: string;
   theme?: 'light' | 'dark';
   gridStyle?: 'dots' | 'lines' | 'cross';
   coloredGrid?: boolean;
   // Editor settings
   snapToGrid?: boolean;
-  autoConnect?: boolean;
-  highlightConnections?: boolean;
   connectionAnimation?: 'none' | 'flow' | 'pulse' | 'dash' | 'glow';
   isDev?: boolean;
   // Minimap settings
@@ -422,7 +504,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
       const y = typeof node.data.y === 'number' ? node.data.y : 0;
       const z = typeof node.data.z === 'number' ? node.data.z : 0;
       return (
-        <div className="grid grid-cols-3 gap-1">
+        <div className="grid grid-cols-3 gap-1 w-full" style={{ minWidth: 0 }}>
           {(['x', 'y', 'z'] as const).map((axis) => (
             <div key={axis} className="min-w-0 flex flex-col gap-1">
               <span className="text-[9px] text-gray-400 uppercase font-medium">{axis}</span>
@@ -874,7 +956,6 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
 
   const hasInputs = node.inputs.length > 0;
   const hasOutputs = node.outputs.length > 0;
-  const isCompactVector = node.type === 'const-vector';
   const editableDataKeys = getEditableDataKeys();
   const hasEditableData = editableDataKeys.length > 0 || 
     node.type.startsWith('const-'); // const nodes always show their editors
@@ -883,8 +964,9 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
     <div
       className="rounded-lg select-none overflow-hidden"
       style={{
-        minWidth: isCompactVector ? 210 : 240,
-        width: isCompactVector ? 210 : undefined,
+        minWidth: 240,
+        width: 240,
+        maxWidth: 240,
         opacity: nodeOpacity / 100,
         backgroundColor: '#212121', // Material Grey 900
         border: 'none',
@@ -896,14 +978,14 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
     >
       {/* Node Header - Material style */}
       <div
-        className={`${isCompactVector ? 'px-2 py-2 gap-2' : 'px-4 py-3 gap-2.5'} flex items-center`}
+        className="px-4 py-3 flex items-center gap-2.5 relative"
         style={{
           background: nodeColor,
           borderBottom: 'none',
         }}
       >
-        <span className={`${isCompactVector ? 'text-sm' : 'text-base'} opacity-90`}>{getNodeIcon()}</span>
-        <span className={`${isCompactVector ? 'text-xs' : 'text-sm'} font-medium text-white tracking-wide flex-1 truncate`}>
+        <span className="text-base opacity-90">{getNodeIcon()}</span>
+        <span className="text-sm font-medium text-white tracking-wide flex-1 truncate pr-6">
           {node.label.replace(/^(Event|Flow|Mod|Data|Action):\s*/, '')}
         </span>
         {selected && (
@@ -912,9 +994,9 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
               e.stopPropagation();
               onDelete();
             }}
-            className={`${isCompactVector ? 'p-1' : 'p-1.5'} hover:bg-white/20 rounded-full transition-colors`}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-white/20 rounded-full transition-colors"
           >
-            <Trash2 size={isCompactVector ? 14 : 16} className="text-white/90" />
+            <Trash2 size={16} className="text-white/90" />
           </button>
         )}
       </div>
@@ -955,30 +1037,30 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
 
       {/* Node Data Section - only show for fields without input ports */}
       {hasEditableData && (
-        <div className={`${isCompactVector ? 'px-2 py-2' : 'px-4 py-3'} border-t border-white/5`}>
+        <div className='px-4 py-3 border-t border-white/5'>
           {renderInlineEditor()}
         </div>
       )}
 
       {/* OUTPUTS Section */}
       {hasOutputs && (
-        <div className={`${isCompactVector ? 'px-2 pt-1.5 pb-2' : 'px-4 pt-2 pb-3'} border-t border-white/5`}>
-          <div className={`${isCompactVector ? 'text-[10px] mb-2' : 'text-[11px] mb-2.5'} text-gray-400 uppercase tracking-wider font-medium text-right`}>Outputs</div>
+        <div className='px-4 pt-2 pb-3 border-t border-white/5'>
+          <div className='text-[11px] mb-2.5 text-gray-400 uppercase tracking-wider font-medium text-right'>Outputs</div>
           {node.outputs.map((output) => {
             const portColor = getPortColor(output.type, output.dataType);
             return (
-              <div key={output.id} className={`${isCompactVector ? 'py-1.5' : 'py-2'} flex items-center justify-end relative`}>
+              <div key={output.id} className='py-2 flex flex-wrap items-center justify-end relative gap-x-2'>
                 {output.dataType && (
-                  <span className={`${isCompactVector ? 'text-[10px] px-1.5' : 'text-[11px] px-2'} mr-auto text-gray-500 bg-white/5 py-0.5 rounded`}>
+                  <span className='text-[11px] px-2 text-gray-500 bg-white/5 py-0.5 rounded order-3'>
                     {getTypeLabel(output.dataType)}
                   </span>
                 )}
-                <span className={`${isCompactVector ? 'text-xs mr-2' : 'text-sm mr-3'} text-gray-200`}>{output.label}</span>
+                <span className='text-sm text-gray-200 order-2'>{output.label}</span>
                 <Handle
                   type="source"
                   position={Position.Right}
                   id={output.id}
-                  className="!border-0 !-right-[9px]"
+                  className="!border-0 !-right-[9px] order-4"
                   style={{
                     width: '14px',
                     height: '14px',
@@ -1044,7 +1126,7 @@ const CommentNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNode
       >
         {/* Material header bar */}
         <div 
-          className="flex items-center gap-2 px-3 py-2"
+          className="flex items-center gap-2 px-3 py-2 relative"
           style={{ 
             backgroundColor: commentColor,
             borderBottom: `1px solid ${commentColor}`,
@@ -1055,7 +1137,7 @@ const CommentNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNode
             value={commentText}
             onChange={(e) => onUpdate({ data: { ...node.data, comment: e.target.value } })}
             onMouseDown={(e) => e.stopPropagation()}
-            className="bg-transparent text-white text-sm font-medium outline-none flex-1 min-w-0 nodrag placeholder:text-white/60"
+            className="bg-transparent text-white text-sm font-medium outline-none flex-1 min-w-0 nodrag placeholder:text-white/60 pr-6"
             placeholder="Comment"
             style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
           />
@@ -1066,7 +1148,7 @@ const CommentNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNode
                 onDelete();
               }}
               onMouseDown={(e) => e.stopPropagation()}
-              className="p-1 hover:bg-white/20 rounded-full transition-colors nodrag"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-white/20 rounded-full transition-colors nodrag"
             >
               <Trash2 size={14} className="text-white/90" />
             </button>
@@ -1374,6 +1456,7 @@ const edgeTypes: EdgeTypes = {
 interface QuickMenuState {
   screenPosition: { x: number; y: number };
   canvasPosition: { x: number; y: number };
+  containerOffset?: { left: number; top: number };
   sourcePort?: {
     nodeId: string;
     portId: string;
@@ -1415,14 +1498,11 @@ function ReactFlowGraphInner({
   gridSize = 20,
   nodeOpacity = 100,
   connectionStyle = 'bezier',
-  connectionsBehindNodes = false,
   accentColor = '#8B5CF6',
   theme = 'dark',
   gridStyle = 'dots',
   coloredGrid = false,
   snapToGrid = false,
-  autoConnect = true,
-  highlightConnections = true,
   connectionAnimation = 'none',
   isDev = false,
   minimapWidth = 320,
@@ -1853,6 +1933,52 @@ function ReactFlowGraphInner({
     }
   }, [selectedNodeIds]);
 
+  // Remove persistent selection rectangle after selection completes
+  useEffect(() => {
+    const removeSelectionRect = () => {
+      // Remove all selection rectangle elements
+      const selectionRects = document.querySelectorAll('.react-flow__nodesselection-rect, .react-flow__selection-rect, .react-flow__selectionbox');
+      selectionRects.forEach(rect => {
+        rect.remove();
+      });
+    };
+
+    // Remove on selection change
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList') {
+          mutation.addedNodes.forEach((node) => {
+            if (node instanceof HTMLElement && (
+              node.classList.contains('react-flow__nodesselection-rect') ||
+              node.classList.contains('react-flow__selection-rect') ||
+              node.classList.contains('react-flow__selectionbox')
+            )) {
+              // Immediately hide it
+              node.style.display = 'none';
+              node.style.opacity = '0';
+              node.style.visibility = 'hidden';
+              node.style.pointerEvents = 'none';
+            }
+          });
+        }
+      });
+    });
+
+    // Start observing the document body for selection rectangle elements
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    // Periodically remove any selection rectangles that appear
+    const interval = setInterval(removeSelectionRect, 100);
+
+    return () => {
+      observer.disconnect();
+      clearInterval(interval);
+    };
+  }, []);
+
   // Cleanup selection timeout
   useEffect(() => {
     return () => {
@@ -2234,9 +2360,13 @@ function ReactFlowGraphInner({
 
   const handleOpenQuickMenu = useCallback((canvasPos: { x: number; y: number }, screenPos: { x: number; y: number }) => {
     setContextMenu(null);
+    
     setQuickMenu({
       screenPosition: screenPos,
       canvasPosition: canvasPos,
+      // Don't pass containerOffset - screenPosition is already correct for context menu positioning
+      // containerOffset is only needed for drag-drop operations from palette
+      containerOffset: undefined,
     });
   }, []);
 
@@ -2476,10 +2606,10 @@ function ReactFlowGraphInner({
   })();
 
   return (
-    <div 
+    <div
       ref={containerRef}
       tabIndex={0}
-      className="w-full h-full outline-none relative" 
+      className="w-full h-full outline-none relative"
       style={{ backgroundColor: theme === 'dark' ? '#121212' : '#fafafa' }}
       onMouseMove={(e) => {
         lastMousePosRef.current = { x: e.clientX, y: e.clientY };
@@ -2488,6 +2618,43 @@ function ReactFlowGraphInner({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
+      {/* Aggressive CSS to hide selection rectangles */}
+      <style>{`
+        /* Hide all selection rectangles aggressively */
+        .react-flow__nodesselection-rect,
+        .react-flow__selection-rect,
+        .react-flow__selectionbox,
+        .react-flow__selectionpane {
+          display: none !important;
+          opacity: 0 !important;
+          visibility: hidden !important;
+          pointer-events: none !important;
+          width: 0 !important;
+          height: 0 !important;
+          position: absolute !important;
+          left: -9999px !important;
+          top: -9999px !important;
+        }
+        
+        /* Hide in all contexts */
+        .react-flow__viewport .react-flow__nodesselection-rect,
+        .react-flow__viewport .react-flow__selection-rect,
+        .react-flow__viewport .react-flow__selectionbox,
+        .react-flow__viewport .react-flow__selectionpane,
+        .react-flow__selectionpane .react-flow__nodesselection-rect,
+        .react-flow__selectionpane .react-flow__selection-rect,
+        .react-flow__selectionpane .react-flow__selectionbox {
+          display: none !important;
+          opacity: 0 !important;
+          visibility: hidden !important;
+          pointer-events: none !important;
+          width: 0 !important;
+          height: 0 !important;
+          position: absolute !important;
+          left: -9999px !important;
+          top: -9999px !important;
+        }
+      `}</style>
       {/* Drop preview indicator */}
       {isDraggingOver && dropPreviewPos && (
         <div 

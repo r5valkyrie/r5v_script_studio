@@ -72,9 +72,6 @@ export interface AppSettings {
   editor: {
     snapToGrid: boolean;
     showNodeLabels: boolean;
-    autoConnect: boolean;
-    highlightConnections: boolean;
-    connectionsBehindNodes: boolean;
   };
   ui: {
     isSidebarOpen: boolean;
@@ -115,9 +112,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   editor: {
     snapToGrid: false,
     showNodeLabels: true,
-    autoConnect: true,
-    highlightConnections: true,
-    connectionsBehindNodes: false,
   },
   ui: {
     isSidebarOpen: true,
@@ -761,44 +755,7 @@ export default function SettingsModal({
                     />
                   </label>
 
-                  <label className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm text-white">Auto Connect</div>
-                      <div className="text-xs text-gray-500">Automatically connect nodes when dropping near a port</div>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={localSettings.editor.autoConnect}
-                      onChange={(e) => updateSettings('editor', 'autoConnect', e.target.checked)}
-                      className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-[#2196F3]"
-                    />
-                  </label>
 
-                  <label className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm text-white">Highlight Connections</div>
-                      <div className="text-xs text-gray-500">Highlight connections when hovering over a node</div>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={localSettings.editor.highlightConnections}
-                      onChange={(e) => updateSettings('editor', 'highlightConnections', e.target.checked)}
-                      className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-[#2196F3]"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm text-white">Connections Behind Nodes</div>
-                      <div className="text-xs text-gray-500">Render connection lines behind nodes instead of in front</div>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={localSettings.editor.connectionsBehindNodes}
-                      onChange={(e) => updateSettings('editor', 'connectionsBehindNodes', e.target.checked)}
-                      className="w-5 h-5 rounded border-white/20 bg-black/30 text-purple-600 focus:ring-[#2196F3]"
-                    />
-                  </label>
 
 
                 </div>

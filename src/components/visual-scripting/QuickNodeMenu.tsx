@@ -261,6 +261,10 @@ export default function QuickNodeMenu({
     let x = containerOffset ? position.x - containerOffset.left : position.x;
     let y = containerOffset ? position.y - containerOffset.top : position.y;
 
+    // Center the menu on the click point (subtract half width/height for better centering)
+    x -= menuWidth / 2;
+    y += 10;
+
     // Keep menu on screen (use container dimensions if available)
     if (typeof window !== 'undefined') {
       const maxX = containerOffset ? window.innerWidth - containerOffset.left : window.innerWidth;
