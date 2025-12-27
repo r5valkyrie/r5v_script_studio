@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Code, Save, FolderOpen, FileDown, FileText, FilePlus, ChevronDown, ChevronLeft, ChevronRight, Folder, X, Settings, Package, Crosshair } from 'lucide-react';
+import { Code, Save, FolderOpen, FileDown, FileText, FilePlus, ChevronDown, ChevronLeft, ChevronRight, Folder, X, Settings, Package, Crosshair, Layout } from 'lucide-react';
 import SettingsModal, { loadSettings, saveSettings, DEFAULT_SETTINGS } from './visual-scripting/SettingsModal';
 import ProjectSettingsModal from './visual-scripting/ProjectSettingsModal';
 import { NotificationContainer, ExportPathModal, useNotifications, useConfirmModal } from './visual-scripting/Notification';
@@ -11,6 +11,7 @@ import NodeSpotlight from './visual-scripting/NodeSpotlight';
 import NodeDocModal from './visual-scripting/NodeDocModal';
 import CodeView from './visual-scripting/CodeView';
 import WeaponEditor from './visual-scripting/WeaponEditor';
+import UITextEditor from './visual-scripting/UITextEditor';
 import WelcomeScreen from './visual-scripting/WelcomeScreen';
 import SaveTemplateModal from './visual-scripting/SaveTemplateModal';
 import UnifiedSidebar from './visual-scripting/UnifiedSidebar';
@@ -74,7 +75,7 @@ export default function VisualScriptEditor() {
   }, []);
 
   // Open file tabs - now stores file ID and type
-  type OpenTab = { id: string; type: 'script' | 'weapon' };
+  type OpenTab = { id: string; type: 'script' | 'weapon' | 'ui' };
   const [openFileTabs, setOpenFileTabs] = useState<OpenTab[]>([]);
   
   // Collapsed categories in node palette
@@ -97,6 +98,10 @@ export default function VisualScriptEditor() {
     activeWeaponFile,
     activeFileType,
     weaponFolders,
+    // UI file state
+    uiFiles,
+    activeUIFile,
+    uiFolders,
     saveProject,
     saveProjectAs,
     loadProject,
@@ -120,6 +125,15 @@ export default function VisualScriptEditor() {
     createWeaponFolder,
     deleteWeaponFolder,
     renameWeaponFolder,
+    // UI file actions
+    createNewUIFile,
+    deleteUIFile,
+    renameUIFile,
+    setActiveUIFile: setActiveUIFileBase,
+    updateUIContent,
+    createUIFolder,
+    deleteUIFolder,
+    renameUIFolder,
   } = useProjectFiles({ maxRecentProjects: appSettings.general.maxRecentProjects });
 
   // Wrapper to set active weapon file AND add tab simultaneously
@@ -136,6 +150,21 @@ export default function VisualScriptEditor() {
       });
     }
   }, [setActiveWeaponFileBase]);
+
+  // Wrapper to set active UI file AND add tab simultaneously
+  const setActiveUIFile = useCallback((fileId: string | null) => {
+    setActiveUIFileBase(fileId);
+    if (fileId) {
+      // Add tab immediately when selecting a UI file
+      setOpenFileTabs(prevTabs => {
+        const alreadyOpen = prevTabs.some(tab => tab.id === fileId && tab.type === 'ui');
+        if (!alreadyOpen) {
+          return [...prevTabs, { id: fileId, type: 'ui' as const }];
+        }
+        return prevTabs;
+      });
+    }
+  }, [setActiveUIFileBase]);
 
   // Auto-save functionality
   useEffect(() => {
@@ -253,8 +282,21 @@ export default function VisualScriptEditor() {
     }
   }, [activeWeaponFile?.id]);
 
+  // Add UI file to tabs when loaded from saved project (backup for initial load)
+  useEffect(() => {
+    if (activeUIFile && activeUIFile.id) {
+      setOpenFileTabs(prevTabs => {
+        const alreadyOpen = prevTabs.some(tab => tab.id === activeUIFile.id && tab.type === 'ui');
+        if (!alreadyOpen) {
+          return [...prevTabs, { id: activeUIFile.id, type: 'ui' as const }];
+        }
+        return prevTabs;
+      });
+    }
+  }, [activeUIFile?.id]);
+
   // Close a file tab
-  const handleCloseTab = useCallback((fileId: string, fileType: 'script' | 'weapon', e: React.MouseEvent) => {
+  const handleCloseTab = useCallback((fileId: string, fileType: 'script' | 'weapon' | 'ui', e: React.MouseEvent) => {
     e.stopPropagation();
     
     // Get the current tabs state to calculate new tabs
@@ -266,16 +308,19 @@ export default function VisualScriptEditor() {
       setTimeout(() => {
         const isActiveScript = fileType === 'script' && activeScriptFile?.id === fileId;
         const isActiveWeapon = fileType === 'weapon' && activeWeaponFile?.id === fileId;
+        const isActiveUI = fileType === 'ui' && activeUIFile?.id === fileId;
         
-        if (isActiveScript || isActiveWeapon) {
+        if (isActiveScript || isActiveWeapon || isActiveUI) {
           if (newTabs.length > 0) {
             // Switch to the previous tab or the first remaining tab
             const newActiveIndex = Math.min(closedIndex, newTabs.length - 1);
             const newActiveTab = newTabs[newActiveIndex];
             if (newActiveTab.type === 'script') {
               setActiveScriptFile(newActiveTab.id);
-            } else {
+            } else if (newActiveTab.type === 'weapon') {
               setActiveWeaponFile(newActiveTab.id);
+            } else {
+              setActiveUIFile(newActiveTab.id);
             }
           } else {
             // No more tabs, clear the active file and graph state
@@ -284,8 +329,10 @@ export default function VisualScriptEditor() {
               setNodes([]);
               setConnections([]);
               setSelectedNodeIds([]);
-            } else {
+            } else if (isActiveWeapon) {
               setActiveWeaponFile(null);
+            } else {
+              setActiveUIFile(null);
             }
           }
         }
@@ -293,7 +340,7 @@ export default function VisualScriptEditor() {
       
       return newTabs;
     });
-  }, [activeScriptFile?.id, activeWeaponFile?.id, setActiveScriptFile, setActiveWeaponFile]);
+  }, [activeScriptFile?.id, activeWeaponFile?.id, activeUIFile?.id, setActiveScriptFile, setActiveWeaponFile, setActiveUIFile]);
 
   // Update active script when nodes/connections change (but not during initial load)
   useEffect(() => {
@@ -1058,16 +1105,27 @@ export default function VisualScriptEditor() {
             <div className="flex-shrink-0 flex items-center bg-[#1e1e1e] border-b border-white/8 overflow-x-auto px-1 gap-1 h-9">
               {openFileTabs.map(tab => {
                 const isScript = tab.type === 'script';
+                const isWeapon = tab.type === 'weapon';
+                const isUI = tab.type === 'ui';
                 const file = isScript 
                   ? scriptFiles.find(f => f.id === tab.id)
-                  : weaponFiles.find(f => f.id === tab.id);
+                  : isWeapon
+                    ? weaponFiles.find(f => f.id === tab.id)
+                    : uiFiles.find(f => f.id === tab.id);
                 if (!file) return null;
                 
                 const isActive = isScript 
                   ? (activeFileType === 'script' && activeScriptFile?.id === tab.id)
-                  : (activeFileType === 'weapon' && activeWeaponFile?.id === tab.id);
+                  : isWeapon
+                    ? (activeFileType === 'weapon' && activeWeaponFile?.id === tab.id)
+                    : (activeFileType === 'ui' && activeUIFile?.id === tab.id);
                 const isModified = modifiedFileIds.has(tab.id);
-                const displayName = isScript ? file.name : `${file.name}.txt`;
+                const uiFile = isUI ? (file as any) : null;
+                const displayName = isScript 
+                  ? file.name 
+                  : isUI 
+                    ? `${file.name}.${uiFile?.fileType || 'res'}`
+                    : `${file.name}.txt`;
                 
                 return (
                   <div
@@ -1077,19 +1135,25 @@ export default function VisualScriptEditor() {
                         ? 'bg-[#2d2d2d] text-white' 
                         : 'text-gray-500 hover:bg-[#2d2d2d]/50 hover:text-gray-300'
                     }`}
-                    onClick={() => isScript ? setActiveScriptFile(tab.id) : setActiveWeaponFile(tab.id)}
+                    onClick={() => isScript ? setActiveScriptFile(tab.id) : isWeapon ? setActiveWeaponFile(tab.id) : setActiveUIFile(tab.id)}
                   >
                     {/* Active tab indicator line */}
                     {isActive && (
                       <div 
                         className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full"
-                        style={{ backgroundColor: accentColor }}
+                        style={{ backgroundColor: isUI ? '#a855f7' : isWeapon ? '#f59e0b' : accentColor }}
                       />
                     )}
                     {isScript ? (
                       <FileText 
                         size={13} 
                         style={{ color: isActive ? accentColor : undefined }} 
+                        className={`flex-shrink-0 ${isActive ? '' : 'text-gray-600'}`} 
+                      />
+                    ) : isUI ? (
+                      <Layout 
+                        size={13} 
+                        style={{ color: isActive ? '#a855f7' : undefined }} 
                         className={`flex-shrink-0 ${isActive ? '' : 'text-gray-600'}`} 
                       />
                     ) : (
@@ -1146,6 +1210,16 @@ export default function VisualScriptEditor() {
                     onCreateWeaponFolder={createWeaponFolder}
                     onDeleteWeaponFolder={deleteWeaponFolder}
                     onRenameWeaponFolder={renameWeaponFolder}
+                    uiFiles={uiFiles}
+                    activeUIFileId={activeUIFile?.id || null}
+                    uiFolders={uiFolders}
+                    onSelectUIFile={setActiveUIFile}
+                    onCreateUIFile={createNewUIFile}
+                    onDeleteUIFile={deleteUIFile}
+                    onRenameUIFile={renameUIFile}
+                    onCreateUIFolder={createUIFolder}
+                    onDeleteUIFolder={deleteUIFolder}
+                    onRenameUIFolder={renameUIFolder}
                     modifiedFileIds={modifiedFileIds}
                     onAddNode={handleAddNode}
                     viewState={graphView}
@@ -1221,7 +1295,7 @@ export default function VisualScriptEditor() {
 
             {/* Main Canvas */}
             <div className="flex-1 h-full flex flex-col min-h-0">
-              {/* Node Graph, Weapon Editor, or Empty State */}
+              {/* Node Graph, Weapon Editor, UI Editor, or Empty State */}
               <div className="flex-1 h-full min-h-0">
                 {activeFileType === 'weapon' && activeWeaponFile ? (
                   // Weapon Editor
@@ -1229,6 +1303,14 @@ export default function VisualScriptEditor() {
                     weaponFile={activeWeaponFile}
                     onContentChange={updateWeaponContent}
                     isModified={modifiedFileIds.has(activeWeaponFile.id)}
+                    accentColor={accentColor}
+                  />
+                ) : activeFileType === 'ui' && activeUIFile ? (
+                  // UI Text Editor
+                  <UITextEditor
+                    uiFile={activeUIFile}
+                    onContentChange={updateUIContent}
+                    isModified={modifiedFileIds.has(activeUIFile.id)}
                     accentColor={accentColor}
                   />
                 ) : activeFileType === 'script' && activeScriptFile ? (

@@ -1,13 +1,14 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { ScriptNode, NodeConnection } from '../types/visual-scripting';
-import type { ProjectData, ProjectMetadata, ScriptFile, ModSettings, WeaponFile, ActiveFileType } from '../types/project';
+import type { ProjectData, ProjectMetadata, ScriptFile, ModSettings, WeaponFile, UIFile, UIFileType, ActiveFileType } from '../types/project';
 import { 
   serializeProject, 
   deserializeProject, 
   validateProject,
   createNewProject,
   createScriptFile,
-  createWeaponFile
+  createWeaponFile,
+  createUIFile
 } from '../utils/project-manager';
 import { saveProjectFile, openProjectFile } from '../utils/file-system';
 
@@ -26,6 +27,11 @@ export interface UseProjectFilesReturn {
   activeWeaponFile: WeaponFile | null;
   activeFileType: ActiveFileType;
   weaponFolders: string[];
+  
+  // UI file state
+  uiFiles: UIFile[];
+  activeUIFile: UIFile | null;
+  uiFolders: string[];
   
   // Project actions
   newProject: () => void;
@@ -54,6 +60,16 @@ export interface UseProjectFilesReturn {
   createWeaponFolder: (folderPath: string) => void;
   deleteWeaponFolder: (folderPath: string) => void;
   renameWeaponFolder: (oldPath: string, newPath: string) => void;
+  
+  // UI file actions
+  createNewUIFile: (name: string, fileType?: UIFileType) => void;
+  deleteUIFile: (fileId: string) => void;
+  renameUIFile: (fileId: string, newName: string) => void;
+  setActiveUIFile: (fileId: string | null) => void;
+  updateUIContent: (fileId: string, content: string) => void;
+  createUIFolder: (folderPath: string) => void;
+  deleteUIFolder: (folderPath: string) => void;
+  renameUIFolder: (oldPath: string, newPath: string) => void;
   
   // Folder actions
   createFolder: (folderPath: string) => void;
@@ -111,6 +127,13 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
   const weaponFolders = projectData?.settings.weaponFolders || [];
   const activeWeaponFileId = projectData?.settings.activeWeaponFile;
   const activeWeaponFile = activeWeaponFileId ? (weaponFiles.find(f => f.id === activeWeaponFileId) || null) : null;
+  
+  // UI file derived state
+  const uiFiles = projectData?.uiFiles || [];
+  const uiFolders = projectData?.settings.uiFolders || [];
+  const activeUIFileId = projectData?.settings.activeUIFile;
+  const activeUIFile = activeUIFileId ? (uiFiles.find(f => f.id === activeUIFileId) || null) : null;
+  
   const activeFileType: ActiveFileType = projectData?.settings.activeFileType || 'script';
 
   // Helper to save project data (used for auto-save after structural changes)
@@ -122,7 +145,8 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
         data.scriptFiles,
         data.metadata,
         data.settings,
-        data.weaponFiles
+        data.weaponFiles,
+        data.uiFiles
       );
       
       if (window.electron) {
@@ -153,7 +177,8 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
         projectData.scriptFiles,
         projectData.metadata,
         projectData.settings,
-        projectData.weaponFiles
+        projectData.weaponFiles,
+        projectData.uiFiles
       );
       
       let filePath = currentFilePath;
@@ -196,7 +221,8 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
         projectData.scriptFiles,
         projectData.metadata,
         projectData.settings,
-        projectData.weaponFiles
+        projectData.weaponFiles,
+        projectData.uiFiles
       );
       
       const result = await saveProjectFile(jsonContent, {
@@ -775,6 +801,231 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
     });
   }, [currentFilePath, saveProjectData]);
 
+  // ============================================
+  // UI File Management
+  // ============================================
+
+  // Create new UI file
+  const createNewUIFile = useCallback((name: string, fileType: UIFileType = 'res') => {
+    setProjectData(prev => {
+      if (!prev) return prev;
+      const newFile = createUIFile(name, fileType);
+      return {
+        ...prev,
+        uiFiles: [...(prev.uiFiles || []), newFile],
+        settings: {
+          ...prev.settings,
+          activeUIFile: newFile.id,
+          activeFileType: 'ui',
+        },
+      };
+    });
+    setHasUnsavedChanges(true);
+  }, []);
+
+  // Delete UI file
+  const deleteUIFile = useCallback((fileId: string) => {
+    setProjectData(prev => {
+      if (!prev) return prev;
+      const filtered = (prev.uiFiles || []).filter(f => f.id !== fileId);
+      const wasActive = prev.settings.activeUIFile === fileId;
+      const newActiveId = wasActive && filtered.length > 0 ? filtered[0].id : undefined;
+      const newData: ProjectData = {
+        ...prev,
+        uiFiles: filtered,
+        settings: {
+          ...prev.settings,
+          activeUIFile: newActiveId,
+        },
+      };
+      
+      if (currentFilePath) {
+        setTimeout(() => {
+          saveProjectData(newData, currentFilePath).then(saved => {
+            if (saved) {
+              setHasUnsavedChanges(false);
+              setModifiedFileIds(new Set());
+            }
+          });
+        }, 0);
+      } else {
+        setHasUnsavedChanges(true);
+      }
+      
+      return newData;
+    });
+  }, [currentFilePath, saveProjectData]);
+
+  // Rename UI file
+  const renameUIFile = useCallback((fileId: string, newName: string) => {
+    setProjectData(prev => {
+      if (!prev) return prev;
+      const newData: ProjectData = {
+        ...prev,
+        uiFiles: (prev.uiFiles || []).map(f => {
+          if (f.id === fileId) {
+            // Remove any extension, will be added based on fileType
+            const baseName = newName.replace(/\.(res|menu)$/, '');
+            return { ...f, name: baseName, modifiedAt: new Date().toISOString() };
+          }
+          return f;
+        }),
+      };
+      
+      if (currentFilePath) {
+        setTimeout(() => {
+          saveProjectData(newData, currentFilePath).then(saved => {
+            if (saved) {
+              setHasUnsavedChanges(false);
+              setModifiedFileIds(new Set());
+            }
+          });
+        }, 0);
+      } else {
+        setHasUnsavedChanges(true);
+      }
+      
+      return newData;
+    });
+  }, [currentFilePath, saveProjectData]);
+
+  // Set active UI file
+  const setActiveUIFile = useCallback((fileId: string | null) => {
+    setProjectData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        settings: {
+          ...prev.settings,
+          activeUIFile: fileId ?? undefined,
+          activeFileType: 'ui',
+        },
+      };
+    });
+  }, []);
+
+  // Update UI file content
+  const updateUIContent = useCallback((fileId: string, content: string) => {
+    setProjectData(prev => {
+      if (!prev) return prev;
+      setModifiedFileIds(ids => {
+        const newIds = new Set(ids);
+        newIds.add(fileId);
+        return newIds;
+      });
+      return {
+        ...prev,
+        uiFiles: (prev.uiFiles || []).map(f =>
+          f.id === fileId
+            ? { ...f, content, modifiedAt: new Date().toISOString() }
+            : f
+        ),
+      };
+    });
+    setHasUnsavedChanges(true);
+  }, []);
+
+  // Create UI folder
+  const createUIFolder = useCallback((folderPath: string) => {
+    setProjectData(prev => {
+      if (!prev) return prev;
+      const currentFolders = prev.settings.uiFolders || [];
+      if (currentFolders.includes(folderPath)) return prev;
+      const newData: ProjectData = {
+        ...prev,
+        settings: {
+          ...prev.settings,
+          uiFolders: [...currentFolders, folderPath],
+        },
+      };
+      
+      if (currentFilePath) {
+        setTimeout(() => {
+          saveProjectData(newData, currentFilePath).then(saved => {
+            if (saved) {
+              setHasUnsavedChanges(false);
+              setModifiedFileIds(new Set());
+            }
+          });
+        }, 0);
+      } else {
+        setHasUnsavedChanges(true);
+      }
+      
+      return newData;
+    });
+  }, [currentFilePath, saveProjectData]);
+
+  // Delete UI folder
+  const deleteUIFolder = useCallback((folderPath: string) => {
+    setProjectData(prev => {
+      if (!prev) return prev;
+      const filtered = (prev.uiFiles || []).filter(f => !f.name.startsWith(`${folderPath}/`));
+      const newData: ProjectData = {
+        ...prev,
+        uiFiles: filtered,
+        settings: {
+          ...prev.settings,
+          uiFolders: (prev.settings.uiFolders || []).filter(f => f !== folderPath && !f.startsWith(`${folderPath}/`)),
+        },
+      };
+      
+      if (currentFilePath) {
+        setTimeout(() => {
+          saveProjectData(newData, currentFilePath).then(saved => {
+            if (saved) {
+              setHasUnsavedChanges(false);
+              setModifiedFileIds(new Set());
+            }
+          });
+        }, 0);
+      } else {
+        setHasUnsavedChanges(true);
+      }
+      
+      return newData;
+    });
+  }, [currentFilePath, saveProjectData]);
+
+  // Rename UI folder
+  const renameUIFolder = useCallback((oldPath: string, newPath: string) => {
+    setProjectData(prev => {
+      if (!prev) return prev;
+      const updatedFolders = (prev.settings.uiFolders || []).map(f => 
+        f === oldPath ? newPath : f.startsWith(`${oldPath}/`) ? f.replace(oldPath, newPath) : f
+      );
+      const updatedFiles = (prev.uiFiles || []).map(f => {
+        if (f.name.startsWith(`${oldPath}/`)) {
+          return { ...f, name: f.name.replace(`${oldPath}/`, `${newPath}/`), modifiedAt: new Date().toISOString() };
+        }
+        return f;
+      });
+      const newData: ProjectData = {
+        ...prev,
+        uiFiles: updatedFiles,
+        settings: {
+          ...prev.settings,
+          uiFolders: updatedFolders,
+        },
+      };
+      
+      if (currentFilePath) {
+        setTimeout(() => {
+          saveProjectData(newData, currentFilePath).then(saved => {
+            if (saved) {
+              setHasUnsavedChanges(false);
+              setModifiedFileIds(new Set());
+            }
+          });
+        }, 0);
+      } else {
+        setHasUnsavedChanges(true);
+      }
+      
+      return newData;
+    });
+  }, [currentFilePath, saveProjectData]);
+
   // Rename folder
   const renameFolder = useCallback((oldPath: string, newPath: string) => {
     setProjectData(prev => {
@@ -841,6 +1092,11 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
     activeFileType,
     weaponFolders,
     
+    // UI file state
+    uiFiles,
+    activeUIFile,
+    uiFolders,
+    
     newProject,
     saveProject,
     saveProjectAs,
@@ -865,6 +1121,16 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
     createWeaponFolder,
     deleteWeaponFolder,
     renameWeaponFolder,
+    
+    // UI file actions
+    createNewUIFile,
+    deleteUIFile,
+    renameUIFile,
+    setActiveUIFile,
+    updateUIContent,
+    createUIFolder,
+    deleteUIFolder,
+    renameUIFolder,
     
     createFolder,
     deleteFolder,

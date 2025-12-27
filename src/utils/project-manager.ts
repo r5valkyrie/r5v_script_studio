@@ -1,5 +1,5 @@
 import type { ScriptNode, NodeConnection } from '../types/visual-scripting';
-import type { ProjectData, ProjectMetadata, SerializedProject, ScriptFile, WeaponFile } from '../types/project';
+import type { ProjectData, ProjectMetadata, SerializedProject, ScriptFile, WeaponFile, UIFile, UIFileType } from '../types/project';
 
 const CURRENT_PROJECT_VERSION = '1.0.0';
 const EDITOR_VERSION = '0.1.0'; // From package.json
@@ -50,6 +50,64 @@ export function createWeaponFile(name: string, baseWeapon?: string): WeaponFile 
 }
 
 /**
+ * Creates a new UI file with default content
+ */
+export function createUIFile(name: string, fileType: UIFileType = 'res'): UIFile {
+  const now = new Date().toISOString();
+  // Remove extension if provided
+  const baseName = name.replace(/\.(res|menu)$/, '');
+  
+  // Generate default content based on file type
+  const defaultContent = fileType === 'menu' 
+    ? `resource/ui/${baseName}.menu
+{
+    menu
+    {
+        ControlName             Frame
+        zpos                    3
+        wide                    f0
+        tall                    f0
+        autoResize              0
+        pinCorner               0
+        visible                 1
+        enabled                 1
+        PaintBackgroundType     0
+
+        // Add your menu elements here
+    }
+}
+`
+    : `Resource/UI/${baseName}.res
+{
+    // Add your UI elements here
+    //
+    // Example element:
+    // ElementName
+    // {
+    //     ControlName     Label
+    //     xpos            0
+    //     ypos            0
+    //     wide            200
+    //     tall            24
+    //     visible         1
+    //     enabled         1
+    //     labelText       "Hello World"
+    //     textAlignment   west
+    // }
+}
+`;
+  
+  return {
+    id: `ui_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    name: baseName,
+    fileType,
+    content: defaultContent,
+    createdAt: now,
+    modifiedAt: now,
+  };
+}
+
+/**
  * Creates a new project with default metadata and one initial script file
  */
 export function createNewProject(name: string = 'Untitled Project'): ProjectData {
@@ -73,9 +131,11 @@ export function createNewProject(name: string = 'Untitled Project'): ProjectData
       activeFileType: 'script',
       folders: [],
       weaponFolders: [],
+      uiFolders: [],
     },
     scriptFiles: [initialScript],
     weaponFiles: [],
+    uiFiles: [],
   };
 }
 
@@ -86,7 +146,8 @@ export function serializeProject(
   scriptFiles: ScriptFile[],
   metadata: Partial<ProjectMetadata> = {},
   settings: ProjectData['settings'] = {},
-  weaponFiles: WeaponFile[] = []
+  weaponFiles: WeaponFile[] = [],
+  uiFiles: UIFile[] = []
 ): string {
   const now = new Date().toISOString();
   
@@ -106,13 +167,16 @@ export function serializeProject(
       lastOpenedNode: settings.lastOpenedNode,
       activeScriptFile: settings.activeScriptFile,
       activeWeaponFile: settings.activeWeaponFile,
+      activeUIFile: settings.activeUIFile,
       activeFileType: settings.activeFileType || 'script',
       folders: settings.folders || [],
       weaponFolders: settings.weaponFolders || [],
+      uiFolders: settings.uiFolders || [],
       mod: settings.mod,
     },
     scriptFiles,
     weaponFiles,
+    uiFiles,
   };
 
   const serialized: SerializedProject = {
@@ -163,6 +227,16 @@ export function deserializeProject(jsonString: string): ProjectData {
     // Ensure weaponFiles exists (migration for older projects)
     if (!parsed.data.weaponFiles) {
       parsed.data.weaponFiles = [];
+    }
+    
+    // Ensure uiFiles exists (migration for older projects)
+    if (!parsed.data.uiFiles) {
+      parsed.data.uiFiles = [];
+    }
+    
+    // Ensure uiFolders exists
+    if (!parsed.data.settings.uiFolders) {
+      parsed.data.settings.uiFolders = [];
     }
     
     // Ensure activeFileType exists

@@ -60,9 +60,27 @@ export interface WeaponFile {
 }
 
 /**
+ * UI file type - .res for layout files, .menu for menu definitions
+ */
+export type UIFileType = 'res' | 'menu';
+
+/**
+ * UI file - VGUI layout files (.res) and menu files (.menu)
+ * Located in resource/ui/
+ */
+export interface UIFile {
+  id: string;
+  name: string;           // Filename without extension (e.g., "hudweapons")
+  fileType: UIFileType;   // Type of UI file (.res or .menu)
+  content: string;        // Raw VGUI content
+  createdAt: string;
+  modifiedAt: string;
+}
+
+/**
  * Type of active file being edited
  */
-export type ActiveFileType = 'script' | 'weapon';
+export type ActiveFileType = 'script' | 'weapon' | 'ui';
 
 export interface ProjectSettings {
   canvasPosition?: { x: number; y: number };
@@ -70,9 +88,11 @@ export interface ProjectSettings {
   lastOpenedNode?: string;
   activeScriptFile?: string; // ID of currently open script file
   activeWeaponFile?: string; // ID of currently open weapon file
+  activeUIFile?: string; // ID of currently open UI file
   activeFileType?: ActiveFileType; // Which type of file is currently active
   folders?: string[]; // Explicit folder paths for scripts (including empty folders)
   weaponFolders?: string[]; // Explicit folder paths for weapons
+  uiFolders?: string[]; // Explicit folder paths for UI files
   
   // Mod export settings
   mod?: ModSettings;
@@ -83,6 +103,7 @@ export interface ProjectData {
   settings: ProjectSettings;
   scriptFiles: ScriptFile[]; // Multiple script files
   weaponFiles: WeaponFile[]; // Weapon definition files
+  uiFiles: UIFile[]; // VGUI UI files
   nodes?: any[]; // Legacy support - will migrate to scriptFiles
   connections?: any[]; // Legacy support
 }

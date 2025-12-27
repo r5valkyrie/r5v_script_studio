@@ -3,7 +3,7 @@
  * Compiles a project into a mod folder structure
  */
 
-import type { ProjectData, ModSettings, ScriptFile, WeaponFile } from '../types/project';
+import type { ProjectData, ModSettings, ScriptFile, WeaponFile, UIFile } from '../types/project';
 import { DEFAULT_MOD_SETTINGS } from '../types/project';
 import { generateCode } from './code-generator';
 import { generateCodeMetadata, embedProjectInCode } from './project-manager';
@@ -189,6 +189,9 @@ export async function compileProject(
     const scriptsDir = `${modDir}/scripts`;
     const vscriptsDir = `${scriptsDir}/vscripts`;
     const weaponsDir = `${scriptsDir}/weapons`;
+    const resourceDir = `${modDir}/resource`;
+    const uiDir = `${resourceDir}/ui`;
+    const menusDir = `${uiDir}/menus`;
     
     // Check if electron API is available
     if (!window.electronAPI) {
@@ -210,6 +213,19 @@ export async function compileProject(
     const weaponFiles = project.weaponFiles || [];
     if (weaponFiles.length > 0) {
       await window.electronAPI.createDirectory(weaponsDir);
+    }
+    
+    // Create UI directories if we have UI files
+    const uiFiles = project.uiFiles || [];
+    const hasResFiles = uiFiles.some(f => f.fileType === 'res');
+    const hasMenuFiles = uiFiles.some(f => f.fileType === 'menu');
+    
+    if (uiFiles.length > 0) {
+      await window.electronAPI.createDirectory(resourceDir);
+      await window.electronAPI.createDirectory(uiDir);
+      if (hasMenuFiles) {
+        await window.electronAPI.createDirectory(menusDir);
+      }
     }
     
     // Create mod.vdf
@@ -279,6 +295,35 @@ export async function compileProject(
       
       // Write weapon file
       const writeResult = await window.electronAPI.writeFile(filePath, weaponFile.content);
+      if (!writeResult.success) {
+        return { success: false, error: `Failed to write ${fileName}: ${writeResult.error}` };
+      }
+      filesCreated.push(filePath);
+    }
+    
+    // Generate and write UI files
+    for (const uiFile of uiFiles) {
+      // Determine file name and target directory
+      const isMenu = uiFile.fileType === 'menu';
+      const extension = isMenu ? '.menu' : '.res';
+      const fileName = uiFile.name.endsWith(extension)
+        ? uiFile.name
+        : `${uiFile.name}${extension}`;
+      
+      // Menu files go in resource/ui/menus/, res files go in resource/ui/
+      const targetDir = isMenu ? menusDir : uiDir;
+      
+      // Handle nested paths
+      const filePath = `${targetDir}/${fileName}`;
+      
+      // Create parent directories if needed
+      const parentDir = filePath.substring(0, filePath.lastIndexOf('/'));
+      if (parentDir !== targetDir) {
+        await window.electronAPI.createDirectory(parentDir);
+      }
+      
+      // Write UI file
+      const writeResult = await window.electronAPI.writeFile(filePath, uiFile.content);
       if (!writeResult.success) {
         return { success: false, error: `Failed to write ${fileName}: ${writeResult.error}` };
       }

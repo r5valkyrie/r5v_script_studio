@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { FileCode, Crosshair, Plus, FolderPlus, Trash2, Edit2, Folder, FolderOpen, ChevronRight, ChevronDown, MoreVertical } from 'lucide-react';
-import type { ScriptFile, WeaponFile } from '../../types/project';
+import { FileCode, Crosshair, Plus, FolderPlus, Trash2, Edit2, Folder, FolderOpen, ChevronRight, ChevronDown, MoreVertical, Layout } from 'lucide-react';
+import type { ScriptFile, WeaponFile, UIFile, UIFileType } from '../../types/project';
 import ConfirmDialog from './ConfirmDialog';
 
-type FileSection = 'scripts' | 'weapons';
+type FileSection = 'scripts' | 'weapons' | 'ui';
 
 interface ProjectSidebarProps {
   // Script files
@@ -30,6 +30,18 @@ interface ProjectSidebarProps {
   onDeleteWeaponFolder: (folderPath: string) => void;
   onRenameWeaponFolder?: (oldPath: string, newPath: string) => void;
   
+  // UI files
+  uiFiles: UIFile[];
+  activeUIFileId: string | null;
+  uiFolders: string[];
+  onSelectUIFile: (fileId: string) => void;
+  onCreateUIFile: (fileName: string, fileType?: UIFileType) => void;
+  onDeleteUIFile: (fileId: string) => void;
+  onRenameUIFile: (fileId: string, newName: string) => void;
+  onCreateUIFolder: (folderPath: string) => void;
+  onDeleteUIFolder: (folderPath: string) => void;
+  onRenameUIFolder?: (oldPath: string, newPath: string) => void;
+  
   // General
   modifiedFileIds: Set<string>;
   accentColor?: string;
@@ -46,6 +58,12 @@ const BASE_WEAPONS = [
   { id: '_base_melee', name: 'Melee' },
   { id: '_base_ability_tactical', name: 'Tactical Ability' },
   { id: '_base_ability_ultimate', name: 'Ultimate Ability' },
+];
+
+// UI file type options
+const UI_FILE_TYPES: { id: UIFileType; name: string }[] = [
+  { id: 'res', name: 'Layout (.res)' },
+  { id: 'menu', name: 'Menu (.menu)' },
 ];
 
 export default function ProjectSidebar({
@@ -67,11 +85,20 @@ export default function ProjectSidebar({
   onRenameWeaponFile,
   onCreateWeaponFolder,
   onDeleteWeaponFolder,
+  uiFiles,
+  activeUIFileId,
+  uiFolders,
+  onSelectUIFile,
+  onCreateUIFile,
+  onDeleteUIFile,
+  onRenameUIFile,
+  onCreateUIFolder,
+  onDeleteUIFolder,
   modifiedFileIds,
   accentColor = '#22d3ee',
 }: ProjectSidebarProps) {
-  // Expand both sections by default
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['scripts', 'weapons']));
+  // Expand all sections by default
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['scripts', 'weapons', 'ui']));
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['root']));
   
   // Creation state
@@ -83,6 +110,8 @@ export default function ProjectSidebar({
   const [newFolderName, setNewFolderName] = useState('');
   const [selectedBaseWeapon, setSelectedBaseWeapon] = useState<string>('');
   const [showBaseWeaponDropdown, setShowBaseWeaponDropdown] = useState(false);
+  const [selectedUIFileType, setSelectedUIFileType] = useState<UIFileType>('res');
+  const [showUIFileTypeDropdown, setShowUIFileTypeDropdown] = useState(false);
   
   // Rename state
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -131,11 +160,17 @@ export default function ProjectSidebar({
       } else {
         onDeleteScriptFolder(deleteConfirm.id);
       }
-    } else {
+    } else if (deleteConfirm.section === 'weapons') {
       if (deleteConfirm.type === 'file') {
         onDeleteWeaponFile(deleteConfirm.id);
       } else {
         onDeleteWeaponFolder(deleteConfirm.id);
+      }
+    } else if (deleteConfirm.section === 'ui') {
+      if (deleteConfirm.type === 'file') {
+        onDeleteUIFile(deleteConfirm.id);
+      } else {
+        onDeleteUIFolder(deleteConfirm.id);
       }
     }
     setDeleteConfirm({ isOpen: false, type: 'file', id: '', name: '', section: 'scripts' });
@@ -146,11 +181,14 @@ export default function ProjectSidebar({
       const fileName = creatingIn.folder ? `${creatingIn.folder}/${newFileName.trim()}` : newFileName.trim();
       if (creatingIn.section === 'scripts') {
         onCreateScriptFile(fileName);
-      } else {
+      } else if (creatingIn.section === 'weapons') {
         onCreateWeaponFile(fileName, selectedBaseWeapon || undefined);
+      } else if (creatingIn.section === 'ui') {
+        onCreateUIFile(fileName, selectedUIFileType);
       }
       setNewFileName('');
       setSelectedBaseWeapon('');
+      setSelectedUIFileType('res');
       setCreatingIn(null);
     }
   };
@@ -166,8 +204,10 @@ export default function ProjectSidebar({
     if (newFolderName.trim() && creatingFolderIn) {
       if (creatingFolderIn === 'scripts') {
         onCreateScriptFolder(newFolderName.trim());
-      } else {
+      } else if (creatingFolderIn === 'weapons') {
         onCreateWeaponFolder(newFolderName.trim());
+      } else if (creatingFolderIn === 'ui') {
+        onCreateUIFolder(newFolderName.trim());
       }
       setCreatingFolderIn(null);
       setNewFolderName('');
@@ -178,8 +218,10 @@ export default function ProjectSidebar({
     if (renameValue.trim()) {
       if (section === 'scripts') {
         onRenameScriptFile(fileId, renameValue.trim());
-      } else {
+      } else if (section === 'weapons') {
         onRenameWeaponFile(fileId, renameValue.trim());
+      } else if (section === 'ui') {
+        onRenameUIFile(fileId, renameValue.trim());
       }
     }
     setRenamingId(null);
@@ -267,6 +309,7 @@ export default function ProjectSidebar({
 
   const scriptsByFolder = groupFilesByFolder(scriptFiles, scriptFolders);
   const weaponsByFolder = groupFilesByFolder(weaponFiles, weaponFolders);
+  const uiByFolder = groupFilesByFolder(uiFiles, uiFolders);
 
   const getChildFolders = (parentPath: string, allFolders: string[]): string[] => {
     if (parentPath === 'root') {
@@ -281,13 +324,19 @@ export default function ProjectSidebar({
   };
 
   // Render a file item
-  const renderFile = (file: ScriptFile | WeaponFile, section: FileSection, depth: number = 0) => {
+  const renderFile = (file: ScriptFile | WeaponFile | UIFile, section: FileSection, depth: number = 0) => {
     const fileName = file.name.split('/').pop() || file.name;
-    const isActive = section === 'scripts' ? file.id === activeScriptFileId : file.id === activeWeaponFileId;
+    const isActive = section === 'scripts' 
+      ? file.id === activeScriptFileId 
+      : section === 'weapons'
+        ? file.id === activeWeaponFileId
+        : file.id === activeUIFileId;
     const isModified = modifiedFileIds.has(file.id);
     const isRenaming = renamingId === file.id;
     const isScript = section === 'scripts';
-    const extension = isScript ? '.nut' : '.txt';
+    const isUI = section === 'ui';
+    const uiFile = isUI ? (file as UIFile) : null;
+    const extension = isScript ? '.nut' : isUI ? `.${uiFile?.fileType || 'res'}` : '.txt';
 
     return (
       <div
@@ -302,8 +351,10 @@ export default function ProjectSidebar({
           if (!isRenaming) {
             if (section === 'scripts') {
               onSelectScriptFile(file.id);
-            } else {
+            } else if (section === 'weapons') {
               onSelectWeaponFile(file.id);
+            } else if (section === 'ui') {
+              onSelectUIFile(file.id);
             }
           }
         }}
@@ -318,6 +369,8 @@ export default function ProjectSidebar({
         {/* Icon */}
         {isScript ? (
           <FileCode size={14} className={isActive ? 'text-blue-400' : 'text-gray-500'} />
+        ) : isUI ? (
+          <Layout size={14} className={isActive ? 'text-purple-400' : 'text-gray-500'} />
         ) : (
           <Crosshair size={14} className={isActive ? 'text-orange-400' : 'text-gray-500'} />
         )}
@@ -426,14 +479,19 @@ export default function ProjectSidebar({
     if (!creatingIn || creatingIn.section !== section) return null;
     
     const isScript = section === 'scripts';
-    const icon = isScript ? <FileCode size={14} className="text-blue-400" /> : <Crosshair size={14} className="text-orange-400" />;
+    const isUI = section === 'ui';
+    const icon = isScript 
+      ? <FileCode size={14} className="text-blue-400" /> 
+      : isUI 
+        ? <Layout size={14} className="text-purple-400" />
+        : <Crosshair size={14} className="text-orange-400" />;
     
     return (
       <div className="flex items-center gap-1.5 py-1 pr-2" style={{ paddingLeft: '28px' }}>
         {icon}
         <input
           type="text"
-          placeholder={isScript ? 'script_name' : 'weapon_name'}
+          placeholder={isScript ? 'script_name' : isUI ? 'ui_file_name' : 'weapon_name'}
           value={newFileName}
           onChange={(e) => setNewFileName(e.target.value)}
           onKeyDown={(e) => {
@@ -442,11 +500,38 @@ export default function ProjectSidebar({
               setCreatingIn(null);
               setNewFileName('');
               setSelectedBaseWeapon('');
+              setSelectedUIFileType('res');
             }
           }}
           className="flex-1 bg-[#2d2d2d] border border-blue-500/50 rounded px-1.5 py-0.5 text-xs text-white outline-none"
           autoFocus
         />
+        {/* UI file type selector */}
+        {isUI && (
+          <div className="relative">
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowUIFileTypeDropdown(!showUIFileTypeDropdown); }}
+              className="px-2 py-0.5 text-[10px] bg-[#2d2d2d] border border-white/10 rounded text-gray-300 hover:text-white hover:border-white/20 transition-colors"
+            >
+              .{selectedUIFileType}
+            </button>
+            {showUIFileTypeDropdown && (
+              <div className="absolute top-full left-0 mt-1 z-50 bg-[#2d2d2d] border border-white/10 rounded py-1 min-w-[100px]">
+                {UI_FILE_TYPES.map(ft => (
+                  <button
+                    key={ft.id}
+                    onClick={(e) => { e.stopPropagation(); setSelectedUIFileType(ft.id); setShowUIFileTypeDropdown(false); }}
+                    className={`w-full text-left px-2 py-1 text-[10px] hover:bg-white/10 ${
+                      selectedUIFileType === ft.id ? 'text-purple-400' : 'text-gray-300'
+                    }`}
+                  >
+                    {ft.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         <button
           onClick={handleCreate}
           className="p-1 text-green-400 hover:text-green-300 hover:bg-green-500/20 rounded"
@@ -455,7 +540,7 @@ export default function ProjectSidebar({
           <Plus size={12} />
         </button>
         <button
-          onClick={() => { setCreatingIn(null); setNewFileName(''); setSelectedBaseWeapon(''); }}
+          onClick={() => { setCreatingIn(null); setNewFileName(''); setSelectedBaseWeapon(''); setSelectedUIFileType('res'); }}
           className="p-1 text-gray-500 hover:text-gray-300 hover:bg-white/10 rounded"
           title="Cancel"
         >
@@ -505,20 +590,20 @@ export default function ProjectSidebar({
     );
   };
 
-  // Render a section (Scripts or Weapons) as a root folder
+  // Render a section (Scripts, Weapons, or UI) as a root folder
   const renderSection = (
     section: FileSection,
     title: string,
     icon: React.ReactNode,
-    files: (ScriptFile | WeaponFile)[],
+    files: (ScriptFile | WeaponFile | UIFile)[],
     folders: string[],
-    filesByFolder: Record<string, (ScriptFile | WeaponFile)[]>
+    filesByFolder: Record<string, (ScriptFile | WeaponFile | UIFile)[]>
   ) => {
     const isExpanded = expandedSections.has(section);
     const rootFiles = filesByFolder['root'] || [];
     const rootFolders = getChildFolders('root', folders);
     const isRootDropTarget = dropTarget === 'root' && draggedFile?.section === section;
-    const folderColor = section === 'scripts' ? 'text-blue-500' : 'text-orange-500';
+    const folderColor = section === 'scripts' ? 'text-blue-500' : section === 'ui' ? 'text-purple-500' : 'text-orange-500';
 
     return (
       <div>
@@ -551,7 +636,7 @@ export default function ProjectSidebar({
             <button
               onClick={(e) => { e.stopPropagation(); setCreatingIn({ section }); }}
               className="p-1 text-gray-500 hover:text-white hover:bg-white/10 rounded transition-colors"
-              title={`New ${section === 'scripts' ? 'script' : 'weapon'}`}
+              title={`New ${section === 'scripts' ? 'script' : section === 'ui' ? 'UI file' : 'weapon'}`}
             >
               <Plus size={12} />
             </button>
@@ -583,7 +668,7 @@ export default function ProjectSidebar({
                 onClick={() => setCreatingIn({ section })}
               >
                 <p className="text-[10px] text-gray-600">
-                  Click to add {section === 'scripts' ? 'a script' : 'a weapon'}
+                  Click to add {section === 'scripts' ? 'a script' : section === 'ui' ? 'a UI file' : 'a weapon'}
                 </p>
               </div>
             )}
@@ -619,10 +704,11 @@ export default function ProjectSidebar({
         >
           <button
             onClick={() => {
-              const files = contextMenu.section === 'scripts' ? scriptFiles : weaponFiles;
+              const files = contextMenu.section === 'scripts' ? scriptFiles : contextMenu.section === 'ui' ? uiFiles : weaponFiles;
               const file = files.find(f => f.id === contextMenu.id);
               if (file) {
-                const ext = contextMenu.section === 'scripts' ? '.nut' : '.txt';
+                const uiFile = contextMenu.section === 'ui' ? (file as UIFile) : null;
+                const ext = contextMenu.section === 'scripts' ? '.nut' : contextMenu.section === 'ui' ? `.${uiFile?.fileType || 'res'}` : '.txt';
                 setRenamingId(contextMenu.id);
                 setRenameValue((file.name.split('/').pop() || file.name).replace(ext, ''));
               }
@@ -635,7 +721,7 @@ export default function ProjectSidebar({
           </button>
           <button
             onClick={() => {
-              const files = contextMenu.section === 'scripts' ? scriptFiles : weaponFiles;
+              const files = contextMenu.section === 'scripts' ? scriptFiles : contextMenu.section === 'ui' ? uiFiles : weaponFiles;
               const file = files.find(f => f.id === contextMenu.id);
               if (file) {
                 setDeleteConfirm({
@@ -676,6 +762,16 @@ export default function ProjectSidebar({
           weaponFiles,
           weaponFolders,
           weaponsByFolder
+        )}
+
+        {/* UI Section */}
+        {renderSection(
+          'ui',
+          'UI',
+          <Layout size={14} />,
+          uiFiles,
+          uiFolders,
+          uiByFolder
         )}
       </div>
 

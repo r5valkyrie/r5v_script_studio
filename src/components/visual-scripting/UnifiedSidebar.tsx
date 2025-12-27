@@ -45,7 +45,7 @@ import type { ScriptNode, NodeType, NodeTemplate, TemplateCategory, NodeConnecti
 import { loadTemplates, deleteTemplate as deleteTemplateFromStorage, instantiateTemplate } from '../../utils/template-storage';
 import { BUILT_IN_TEMPLATES } from '../../data/built-in-templates';
 import ProjectSidebar from './ProjectSidebar';
-import type { ScriptFile, WeaponFile } from '../../types/project';
+import type { ScriptFile, WeaponFile, UIFile, UIFileType } from '../../types/project';
 
 type SidebarTab = 'project' | 'nodes' | 'presets';
 
@@ -108,6 +108,19 @@ interface UnifiedSidebarProps {
   onCreateWeaponFolder: (folderPath: string) => void;
   onDeleteWeaponFolder: (folderPath: string) => void;
   onRenameWeaponFolder?: (oldPath: string, newPath: string) => void;
+  
+  // UI files
+  uiFiles: UIFile[];
+  activeUIFileId: string | null;
+  uiFolders: string[];
+  onSelectUIFile: (fileId: string) => void;
+  onCreateUIFile: (fileName: string, fileType?: UIFileType) => void;
+  onDeleteUIFile: (fileId: string) => void;
+  onRenameUIFile: (fileId: string, newName: string) => void;
+  onCreateUIFolder: (folderPath: string) => void;
+  onDeleteUIFolder: (folderPath: string) => void;
+  onRenameUIFolder?: (oldPath: string, newPath: string) => void;
+  
   modifiedFileIds: Set<string>;
   
   // Node palette props
@@ -124,7 +137,7 @@ interface UnifiedSidebarProps {
   
   // General
   accentColor: string;
-  activeFileType: 'script' | 'weapon';
+  activeFileType: 'script' | 'weapon' | 'ui';
   onClose: () => void;
 }
 
@@ -166,6 +179,16 @@ export default function UnifiedSidebar({
   onCreateWeaponFolder,
   onDeleteWeaponFolder,
   onRenameWeaponFolder,
+  uiFiles,
+  activeUIFileId,
+  uiFolders,
+  onSelectUIFile,
+  onCreateUIFile,
+  onDeleteUIFile,
+  onRenameUIFile,
+  onCreateUIFolder,
+  onDeleteUIFolder,
+  onRenameUIFolder,
   modifiedFileIds,
   onAddNode,
   viewState,
@@ -464,6 +487,16 @@ export default function UnifiedSidebar({
           onCreateWeaponFolder={onCreateWeaponFolder}
           onDeleteWeaponFolder={onDeleteWeaponFolder}
           onRenameWeaponFolder={onRenameWeaponFolder}
+          uiFiles={uiFiles}
+          activeUIFileId={activeUIFileId}
+          uiFolders={uiFolders}
+          onSelectUIFile={onSelectUIFile}
+          onCreateUIFile={onCreateUIFile}
+          onDeleteUIFile={onDeleteUIFile}
+          onRenameUIFile={onRenameUIFile}
+          onCreateUIFolder={onCreateUIFolder}
+          onDeleteUIFolder={onDeleteUIFolder}
+          onRenameUIFolder={onRenameUIFolder}
           modifiedFileIds={modifiedFileIds}
           accentColor={accentColor}
         />
