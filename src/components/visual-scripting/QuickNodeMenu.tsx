@@ -255,32 +255,32 @@ export default function QuickNodeMenu({
 
   // Calculate menu position to keep it on screen
   const menuStyle = useMemo(() => {
-    const menuWidth = 360;
+    const menuWidth = 340; // Match the actual rendered width
     const menuHeight = 420;
-    // Convert to position relative to container if offset provided
-    let x = containerOffset ? position.x - containerOffset.left : position.x;
-    let y = containerOffset ? position.y - containerOffset.top : position.y;
+    
+    // Use viewport position directly (fixed positioning)
+    let x = position.x;
+    let y = position.y;
 
-    // Center the menu on the click point (subtract half width/height for better centering)
+    // Center the menu horizontally on the click point
     x -= menuWidth / 2;
+    // Position slightly below the click point
     y += 10;
 
-    // Keep menu on screen (use container dimensions if available)
+    // Keep menu on screen
     if (typeof window !== 'undefined') {
-      const maxX = containerOffset ? window.innerWidth - containerOffset.left : window.innerWidth;
-      const maxY = containerOffset ? window.innerHeight - containerOffset.top : window.innerHeight;
-      if (x + menuWidth > maxX - 20) {
-        x = maxX - menuWidth - 20;
+      if (x + menuWidth > window.innerWidth - 20) {
+        x = window.innerWidth - menuWidth - 20;
       }
-      if (y + menuHeight > maxY - 20) {
-        y = maxY - menuHeight - 20;
+      if (y + menuHeight > window.innerHeight - 20) {
+        y = window.innerHeight - menuHeight - 20;
       }
       if (x < 20) x = 20;
       if (y < 20) y = 20;
     }
 
     return { left: x, top: y };
-  }, [position, containerOffset]);
+  }, [position]);
 
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -302,7 +302,7 @@ export default function QuickNodeMenu({
     <div
       ref={menuRef}
       data-quick-node-menu="true"
-      className="absolute z-[1000] w-[340px] bg-[#2d2d2d] rounded overflow-hidden"
+      className="fixed z-[1000] w-[340px] bg-[#2d2d2d] rounded overflow-hidden"
       style={{
         ...menuStyle,
         boxShadow: '0 8px 10px -5px rgba(0,0,0,.2), 0 16px 24px 2px rgba(0,0,0,.14), 0 6px 30px 5px rgba(0,0,0,.12)',

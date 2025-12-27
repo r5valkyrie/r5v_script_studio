@@ -15,6 +15,105 @@ export interface OpenFileOptions {
   properties?: Array<'openFile' | 'openDirectory' | 'multiSelections'>;
 }
 
+export interface SaveProjectResult {
+  filePath: string | null;
+  originalSize?: number;
+  compressedSize?: number;
+  compressionRatio?: string;
+}
+
+/**
+ * Shows save dialog and writes compressed project content to file
+ */
+export async function saveProjectFile(content: string, options: SaveFileOptions = {}): Promise<SaveProjectResult> {
+  try {
+    // Check if electron API is available
+    if (!window.electron) {
+      console.error('Electron API not available');
+      // Fallback to browser download (uncompressed)
+      downloadAsFile(content, options.defaultPath || 'project.r5vproj');
+      return { filePath: null };
+    }
+
+    const result = await window.electron.showSaveDialog({
+      title: options.title || 'Save Project',
+      defaultPath: options.defaultPath,
+      filters: options.filters || [
+        { name: 'R5V Project', extensions: ['r5vproj'] },
+        { name: 'All Files', extensions: ['*'] },
+      ],
+    });
+
+    if (result.canceled || !result.filePath) {
+      return { filePath: null };
+    }
+
+    const writeResult = await window.electron.writeProjectFile(result.filePath, content);
+    
+    if (!writeResult.success) {
+      throw new Error(writeResult.error || 'Failed to write project file');
+    }
+
+    const ratio = writeResult.originalSize && writeResult.compressedSize 
+      ? ((1 - writeResult.compressedSize / writeResult.originalSize) * 100).toFixed(1) + '%'
+      : undefined;
+
+    return { 
+      filePath: result.filePath,
+      originalSize: writeResult.originalSize,
+      compressedSize: writeResult.compressedSize,
+      compressionRatio: ratio
+    };
+  } catch (error) {
+    console.error('Failed to save project file:', error);
+    throw error;
+  }
+}
+
+/**
+ * Shows open dialog and reads project file (auto-detects compressed or plain JSON)
+ */
+export async function openProjectFile(options: OpenFileOptions = {}): Promise<{ filePath: string; content: string; wasCompressed: boolean } | null> {
+  try {
+    // Check if electron API is available
+    if (!window.electron) {
+      console.error('Electron API not available');
+      const result = await openFileInBrowser();
+      return result ? { ...result, wasCompressed: false } : null;
+    }
+
+    const result = await window.electron.showOpenDialog({
+      title: options.title || 'Open Project',
+      filters: options.filters || [
+        { name: 'R5V Project', extensions: ['r5vproj'] },
+        { name: 'JSON', extensions: ['json'] },
+        { name: 'All Files', extensions: ['*'] },
+      ],
+      properties: options.properties || ['openFile'],
+    });
+
+    if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
+      return null;
+    }
+
+    const filePath = result.filePaths[0];
+    const readResult = await window.electron.readProjectFile(filePath);
+    
+    if (!readResult.success || !readResult.content) {
+      throw new Error(readResult.error || 'Failed to read project file');
+    }
+    
+    return { 
+      filePath, 
+      content: readResult.content,
+      wasCompressed: readResult.compressed || false
+    };
+  } catch (error) {
+    console.error('Failed to open project file:', error);
+    throw error;
+  }
+}
+
 /**
  * Shows save dialog and writes content to file
  */

@@ -7,7 +7,7 @@ import {
   validateProject,
   createNewProject 
 } from '../utils/project-manager';
-import { saveFile, openFile } from '../utils/file-system';
+import { saveProjectFile, openProjectFile } from '../utils/file-system';
 
 export interface UseProjectReturn {
   // State
@@ -53,20 +53,20 @@ export function useProject(): UseProjectReturn {
       
       // If no current file, show save dialog
       if (!filePath) {
-        filePath = await saveFile(jsonContent, {
+        const result = await saveProjectFile(jsonContent, {
           title: 'Save Project',
           defaultPath: `${(metadata as any).name || 'Untitled'}.r5vproj`,
           filters: [
             { name: 'R5V Project', extensions: ['r5vproj'] },
-            { name: 'JSON', extensions: ['json'] },
           ],
         });
         
+        filePath = result.filePath;
         if (!filePath) return false; // User cancelled
       } else {
-        // Save to existing file
+        // Save to existing file using compressed format
         if (window.electron) {
-          await window.electron.writeFile(filePath, jsonContent);
+          await window.electron.writeProjectFile(filePath, jsonContent);
         }
       }
       
@@ -95,18 +95,17 @@ export function useProject(): UseProjectReturn {
       
       const jsonContent = serializeProject(nodes, connections, metadata, settings);
       
-      const filePath = await saveFile(jsonContent, {
+      const result = await saveProjectFile(jsonContent, {
         title: 'Save Project As',
         defaultPath: `${(metadata as any).name || 'Untitled'}.r5vproj`,
         filters: [
           { name: 'R5V Project', extensions: ['r5vproj'] },
-          { name: 'JSON', extensions: ['json'] },
         ],
       });
       
-      if (!filePath) return false;
+      if (!result.filePath) return false;
       
-      setCurrentFilePath(filePath);
+      setCurrentFilePath(result.filePath);
       setHasUnsavedChanges(false);
       
       const updated = deserializeProject(jsonContent);
@@ -125,7 +124,7 @@ export function useProject(): UseProjectReturn {
     connections: NodeConnection[] 
   } | null> => {
     try {
-      const result = await openFile({
+      const result = await openProjectFile({
         title: 'Open Project',
         filters: [
           { name: 'R5V Project', extensions: ['r5vproj'] },

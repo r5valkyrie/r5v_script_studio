@@ -9,7 +9,7 @@ import {
   createScriptFile,
   createWeaponFile
 } from '../utils/project-manager';
-import { saveFile, openFile } from '../utils/file-system';
+import { saveProjectFile, openProjectFile } from '../utils/file-system';
 
 export interface UseProjectFilesReturn {
   // State
@@ -126,7 +126,7 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
       );
       
       if (window.electron) {
-        await window.electron.writeFile(filePath, jsonContent);
+        await window.electron.writeProjectFile(filePath, jsonContent);
       }
       
       return true;
@@ -159,19 +159,19 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
       let filePath = currentFilePath;
       
       if (!filePath) {
-        filePath = await saveFile(jsonContent, {
+        const result = await saveProjectFile(jsonContent, {
           title: 'Save Project',
           defaultPath: `${projectData.metadata.name || 'Untitled'}.r5vproj`,
           filters: [
             { name: 'R5V Project', extensions: ['r5vproj'] },
-            { name: 'JSON', extensions: ['json'] },
           ],
         });
         
+        filePath = result.filePath;
         if (!filePath) return false;
       } else {
         if (window.electron) {
-          await window.electron.writeFile(filePath, jsonContent);
+          await window.electron.writeProjectFile(filePath, jsonContent);
         }
       }
       
@@ -199,21 +199,20 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
         projectData.weaponFiles
       );
       
-      const filePath = await saveFile(jsonContent, {
+      const result = await saveProjectFile(jsonContent, {
         title: 'Save Project As',
         defaultPath: `${projectData.metadata.name || 'Untitled'}.r5vproj`,
         filters: [
           { name: 'R5V Project', extensions: ['r5vproj'] },
-          { name: 'JSON', extensions: ['json'] },
         ],
       });
       
-      if (!filePath) return false;
+      if (!result.filePath) return false;
       
-      setCurrentFilePath(filePath);
+      setCurrentFilePath(result.filePath);
       setHasUnsavedChanges(false);
       setModifiedFileIds(new Set()); // Clear all modified file indicators
-      addToRecentProjects(filePath, projectData.metadata.name || 'Untitled');
+      addToRecentProjects(result.filePath, projectData.metadata.name || 'Untitled');
       
       return true;
     } catch (error) {
@@ -225,7 +224,7 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
   // Load project
   const loadProject = useCallback(async (): Promise<boolean> => {
     try {
-      const result = await openFile({
+      const result = await openProjectFile({
         title: 'Open Project',
         filters: [
           { name: 'R5V Project', extensions: ['r5vproj'] },
@@ -263,8 +262,12 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
         return false;
       }
 
-      const content = await window.electron.readFile(path);
-      const loaded = deserializeProject(content);
+      const result = await window.electron.readProjectFile(path);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to read project file');
+      }
+      
+      const loaded = deserializeProject(result.content);
       
       if (!validateProject(loaded)) {
         throw new Error('Invalid project file format');

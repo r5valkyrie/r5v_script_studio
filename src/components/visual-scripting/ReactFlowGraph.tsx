@@ -3001,7 +3001,13 @@ function ReactFlowGraphInner({
             <>
               <button
                 className="px-4 py-2.5 hover:bg-white/8 w-full text-left flex items-center gap-3 transition-colors"
-                onClick={() => contextMenu.canvasPos && handleOpenQuickMenu(contextMenu.canvasPos, { x: contextMenu.x, y: contextMenu.y })}
+                onClick={() => {
+                  if (contextMenu.canvasPos) {
+                    // Position QuickNodeMenu at the original right-click position
+                    // The menu will center itself on this position
+                    handleOpenQuickMenu(contextMenu.canvasPos, { x: contextMenu.x, y: contextMenu.y });
+                  }
+                }}
               >
                 <span className="text-[#2196F3] text-lg">+</span> 
                 <span className="text-gray-100">Add Node</span>

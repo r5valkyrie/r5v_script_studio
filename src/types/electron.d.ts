@@ -60,6 +60,20 @@ export interface ElectronAPI {
   close: () => void;
 }
 
+export interface ProjectFileReadResult {
+  success: boolean;
+  content?: string;
+  compressed?: boolean;
+  error?: string;
+}
+
+export interface ProjectFileWriteResult {
+  success: boolean;
+  originalSize?: number;
+  compressedSize?: number;
+  error?: string;
+}
+
 export interface Electron {
   ipcRenderer: {
     on: (channel: string, listener: (...args: any[]) => void) => void;
@@ -69,6 +83,9 @@ export interface Electron {
   showOpenDialog: (options: OpenDialogOptions) => Promise<DialogResult>;
   readFile: (filePath: string) => Promise<string>;
   writeFile: (filePath: string, content: string) => Promise<any>;
+  // Compressed project file operations
+  readProjectFile: (filePath: string) => Promise<ProjectFileReadResult>;
+  writeProjectFile: (filePath: string, content: string) => Promise<ProjectFileWriteResult>;
 }
 
 declare global {

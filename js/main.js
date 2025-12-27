@@ -3,6 +3,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fs from 'node:fs/promises';
 import { existsSync } from 'node:fs';
+import zlib from 'node:zlib';
+import { promisify } from 'node:util';
+
+const gzip = promisify(zlib.gzip);
+const gunzip = promisify(zlib.gunzip);
+
+// Magic bytes to identify compressed R5V project files
+const R5V_MAGIC = Buffer.from([0x52, 0x35, 0x56, 0x50]); // "R5VP"
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -144,6 +152,42 @@ ipcMain.handle('write-file', async (event, { filePath, content }) => {
   try {
     await fs.writeFile(filePath, content, 'utf-8');
     return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Read project file - auto-detect compressed or plain JSON
+ipcMain.handle('read-project-file', async (event, { filePath }) => {
+  try {
+    const buffer = await fs.readFile(filePath);
+    
+    // Check for R5V magic header (compressed format)
+    if (buffer.length >= 4 && buffer.slice(0, 4).equals(R5V_MAGIC)) {
+      // Compressed format: R5VP + gzipped JSON
+      const compressedData = buffer.slice(4);
+      const decompressed = await gunzip(compressedData);
+      return { success: true, content: decompressed.toString('utf-8'), compressed: true };
+    }
+    
+    // Plain JSON (legacy/uncompressed)
+    return { success: true, content: buffer.toString('utf-8'), compressed: false };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Write project file - always compress
+ipcMain.handle('write-project-file', async (event, { filePath, content }) => {
+  try {
+    // Compress the JSON content
+    const compressed = await gzip(Buffer.from(content, 'utf-8'), { level: 9 });
+    
+    // Create buffer with magic header + compressed data
+    const finalBuffer = Buffer.concat([R5V_MAGIC, compressed]);
+    
+    await fs.writeFile(filePath, finalBuffer);
+    return { success: true, originalSize: content.length, compressedSize: finalBuffer.length };
   } catch (error) {
     return { success: false, error: error.message };
   }
