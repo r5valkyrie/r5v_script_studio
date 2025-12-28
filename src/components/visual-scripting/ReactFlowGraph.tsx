@@ -2494,11 +2494,17 @@ function ReactFlowGraphInner({
     }
     if (!connectionState.fromNode || !connectionState.fromHandle) return;
 
+    // If a valid connection was made to another node, don't show quick menu
+    if (connectionState.toNode || connectionState.toHandle) {
+      activeConnectRef.current = null;
+      return;
+    }
+
     // Get mouse position
     const clientX = 'clientX' in event ? event.clientX : (event as TouchEvent).touches[0].clientX;
     const clientY = 'clientY' in event ? event.clientY : (event as TouchEvent).touches[0].clientY;
 
-    // Check if we dropped on a valid target
+    // Check if we dropped on a valid target (fallback check)
     const targetElement = document.elementFromPoint(clientX, clientY);
     if (targetElement?.closest('.react-flow__handle')) return;
 
