@@ -563,12 +563,30 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
     }
 
     case 'reroute': {
-      // Reroute nodes pass through both execution and data - they're just for visual organization
-      // Pass through data value from input to output
-      const inputValue = getInputValue(ctx, node, 'input_0');
-      ctx.variables.set(`${node.id}:output_0`, inputValue);
-      // Also follow exec if this is an exec reroute
-      followExec('output_0');
+      // Reroute nodes auto-detect whether they're exec or data based on what's connected
+      const inputConns = getInputConnections(ctx, node.id, 'input_0');
+      
+      // Check if connected to an exec port
+      let isExecReroute = false;
+      if (inputConns.length > 0) {
+        const conn = inputConns[0];
+        const sourceNode = ctx.nodeMap.get(conn.from.nodeId);
+        if (sourceNode) {
+          const sourcePort = sourceNode.outputs.find(p => p.id === conn.from.portId);
+          if (sourcePort && sourcePort.type === 'exec') {
+            isExecReroute = true;
+          }
+        }
+      }
+      
+      if (isExecReroute) {
+        // Exec reroute: just follow the execution flow
+        followExec('output_0');
+      } else {
+        // Data reroute: pass through the data value (don't follow exec)
+        const inputValue = getInputValue(ctx, node, 'input_0');
+        ctx.variables.set(`${node.id}:output_0`, inputValue);
+      }
       break;
     }
 
@@ -1499,8 +1517,8 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
     case 'give-weapon': {
       const player = getInputValue(ctx, node, 'input_1');
       const weaponClass = getInputValue(ctx, node, 'input_2');
-      const mods = getInputValue(ctx, node, 'input_3');
-      const slot = node.data?.slot || 'WEAPON_INVENTORY_SLOT_PRIMARY_0';
+      const slot = getInputValue(ctx, node, 'input_3');
+      const mods = getInputValue(ctx, node, 'input_4');
       const resultVar = getVarName(ctx, 'weapon');
       ctx.variables.set(`${node.id}:output_1`, resultVar);
       if (mods && mods !== 'null' && mods !== '[]') {
@@ -2183,6 +2201,12 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
     case 'const-weapon-type': {
       const weaponType = node.data.weaponType || 'pistol';
       ctx.variables.set(`${node.id}:output_0`, `"${weaponType}"`);
+      break;
+    }
+
+    case 'const-weapon-slot': {
+      const slot = node.data.slot || 'WEAPON_INVENTORY_SLOT_PRIMARY_0';
+      ctx.variables.set(`${node.id}:output_0`, slot);
       break;
     }
 

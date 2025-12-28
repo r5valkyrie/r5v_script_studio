@@ -625,14 +625,10 @@ export default function VisualScriptEditor() {
       return [...currentConnections, newConnection];
     });
 
-    // Update call-function arg types based on connected source
+    // Update node types based on connected source
     setNodes(currentNodes => {
       const targetNode = currentNodes.find(n => n.id === newConnection.to.nodeId);
-      if (!targetNode || targetNode.type !== 'call-function') return currentNodes;
-      
-      // Check if this is an arg input (input_1, input_2, etc.)
-      const portId = newConnection.to.portId;
-      if (!portId.startsWith('input_') || portId === 'input_exec') return currentNodes;
+      if (!targetNode) return currentNodes;
       
       // Find the source node and port to get the dataType
       const sourceNode = currentNodes.find(n => n.id === newConnection.from.nodeId);
@@ -641,17 +637,55 @@ export default function VisualScriptEditor() {
       const sourcePort = sourceNode.outputs.find(o => o.id === newConnection.from.portId);
       if (!sourcePort || sourcePort.type !== 'data') return currentNodes;
       
-      // Update the target input's dataType
-      return currentNodes.map(n => {
-        if (n.id !== targetNode.id) return n;
-        return {
-          ...n,
-          inputs: n.inputs.map(inp => {
-            if (inp.id !== portId) return inp;
-            return { ...inp, dataType: sourcePort.dataType || 'any' };
-          }),
-        };
-      });
+      const sourceDataType = sourcePort.dataType || 'any';
+      const portId = newConnection.to.portId;
+      
+      // Handle call-function arg types
+      if (targetNode.type === 'call-function') {
+        if (!portId.startsWith('input_') || portId === 'input_exec') return currentNodes;
+        
+        return currentNodes.map(n => {
+          if (n.id !== targetNode.id) return n;
+          return {
+            ...n,
+            inputs: n.inputs.map(inp => {
+              if (inp.id !== portId) return inp;
+              return { ...inp, dataType: sourceDataType };
+            }),
+          };
+        });
+      }
+      
+      // Handle set-portal Value input type - also update matching get-portal nodes
+      if (targetNode.type === 'set-portal' && portId === 'input_1') {
+        const portalName = targetNode.data?.portalName || 'MyPortal';
+        
+        return currentNodes.map(n => {
+          // Update the set-portal's Value input
+          if (n.id === targetNode.id) {
+            return {
+              ...n,
+              inputs: n.inputs.map(inp => {
+                if (inp.id !== 'input_1') return inp;
+                return { ...inp, dataType: sourceDataType };
+              }),
+            };
+          }
+          // Also update any get-portal nodes with matching portal name
+          if (n.type === 'get-portal' && n.data?.portalName === portalName) {
+            return {
+              ...n,
+              outputs: n.outputs.map(out => {
+                if (out.id !== 'output_0') return out;
+                return { ...out, dataType: sourceDataType };
+              }),
+            };
+          }
+          return n;
+        });
+      }
+      
+      return currentNodes;
     });
   }, []);
 
@@ -660,25 +694,57 @@ export default function VisualScriptEditor() {
       currentConnections.filter(conn => !(conn.to.nodeId === nodeId && conn.to.portId === portId))
     );
     
-    // Reset call-function arg type back to 'any' when disconnected
+    // Reset types back to 'any' when disconnected
     setNodes(currentNodes => {
       const targetNode = currentNodes.find(n => n.id === nodeId);
-      if (!targetNode || targetNode.type !== 'call-function') return currentNodes;
+      if (!targetNode) return currentNodes;
       
-      // Check if this is an arg input (input_1, input_2, etc.)
-      if (!portId.startsWith('input_') || portId === 'input_exec') return currentNodes;
+      // Handle call-function arg types
+      if (targetNode.type === 'call-function') {
+        if (!portId.startsWith('input_') || portId === 'input_exec') return currentNodes;
+        
+        return currentNodes.map(n => {
+          if (n.id !== nodeId) return n;
+          return {
+            ...n,
+            inputs: n.inputs.map(inp => {
+              if (inp.id !== portId) return inp;
+              return { ...inp, dataType: 'any' as const };
+            }),
+          };
+        });
+      }
       
-      // Reset the input's dataType to 'any'
-      return currentNodes.map(n => {
-        if (n.id !== nodeId) return n;
-        return {
-          ...n,
-          inputs: n.inputs.map(inp => {
-            if (inp.id !== portId) return inp;
-            return { ...inp, dataType: 'any' as const };
-          }),
-        };
-      });
+      // Handle set-portal Value input - also reset matching get-portal nodes
+      if (targetNode.type === 'set-portal' && portId === 'input_1') {
+        const portalName = targetNode.data?.portalName || 'MyPortal';
+        
+        return currentNodes.map(n => {
+          // Reset the set-portal's Value input
+          if (n.id === nodeId) {
+            return {
+              ...n,
+              inputs: n.inputs.map(inp => {
+                if (inp.id !== 'input_1') return inp;
+                return { ...inp, dataType: 'any' as const };
+              }),
+            };
+          }
+          // Also reset any get-portal nodes with matching portal name
+          if (n.type === 'get-portal' && n.data?.portalName === portalName) {
+            return {
+              ...n,
+              outputs: n.outputs.map(out => {
+                if (out.id !== 'output_0') return out;
+                return { ...out, dataType: 'any' as const };
+              }),
+            };
+          }
+          return n;
+        });
+      }
+      
+      return currentNodes;
     });
   }, []);
 
@@ -687,25 +753,57 @@ export default function VisualScriptEditor() {
     setConnections(currentConnections => {
       const deletedConn = currentConnections.find(conn => conn.id === connectionId);
       
-      // Reset call-function arg type if needed
+      // Reset types if needed
       if (deletedConn) {
         const { nodeId, portId } = deletedConn.to;
         setNodes(currentNodes => {
           const targetNode = currentNodes.find(n => n.id === nodeId);
-          if (!targetNode || targetNode.type !== 'call-function') return currentNodes;
+          if (!targetNode) return currentNodes;
           
-          if (!portId.startsWith('input_') || portId === 'input_exec') return currentNodes;
+          // Handle call-function arg types
+          if (targetNode.type === 'call-function') {
+            if (!portId.startsWith('input_') || portId === 'input_exec') return currentNodes;
+            
+            return currentNodes.map(n => {
+              if (n.id !== nodeId) return n;
+              return {
+                ...n,
+                inputs: n.inputs.map(inp => {
+                  if (inp.id !== portId) return inp;
+                  return { ...inp, dataType: 'any' as const };
+                }),
+              };
+            });
+          }
           
-          return currentNodes.map(n => {
-            if (n.id !== nodeId) return n;
-            return {
-              ...n,
-              inputs: n.inputs.map(inp => {
-                if (inp.id !== portId) return inp;
-                return { ...inp, dataType: 'any' as const };
-              }),
-            };
-          });
+          // Handle set-portal Value input - also reset matching get-portal nodes
+          if (targetNode.type === 'set-portal' && portId === 'input_1') {
+            const portalName = targetNode.data?.portalName || 'MyPortal';
+            
+            return currentNodes.map(n => {
+              if (n.id === nodeId) {
+                return {
+                  ...n,
+                  inputs: n.inputs.map(inp => {
+                    if (inp.id !== 'input_1') return inp;
+                    return { ...inp, dataType: 'any' as const };
+                  }),
+                };
+              }
+              if (n.type === 'get-portal' && n.data?.portalName === portalName) {
+                return {
+                  ...n,
+                  outputs: n.outputs.map(out => {
+                    if (out.id !== 'output_0') return out;
+                    return { ...out, dataType: 'any' as const };
+                  }),
+                };
+              }
+              return n;
+            });
+          }
+          
+          return currentNodes;
         });
       }
       

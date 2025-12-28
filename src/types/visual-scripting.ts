@@ -513,6 +513,7 @@ export type NodeType =
   | 'const-loot-tier'
   | 'const-supported-attachments'
   | 'const-weapon-type'
+  | 'const-weapon-slot'
   | 'define-const'
   | 'global-variable'
   | 'local-variable'

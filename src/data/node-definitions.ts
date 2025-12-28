@@ -5797,6 +5797,7 @@ vector targetPos = player.GetEyePosition() + (aimDir * 1000)`,
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Player', type: 'data', dataType: 'player', isInput: true },
       { label: 'WeaponClass', type: 'data', dataType: 'string', isInput: true },
+      { label: 'Slot', type: 'data', dataType: 'int', isInput: true },
       { label: 'Mods', type: 'data', dataType: 'array', isInput: true },
     ],
     outputs: [
@@ -8893,6 +8894,19 @@ void function OnPlayerDeath( entity player, var damageInfo )
       { label: 'Type', type: 'data', dataType: 'string', isInput: false },
     ],
     defaultData: { weaponType: 'pistol' },
+  },
+  {
+    type: 'const-weapon-slot',
+    category: 'weapons',
+    label: 'Weapon Slot',
+    description: 'Weapon inventory slot constant for GiveWeapon',
+    color: '#E67E22',
+    inputs: [],
+    outputs: [
+      { label: 'Slot', type: 'data', dataType: 'int', isInput: false },
+    ],
+    defaultData: { slot: 'WEAPON_INVENTORY_SLOT_PRIMARY_0' },
+    tags: ['weapon', 'slot', 'inventory', 'primary', 'secondary', 'tactical', 'ultimate'],
   },
   {
     type: 'variable-get',

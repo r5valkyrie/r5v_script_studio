@@ -971,6 +971,31 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
       );
     }
 
+    // Weapon Slot selector
+    if (node.type === 'const-weapon-slot') {
+      const value = typeof node.data.slot === 'string' ? node.data.slot : 'WEAPON_INVENTORY_SLOT_PRIMARY_0';
+      const slotOptions = [
+        { value: 'WEAPON_INVENTORY_SLOT_PRIMARY_0', label: 'Primary 1' },
+        { value: 'WEAPON_INVENTORY_SLOT_PRIMARY_1', label: 'Primary 2' },
+        { value: 'WEAPON_INVENTORY_SLOT_PRIMARY_2', label: 'Primary 3' },
+        { value: 'WEAPON_INVENTORY_SLOT_ANTI_TITAN', label: 'Anti-Titan' },
+        { value: 'OFFHAND_TACTICAL', label: 'Tactical' },
+        { value: 'OFFHAND_ULTIMATE', label: 'Ultimate' },
+        { value: 'OFFHAND_SLOT_ACTIVE_ABILITY', label: 'Active Ability' },
+        { value: 'OFFHAND_MELEE', label: 'Melee' },
+        { value: 'OFFHAND_ORDNANCE', label: 'Ordnance' },
+        { value: 'OFFHAND_INVENTORY', label: 'Inventory' },
+      ];
+      return (
+        <CustomSelect
+          value={value}
+          options={slotOptions}
+          onChange={(val) => onUpdate({ data: { ...node.data, slot: val } })}
+          size="md"
+        />
+      );
+    }
+
     // Fallback: render editable fields for nodes with data
     // Only show fields that don't have a corresponding input port
     const inputLabels = new Set(node.inputs.map(input => input.label.toLowerCase().replace(/\s+/g, '')));
