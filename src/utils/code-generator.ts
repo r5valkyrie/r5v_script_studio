@@ -169,6 +169,11 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
     case 'delay':
     case 'wait': {
       const duration = getInputValue(ctx, node, 'input_1');
+      // Flush any pending lines before the wait statement
+      if (ctx.pendingLines.length > 0) {
+        lines.push(...ctx.pendingLines);
+        ctx.pendingLines = [];
+      }
       lines.push(`${ind}wait ${duration}`);
       followExec('output_0');
       break;
@@ -2300,6 +2305,11 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
     // ==================== UTILITIES ====================
     case 'print': {
       const message = getInputValue(ctx, node, 'input_1');
+      // Flush any pending lines before the print statement
+      if (ctx.pendingLines.length > 0) {
+        lines.push(...ctx.pendingLines);
+        ctx.pendingLines = [];
+      }
       lines.push(`${ind}print(${message})`);
       followExec('output_0');
       break;
@@ -2314,6 +2324,11 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
           parts.push(part);
         }
       }
+      // Flush any pending lines before the printf statement
+      if (ctx.pendingLines.length > 0) {
+        lines.push(...ctx.pendingLines);
+        ctx.pendingLines = [];
+      }
       if (parts.length === 0) {
         lines.push(`${ind}printf("")`);
       } else {
@@ -2327,6 +2342,11 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
 
     case 'printt': {
       const value = getInputValue(ctx, node, 'input_1');
+      // Flush any pending lines before the printt statement
+      if (ctx.pendingLines.length > 0) {
+        lines.push(...ctx.pendingLines);
+        ctx.pendingLines = [];
+      }
       lines.push(`${ind}printt(${value})`);
       followExec('output_0');
       break;
@@ -2334,6 +2354,11 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
 
     case 'printl': {
       const message = getInputValue(ctx, node, 'input_1');
+      // Flush any pending lines before the printl statement
+      if (ctx.pendingLines.length > 0) {
+        lines.push(...ctx.pendingLines);
+        ctx.pendingLines = [];
+      }
       lines.push(`${ind}printl(${message})`);
       followExec('output_0');
       break;
