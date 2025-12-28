@@ -84,6 +84,8 @@ function getInputValue(ctx: CodeGenContext, node: ScriptNode, portId: string): s
     // Try to generate the source node first if it's a data node
     const sourceNode = ctx.nodeMap.get(conn.from.nodeId);
     if (sourceNode && !ctx.visitedNodes.has(sourceNode.id)) {
+      // Mark as visited to prevent re-generation
+      ctx.visitedNodes.add(sourceNode.id);
       const generatedCode = generateNodeCode(ctx, sourceNode);
       // Add the generated code to pending lines so it gets output before the node that uses it
       if (generatedCode && generatedCode.trim()) {
@@ -245,15 +247,16 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
     }
 
     case 'call-function': {
-      const funcName = getInputValue(ctx, node, 'input_1');
+      // Function name is now stored in node.data, not from an input port
+      const funcName = typeof node.data?.functionName === 'string' ? node.data.functionName : 'MyFunction';
       const returnType = typeof node.data?.returnType === 'string' ? node.data.returnType : 'none';
-      const argCount = typeof node.data?.argCount === 'number' ? node.data.argCount : 1;
+      const argCount = typeof node.data?.argCount === 'number' ? node.data.argCount : 0;
       const threaded = typeof node.data?.threaded === 'boolean' ? node.data.threaded : false;
       
-      // Build arguments list - collect all connected args
+      // Build arguments list - collect all connected args (now starting at input_1 since Function port was removed)
       const args: string[] = [];
       for (let i = 0; i < argCount; i++) {
-        const arg = getInputValue(ctx, node, `input_${i + 2}`);
+        const arg = getInputValue(ctx, node, `input_${i + 1}`);
         if (arg && arg !== 'null') {
           args.push(arg);
         }
@@ -3751,6 +3754,60 @@ function generateThreadFunction(ctx: CodeGenContext, threadFunc: ThreadFunction)
   return lines.join('\n');
 }
 
+// Helper to follow exec chain from file-level variable nodes and process Set Portal nodes
+function processFileLevelExecChain(
+  ctx: CodeGenContext,
+  nodeId: string,
+  connections: NodeConnection[],
+  processedNodeIds: Set<string>
+): void {
+  // Find exec output connections from this node
+  const execConns = connections.filter(c => c.from.nodeId === nodeId && c.from.portId === 'output_0');
+  
+  for (const conn of execConns) {
+    const nextNode = ctx.nodeMap.get(conn.to.nodeId);
+    if (!nextNode || processedNodeIds.has(nextNode.id)) continue;
+    
+    // Only process Set Portal nodes in the file-level chain
+    if (nextNode.type === 'set-portal') {
+      processedNodeIds.add(nextNode.id);
+      const portalName = nextNode.data?.portalName || 'MyPortal';
+      
+      // Get the value input - look for any data connection to this node (not exec)
+      const valueConns = connections.filter(c => 
+        c.to.nodeId === nextNode.id && 
+        !c.to.portId.includes('exec') && 
+        c.to.portId !== 'input_0' // input_0 is the exec input
+      );
+      
+      let portalValue: string | null = null;
+      
+      if (valueConns.length > 0) {
+        const valueConn = valueConns[0];
+        const varKey = `${valueConn.from.nodeId}:${valueConn.from.portId}`;
+        portalValue = ctx.variables.get(varKey) || null;
+      }
+      
+      // Fallback: if no explicit connection but portal name matches a variable, use it
+      if (!portalValue) {
+        for (const [, val] of ctx.variables.entries()) {
+          if (val === portalName) {
+            portalValue = val;
+            break;
+          }
+        }
+      }
+      
+      if (portalValue) {
+        ctx.portals.set(portalName, portalValue);
+      }
+      
+      // Continue following the chain
+      processFileLevelExecChain(ctx, nextNode.id, connections, processedNodeIds);
+    }
+  }
+}
+
 export function generateCode(nodes: ScriptNode[], connections: NodeConnection[]): string {
   if (nodes.length === 0) {
     return '// No nodes in the visual script\n// Add nodes from the palette to get started';
@@ -3838,7 +3895,7 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
     
     if (eventNode.type === 'custom-function') {
       const funcName = eventNode.data.functionName || `${eventNode.type.replace(/-/g, '_')}_handler`;
-      const callNodes = nodes.filter(n => n.type === 'call-function' && n.data.function === funcName);
+      const callNodes = nodes.filter(n => n.type === 'call-function' && n.data.functionName === funcName);
       const contexts = new Set<string>();
       
       for (const callNode of callNodes) {
@@ -4099,6 +4156,9 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
       fileLevelVarNodeIds.add(targetNode.id);
       const decl = generateVarDeclaration(targetNode, true);
       if (decl) output.push(decl);
+      
+      // Follow exec chain to process Set Portal nodes
+      processFileLevelExecChain(ctx, targetNode.id, connections, fileLevelVarNodeIds);
     }
   }
   
@@ -4111,6 +4171,9 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
       fileLevelVarNodeIds.add(targetNode.id);
       const decl = generateVarDeclaration(targetNode, false);
       if (decl) output.push(decl);
+      
+      // Follow exec chain to process Set Portal nodes
+      processFileLevelExecChain(ctx, targetNode.id, connections, fileLevelVarNodeIds);
     }
   }
   
@@ -4120,6 +4183,9 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
   
   // Store file-level var node IDs in context so inline generation can skip them
   (ctx as any).globalVarNodeIds = fileLevelVarNodeIds;
+  
+  // Save file-level variable mappings to restore after each context clear
+  const fileLevelVars = new Map(ctx.variables);
 
   if (serverInit) {
     output.push('#if SERVER');
@@ -4128,6 +4194,10 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
     ctx.indentLevel = 1;
     ctx.visitedNodes.clear();
     ctx.variables.clear();
+    // Restore file-level variable mappings
+    for (const [key, val] of fileLevelVars) {
+      ctx.variables.set(key, val);
+    }
     ctx.varCounter = 0;
     ctx.threadFunctions = [];
     ctx.pendingLines = [];
@@ -4158,6 +4228,10 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
     ctx.indentLevel = 1;
     ctx.visitedNodes.clear();
     ctx.variables.clear();
+    // Restore file-level variable mappings
+    for (const [key, val] of fileLevelVars) {
+      ctx.variables.set(key, val);
+    }
     ctx.varCounter = 0;
     ctx.threadFunctions = [];
     ctx.pendingLines = [];
@@ -4187,6 +4261,10 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
     ctx.indentLevel = 1;
     ctx.visitedNodes.clear();
     ctx.variables.clear();
+    // Restore file-level variable mappings
+    for (const [key, val] of fileLevelVars) {
+      ctx.variables.set(key, val);
+    }
     ctx.varCounter = 0;
     ctx.threadFunctions = [];
     ctx.pendingLines = [];
@@ -4431,6 +4509,10 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
   for (const eventNode of eventNodes) {
     ctx.visitedNodes.clear();
     ctx.variables.clear();
+    // Restore file-level variable mappings
+    for (const [key, val] of fileLevelVars) {
+      ctx.variables.set(key, val);
+    }
     ctx.varCounter = 0;
     ctx.threadFunctions = [];
     ctx.pendingLines = [];

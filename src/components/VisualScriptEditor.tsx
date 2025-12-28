@@ -624,18 +624,93 @@ export default function VisualScriptEditor() {
       }
       return [...currentConnections, newConnection];
     });
+
+    // Update call-function arg types based on connected source
+    setNodes(currentNodes => {
+      const targetNode = currentNodes.find(n => n.id === newConnection.to.nodeId);
+      if (!targetNode || targetNode.type !== 'call-function') return currentNodes;
+      
+      // Check if this is an arg input (input_1, input_2, etc.)
+      const portId = newConnection.to.portId;
+      if (!portId.startsWith('input_') || portId === 'input_exec') return currentNodes;
+      
+      // Find the source node and port to get the dataType
+      const sourceNode = currentNodes.find(n => n.id === newConnection.from.nodeId);
+      if (!sourceNode) return currentNodes;
+      
+      const sourcePort = sourceNode.outputs.find(o => o.id === newConnection.from.portId);
+      if (!sourcePort || sourcePort.type !== 'data') return currentNodes;
+      
+      // Update the target input's dataType
+      return currentNodes.map(n => {
+        if (n.id !== targetNode.id) return n;
+        return {
+          ...n,
+          inputs: n.inputs.map(inp => {
+            if (inp.id !== portId) return inp;
+            return { ...inp, dataType: sourcePort.dataType || 'any' };
+          }),
+        };
+      });
+    });
   }, []);
 
   const handleBreakInput = useCallback((nodeId: string, portId: string) => {
     setConnections(currentConnections =>
       currentConnections.filter(conn => !(conn.to.nodeId === nodeId && conn.to.portId === portId))
     );
+    
+    // Reset call-function arg type back to 'any' when disconnected
+    setNodes(currentNodes => {
+      const targetNode = currentNodes.find(n => n.id === nodeId);
+      if (!targetNode || targetNode.type !== 'call-function') return currentNodes;
+      
+      // Check if this is an arg input (input_1, input_2, etc.)
+      if (!portId.startsWith('input_') || portId === 'input_exec') return currentNodes;
+      
+      // Reset the input's dataType to 'any'
+      return currentNodes.map(n => {
+        if (n.id !== nodeId) return n;
+        return {
+          ...n,
+          inputs: n.inputs.map(inp => {
+            if (inp.id !== portId) return inp;
+            return { ...inp, dataType: 'any' as const };
+          }),
+        };
+      });
+    });
   }, []);
 
   const handleDeleteConnection = useCallback((connectionId: string) => {
-    setConnections(currentConnections =>
-      currentConnections.filter(conn => conn.id !== connectionId)
-    );
+    // Find the connection before deleting to get target info
+    setConnections(currentConnections => {
+      const deletedConn = currentConnections.find(conn => conn.id === connectionId);
+      
+      // Reset call-function arg type if needed
+      if (deletedConn) {
+        const { nodeId, portId } = deletedConn.to;
+        setNodes(currentNodes => {
+          const targetNode = currentNodes.find(n => n.id === nodeId);
+          if (!targetNode || targetNode.type !== 'call-function') return currentNodes;
+          
+          if (!portId.startsWith('input_') || portId === 'input_exec') return currentNodes;
+          
+          return currentNodes.map(n => {
+            if (n.id !== nodeId) return n;
+            return {
+              ...n,
+              inputs: n.inputs.map(inp => {
+                if (inp.id !== portId) return inp;
+                return { ...inp, dataType: 'any' as const };
+              }),
+            };
+          });
+        });
+      }
+      
+      return currentConnections.filter(conn => conn.id !== connectionId);
+    });
   }, []);
 
   // Generate code from nodes

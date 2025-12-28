@@ -1291,13 +1291,11 @@ float function CalculateDistance( vector a, vector b )
     color: '#4A90E2',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
-      { label: 'Function', type: 'data', dataType: 'function', isInput: true },
     ],
     outputs: [
       { label: 'Out', type: 'exec', isInput: false },
-      { label: 'Return', type: 'data', dataType: 'any', isInput: false },
     ],
-    defaultData: { function: 'MyFunction', returnType: 'none', argCount: 0, threaded: false },
+    defaultData: { functionName: 'MyFunction', returnType: 'none', argCount: 0, threaded: false },
     documentation: {
       longDescription: 'Calls an existing function by name, passing optional arguments. The function must be defined and GlobalizeFunction() called to make it accessible. The Return output provides the function\'s return value.',
       codeExample: `// Call a previously defined and globalized function
@@ -1327,7 +1325,7 @@ function MyFunction( int value ) => string
   {
     type: 'custom-function',
     category: 'flow',
-    label: 'Custom Function',
+    label: 'Define Function',
     description: 'User-defined function entry point. Use +/- to add parameters.',
     color: '#4A90E2',
     inputs: [],

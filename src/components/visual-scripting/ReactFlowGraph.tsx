@@ -18,6 +18,7 @@ import {
   NodeResizer,
   Panel,
   useStoreApi,
+  useEdges,
 } from '@xyflow/react';
 import type {
   Connection,
@@ -161,15 +162,6 @@ const reactFlowStyles = `
     -webkit-font-smoothing: subpixel-antialiased;
   }
   
-  /* Disable all animations on nodes */
-  .react-flow__node,
-  .react-flow__node.dragging,
-  .react-flow__node.selected,
-  .react-flow__node > div {
-    transition: none !important;
-    animation: none !important;
-  }
-
   .react-flow__node > div {
     transform: translateZ(0);
     backface-visibility: hidden;
@@ -191,18 +183,20 @@ const reactFlowStyles = `
     stroke-width: 3px;
   }
   
-  /* Render edges on top of nodes for better visibility */
-  .react-flow__edges {
-    z-index: 5 !important;
-  }
-  
   .react-flow__edge {
-    pointer-events: visibleStroke;
+    pointer-events: visibleStroke !important;
   }
   
-  /* Keep selected nodes above edges */
-  .react-flow__node.selected {
-    z-index: 1000 !important;
+  /* Nodes need lower z-index than edges */
+  .react-flow__nodes {
+    z-index: 4 !important;
+    transform: translateZ(0);
+  }
+  
+  /* Selected/dragging nodes go above edges */
+  .react-flow__node.selected,
+  .react-flow__node.dragging {
+    z-index: 10 !important;
   }
   
   /* Handle transitions - no movement, just glow */
@@ -458,6 +452,16 @@ PortHandle.displayName = 'PortHandle';
 const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeData>>) => {
   const { scriptNode: node, onUpdate, onDelete, accentColor, nodeOpacity } = data;
   const nodeColor = getNodeColor(node.type);
+  const edges = useEdges();
+  
+  // Check if a port is connected
+  const isPortConnected = useCallback((portId: string, isInput: boolean) => {
+    return edges.some(edge => 
+      isInput 
+        ? (edge.target === node.id && edge.targetHandle === portId)
+        : (edge.source === node.id && edge.sourceHandle === portId)
+    );
+  }, [edges, node.id]);
 
   // Separate exec and data ports for Unreal-style layout
   const execInputs = node.inputs.filter(p => p.type === 'exec');
@@ -596,15 +600,16 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
 
     // Call Function node - special handling for dynamic arguments
     if (node.type === 'call-function') {
+      const functionName = typeof node.data.functionName === 'string' ? node.data.functionName : 'MyFunction';
       const returnType = typeof node.data.returnType === 'string' ? node.data.returnType : 'none';
       const returnTypes = ['none', 'entity', 'int', 'float', 'bool', 'string', 'vector', 'array', 'var'];
-      const argCount = typeof node.data.argCount === 'number' ? node.data.argCount : 1;
+      const argCount = typeof node.data.argCount === 'number' ? node.data.argCount : 0;
       const threaded = typeof node.data.threaded === 'boolean' ? node.data.threaded : false;
       
       const addArg = () => {
         const newCount = argCount + 1;
         const newInputs = [...node.inputs, {
-          id: `input_${newCount + 1}`,
+          id: `input_${newCount}`,
           label: `Arg ${newCount}`,
           type: 'data' as const,
           dataType: 'any' as NodeDataType,
@@ -619,8 +624,8 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
       const removeArg = () => {
         if (argCount <= 0) return;
         const newCount = argCount - 1;
-        // Keep exec input (0) and function input (1), remove last arg
-        const newInputs = node.inputs.slice(0, 2 + newCount);
+        // Keep exec input (0), remove last arg
+        const newInputs = node.inputs.slice(0, 1 + newCount);
         onUpdate({
           data: { ...node.data, argCount: newCount },
           inputs: newInputs,
@@ -675,6 +680,18 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
 
       return (
         <div className="flex flex-col gap-2.5">
+          {/* Function name input */}
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Function Name</span>
+            <input
+              type="text"
+              value={functionName}
+              onChange={(e) => onUpdate({ data: { ...node.data, functionName: e.target.value } })}
+              onMouseDown={(e) => e.stopPropagation()}
+              placeholder="FunctionName"
+              className={inputClass}
+            />
+          </div>
           {/* Return type row */}
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium w-14">Return</span>
@@ -1173,66 +1190,72 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
         <div className="flex justify-between items-start px-3 py-2 border-b border-white/10">
           {/* Exec Input(s) - typically just one */}
           <div className="flex flex-col gap-2">
-            {execInputs.map((input) => (
-              <div key={input.id} className="flex items-center relative h-6">
-                <Handle
-                  type="target"
-                  position={Position.Left}
-                  id={input.id}
-                  className="!border-0"
-                  style={{
-                    width: '14px',
-                    height: '14px',
-                    background: 'transparent',
-                    left: '8px',
-                  }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 14 14" className="pointer-events-none">
-                    <polygon 
-                      points="0,0 14,7 0,14" 
-                      fill="none" 
-                      stroke="white" 
-                      strokeWidth="2"
-                    />
-                  </svg>
-                </Handle>
-                {input.label !== 'Exec' && (
-                  <span className="ml-8 text-xs text-gray-400">{input.label}</span>
-                )}
-              </div>
-            ))}
+            {execInputs.map((input) => {
+              const connected = isPortConnected(input.id, true);
+              return (
+                <div key={input.id} className="flex items-center relative h-6">
+                  <Handle
+                    type="target"
+                    position={Position.Left}
+                    id={input.id}
+                    className="!border-0"
+                    style={{
+                      width: '14px',
+                      height: '14px',
+                      background: 'transparent',
+                      left: '2px',
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 14 14" className="pointer-events-none">
+                      <polygon 
+                        points="0,0 14,7 0,14" 
+                        fill={connected ? 'white' : 'none'}
+                        stroke="white" 
+                        strokeWidth="2"
+                      />
+                    </svg>
+                  </Handle>
+                  {input.label !== 'Exec' && (
+                    <span className="ml-8 text-xs text-gray-400">{input.label}</span>
+                  )}
+                </div>
+              );
+            })}
           </div>
           
           {/* Exec Output(s) - stacked vertically like Unreal's Branch True/False */}
           <div className="flex flex-col gap-2">
-            {execOutputs.map((output) => (
-              <div key={output.id} className="flex items-center justify-end relative h-6">
-                {output.label !== 'Exec' && output.label !== 'Then' && (
-                  <span className="mr-8 text-xs text-gray-300">{output.label}</span>
-                )}
-                <Handle
-                  type="source"
-                  position={Position.Right}
-                  id={output.id}
-                  className="!border-0"
-                  style={{
-                    width: '14px',
-                    height: '14px',
-                    background: 'transparent',
-                    right: '8px',
-                  }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 14 14" className="pointer-events-none">
-                    <polygon 
-                      points="0,0 14,7 0,14" 
-                      fill="none" 
-                      stroke="white" 
-                      strokeWidth="2"
-                    />
-                  </svg>
-                </Handle>
-              </div>
-            ))}
+            {execOutputs.map((output) => {
+              const connected = isPortConnected(output.id, false);
+              return (
+                <div key={output.id} className="flex items-center justify-end relative h-6">
+                  {output.label !== 'Exec' && output.label !== 'Then' && (
+                    <span className="mr-8 text-xs text-gray-300">{output.label}</span>
+                  )}
+                  <Handle
+                    type="source"
+                    position={Position.Right}
+                    id={output.id}
+                    className="!border-0"
+                    style={{
+                      width: '14px',
+                      height: '14px',
+                      background: 'transparent',
+                      right: '2px',
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 14 14" className="pointer-events-none">
+                      <polygon 
+                        points="0,0 14,7 0,14" 
+                        fill={connected ? 'white' : 'none'}
+                        stroke="white" 
+                        strokeWidth="2"
+                      />
+                    </svg>
+                  </Handle>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -1244,25 +1267,27 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
           {Array.from({ length: Math.max(dataInputs.length, dataOutputs.length) }).map((_, rowIndex) => {
             const input = dataInputs[rowIndex];
             const output = dataOutputs[rowIndex];
+            const inputConnected = input ? isPortConnected(input.id, true) : false;
+            const outputConnected = output ? isPortConnected(output.id, false) : false;
             
             return (
               <div key={rowIndex} className="flex justify-between items-center py-1.5 min-h-[28px]">
                 {/* Left side - Input */}
                 <div className="flex items-center flex-1">
                   {input && (
-                    <div className="flex items-center relative">
+                    <div className="flex items-center relative whitespace-nowrap">
                       <Handle
                         type="target"
                         position={Position.Left}
                         id={input.id}
-                        className="!border-0"
                         style={{
                           width: '10px',
                           height: '10px',
-                          backgroundColor: getPortColor(input.type, input.dataType),
+                          backgroundColor: inputConnected ? getPortColor(input.type, input.dataType) : 'transparent',
+                          border: `2px solid ${getPortColor(input.type, input.dataType)}`,
                           borderRadius: '50%',
-                          boxShadow: `0 0 4px ${getPortColor(input.type, input.dataType)}60`,
-                          left: '8px',
+                          boxShadow: inputConnected ? `0 0 4px ${getPortColor(input.type, input.dataType)}60` : 'none',
+                          left: '2px',
                         }}
                       />
                       <span className="ml-5 text-xs text-gray-300">{input.label}</span>
@@ -1284,7 +1309,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
                 {/* Right side - Output */}
                 <div className="flex items-center justify-end flex-1">
                   {output && (
-                    <div className="flex items-center relative">
+                    <div className="flex items-center relative whitespace-nowrap">
                       {output.dataType && (
                         <span 
                           className="mr-2 text-[10px] px-1.5 py-0.5 rounded"
@@ -1301,14 +1326,14 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
                         type="source"
                         position={Position.Right}
                         id={output.id}
-                        className="!border-0"
                         style={{
                           width: '10px',
                           height: '10px',
-                          backgroundColor: getPortColor(output.type, output.dataType),
+                          backgroundColor: outputConnected ? getPortColor(output.type, output.dataType) : 'transparent',
+                          border: `2px solid ${getPortColor(output.type, output.dataType)}`,
                           borderRadius: '50%',
-                          boxShadow: `0 0 4px ${getPortColor(output.type, output.dataType)}60`,
-                          right: '8px',
+                          boxShadow: outputConnected ? `0 0 4px ${getPortColor(output.type, output.dataType)}60` : 'none',
+                          right: '2px',
                         }}
                       />
                     </div>
@@ -2977,6 +3002,7 @@ function ReactFlowGraphInner({
         multiSelectionKeyCode="Shift" // Hold Shift to add to selection
         selectNodesOnDrag={false}
         selectionMode={SelectionMode.Partial} // Select nodes that are partially in the box
+        elevateEdgesOnSelect={true} // Render edges on top when connected nodes are selected
         proOptions={{ hideAttribution: true }}
         style={{
           backgroundColor: theme === 'dark' ? '#121212' : '#fafafa',
