@@ -6,6 +6,7 @@ import { NotificationContainer, ExportPathModal, useNotifications, useConfirmMod
 import type { AppSettings } from './visual-scripting/SettingsModal';
 import type { ScriptNode, NodeConnection, NodeType, TemplateCategory } from '../types/visual-scripting';
 import type { ModSettings } from '../types/project';
+import { DEFAULT_MOD_SETTINGS } from '../types/project';
 import ReactFlowGraph from './visual-scripting/ReactFlowGraph';
 import NodeSpotlight from './visual-scripting/NodeSpotlight';
 import NodeDocModal from './visual-scripting/NodeDocModal';
@@ -813,8 +814,9 @@ export default function VisualScriptEditor() {
 
   // Generate code from nodes
   const generatedCode = useMemo(() => {
-    return generateCode(nodes, connections);
-  }, [nodes, connections]);
+    const modSettings = projectData?.settings?.mod || DEFAULT_MOD_SETTINGS;
+    return generateCode(nodes, connections, modSettings.modId);
+  }, [nodes, connections, projectData?.settings?.mod]);
 
   // Export handler
   const handleExportCode = useCallback(async () => {

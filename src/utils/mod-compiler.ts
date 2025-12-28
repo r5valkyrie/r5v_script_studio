@@ -276,8 +276,8 @@ export async function compileProject(
     
     // Generate and write script files
     for (const scriptFile of project.scriptFiles) {
-      // Generate code for this script file
-      const code = generateCode(scriptFile.nodes, scriptFile.connections);
+      // Generate code for this script file (pass mod ID for correct init function names)
+      const code = generateCode(scriptFile.nodes, scriptFile.connections, modSettings.modId);
       const codeWithMetadata = generateCodeMetadata(project.metadata) + code;
       
       // Optionally embed project data

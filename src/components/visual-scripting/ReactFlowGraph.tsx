@@ -996,6 +996,121 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
       );
     }
 
+    // Weapon Attachment Mods multi-select
+    if (node.type === 'const-weapon-mod') {
+      const modCategories = [
+        {
+          name: 'Optics',
+          mods: [
+            { value: 'optic_cq_hcog_classic', label: 'x1 HCOG' },
+            { value: 'optic_cq_hcog_bruiser', label: 'x2 Bruiser' },
+            { value: 'optic_cq_holosight', label: 'x1 Holo' },
+            { value: 'optic_cq_threat', label: 'x1 Threat' },
+            { value: 'optic_cq_holosight_variable', label: 'x1-2 Holo' },
+            { value: 'optic_ranged_hcog', label: 'x3 Ranger' },
+            { value: 'optic_ranged_aog_variable', label: 'x2-4 AOG' },
+            { value: 'optic_sniper', label: 'x6 Sniper' },
+            { value: 'optic_sniper_variable', label: 'x4-8 Sniper' },
+            { value: 'optic_sniper_threat', label: 'x4-10 Threat' },
+          ]
+        },
+        {
+          name: 'Barrel',
+          mods: [
+            { value: 'barrel_stabilizer_l1', label: 'Barrel L1' },
+            { value: 'barrel_stabilizer_l2', label: 'Barrel L2' },
+            { value: 'barrel_stabilizer_l3', label: 'Barrel L3' },
+            { value: 'barrel_stabilizer_l4_flash_hider', label: 'Barrel L4' },
+          ]
+        },
+        {
+          name: 'Stock',
+          mods: [
+            { value: 'stock_tactical_l1', label: 'Tac L1' },
+            { value: 'stock_tactical_l2', label: 'Tac L2' },
+            { value: 'stock_tactical_l3', label: 'Tac L3' },
+            { value: 'stock_sniper_l1', label: 'Sniper L1' },
+            { value: 'stock_sniper_l2', label: 'Sniper L2' },
+            { value: 'stock_sniper_l3', label: 'Sniper L3' },
+          ]
+        },
+        {
+          name: 'Magazine',
+          mods: [
+            { value: 'bullets_mag_l1', label: 'Light L1' },
+            { value: 'bullets_mag_l2', label: 'Light L2' },
+            { value: 'bullets_mag_l3', label: 'Light L3' },
+            { value: 'highcal_mag_l1', label: 'Heavy L1' },
+            { value: 'highcal_mag_l2', label: 'Heavy L2' },
+            { value: 'highcal_mag_l3', label: 'Heavy L3' },
+            { value: 'energy_mag_l1', label: 'Energy L1' },
+            { value: 'energy_mag_l2', label: 'Energy L2' },
+            { value: 'energy_mag_l3', label: 'Energy L3' },
+            { value: 'sniper_mag_l1', label: 'Sniper L1' },
+            { value: 'sniper_mag_l2', label: 'Sniper L2' },
+            { value: 'sniper_mag_l3', label: 'Sniper L3' },
+          ]
+        },
+        {
+          name: 'Bolt',
+          mods: [
+            { value: 'shotgun_bolt_l1', label: 'Bolt L1' },
+            { value: 'shotgun_bolt_l2', label: 'Bolt L2' },
+            { value: 'shotgun_bolt_l3', label: 'Bolt L3' },
+          ]
+        },
+        {
+          name: 'Hop-Up',
+          mods: [
+            { value: 'hopup_turbocharger', label: 'Turbo' },
+            { value: 'hopup_selectfire', label: 'Selectfire' },
+            { value: 'hopup_energy_choke', label: 'Choke' },
+            { value: 'hopup_unshielded_dmg', label: 'Hammer' },
+            { value: 'hopup_highcal_rounds', label: 'Anvil' },
+            { value: 'hopup_double_tap', label: 'Double Tap' },
+          ]
+        },
+      ];
+      const selected = Array.isArray(node.data.mods) ? node.data.mods : [];
+      const toggle = (mod: string, checked: boolean) => {
+        const next = checked
+          ? Array.from(new Set([...selected, mod]))
+          : selected.filter((item) => item !== mod);
+        onUpdate({ data: { ...node.data, mods: next } });
+      };
+      return (
+        <div 
+          className="nowheel flex flex-col gap-2 max-h-[300px] overflow-y-auto"
+        >
+          {modCategories.map((category) => (
+            <div key={category.name} className="flex flex-col gap-1">
+              <span className="text-[9px] text-gray-400 font-semibold uppercase tracking-wider">{category.name}</span>
+              <div className="grid grid-cols-2 gap-1">
+                {category.mods.map((mod) => (
+                  <label 
+                    key={mod.value} 
+                    className="flex items-center gap-1.5 px-2 py-1.5 bg-white/[0.06] rounded cursor-pointer hover:bg-white/[0.09] transition-all duration-200 border border-transparent hover:border-white/10"
+                  >
+                    <div className={`w-3 h-3 rounded-sm flex items-center justify-center transition-all duration-200 ${selected.includes(mod.value) ? 'bg-[#E67E22] shadow-[0_0_6px_rgba(230,126,34,0.3)]' : 'bg-white/[0.08] border border-white/20'}`}>
+                      {selected.includes(mod.value) && <span className="text-white text-[7px] font-bold">✓</span>}
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(mod.value)}
+                      onChange={(e) => toggle(mod.value, e.target.checked)}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      className="sr-only"
+                    />
+                    <span className="text-[9px] text-gray-200 font-medium truncate">{mod.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
     // Fallback: render editable fields for nodes with data
     // Only show fields that don't have a corresponding input port
     const inputLabels = new Set(node.inputs.map(input => input.label.toLowerCase().replace(/\s+/g, '')));

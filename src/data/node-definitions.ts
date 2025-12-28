@@ -5871,6 +5871,33 @@ foreach ( entity p in GetPlayerArray() )
     defaultData: {},
   },
   {
+    type: 'take-weapon-by-slot',
+    category: 'weapons',
+    label: 'TakeWeaponBySlot',
+    description: 'Take weapon from player by inventory slot index',
+    color: '#E67E22',
+    inputs: [
+      { label: 'In', type: 'exec', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Slot', type: 'data', dataType: 'int', isInput: true },
+    ],
+    outputs: [
+      { label: 'Out', type: 'exec', isInput: false },
+    ],
+    defaultData: { slot: 'WEAPON_INVENTORY_SLOT_PRIMARY_0' },
+    documentation: {
+      longDescription: 'Removes a weapon from the player based on the weapon inventory slot. Use weapon slot constants like WEAPON_INVENTORY_SLOT_PRIMARY_0, WEAPON_INVENTORY_SLOT_PRIMARY_1, etc.',
+      codeExample: `player.TakeNormalWeaponByIndex( WEAPON_INVENTORY_SLOT_PRIMARY_0 )`,
+      tips: [
+        'Use the Weapon Slot constant node to get slot values',
+        'PRIMARY_0 is the first weapon slot, PRIMARY_1 is the second',
+        'This removes the weapon entirely from the player'
+      ],
+      relatedNodes: ['give-weapon', 'take-weapon', 'take-all-weapons', 'const-weapon-slot']
+    },
+    tags: ['weapon', 'take', 'remove', 'slot', 'inventory'],
+  },
+  {
     type: 'switch-to-weapon',
     category: 'weapons',
     label: 'SwitchToWeapon',
@@ -8907,6 +8934,31 @@ void function OnPlayerDeath( entity player, var damageInfo )
     ],
     defaultData: { slot: 'WEAPON_INVENTORY_SLOT_PRIMARY_0' },
     tags: ['weapon', 'slot', 'inventory', 'primary', 'secondary', 'tactical', 'ultimate'],
+  },
+  {
+    type: 'const-weapon-mod',
+    category: 'weapons',
+    label: 'Weapon Attachments',
+    description: 'Weapon attachment mods array (optics, barrels, mags, stocks, bolts, hopups)',
+    color: '#E67E22',
+    inputs: [],
+    outputs: [
+      { label: 'Mods', type: 'data', dataType: 'array', isInput: false },
+    ],
+    defaultData: { mods: [] },
+    tags: ['weapon', 'mod', 'attachment', 'optic', 'barrel', 'magazine', 'stock', 'bolt', 'hopup', 'sight', 'scope', 'array'],
+    documentation: {
+      longDescription: 'Provides an array of weapon attachment mods for use with GiveWeapon or weapon mod functions. Select multiple attachments (optics, barrel stabilizers, magazines, stocks, shotgun bolts, and hop-ups).',
+      codeExample: `// Give weapon with mods
+array<string> mods = ["optic_cq_hcog_classic", "barrel_stabilizer_l3", "bullets_mag_l3"]
+entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY_0, mods)`,
+      tips: [
+        'Select multiple mods by clicking on them',
+        'Use with GiveWeapon to spawn weapon with attachments',
+        'Mods are passed as an array of strings'
+      ],
+      relatedNodes: ['give-weapon', 'weapon-add-mod', 'weapon-has-mod', 'weapon-remove-mod']
+    }
   },
   {
     type: 'variable-get',

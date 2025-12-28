@@ -1550,6 +1550,19 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
+    case 'take-weapon-by-slot': {
+      const player = getInputValue(ctx, node, 'input_1');
+      const slot = getInputValue(ctx, node, 'input_2');
+      // Flush any pending lines before the statement
+      if (ctx.pendingLines.length > 0) {
+        lines.push(...ctx.pendingLines);
+        ctx.pendingLines = [];
+      }
+      lines.push(`${ind}${player}.TakeNormalWeaponByIndex(${slot})`);
+      followExec('output_0');
+      break;
+    }
+
     case 'switch-to-weapon': {
       const player = getInputValue(ctx, node, 'input_1');
       const weapon = getInputValue(ctx, node, 'input_2');
@@ -2212,6 +2225,13 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
     case 'const-weapon-slot': {
       const slot = node.data.slot || 'WEAPON_INVENTORY_SLOT_PRIMARY_0';
       ctx.variables.set(`${node.id}:output_0`, slot);
+      break;
+    }
+
+    case 'const-weapon-mod': {
+      const mods = Array.isArray(node.data.mods) ? node.data.mods : [];
+      const modsStr = mods.map((m: string) => `"${m}"`).join(', ');
+      ctx.variables.set(`${node.id}:output_0`, `[${modsStr}]`);
       break;
     }
 
@@ -3857,7 +3877,7 @@ function processFileLevelExecChain(
   }
 }
 
-export function generateCode(nodes: ScriptNode[], connections: NodeConnection[]): string {
+export function generateCode(nodes: ScriptNode[], connections: NodeConnection[], modId?: string): string {
   if (nodes.length === 0) {
     return '// No nodes in the visual script\n// Add nodes from the palette to get started';
   }
@@ -3874,6 +3894,13 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
     pendingLines: [],
     portals: new Map(),
   };
+
+  // Generate correct init function names based on mod ID
+  // Format: CodeCallback_<modId>_ModInit for server, ClientCodeCallback_<modId>_ModInit for client, etc.
+  const sanitizedModId = modId ? modId.replace(/[^a-zA-Z0-9_]/g, '_') : '';
+  const serverInitName = sanitizedModId ? `CodeCallback_${sanitizedModId}_ModInit` : 'CodeCallback_ModInit';
+  const clientInitName = sanitizedModId ? `ClientCodeCallback_${sanitizedModId}_ModInit` : 'ClientCodeCallback_ModInit';
+  const uiInitName = sanitizedModId ? `UICodeCallback_${sanitizedModId}_ModInit` : 'UICodeCallback_ModInit';
 
   const output: string[] = [];
 
@@ -4095,13 +4122,13 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
   
   // Init function global declarations
   if (serverInit) {
-    addGlobalDeclToContext('SERVER', `global function ${serverInit.data.functionName || 'CodeCallback_ModInit'}`);
+    addGlobalDeclToContext('SERVER', `global function ${serverInitName}`);
   }
   if (clientInit) {
-    addGlobalDeclToContext('CLIENT', `global function ${clientInit.data.functionName || 'ClientCodeCallback_ModInit'}`);
+    addGlobalDeclToContext('CLIENT', `global function ${clientInitName}`);
   }
   if (uiInit) {
-    addGlobalDeclToContext('UI', `global function ${uiInit.data.functionName || 'UICodeCallback_ModInit'}`);
+    addGlobalDeclToContext('UI', `global function ${uiInitName}`);
   }
   
   // Global custom function declarations
@@ -4260,7 +4287,7 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
   // Generate init functions and collect into context groups
   if (serverInit) {
     const funcLines: string[] = [];
-    funcLines.push(`void function ${serverInit.data.functionName || 'CodeCallback_ModInit'}()`);
+    funcLines.push(`void function ${serverInitName}()`);
     funcLines.push('{');
     ctx.indentLevel = 1;
     ctx.visitedNodes.clear();
@@ -4292,7 +4319,7 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
 
   if (clientInit) {
     const funcLines: string[] = [];
-    funcLines.push(`void function ${clientInit.data.functionName || 'ClientCodeCallback_ModInit'}()`);
+    funcLines.push(`void function ${clientInitName}()`);
     funcLines.push('{');
     ctx.indentLevel = 1;
     ctx.visitedNodes.clear();
@@ -4323,7 +4350,7 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[])
 
   if (uiInit) {
     const funcLines: string[] = [];
-    funcLines.push(`void function ${uiInit.data.functionName || 'UICodeCallback_ModInit'}()`);
+    funcLines.push(`void function ${uiInitName}()`);
     funcLines.push('{');
     ctx.indentLevel = 1;
     ctx.visitedNodes.clear();
