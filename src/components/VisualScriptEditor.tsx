@@ -4,7 +4,7 @@ import SettingsModal, { loadSettings, saveSettings, DEFAULT_SETTINGS } from './v
 import ProjectSettingsModal from './visual-scripting/ProjectSettingsModal';
 import { NotificationContainer, ExportPathModal, useNotifications, useConfirmModal } from './visual-scripting/Notification';
 import type { AppSettings } from './visual-scripting/SettingsModal';
-import type { ScriptNode, NodeConnection, NodeType, TemplateCategory } from '../types/visual-scripting';
+import type { ScriptNode, NodeConnection, NodeType, NodeDataType, TemplateCategory } from '../types/visual-scripting';
 import type { ModSettings } from '../types/project';
 import { DEFAULT_MOD_SETTINGS } from '../types/project';
 import ReactFlowGraph from './visual-scripting/ReactFlowGraph';
@@ -657,9 +657,127 @@ export default function VisualScriptEditor() {
         });
       }
       
+      // Helper function to trace elementType through the graph, including portals and node data
+      const traceElementType = (node: ScriptNode, outputPortId: string): NodeDataType | undefined => {
+        const port = node.outputs.find(o => o.id === outputPortId);
+        
+        // First check if the port itself has elementType
+        if (port?.elementType) return port.elementType;
+        
+        // Check if node stores elementType in data (e.g., array-create-typed)
+        if (node.data?.elementType) return node.data.elementType as NodeDataType;
+        
+        // If source is get-portal, trace back through the portal system
+        if (node.type === 'get-portal') {
+          const portalName = node.data?.portalName;
+          if (portalName) {
+            // Find matching set-portal
+            const matchingSetPortal = currentNodes.find(n => 
+              n.type === 'set-portal' && n.data?.portalName === portalName
+            );
+            if (matchingSetPortal) {
+              // Check if set-portal's input has elementType stored
+              const setPortalInput = matchingSetPortal.inputs.find(i => i.id === 'input_1');
+              if (setPortalInput?.elementType) return setPortalInput.elementType;
+              
+              // Trace back to what's connected to set-portal's input
+              const connToSetPortal = connections.find(c => 
+                c.to.nodeId === matchingSetPortal.id && c.to.portId === 'input_1'
+              );
+              if (connToSetPortal) {
+                const sourceOfSetPortal = currentNodes.find(n => n.id === connToSetPortal.from.nodeId);
+                if (sourceOfSetPortal) {
+                  // Recursively trace through the source node
+                  return traceElementType(sourceOfSetPortal, connToSetPortal.from.portId);
+                }
+              }
+            }
+          }
+        }
+        
+        // Fall back to looking up from node definition
+        const nodeDef = NODE_DEFINITIONS.find(d => d.type === node.type);
+        const portDef = nodeDef?.outputs.find((_, idx) => `output_${idx}` === outputPortId);
+        return (portDef as { elementType?: NodeDataType } | undefined)?.elementType;
+      };
+      
+      // Handle loop-foreach Array input - update Element output type based on array's elementType
+      if (targetNode.type === 'loop-foreach' && portId === 'input_1') {
+        const elementType = traceElementType(sourceNode, newConnection.from.portId);
+        const finalElementType = elementType || 'any';
+        
+        return currentNodes.map(n => {
+          if (n.id !== targetNode.id) return n;
+          return {
+            ...n,
+            inputs: n.inputs.map(inp => {
+              if (inp.id !== 'input_1') return inp;
+              // Store the elementType on the Array input for reference
+              return { ...inp, elementType: elementType };
+            }),
+            outputs: n.outputs.map(out => {
+              // Update the Element output (output_1) to match the array's element type
+              if (out.id !== 'output_1') return out;
+              return { ...out, dataType: finalElementType };
+            }),
+          };
+        });
+      }
+      
+      // Handle array operations - update Element input/output types based on connected array's elementType
+      // Define which nodes have array inputs and which ports should be updated
+      const arrayNodeConfigs: Record<string, { arrayInputId: string; elementInputIds?: string[]; elementOutputIds?: string[] }> = {
+        'array-contains': { arrayInputId: 'input_0', elementInputIds: ['input_1'] },
+        'array-find': { arrayInputId: 'input_0', elementInputIds: ['input_1'] },
+        'array-append': { arrayInputId: 'input_1', elementInputIds: ['input_2'] },
+        'array-remove': { arrayInputId: 'input_1', elementInputIds: ['input_2'] },
+        'array-get': { arrayInputId: 'input_0', elementOutputIds: ['output_0'] },
+        'array-set': { arrayInputId: 'input_1', elementInputIds: ['input_3'] },
+        'array-remove-by-index': { arrayInputId: 'input_1', elementOutputIds: ['output_1'] },
+      };
+      
+      const arrayConfig = arrayNodeConfigs[targetNode.type];
+      if (arrayConfig && portId === arrayConfig.arrayInputId) {
+        // Get elementType by tracing through the graph
+        const elementType = traceElementType(sourceNode, newConnection.from.portId);
+        const finalElementType = elementType || 'any';
+        
+        return currentNodes.map(n => {
+          if (n.id !== targetNode.id) return n;
+          return {
+            ...n,
+            inputs: n.inputs.map(inp => {
+              // Store elementType on the array input
+              if (inp.id === arrayConfig.arrayInputId) {
+                return { ...inp, elementType: elementType };
+              }
+              // Update element input types
+              if (arrayConfig.elementInputIds?.includes(inp.id)) {
+                return { ...inp, dataType: finalElementType };
+              }
+              return inp;
+            }),
+            outputs: n.outputs.map(out => {
+              // Update element output types
+              if (arrayConfig.elementOutputIds?.includes(out.id)) {
+                return { ...out, dataType: finalElementType };
+              }
+              return out;
+            }),
+          };
+        });
+      }
+      
       // Handle set-portal Value input type - also update matching get-portal nodes
       if (targetNode.type === 'set-portal' && portId === 'input_1') {
         const portalName = targetNode.data?.portalName || 'MyPortal';
+        // Get elementType for arrays
+        let elementType = sourcePort.elementType;
+        if (!elementType && sourceDataType === 'array') {
+          const sourceNodeDef = NODE_DEFINITIONS.find(d => d.type === sourceNode.type);
+          const sourcePortDef = sourceNodeDef?.outputs.find((_, idx) => `output_${idx}` === newConnection.from.portId);
+          elementType = (sourcePortDef as { elementType?: NodeDataType } | undefined)?.elementType;
+        }
         
         return currentNodes.map(n => {
           // Update the set-portal's Value input
@@ -668,7 +786,7 @@ export default function VisualScriptEditor() {
               ...n,
               inputs: n.inputs.map(inp => {
                 if (inp.id !== 'input_1') return inp;
-                return { ...inp, dataType: sourceDataType };
+                return { ...inp, dataType: sourceDataType, elementType: elementType };
               }),
             };
           }
@@ -678,7 +796,7 @@ export default function VisualScriptEditor() {
               ...n,
               outputs: n.outputs.map(out => {
                 if (out.id !== 'output_0') return out;
-                return { ...out, dataType: sourceDataType };
+                return { ...out, dataType: sourceDataType, elementType: elementType };
               }),
             };
           }
@@ -688,7 +806,7 @@ export default function VisualScriptEditor() {
       
       return currentNodes;
     });
-  }, []);
+  }, [connections]);
 
   const handleBreakInput = useCallback((nodeId: string, portId: string) => {
     setConnections(currentConnections =>
@@ -716,6 +834,60 @@ export default function VisualScriptEditor() {
         });
       }
       
+      // Handle loop-foreach Array input - reset Element output type
+      if (targetNode.type === 'loop-foreach' && portId === 'input_1') {
+        return currentNodes.map(n => {
+          if (n.id !== nodeId) return n;
+          return {
+            ...n,
+            inputs: n.inputs.map(inp => {
+              if (inp.id !== 'input_1') return inp;
+              return { ...inp, elementType: undefined };
+            }),
+            outputs: n.outputs.map(out => {
+              if (out.id !== 'output_1') return out;
+              return { ...out, dataType: 'any' as const };
+            }),
+          };
+        });
+      }
+      
+      // Handle array operations - reset Element input/output types when array disconnected
+      const arrayNodeConfigs: Record<string, { arrayInputId: string; elementInputIds?: string[]; elementOutputIds?: string[] }> = {
+        'array-contains': { arrayInputId: 'input_0', elementInputIds: ['input_1'] },
+        'array-find': { arrayInputId: 'input_0', elementInputIds: ['input_1'] },
+        'array-append': { arrayInputId: 'input_1', elementInputIds: ['input_2'] },
+        'array-remove': { arrayInputId: 'input_1', elementInputIds: ['input_2'] },
+        'array-get': { arrayInputId: 'input_0', elementOutputIds: ['output_0'] },
+        'array-set': { arrayInputId: 'input_1', elementInputIds: ['input_3'] },
+        'array-remove-by-index': { arrayInputId: 'input_1', elementOutputIds: ['output_1'] },
+      };
+      
+      const arrayConfig = arrayNodeConfigs[targetNode.type];
+      if (arrayConfig && portId === arrayConfig.arrayInputId) {
+        return currentNodes.map(n => {
+          if (n.id !== nodeId) return n;
+          return {
+            ...n,
+            inputs: n.inputs.map(inp => {
+              if (inp.id === arrayConfig.arrayInputId) {
+                return { ...inp, elementType: undefined };
+              }
+              if (arrayConfig.elementInputIds?.includes(inp.id)) {
+                return { ...inp, dataType: 'any' as const };
+              }
+              return inp;
+            }),
+            outputs: n.outputs.map(out => {
+              if (arrayConfig.elementOutputIds?.includes(out.id)) {
+                return { ...out, dataType: 'any' as const };
+              }
+              return out;
+            }),
+          };
+        });
+      }
+      
       // Handle set-portal Value input - also reset matching get-portal nodes
       if (targetNode.type === 'set-portal' && portId === 'input_1') {
         const portalName = targetNode.data?.portalName || 'MyPortal';
@@ -727,7 +899,7 @@ export default function VisualScriptEditor() {
               ...n,
               inputs: n.inputs.map(inp => {
                 if (inp.id !== 'input_1') return inp;
-                return { ...inp, dataType: 'any' as const };
+                return { ...inp, dataType: 'any' as const, elementType: undefined };
               }),
             };
           }
@@ -737,7 +909,7 @@ export default function VisualScriptEditor() {
               ...n,
               outputs: n.outputs.map(out => {
                 if (out.id !== 'output_0') return out;
-                return { ...out, dataType: 'any' as const };
+                return { ...out, dataType: 'any' as const, elementType: undefined };
               }),
             };
           }
@@ -777,6 +949,60 @@ export default function VisualScriptEditor() {
             });
           }
           
+          // Handle loop-foreach Array input - reset Element output type
+          if (targetNode.type === 'loop-foreach' && portId === 'input_1') {
+            return currentNodes.map(n => {
+              if (n.id !== nodeId) return n;
+              return {
+                ...n,
+                inputs: n.inputs.map(inp => {
+                  if (inp.id !== 'input_1') return inp;
+                  return { ...inp, elementType: undefined };
+                }),
+                outputs: n.outputs.map(out => {
+                  if (out.id !== 'output_1') return out;
+                  return { ...out, dataType: 'any' as const };
+                }),
+              };
+            });
+          }
+          
+          // Handle array operations - reset Element input/output types when array disconnected
+          const arrayNodeConfigs: Record<string, { arrayInputId: string; elementInputIds?: string[]; elementOutputIds?: string[] }> = {
+            'array-contains': { arrayInputId: 'input_0', elementInputIds: ['input_1'] },
+            'array-find': { arrayInputId: 'input_0', elementInputIds: ['input_1'] },
+            'array-append': { arrayInputId: 'input_1', elementInputIds: ['input_2'] },
+            'array-remove': { arrayInputId: 'input_1', elementInputIds: ['input_2'] },
+            'array-get': { arrayInputId: 'input_0', elementOutputIds: ['output_0'] },
+            'array-set': { arrayInputId: 'input_1', elementInputIds: ['input_3'] },
+            'array-remove-by-index': { arrayInputId: 'input_1', elementOutputIds: ['output_1'] },
+          };
+          
+          const arrayConfig = arrayNodeConfigs[targetNode.type];
+          if (arrayConfig && portId === arrayConfig.arrayInputId) {
+            return currentNodes.map(n => {
+              if (n.id !== nodeId) return n;
+              return {
+                ...n,
+                inputs: n.inputs.map(inp => {
+                  if (inp.id === arrayConfig.arrayInputId) {
+                    return { ...inp, elementType: undefined };
+                  }
+                  if (arrayConfig.elementInputIds?.includes(inp.id)) {
+                    return { ...inp, dataType: 'any' as const };
+                  }
+                  return inp;
+                }),
+                outputs: n.outputs.map(out => {
+                  if (arrayConfig.elementOutputIds?.includes(out.id)) {
+                    return { ...out, dataType: 'any' as const };
+                  }
+                  return out;
+                }),
+              };
+            });
+          }
+          
           // Handle set-portal Value input - also reset matching get-portal nodes
           if (targetNode.type === 'set-portal' && portId === 'input_1') {
             const portalName = targetNode.data?.portalName || 'MyPortal';
@@ -787,7 +1013,7 @@ export default function VisualScriptEditor() {
                   ...n,
                   inputs: n.inputs.map(inp => {
                     if (inp.id !== 'input_1') return inp;
-                    return { ...inp, dataType: 'any' as const };
+                    return { ...inp, dataType: 'any' as const, elementType: undefined };
                   }),
                 };
               }
@@ -796,7 +1022,7 @@ export default function VisualScriptEditor() {
                   ...n,
                   outputs: n.outputs.map(out => {
                     if (out.id !== 'output_0') return out;
-                    return { ...out, dataType: 'any' as const };
+                    return { ...out, dataType: 'any' as const, elementType: undefined };
                   }),
                 };
               }

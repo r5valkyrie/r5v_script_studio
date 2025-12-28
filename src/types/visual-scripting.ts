@@ -32,7 +32,6 @@ export type NodeDataType =
   | 'boolean'
   | 'entity'
   | 'weapon'
-  | 'player'
   | 'vector'
   | 'rotation'
   | 'asset'
@@ -619,6 +618,7 @@ export interface NodePort {
   label: string;
   type: 'exec' | 'data';
   dataType?: NodeDataType;
+  elementType?: NodeDataType; // For array types, the type of elements in the array
   isInput: boolean;
 }
 

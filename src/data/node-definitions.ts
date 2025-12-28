@@ -5711,7 +5711,7 @@ vector targetPos = player.GetEyePosition() + (aimDir * 1000)`,
     description: 'Get player active weapon',
     color: '#E67E22',
     inputs: [
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
     ],
     outputs: [
       { label: 'Weapon', type: 'data', dataType: 'weapon', isInput: false },
@@ -5728,7 +5728,7 @@ vector targetPos = player.GetEyePosition() + (aimDir * 1000)`,
       { label: 'Weapon', type: 'data', dataType: 'weapon', isInput: true },
     ],
     outputs: [
-      { label: 'Owner', type: 'data', dataType: 'player', isInput: false },
+      { label: 'Owner', type: 'data', dataType: 'entity', isInput: false },
     ],
     defaultData: {},
   },
@@ -5795,7 +5795,7 @@ vector targetPos = player.GetEyePosition() + (aimDir * 1000)`,
     color: '#E67E22',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
       { label: 'WeaponClass', type: 'data', dataType: 'string', isInput: true },
       { label: 'Slot', type: 'data', dataType: 'int', isInput: true },
       { label: 'Mods', type: 'data', dataType: 'array', isInput: true },
@@ -5847,7 +5847,7 @@ foreach ( entity p in GetPlayerArray() )
     color: '#E67E22',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
       { label: 'WeaponClass', type: 'data', dataType: 'string', isInput: true },
     ],
     outputs: [
@@ -5863,7 +5863,7 @@ foreach ( entity p in GetPlayerArray() )
     color: '#E67E22',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
     ],
     outputs: [
       { label: 'Out', type: 'exec', isInput: false },
@@ -5878,7 +5878,7 @@ foreach ( entity p in GetPlayerArray() )
     color: '#E67E22',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
       { label: 'Slot', type: 'data', dataType: 'int', isInput: true },
     ],
     outputs: [
@@ -5905,7 +5905,7 @@ foreach ( entity p in GetPlayerArray() )
     color: '#E67E22',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
       { label: 'Weapon', type: 'data', dataType: 'weapon', isInput: true },
     ],
     outputs: [
@@ -6728,7 +6728,7 @@ EffectStop( handle, true )`,
     color: '#1ABC9C',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
       { label: 'Sound', type: 'data', dataType: 'string', isInput: true },
     ],
     outputs: [
@@ -7561,7 +7561,7 @@ TraceHull( traceStart, traceEnd, <-5, -5, -5>, <5, 5, 5>, null, TRACE_MASK_SHOT,
     color: '#3498DB',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
       { label: 'Message', type: 'data', dataType: 'string', isInput: true },
       { label: 'Duration', type: 'data', dataType: 'number', isInput: true },
     ],
@@ -7579,7 +7579,7 @@ TraceHull( traceStart, traceEnd, <-5, -5, -5>, <5, 5, 5>, null, TRACE_MASK_SHOT,
     color: '#3498DB',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
       { label: 'Command', type: 'data', dataType: 'string', isInput: true },
     ],
     outputs: [
@@ -7695,7 +7695,7 @@ TraceHull( traceStart, traceEnd, <-5, -5, -5>, <5, 5, 5>, null, TRACE_MASK_SHOT,
       { label: 'Delimiter', type: 'data', dataType: 'string', isInput: true },
     ],
     outputs: [
-      { label: 'Array', type: 'data', dataType: 'array', isInput: false },
+      { label: 'Array', type: 'data', dataType: 'array', elementType: 'string', isInput: false },
     ],
     defaultData: { delimiter: ' ' },
     tags: ['string', 'split', 'delimiter'],
@@ -9451,7 +9451,7 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
       { label: 'Table', type: 'data', dataType: 'table', isInput: true },
     ],
     outputs: [
-      { label: 'Keys', type: 'data', dataType: 'array', isInput: false },
+      { label: 'Keys', type: 'data', dataType: 'array', elementType: 'string', isInput: false },
     ],
     defaultData: {},
     tags: ['table', 'keys', 'list'],
@@ -9614,7 +9614,7 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
     color: '#F39C12',
     inputs: [],
     outputs: [
-      { label: 'Players', type: 'data', dataType: 'array', isInput: false },
+      { label: 'Players', type: 'data', dataType: 'array', elementType: 'entity', isInput: false },
     ],
     defaultData: {},
   },
@@ -9628,7 +9628,7 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
       { label: 'Team', type: 'data', dataType: 'int', isInput: true },
     ],
     outputs: [
-      { label: 'Players', type: 'data', dataType: 'array', isInput: false },
+      { label: 'Players', type: 'data', dataType: 'array', elementType: 'entity', isInput: false },
     ],
     defaultData: { team: 1 },
   },
@@ -9640,7 +9640,7 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
     color: '#F39C12',
     inputs: [],
     outputs: [
-      { label: 'Players', type: 'data', dataType: 'array', isInput: false },
+      { label: 'Players', type: 'data', dataType: 'array', elementType: 'entity', isInput: false },
     ],
     defaultData: {},
   },
@@ -9654,7 +9654,7 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
       { label: 'Team', type: 'data', dataType: 'int', isInput: true },
     ],
     outputs: [
-      { label: 'Players', type: 'data', dataType: 'array', isInput: false },
+      { label: 'Players', type: 'data', dataType: 'array', elementType: 'entity', isInput: false },
     ],
     defaultData: { team: 1 },
   },
@@ -9666,7 +9666,7 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
     color: '#34495E',
     inputs: [],
     outputs: [
-      { label: 'Player', type: 'data', dataType: 'player', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
     ],
     defaultData: {},
     clientOnly: true,
@@ -9679,7 +9679,7 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
     color: '#34495E',
     inputs: [],
     outputs: [
-      { label: 'Player', type: 'data', dataType: 'player', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
     ],
     defaultData: {},
     clientOnly: true,
@@ -9779,7 +9779,7 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
       { label: 'Index', type: 'data', dataType: 'int', isInput: true },
     ],
     outputs: [
-      { label: 'Player', type: 'data', dataType: 'player', isInput: false },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: false },
     ],
     defaultData: { index: 0 },
   },
@@ -9790,7 +9790,7 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
     description: 'Get player offhand weapon by slot',
     color: '#E67E22',
     inputs: [
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
       { label: 'Slot', type: 'data', dataType: 'int', isInput: true },
     ],
     outputs: [
@@ -10006,7 +10006,7 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
     color: '#E67E22',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
     ],
     outputs: [
       { label: 'Out', type: 'exec', isInput: false },
@@ -10022,7 +10022,7 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
     color: '#E67E22',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
       { label: 'Slot', type: 'data', dataType: 'int', isInput: true },
       { label: 'WeaponName', type: 'data', dataType: 'string', isInput: true },
     ],
@@ -10042,7 +10042,7 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
     color: '#9B59B6',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
       { label: 'Passive', type: 'data', dataType: 'int', isInput: true },
     ],
     outputs: [
@@ -10059,7 +10059,7 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
     color: '#9B59B6',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
       { label: 'Passive', type: 'data', dataType: 'int', isInput: true },
     ],
     outputs: [
@@ -10076,7 +10076,7 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
     color: '#9B59B6',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
     ],
     outputs: [
       { label: 'Out', type: 'exec', isInput: false },
@@ -10091,7 +10091,7 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
     description: 'Get array of all passive ability indices for player',
     color: '#9B59B6',
     inputs: [
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
     ],
     outputs: [
       { label: 'Passives', type: 'data', dataType: 'array', isInput: false },
@@ -10106,7 +10106,7 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
     description: 'Check if player has a specific passive ability',
     color: '#9B59B6',
     inputs: [
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
       { label: 'Passive', type: 'data', dataType: 'int', isInput: true },
     ],
     outputs: [
@@ -10168,7 +10168,7 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
     color: '#27AE60',
     inputs: [],
     outputs: [
-      { label: 'LootArray', type: 'data', dataType: 'array', isInput: false },
+      { label: 'LootArray', type: 'data', dataType: 'array', elementType: 'entity', isInput: false },
     ],
     defaultData: {},
   },
@@ -10181,7 +10181,7 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
       { label: 'Loot', type: 'data', dataType: 'entity', isInput: true },
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
     ],
     outputs: [
       { label: 'Out', type: 'exec', isInput: false },
@@ -10198,7 +10198,7 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
     color: '#27AE60',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
       { label: 'ItemRef', type: 'data', dataType: 'string', isInput: true },
       { label: 'Count', type: 'data', dataType: 'int', isInput: true },
     ],
@@ -10217,7 +10217,7 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
     color: '#27AE60',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
       { label: 'ItemRef', type: 'data', dataType: 'string', isInput: true },
       { label: 'Count', type: 'data', dataType: 'int', isInput: true },
     ],
@@ -10234,7 +10234,7 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
     description: 'Get player inventory as array of ConsumableInventoryItem',
     color: '#27AE60',
     inputs: [
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
     ],
     outputs: [
       { label: 'Inventory', type: 'data', dataType: 'array', isInput: false },
@@ -10248,7 +10248,7 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
     description: 'Count how many of a specific item player has in inventory',
     color: '#27AE60',
     inputs: [
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
       { label: 'ItemRef', type: 'data', dataType: 'string', isInput: true },
     ],
     outputs: [
@@ -10263,7 +10263,7 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
     description: 'Check if player has at least a certain count of an item',
     color: '#27AE60',
     inputs: [
-      { label: 'Player', type: 'data', dataType: 'player', isInput: true },
+      { label: 'Player', type: 'data', dataType: 'entity', isInput: true },
       { label: 'ItemRef', type: 'data', dataType: 'string', isInput: true },
       { label: 'Count', type: 'data', dataType: 'int', isInput: true },
     ],

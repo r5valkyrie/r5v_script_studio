@@ -315,8 +315,7 @@ const getLineColor = (portType: 'exec' | 'data', dataType?: NodeDataType): strin
     vector: '#FFEB3B',   // Yellow 500
     rotation: '#FF9800', // Orange 500
     boolean: '#F44336',  // Red 500
-    entity: '#009688',   // Teal 500
-    player: '#00BCD4',   // Cyan 500
+    entity: '#00BCD4',   // Cyan 500
     weapon: '#FFC107',   // Amber 500
     array: '#9C27B0',    // Purple 500
     table: '#3F51B5',    // Indigo 500
@@ -335,6 +334,32 @@ const getPortColor = (portType: 'exec' | 'data', dataType?: NodeDataType): strin
 
 const getNodeColor = (type: string): string => {
   const definition = getNodeDefinition(type);
+  return definition?.color || '#6B7280';
+};
+
+// Get dynamic node color based on output type
+// Colors nodes by their data output type for easy visual identification
+const getDynamicNodeColor = (node: ScriptNode, accentColor: string): string => {
+  const definition = getNodeDefinition(node.type);
+  
+  // Function nodes (call-function, custom-function) use accent color
+  // since they can have multiple outputs of different types
+  if (node.type === 'call-function' || node.type === 'custom-function') {
+    return accentColor;
+  }
+  
+  // Get all data outputs
+  const dataOutputs = node.outputs.filter(o => o.type === 'data');
+  
+  // If node has exactly one data output, color by that output's type
+  // This covers: constants, get-portal, GetPlayerName, IsValid, IsPlayer, etc.
+  if (dataOutputs.length === 1) {
+    const output = dataOutputs[0];
+    if (output.dataType && output.dataType !== 'any') {
+      return getLineColor('data', output.dataType);
+    }
+  }
+  
   return definition?.color || '#6B7280';
 };
 
@@ -451,7 +476,7 @@ PortHandle.displayName = 'PortHandle';
 
 const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeData>>) => {
   const { scriptNode: node, onUpdate, onDelete, accentColor, nodeOpacity } = data;
-  const nodeColor = getNodeColor(node.type);
+  const nodeColor = getDynamicNodeColor(node, accentColor);
   const edges = useEdges();
   
   // Check if a port is connected
@@ -2028,6 +2053,7 @@ function ReactFlowGraphInner({
         label: output.label,
         type: output.type,
         dataType: output.dataType,
+        elementType: (output as { elementType?: NodeDataType }).elementType,
         isInput: false,
       })),
     };
@@ -2972,6 +2998,7 @@ function ReactFlowGraphInner({
         label: output.label,
         type: output.type,
         dataType: output.dataType,
+        elementType: (output as { elementType?: NodeDataType }).elementType,
         isInput: false,
       })),
     };
