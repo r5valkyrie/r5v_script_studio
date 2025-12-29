@@ -312,7 +312,7 @@ const getLineColor = (portType: 'exec' | 'data', dataType?: NodeDataType): strin
     float: '#4CAF50',    // Green 500
     number: '#4CAF50',   // Green 500
     string: '#E91E63',   // Pink 500
-    vector: '#FFEB3B',   // Yellow 500
+    vector: '#26C6DA',   // Cyan 400 (softer on eyes)
     rotation: '#FF9800', // Orange 500
     boolean: '#F44336',  // Red 500
     entity: '#00BCD4',   // Cyan 500
@@ -598,30 +598,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
       );
     }
 
-    if (node.type === 'const-vector') {
-      const x = typeof node.data.x === 'number' ? node.data.x : 0;
-      const y = typeof node.data.y === 'number' ? node.data.y : 0;
-      const z = typeof node.data.z === 'number' ? node.data.z : 0;
-      const vectorColor = '#FFEB3B'; // Yellow for vectors like Unreal
-      return (
-        <div className="flex items-center gap-1 w-full">
-          {(['x', 'y', 'z'] as const).map((axis) => (
-            <div key={axis} className="flex-1 min-w-0 flex items-center">
-              <span className="text-[10px] text-gray-500 uppercase font-medium mr-1">{axis}</span>
-              <input
-                type="number"
-                step="0.1"
-                value={axis === 'x' ? x : axis === 'y' ? y : z}
-                onChange={(e) => onUpdate({ data: { ...node.data, [axis]: parseFloat(e.target.value) || 0 } })}
-                onMouseDown={(e) => e.stopPropagation()}
-                style={{ fontVariantNumeric: 'tabular-nums' }}
-                className="w-full min-w-0 px-1.5 py-1 bg-black/40 text-[11px] text-center text-gray-100 outline-none transition-all duration-200 hover:bg-black/50 focus:bg-black/60"
-              />
-            </div>
-          ))}
-        </div>
-      );
-    }
+    // const-vector is now replaced by vector-make (inline inputs handled in port rendering)
 
     // Call Function node - special handling for dynamic arguments
     if (node.type === 'call-function') {
@@ -893,7 +870,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
                     value={paramNames[i] || `param${i + 1}`}
                     onChange={(e) => updateParamName(i, e.target.value)}
                     onMouseDown={(e) => e.stopPropagation()}
-                    className="flex-1 px-2 py-1.5 bg-white/[0.06] rounded-t rounded-b-none text-[11px] text-gray-100 border-b-2 border-white/20 outline-none transition-all duration-200 hover:bg-white/[0.08] focus:bg-white/[0.09] focus:border-[#2196F3] min-w-0"
+                    className="flex-1 px-2 py-1.5 bg-black/40 rounded text-[11px] text-gray-100 border border-white/10 outline-none transition-all duration-200 hover:bg-black/50 focus:bg-black/60 focus:border-white/30 min-w-0"
                     placeholder={`param${i + 1}`}
                   />
                   <CustomSelect
@@ -1190,7 +1167,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
                     step="0.1"
                     onChange={(e) => onUpdate({ data: { ...node.data, [key]: parseFloat(e.target.value) || 0 } })}
                     onMouseDown={(e) => e.stopPropagation()}
-                    className="w-full px-3 py-2 bg-white/[0.06] rounded-t rounded-b-none text-[11px] text-gray-100 border-b-2 border-white/20 outline-none transition-all duration-200 hover:bg-white/[0.08] focus:bg-white/[0.09] focus:border-[#2196F3]"
+                    className="w-full px-2 py-1.5 bg-black/40 rounded text-[11px] text-gray-100 border border-white/10 outline-none transition-all duration-200 hover:bg-black/50 focus:bg-black/60 focus:border-white/30"
                     style={{ fontVariantNumeric: 'tabular-nums' }}
                   />
                 </div>
@@ -1206,7 +1183,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
                     value={value}
                     onChange={(e) => onUpdate({ data: { ...node.data, [key]: e.target.value } })}
                     onMouseDown={(e) => e.stopPropagation()}
-                    className="w-full px-3 py-2 bg-white/[0.06] rounded-t rounded-b-none text-[11px] text-gray-100 border-b-2 border-white/20 outline-none transition-all duration-200 hover:bg-white/[0.08] focus:bg-white/[0.09] focus:border-[#2196F3]"
+                    className="w-full px-2 py-1.5 bg-black/40 rounded text-[11px] text-gray-100 border border-white/10 outline-none transition-all duration-200 hover:bg-black/50 focus:bg-black/60 focus:border-white/30"
                   />
                 </div>
               );
@@ -1287,7 +1264,7 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
       editorWidth = 280;
     } else if (node.type === 'call-function') {
       editorWidth = 240;
-    } else if (node.type === 'const-vector') {
+    } else if (node.type === 'vector-make') {
       editorWidth = 280;
     } else if (node.type === 'const-supported-attachments') {
       editorWidth = 260;
@@ -1428,52 +1405,14 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
       {/* Data Ports - Side by side layout like Unreal */}
       {(dataInputs.length > 0 || dataOutputs.length > 0) && (
         <div className="py-2 px-3">
-          {/* Render rows with inputs on left, outputs on right */}
-          {Array.from({ length: Math.max(dataInputs.length, dataOutputs.length) }).map((_, rowIndex) => {
-            const input = dataInputs[rowIndex];
-            const output = dataOutputs[rowIndex];
-            const inputConnected = input ? isPortConnected(input.id, true) : false;
-            const outputConnected = output ? isPortConnected(output.id, false) : false;
-            
-            return (
-              <div key={rowIndex} className="flex justify-between items-center py-1.5 min-h-[28px]">
-                {/* Left side - Input */}
-                <div className="flex items-center flex-1">
-                  {input && (
-                    <div className="flex items-center relative whitespace-nowrap">
-                      <Handle
-                        type="target"
-                        position={Position.Left}
-                        id={input.id}
-                        style={{
-                          width: '10px',
-                          height: '10px',
-                          backgroundColor: inputConnected ? getPortColor(input.type, input.dataType) : 'transparent',
-                          border: `2px solid ${getPortColor(input.type, input.dataType)}`,
-                          borderRadius: '50%',
-                          boxShadow: inputConnected ? `0 0 4px ${getPortColor(input.type, input.dataType)}60` : 'none',
-                          left: '2px',
-                        }}
-                      />
-                      <span className="ml-5 text-xs text-gray-300">{input.label}</span>
-                      {input.dataType && (
-                        <span 
-                          className="ml-2 text-[10px] px-1.5 py-0.5 rounded"
-                          style={{ 
-                            color: getPortColor(input.type, input.dataType),
-                            backgroundColor: `${getPortColor(input.type, input.dataType)}15`,
-                          }}
-                        >
-                          {getTypeLabel(input.dataType)}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-                
-                {/* Right side - Output */}
-                <div className="flex items-center justify-end flex-1">
-                  {output && (
+          {/* Special layout for vector-make: output first, then inputs with inline editors */}
+          {node.type === 'vector-make' ? (
+            <>
+              {/* Output row first */}
+              {dataOutputs.map((output) => {
+                const outputConnected = isPortConnected(output.id, false);
+                return (
+                  <div key={output.id} className="flex justify-end items-center py-1.5 min-h-[28px]">
                     <div className="flex items-center relative whitespace-nowrap">
                       {output.dataType && (
                         <span 
@@ -1502,11 +1441,219 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
                         }}
                       />
                     </div>
-                  )}
+                  </div>
+                );
+              })}
+              {/* Separator */}
+              <div className="border-t border-white/10 my-2" />
+              {/* Input rows with inline editors */}
+              {dataInputs.map((input) => {
+                const inputConnected = isPortConnected(input.id, true);
+                const inputDataKey = input.label.toLowerCase();
+                return (
+                  <div key={input.id} className="flex items-center py-1.5 min-h-[28px]">
+                    <div className="flex items-center relative whitespace-nowrap">
+                      <Handle
+                        type="target"
+                        position={Position.Left}
+                        id={input.id}
+                        style={{
+                          width: '10px',
+                          height: '10px',
+                          backgroundColor: inputConnected ? getPortColor(input.type, input.dataType) : 'transparent',
+                          border: `2px solid ${getPortColor(input.type, input.dataType)}`,
+                          borderRadius: '50%',
+                          boxShadow: inputConnected ? `0 0 4px ${getPortColor(input.type, input.dataType)}60` : 'none',
+                          left: '2px',
+                        }}
+                      />
+                      <span className="ml-5 text-xs text-gray-300">{input.label}</span>
+                      {/* Show inline input when not connected */}
+                      {!inputConnected && (
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={typeof node.data[inputDataKey] === 'number' ? node.data[inputDataKey] : 0}
+                          onChange={(e) => onUpdate({ data: { ...node.data, [inputDataKey]: parseFloat(e.target.value) || 0 } })}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          style={{ fontVariantNumeric: 'tabular-nums' }}
+                          className="ml-2 w-16 px-1.5 py-0.5 bg-black/40 text-[11px] text-center text-gray-100 rounded outline-none transition-all duration-200 hover:bg-black/50 focus:bg-black/60 border border-white/10 focus:border-[#26C6DA]"
+                        />
+                      )}
+                      {inputConnected && input.dataType && (
+                        <span 
+                          className="ml-2 text-[10px] px-1.5 py-0.5 rounded"
+                          style={{ 
+                            color: getPortColor(input.type, input.dataType),
+                            backgroundColor: `${getPortColor(input.type, input.dataType)}15`,
+                          }}
+                        >
+                          {getTypeLabel(input.dataType)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          ) : node.type === 'vector-break' ? (
+            <>
+              {/* Input row first */}
+              {dataInputs.map((input) => {
+                const inputConnected = isPortConnected(input.id, true);
+                return (
+                  <div key={input.id} className="flex items-center py-1.5 min-h-[28px]">
+                    <div className="flex items-center relative whitespace-nowrap">
+                      <Handle
+                        type="target"
+                        position={Position.Left}
+                        id={input.id}
+                        style={{
+                          width: '10px',
+                          height: '10px',
+                          backgroundColor: inputConnected ? getPortColor(input.type, input.dataType) : 'transparent',
+                          border: `2px solid ${getPortColor(input.type, input.dataType)}`,
+                          borderRadius: '50%',
+                          boxShadow: inputConnected ? `0 0 4px ${getPortColor(input.type, input.dataType)}60` : 'none',
+                          left: '2px',
+                        }}
+                      />
+                      <span className="ml-5 text-xs text-gray-300">{input.label}</span>
+                      {input.dataType && (
+                        <span 
+                          className="ml-2 text-[10px] px-1.5 py-0.5 rounded"
+                          style={{ 
+                            color: getPortColor(input.type, input.dataType),
+                            backgroundColor: `${getPortColor(input.type, input.dataType)}15`,
+                          }}
+                        >
+                          {getTypeLabel(input.dataType)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {/* Separator */}
+              <div className="border-t border-white/10 my-2" />
+              {/* Output rows */}
+              {dataOutputs.map((output) => {
+                const outputConnected = isPortConnected(output.id, false);
+                return (
+                  <div key={output.id} className="flex justify-end items-center py-1.5 min-h-[28px]">
+                    <div className="flex items-center relative whitespace-nowrap">
+                      {output.dataType && (
+                        <span 
+                          className="mr-2 text-[10px] px-1.5 py-0.5 rounded"
+                          style={{ 
+                            color: getPortColor(output.type, output.dataType),
+                            backgroundColor: `${getPortColor(output.type, output.dataType)}15`,
+                          }}
+                        >
+                          {getTypeLabel(output.dataType)}
+                        </span>
+                      )}
+                      <span className="mr-5 text-xs text-gray-300">{output.label}</span>
+                      <Handle
+                        type="source"
+                        position={Position.Right}
+                        id={output.id}
+                        style={{
+                          width: '10px',
+                          height: '10px',
+                          backgroundColor: outputConnected ? getPortColor(output.type, output.dataType) : 'transparent',
+                          border: `2px solid ${getPortColor(output.type, output.dataType)}`,
+                          borderRadius: '50%',
+                          boxShadow: outputConnected ? `0 0 4px ${getPortColor(output.type, output.dataType)}60` : 'none',
+                          right: '2px',
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          ) : (
+            /* Default layout: Render rows with inputs on left, outputs on right */
+            Array.from({ length: Math.max(dataInputs.length, dataOutputs.length) }).map((_, rowIndex) => {
+              const input = dataInputs[rowIndex];
+              const output = dataOutputs[rowIndex];
+              const inputConnected = input ? isPortConnected(input.id, true) : false;
+              const outputConnected = output ? isPortConnected(output.id, false) : false;
+              
+              return (
+                <div key={rowIndex} className="flex justify-between items-center py-1.5 min-h-[28px]">
+                  {/* Left side - Input */}
+                  <div className="flex items-center flex-1">
+                    {input && (
+                      <div className="flex items-center relative whitespace-nowrap">
+                        <Handle
+                          type="target"
+                          position={Position.Left}
+                          id={input.id}
+                          style={{
+                            width: '10px',
+                            height: '10px',
+                            backgroundColor: inputConnected ? getPortColor(input.type, input.dataType) : 'transparent',
+                            border: `2px solid ${getPortColor(input.type, input.dataType)}`,
+                            borderRadius: '50%',
+                            boxShadow: inputConnected ? `0 0 4px ${getPortColor(input.type, input.dataType)}60` : 'none',
+                            left: '2px',
+                          }}
+                        />
+                        <span className="ml-5 text-xs text-gray-300">{input.label}</span>
+                        {input.dataType && (
+                          <span 
+                            className="ml-2 text-[10px] px-1.5 py-0.5 rounded"
+                            style={{ 
+                              color: getPortColor(input.type, input.dataType),
+                              backgroundColor: `${getPortColor(input.type, input.dataType)}15`,
+                            }}
+                          >
+                            {getTypeLabel(input.dataType)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Right side - Output */}
+                  <div className="flex items-center justify-end flex-1">
+                    {output && (
+                      <div className="flex items-center relative whitespace-nowrap">
+                        {output.dataType && (
+                          <span 
+                            className="mr-2 text-[10px] px-1.5 py-0.5 rounded"
+                            style={{ 
+                              color: getPortColor(output.type, output.dataType),
+                              backgroundColor: `${getPortColor(output.type, output.dataType)}15`,
+                            }}
+                          >
+                            {getTypeLabel(output.dataType)}
+                          </span>
+                        )}
+                        <span className="mr-5 text-xs text-gray-300">{output.label}</span>
+                        <Handle
+                          type="source"
+                          position={Position.Right}
+                          id={output.id}
+                          style={{
+                            width: '10px',
+                            height: '10px',
+                            backgroundColor: outputConnected ? getPortColor(output.type, output.dataType) : 'transparent',
+                            border: `2px solid ${getPortColor(output.type, output.dataType)}`,
+                            borderRadius: '50%',
+                            boxShadow: outputConnected ? `0 0 4px ${getPortColor(output.type, output.dataType)}60` : 'none',
+                            right: '2px',
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       )}
 
@@ -2121,7 +2268,7 @@ function ReactFlowGraphInner({
         }
         if (e.key === '3') {
           e.preventDefault();
-          addNodeByType('const-vector');
+          addNodeByType('vector-make');
           return;
         }
         if (e.key === '1') {

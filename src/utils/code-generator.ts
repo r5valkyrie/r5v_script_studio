@@ -1972,6 +1972,35 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
+    case 'vector-make': {
+      // Get input values, falling back to node data if no connection
+      const xInput = getInputValue(ctx, node, 'input_0');
+      const yInput = getInputValue(ctx, node, 'input_1');
+      const zInput = getInputValue(ctx, node, 'input_2');
+      // Use input values or fall back to defaultData
+      const x = xInput !== 'null' ? xInput : (node.data.x ?? 0);
+      const y = yInput !== 'null' ? yInput : (node.data.y ?? 0);
+      const z = zInput !== 'null' ? zInput : (node.data.z ?? 0);
+      const resultVar = getVarName(ctx, 'vec');
+      ctx.variables.set(`${node.id}:output_0`, resultVar);
+      lines.push(`${ind}vector ${resultVar} = <${x}, ${y}, ${z}>`);
+      break;
+    }
+
+    case 'vector-break': {
+      const vec = getInputValue(ctx, node, 'input_0');
+      const xVar = getVarName(ctx, 'x');
+      const yVar = getVarName(ctx, 'y');
+      const zVar = getVarName(ctx, 'z');
+      ctx.variables.set(`${node.id}:output_0`, xVar);
+      ctx.variables.set(`${node.id}:output_1`, yVar);
+      ctx.variables.set(`${node.id}:output_2`, zVar);
+      lines.push(`${ind}float ${xVar} = ${vec}.x`);
+      lines.push(`${ind}float ${yVar} = ${vec}.y`);
+      lines.push(`${ind}float ${zVar} = ${vec}.z`);
+      break;
+    }
+
     case 'vector-add': {
       const a = getInputValue(ctx, node, 'input_0');
       const b = getInputValue(ctx, node, 'input_1');
@@ -2254,13 +2283,7 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
       break;
     }
 
-    case 'const-vector': {
-      const x = node.data.x ?? 0;
-      const y = node.data.y ?? 0;
-      const z = node.data.z ?? 0;
-      ctx.variables.set(`${node.id}:output_0`, `<${x}, ${y}, ${z}>`);
-      break;
-    }
+    // const-vector is now replaced by vector-make
 
     // reroute case is handled earlier in the switch (handles both exec and data passthrough)
 

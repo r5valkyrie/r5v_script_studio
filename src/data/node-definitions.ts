@@ -7828,6 +7828,89 @@ TraceHull( traceStart, traceEnd, <-5, -5, -5>, <5, 5, 5>, null, TRACE_MASK_SHOT,
 
   // ==================== MATH ====================
   {
+    type: 'vector-make',
+    category: 'variables',
+    label: 'Vector',
+    description: 'Create a vector from X, Y, Z components',
+    color: '#26C6DA',
+    inputs: [
+      { label: 'X', type: 'data', dataType: 'float', isInput: true },
+      { label: 'Y', type: 'data', dataType: 'float', isInput: true },
+      { label: 'Z', type: 'data', dataType: 'float', isInput: true },
+    ],
+    outputs: [
+      { label: 'Return Value', type: 'data', dataType: 'vector', isInput: false },
+    ],
+    defaultData: { x: 0, y: 0, z: 0 },
+    tags: ['vector', 'make', 'create', 'xyz', 'position', 'direction', 'constant'],
+    documentation: {
+      longDescription: 'Creates a vector from individual X, Y, Z float components. Input values can come from other nodes or be entered manually when no connection is present.',
+      codeExample: `// Create vector from components
+vector pos = <100.0, 200.0, 50.0>
+
+// Use with variables
+float x = 100.0
+float y = 200.0
+float z = 50.0
+vector pos = <x, y, z>`,
+      tips: [
+        'Enter values directly when inputs are not connected',
+        'Connect float nodes for dynamic values',
+        'Yellow color indicates vector type',
+        'Use for positions, directions, or any 3D data'
+      ],
+      useCases: [
+        'Creating spawn positions',
+        'Defining movement directions',
+        'Setting velocities',
+        'Building offsets'
+      ],
+      relatedNodes: ['vector-break', 'vector-add', 'get-origin']
+    }
+  },
+  {
+    type: 'vector-break',
+    category: 'variables',
+    label: 'Break Vector',
+    description: 'Break a vector into X, Y, Z components',
+    color: '#26C6DA',
+    inputs: [
+      { label: 'In Vec', type: 'data', dataType: 'vector', isInput: true },
+    ],
+    outputs: [
+      { label: 'X', type: 'data', dataType: 'float', isInput: false },
+      { label: 'Y', type: 'data', dataType: 'float', isInput: false },
+      { label: 'Z', type: 'data', dataType: 'float', isInput: false },
+    ],
+    defaultData: {},
+    tags: ['vector', 'break', 'split', 'xyz', 'component', 'extract', 'constant'],
+    documentation: {
+      longDescription: 'Breaks a vector into its individual X, Y, Z float components. Use this to extract specific axis values from positions, directions, or velocities.',
+      codeExample: `// Break vector into components
+vector pos = player.GetOrigin()
+float x = pos.x
+float y = pos.y
+float z = pos.z
+
+// Use individual components
+if (z > 100.0)
+    print("Player is above ground level")`,
+      tips: [
+        'Input must be a vector type',
+        'Each output is a float value',
+        'Use to compare individual axis values',
+        'Combine with Vector to modify specific components'
+      ],
+      useCases: [
+        'Checking height (Z) values',
+        'Comparing positions on specific axes',
+        'Extracting coordinates for calculations',
+        'Modifying individual vector components'
+      ],
+      relatedNodes: ['vector-make', 'get-origin', 'get-velocity']
+    }
+  },
+  {
     type: 'vector-add',
     category: 'math',
     label: 'Vector Add',
@@ -8861,18 +8944,6 @@ void function OnPlayerDeath( entity player, var damageInfo )
       { label: 'Value', type: 'data', dataType: 'boolean', isInput: false },
     ],
     defaultData: { value: true },
-  },
-  {
-    type: 'const-vector',
-    category: 'variables',
-    label: 'Vector',
-    description: 'Vector',
-    color: '#3498DB',
-    inputs: [],
-    outputs: [
-      { label: 'Value', type: 'data', dataType: 'vector', isInput: false },
-    ],
-    defaultData: { x: 0, y: 0, z: 0 },
   },
   {
     type: 'const-asset',

@@ -448,6 +448,8 @@ export type NodeType =
 
   // ==================== MATH ====================
   | 'vector-create'
+  | 'vector-make'
+  | 'vector-break'
   | 'vector-add'
   | 'vector-subtract'
   | 'vector-multiply'
@@ -508,7 +510,6 @@ export type NodeType =
   | 'const-float'
   | 'const-int'
   | 'const-bool'
-  | 'const-vector'
   | 'const-asset'
   | 'const-loot-tier'
   | 'const-supported-attachments'
