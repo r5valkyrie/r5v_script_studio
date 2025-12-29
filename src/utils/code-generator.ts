@@ -3515,6 +3515,25 @@ function generateNodeCode(ctx: CodeGenContext, node: ScriptNode): string {
     }
 
     // ==================== DATA (EXTENDED) ====================
+    case 'variable-get': {
+      // Get Variable node - simply outputs the variable name
+      const varName = node.data.name || 'myVar';
+      ctx.variables.set(`${node.id}:output_0`, varName);
+      break;
+    }
+
+    case 'variable-set': {
+      // Set Variable node - assigns a value to a variable
+      const varName = node.data.name || 'myVar';
+      // Check if Value input is connected, otherwise use inline value from node data
+      const connectedValue = getInputValue(ctx, node, 'input_1');
+      const inlineValue = node.data.value !== undefined && node.data.value !== '' ? node.data.value : null;
+      const value = connectedValue !== 'null' ? connectedValue : (inlineValue || 'null');
+      lines.push(`${ind}${varName} = ${value}`);
+      followExec('output_0');
+      break;
+    }
+
     case 'variable-declare': {
       const varName = node.data.name || 'myVar';
       const varType = node.data.varType || 'var';
@@ -4238,13 +4257,56 @@ export function generateCode(nodes: ScriptNode[], connections: NodeConnection[],
     } else if (targetNode.type === 'variable-declare') {
       const varName = targetNode.data.name || 'myVar';
       const varType = targetNode.data.varType || 'var';
-      const initialValue = targetNode.data.initialValue;
       ctx.variables.set(`${targetNode.id}:output_1`, varName);
       
-      if (initialValue !== undefined && initialValue !== '') {
+      // Get initial value from connected input (input_1 is "Initial Value")
+      const inputConn = connections.find(c => c.to.nodeId === targetNode.id && c.to.portId === 'input_1');
+      let initialValue: string | null = null;
+      
+      if (inputConn) {
+        // There's a connected node - resolve its value
+        const sourceNode = ctx.nodeMap.get(inputConn.from.nodeId);
+        if (sourceNode) {
+          // Handle constant nodes
+          if (sourceNode.type === 'const-int' || sourceNode.type === 'const-float') {
+            initialValue = String(sourceNode.data.value ?? 0);
+          } else if (sourceNode.type === 'const-string') {
+            initialValue = `"${sourceNode.data.value ?? ''}"`;
+          } else if (sourceNode.type === 'const-bool') {
+            initialValue = sourceNode.data.value ? 'true' : 'false';
+          } else if (sourceNode.type === 'vector-make') {
+            const x = sourceNode.data.x ?? 0;
+            const y = sourceNode.data.y ?? 0;
+            const z = sourceNode.data.z ?? 0;
+            initialValue = `<${x}, ${y}, ${z}>`;
+          } else {
+            // For other nodes, use the variable reference if it exists
+            const varRef = ctx.variables.get(`${sourceNode.id}:${inputConn.from.portId}`);
+            initialValue = varRef || 'null';
+          }
+        }
+      } else if (targetNode.data.initialValue !== undefined && targetNode.data.initialValue !== '') {
+        // Fallback to inline data value
+        initialValue = String(targetNode.data.initialValue);
+      }
+      
+      if (initialValue !== null) {
         return `${prefix}${varType} ${varName} = ${initialValue}`;
       } else {
-        return `${prefix}${varType} ${varName}`;
+        // No initial value - use type-appropriate default
+        const defaultValues: Record<string, string> = {
+          'int': '0',
+          'float': '0.0',
+          'bool': 'false',
+          'string': '""',
+          'vector': '<0, 0, 0>',
+          'array': '[]',
+          'table': '{}',
+          'entity': 'null',
+          'asset': '$""',
+          'var': 'null',
+        };
+        return `${prefix}${varType} ${varName} = ${defaultValues[varType] || 'null'}`;
       }
     }
     return null;

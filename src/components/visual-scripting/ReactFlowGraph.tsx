@@ -1133,6 +1133,222 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
       );
     }
 
+    // Variable Declare node - type dropdown that updates input/output port types
+    if (node.type === 'variable-declare') {
+      const varName = typeof node.data.name === 'string' ? node.data.name : 'myVar';
+      const varType = typeof node.data.varType === 'string' ? node.data.varType : 'var';
+      
+      const typeOptions = [
+        { value: 'var', label: 'var (untyped)' },
+        { value: 'int', label: 'int' },
+        { value: 'float', label: 'float' },
+        { value: 'bool', label: 'bool' },
+        { value: 'string', label: 'string' },
+        { value: 'vector', label: 'vector' },
+        { value: 'entity', label: 'entity' },
+        { value: 'array', label: 'array' },
+        { value: 'table', label: 'table' },
+        { value: 'asset', label: 'asset' },
+      ];
+      
+      const updateVarType = (newType: string) => {
+        // Map varType to dataType
+        const dataType = (newType === 'var' ? 'any' : newType) as NodeDataType;
+        
+        // Update the Initial Value input port's dataType
+        const newInputs = node.inputs.map(input => {
+          if (input.label === 'Initial Value') {
+            return { ...input, dataType };
+          }
+          return input;
+        });
+        
+        // Update the Variable output port's dataType
+        const newOutputs = node.outputs.map(output => {
+          if (output.label === 'Variable') {
+            return { ...output, dataType };
+          }
+          return output;
+        });
+        
+        onUpdate({
+          data: { ...node.data, varType: newType },
+          inputs: newInputs,
+          outputs: newOutputs,
+        });
+      };
+      
+      return (
+        <div className="flex flex-col gap-2.5">
+          {/* Variable name input */}
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[9px] text-gray-500 uppercase font-semibold tracking-wider">Name</span>
+            <input
+              type="text"
+              value={varName}
+              onChange={(e) => onUpdate({ data: { ...node.data, name: e.target.value } })}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="w-full px-2 py-1.5 bg-black/40 rounded text-[11px] text-gray-100 border border-white/10 outline-none transition-all duration-200 hover:bg-black/50 focus:bg-black/60 focus:border-white/30"
+              placeholder="Variable name..."
+            />
+          </div>
+          {/* Variable type dropdown */}
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[9px] text-gray-500 uppercase font-semibold tracking-wider">Type</span>
+            <CustomSelect
+              value={varType}
+              options={typeOptions}
+              onChange={updateVarType}
+              size="md"
+            />
+          </div>
+        </div>
+      );
+    }
+
+    // Variable Get node - name and type that determines output port type
+    if (node.type === 'variable-get') {
+      const varName = typeof node.data.name === 'string' ? node.data.name : 'myVar';
+      const varType = typeof node.data.varType === 'string' ? node.data.varType : 'var';
+      
+      const typeOptions = [
+        { value: 'var', label: 'var (untyped)' },
+        { value: 'int', label: 'int' },
+        { value: 'float', label: 'float' },
+        { value: 'bool', label: 'bool' },
+        { value: 'string', label: 'string' },
+        { value: 'vector', label: 'vector' },
+        { value: 'entity', label: 'entity' },
+        { value: 'array', label: 'array' },
+        { value: 'table', label: 'table' },
+        { value: 'asset', label: 'asset' },
+      ];
+      
+      const updateVarType = (newType: string) => {
+        // Map varType to dataType
+        const dataType = (newType === 'var' ? 'any' : newType) as NodeDataType;
+        
+        // Update the Value output port's dataType
+        const newOutputs = node.outputs.map(output => {
+          if (output.label === 'Value') {
+            return { ...output, dataType };
+          }
+          return output;
+        });
+        
+        onUpdate({
+          data: { ...node.data, varType: newType },
+          outputs: newOutputs,
+        });
+      };
+      
+      return (
+        <div className="flex flex-col gap-2.5">
+          {/* Variable name input */}
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[9px] text-gray-500 uppercase font-semibold tracking-wider">Name</span>
+            <input
+              type="text"
+              value={varName}
+              onChange={(e) => onUpdate({ data: { ...node.data, name: e.target.value } })}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="w-full px-2 py-1.5 bg-black/40 rounded text-[11px] text-gray-100 border border-white/10 outline-none transition-all duration-200 hover:bg-black/50 focus:bg-black/60 focus:border-white/30"
+              placeholder="Variable name..."
+            />
+          </div>
+          {/* Variable type dropdown */}
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[9px] text-gray-500 uppercase font-semibold tracking-wider">Type</span>
+            <CustomSelect
+              value={varType}
+              options={typeOptions}
+              onChange={updateVarType}
+              size="md"
+            />
+          </div>
+        </div>
+      );
+    }
+
+    // Variable Set node - name and type that determines input port type
+    if (node.type === 'variable-set') {
+      const varName = typeof node.data.name === 'string' ? node.data.name : 'myVar';
+      const varType = typeof node.data.varType === 'string' ? node.data.varType : 'var';
+      const inlineValue = typeof node.data.value === 'string' ? node.data.value : 
+                          typeof node.data.value === 'number' ? String(node.data.value) : '';
+      
+      const typeOptions = [
+        { value: 'var', label: 'var (untyped)' },
+        { value: 'int', label: 'int' },
+        { value: 'float', label: 'float' },
+        { value: 'bool', label: 'bool' },
+        { value: 'string', label: 'string' },
+        { value: 'vector', label: 'vector' },
+        { value: 'entity', label: 'entity' },
+        { value: 'array', label: 'array' },
+        { value: 'table', label: 'table' },
+        { value: 'asset', label: 'asset' },
+      ];
+      
+      const updateVarType = (newType: string) => {
+        // Map varType to dataType
+        const dataType = (newType === 'var' ? 'any' : newType) as NodeDataType;
+        
+        // Update the Value input port's dataType
+        const newInputs = node.inputs.map(input => {
+          if (input.label === 'Value') {
+            return { ...input, dataType };
+          }
+          return input;
+        });
+        
+        onUpdate({
+          data: { ...node.data, varType: newType },
+          inputs: newInputs,
+        });
+      };
+      
+      return (
+        <div className="flex flex-col gap-2.5">
+          {/* Variable name input */}
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[9px] text-gray-500 uppercase font-semibold tracking-wider">Name</span>
+            <input
+              type="text"
+              value={varName}
+              onChange={(e) => onUpdate({ data: { ...node.data, name: e.target.value } })}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="w-full px-2 py-1.5 bg-black/40 rounded text-[11px] text-gray-100 border border-white/10 outline-none transition-all duration-200 hover:bg-black/50 focus:bg-black/60 focus:border-white/30"
+              placeholder="Variable name..."
+            />
+          </div>
+          {/* Variable type dropdown */}
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[9px] text-gray-500 uppercase font-semibold tracking-wider">Type</span>
+            <CustomSelect
+              value={varType}
+              options={typeOptions}
+              onChange={updateVarType}
+              size="md"
+            />
+          </div>
+          {/* Inline value (used when Value port is not connected) */}
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[9px] text-gray-500 uppercase font-semibold tracking-wider">Default Value</span>
+            <input
+              type={varType === 'int' || varType === 'float' ? 'number' : 'text'}
+              value={inlineValue}
+              step={varType === 'float' ? '0.1' : '1'}
+              onChange={(e) => onUpdate({ data: { ...node.data, value: e.target.value } })}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="w-full px-2 py-1.5 bg-black/40 rounded text-[11px] text-gray-100 border border-white/10 outline-none transition-all duration-200 hover:bg-black/50 focus:bg-black/60 focus:border-white/30"
+              placeholder="Value when not connected..."
+            />
+          </div>
+        </div>
+      );
+    }
+
     // Fallback: render editable fields for nodes with data
     // Only show fields that don't have a corresponding input port
     const inputLabels = new Set(node.inputs.map(input => input.label.toLowerCase().replace(/\s+/g, '')));

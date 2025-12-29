@@ -9035,15 +9035,14 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
     type: 'variable-get',
     category: 'variables',
     label: 'Get Variable',
-    description: 'Get variable value',
+    description: 'Get the value of a variable by name',
     color: '#3498DB',
-    inputs: [
-      { label: 'Name', type: 'data', dataType: 'string', isInput: true },
-    ],
+    inputs: [],
     outputs: [
       { label: 'Value', type: 'data', dataType: 'any', isInput: false },
     ],
-    defaultData: { name: 'myVar' },
+    defaultData: { name: 'myVar', varType: 'var' },
+    tags: ['variable', 'get', 'read', 'value'],
   },
   {
     type: 'variable-set',
@@ -9053,13 +9052,13 @@ entity weapon = player.GiveWeapon("mp_weapon_r97", WEAPON_INVENTORY_SLOT_PRIMARY
     color: '#3498DB',
     inputs: [
       { label: 'In', type: 'exec', isInput: true },
-      { label: 'Name', type: 'data', dataType: 'string', isInput: true },
       { label: 'Value', type: 'data', dataType: 'any', isInput: true },
     ],
     outputs: [
       { label: 'Out', type: 'exec', isInput: false },
     ],
-    defaultData: { name: 'myVar' },
+    defaultData: { name: 'myVar', varType: 'var', value: '' },
+    tags: ['variable', 'set', 'write', 'assign'],
   },
   {
     type: 'variable-declare',
