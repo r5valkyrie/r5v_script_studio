@@ -290,7 +290,6 @@ interface ReactFlowGraphProps {
 
 interface ScriptNodeData extends Record<string, unknown> {
   scriptNode: ScriptNode;
-  isSelected: boolean;
   onUpdate: (updates: Partial<ScriptNode>) => void;
   onDelete: () => void;
   accentColor: string;
@@ -370,9 +369,9 @@ const getDynamicNodeColor = (node: ScriptNode, accentColor: string): string => {
 };
 
 // Convert ScriptNode to React Flow Node
+// Note: Selection is handled by React Flow internally via the `selected` prop passed to node components
 const scriptNodeToFlowNode = (
   node: ScriptNode,
-  isSelected: boolean,
   onUpdate: (nodeId: string, updates: Partial<ScriptNode>) => void,
   onDelete: (nodeId: string) => void,
   accentColor: string,
@@ -387,11 +386,9 @@ const scriptNodeToFlowNode = (
     id: node.id,
     type: flowNodeType,
     position: node.position,
-    selected: isSelected,
     zIndex: node.type === 'comment' ? -1000 : undefined, // Comments render behind everything
     data: {
       scriptNode: node,
-      isSelected,
       onUpdate: (updates) => onUpdate(node.id, updates),
       onDelete: () => onDelete(node.id),
       accentColor,
@@ -2828,18 +2825,18 @@ function ReactFlowGraphInner({
   }, [selectedNodeIds, scriptNodes, connections, onDeleteNode, onSelectNodes, onAddNode, onConnectProp, onRequestHistorySnapshot, reactFlowInstance, addNodeByType]);
 
   // Convert script nodes to React Flow nodes - memoized base conversion
+  // Note: Selection is NOT included here - React Flow handles it internally via onSelectionChange
   const baseFlowNodes = useMemo<Node<ScriptNodeData>[]>(() => {
     return scriptNodes.map(node => 
       scriptNodeToFlowNode(
         node,
-        selectedNodeIds.includes(node.id),
         onUpdateNode,
         onDeleteNode,
         accentColor,
         nodeOpacity
       )
     );
-  }, [scriptNodes, selectedNodeIds, onUpdateNode, onDeleteNode, accentColor, nodeOpacity]);
+  }, [scriptNodes, onUpdateNode, onDeleteNode, accentColor, nodeOpacity]);
 
   // Internal node state for smooth dragging
   const [internalNodes, setInternalNodes] = useState<Node<ScriptNodeData>[]>(baseFlowNodes);
