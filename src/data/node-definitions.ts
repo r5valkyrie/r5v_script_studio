@@ -7870,7 +7870,7 @@ vector pos = <x, y, z>`,
   },
   {
     type: 'vector-break',
-    category: 'variables',
+    category: 'utilities',
     label: 'Break Vector',
     description: 'Break a vector into X, Y, Z components',
     color: '#26C6DA',

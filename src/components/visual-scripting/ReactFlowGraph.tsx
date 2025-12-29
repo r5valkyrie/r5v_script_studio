@@ -19,6 +19,7 @@ import {
   Panel,
   useStoreApi,
   useEdges,
+  useStore,
 } from '@xyflow/react';
 import type {
   Connection,
@@ -35,7 +36,12 @@ import type {
   NodeChange,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Trash2 } from 'lucide-react';
+import { 
+  Trash2, Zap, GitBranch, Repeat, Timer, FunctionSquare, Circle, 
+  Calculator, Move3D, Database, User, Crosshair, Sword, Terminal,
+  Play, Settings, Box, ArrowRight, Layers, Hash, Type, ToggleLeft,
+  Sparkles, Target, Shield, Activity, Code, Workflow, Split
+} from 'lucide-react';
 import type { ScriptNode, NodeConnection, NodeDataType, NodePort } from '../../types/visual-scripting';
 import { getNodeDefinition } from '../../data/node-definitions';
 import QuickNodeMenu from './QuickNodeMenu';
@@ -494,6 +500,21 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
   const dataInputs = node.inputs.filter(p => p.type !== 'exec');
   const dataOutputs = node.outputs.filter(p => p.type !== 'exec');
 
+  // Detect callback-style nodes: have "Next" + another exec output (event trigger)
+  // Split exec outputs into "flow" (Next/Then) and "event" (callback triggers)
+  const isCallbackNode = execOutputs.length > 1 && 
+    execOutputs.some(p => p.label === 'Next' || p.label === 'Then');
+  
+  // Primary exec outputs are Next/Then - these go in the top flow section
+  const primaryExecOutputs = isCallbackNode 
+    ? execOutputs.filter(p => p.label === 'Next' || p.label === 'Then')
+    : execOutputs;
+  
+  // Event exec outputs are the callback triggers - these go with the data outputs
+  const eventExecOutputs = isCallbackNode 
+    ? execOutputs.filter(p => p.label !== 'Next' && p.label !== 'Then')
+    : [];
+
   // Get icon for node type
   const getNodeIcon = () => {
     if (node.type.startsWith('event-')) return '⚡';
@@ -508,6 +529,8 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
 
   // Get node category subtitle
   const getNodeSubtitle = () => {
+    if (node.type === 'vector-make') return 'Constant';
+    if (node.type === 'vector-break') return 'Utilities';
     if (node.type.startsWith('event-')) return 'Event';
     if (node.type.startsWith('flow-')) return 'Flow Control';
     if (node.type.startsWith('action-')) return 'Action';
@@ -1206,6 +1229,8 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
     return Object.keys(node.data).filter(key => {
       if (['isExec', 'comment', 'commentColor'].includes(key)) return false;
       if (node.data[key] === undefined) return false;
+      // Hide functionName for callback nodes since it auto-generates
+      if (key === 'functionName' && isCallbackNode) return false;
       const keyLower = key.toLowerCase();
       if (inputLabels.has(keyLower)) return false;
       if (inputIds.has(keyLower)) return false;
@@ -1282,97 +1307,218 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
   const nodeWidth = calculateNodeWidth();
   const hasExecPorts = execInputs.length > 0 || execOutputs.length > 0;
 
+  // Get node icon based on category/type - proper SVG icons
+  const getNodeCategoryIcon = () => {
+    const type = node.type;
+    const iconProps = { size: 14, strokeWidth: 2 };
+    
+    // Event/callback nodes
+    if (type.includes('init-') || type.includes('event-') || type.includes('callback') || type.startsWith('on-')) 
+      return <Zap {...iconProps} />;
+    
+    // Flow control
+    if (type.includes('branch') || type.includes('switch')) 
+      return <GitBranch {...iconProps} />;
+    if (type.includes('loop') || type.includes('sequence') || type.includes('foreach')) 
+      return <Repeat {...iconProps} />;
+    if (type.includes('delay') || type.includes('wait')) 
+      return <Timer {...iconProps} />;
+    
+    // Functions
+    if (type.includes('function') || type.includes('call-')) 
+      return <FunctionSquare {...iconProps} />;
+    if (type === 'custom-function') 
+      return <Code {...iconProps} />;
+    
+    // Constants
+    if (type === 'const-int' || type === 'const-float') 
+      return <Hash {...iconProps} />;
+    if (type === 'const-string') 
+      return <Type {...iconProps} />;
+    if (type === 'const-bool') 
+      return <ToggleLeft {...iconProps} />;
+    if (type.includes('const-')) 
+      return <Circle {...iconProps} />;
+    
+    // Math
+    if (type.includes('math-') || type.includes('add') || type.includes('multiply') || type.includes('subtract') || type.includes('divide')) 
+      return <Calculator {...iconProps} />;
+    
+    // Vectors
+    if (type === 'vector-make') 
+      return <Move3D {...iconProps} />;
+    if (type === 'vector-break') 
+      return <Split {...iconProps} />;
+    if (type.includes('vector')) 
+      return <Move3D {...iconProps} />;
+    
+    // Entity/Player
+    if (type.includes('player') || type.includes('entity')) 
+      return <User {...iconProps} />;
+    if (type.includes('spawn')) 
+      return <Sparkles {...iconProps} />;
+    
+    // Combat
+    if (type.includes('damage')) 
+      return <Sword {...iconProps} />;
+    if (type.includes('weapon')) 
+      return <Crosshair {...iconProps} />;
+    if (type.includes('shield') || type.includes('armor')) 
+      return <Shield {...iconProps} />;
+    
+    // Getters/Setters
+    if (type.includes('get-') || type.includes('set-')) 
+      return <Database {...iconProps} />;
+    
+    // Debug
+    if (type.includes('print') || type.includes('debug')) 
+      return <Terminal {...iconProps} />;
+    
+    // Arrays/Collections
+    if (type.includes('array') || type.includes('collection')) 
+      return <Layers {...iconProps} />;
+    
+    // Portal/Flow
+    if (type.includes('portal')) 
+      return <Workflow {...iconProps} />;
+    
+    // Actions
+    if (type.startsWith('action-')) 
+      return <Play {...iconProps} />;
+    
+    // Mod nodes
+    if (type.startsWith('mod-')) 
+      return <Settings {...iconProps} />;
+    
+    // Default
+    return <Box {...iconProps} />;
+  };
+
   return (
     <div
-      className="rounded select-none overflow-visible"
+      className="select-none overflow-visible"
       style={{
         minWidth: nodeWidth,
         width: nodeWidth,
         opacity: nodeOpacity / 100,
-        backgroundColor: '#1a1a1a',
-        border: '1px solid #333',
+        backgroundColor: '#252525',
+        borderRadius: '4px',
+        border: selected ? `2px solid ${accentColor}` : '1px solid #3a3a3a',
         boxShadow: selected
-          ? `0 8px 16px rgba(0,0,0,.4), 0 0 0 2px ${accentColor}`
-          : '0 4px 12px rgba(0,0,0,.3)',
-        transition: 'box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          ? `0 0 20px ${accentColor}40, 0 8px 24px rgba(0,0,0,.5)`
+          : '0 4px 16px rgba(0,0,0,.4), 0 2px 4px rgba(0,0,0,.2)',
+        transition: 'box-shadow 0.15s ease-out, border 0.15s ease-out',
       }}
     >
-      {/* Node Header - Unreal style with gradient */}
+      {/* Node Header - Unreal Blueprint style with colored top bar */}
       <div
-        className="px-3 py-2 flex items-center gap-2 relative"
+        className="relative"
         style={{
-          background: `linear-gradient(180deg, ${nodeColor} 0%, ${nodeColor}dd 100%)`,
-          borderBottom: '1px solid rgba(0,0,0,0.3)',
-          borderRadius: '3px 3px 0 0',
+          background: `linear-gradient(180deg, ${nodeColor} 0%, ${nodeColor}cc 100%)`,
+          borderRadius: selected ? '2px 2px 0 0' : '3px 3px 0 0',
+          borderBottom: '1px solid rgba(0,0,0,0.4)',
         }}
       >
-        <div className="flex flex-col flex-1 min-w-0">
-          <span className="text-[10px] text-white/60 uppercase tracking-wider font-medium">
-            {getNodeSubtitle()}
-          </span>
-          <span className="text-sm font-semibold text-white truncate">
-            {node.label.replace(/^(Event|Flow|Mod|Data|Action):\s*/, '')}
-          </span>
-        </div>
-        {selected && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
+        {/* Top accent line - Unreal style */}
+        <div 
+          className="absolute top-0 left-0 right-0 h-[3px]"
+          style={{ 
+            backgroundColor: nodeColor,
+            borderRadius: '3px 3px 0 0',
+            filter: 'brightness(1.3)',
+          }}
+        />
+        
+        <div className="px-3 py-2.5 flex items-center gap-2.5 relative">
+          {/* Category icon - Unreal style */}
+          <div 
+            className="w-6 h-6 rounded flex items-center justify-center text-sm shrink-0"
+            style={{ 
+              backgroundColor: 'rgba(0,0,0,0.25)',
+              color: 'rgba(255,255,255,0.9)',
+              textShadow: '0 1px 2px rgba(0,0,0,0.3)',
             }}
-            className="p-1 hover:bg-white/20 rounded transition-colors"
           >
-            <Trash2 size={14} className="text-white/80" />
-          </button>
-        )}
+            {getNodeCategoryIcon()}
+          </div>
+          
+          <div className="flex flex-col flex-1 min-w-0">
+            <span className="text-[9px] text-white/50 uppercase tracking-wider font-medium leading-tight">
+              {getNodeSubtitle()}
+            </span>
+            <span className="text-[13px] font-semibold text-white truncate leading-snug" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
+              {node.label.replace(/^(Event|Flow|Mod|Data|Action):\s*/, '')}
+            </span>
+          </div>
+          
+          {selected && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="p-1.5 hover:bg-white/20 rounded transition-colors"
+            >
+              <Trash2 size={14} className="text-white/80" />
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Exec Ports Row - Always at top like Unreal */}
+      {/* Exec Ports Row - Unreal Blueprint style (primary flow only) */}
       {hasExecPorts && (
-        <div className="flex justify-between items-start px-3 py-2 border-b border-white/10">
-          {/* Exec Input(s) - typically just one */}
-          <div className="flex flex-col gap-2">
+        <div 
+          className="flex justify-between items-start"
+          style={{
+            padding: '10px 8px',
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
+            background: 'rgba(0,0,0,0.15)',
+          }}
+        >
+          {/* Exec Input(s) */}
+          <div className="flex flex-col gap-2.5">
             {execInputs.map((input) => {
               const connected = isPortConnected(input.id, true);
               return (
-                <div key={input.id} className="flex items-center relative h-6">
+                <div key={input.id} className="flex items-center relative h-5">
                   <Handle
                     type="target"
                     position={Position.Left}
                     id={input.id}
                     className="!border-0"
                     style={{
-                      width: '14px',
-                      height: '14px',
+                      width: '16px',
+                      height: '16px',
                       background: 'transparent',
-                      left: '2px',
+                      left: '-4px',
                     }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 14 14" className="pointer-events-none">
+                    <svg width="16" height="16" viewBox="0 0 16 16" className="pointer-events-none" style={{ filter: connected ? 'drop-shadow(0 0 3px rgba(255,255,255,0.5))' : 'none' }}>
                       <polygon 
-                        points="0,0 14,7 0,14" 
-                        fill={connected ? 'white' : 'none'}
-                        stroke="white" 
-                        strokeWidth="2"
+                        points="1,1 15,8 1,15" 
+                        fill={connected ? '#ffffff' : '#2a2a2a'}
+                        stroke="#ffffff" 
+                        strokeWidth="1.5"
+                        strokeLinejoin="round"
                       />
                     </svg>
                   </Handle>
-                  {input.label !== 'Exec' && (
-                    <span className="ml-8 text-xs text-gray-400">{input.label}</span>
+                  {input.label !== 'Exec' && input.label !== 'In' && !(isCallbackNode && input.label === 'Register') && (
+                    <span className="ml-6 text-[11px] text-gray-400 font-medium">{input.label}</span>
                   )}
                 </div>
               );
             })}
           </div>
           
-          {/* Exec Output(s) - stacked vertically like Unreal's Branch True/False */}
-          <div className="flex flex-col gap-2">
-            {execOutputs.map((output) => {
+          {/* Primary Exec Output(s) - Next/Then only for callback nodes */}
+          <div className="flex flex-col gap-2.5">
+            {primaryExecOutputs.map((output) => {
               const connected = isPortConnected(output.id, false);
               return (
-                <div key={output.id} className="flex items-center justify-end relative h-6">
-                  {output.label !== 'Exec' && output.label !== 'Then' && (
-                    <span className="mr-8 text-xs text-gray-300">{output.label}</span>
+                <div key={output.id} className="flex items-center justify-end relative h-5">
+                  {output.label !== 'Exec' && output.label !== 'Then' && output.label !== 'Out' && !(isCallbackNode && output.label === 'Next') && (
+                    <span className="mr-6 text-[11px] text-gray-300 font-medium">{output.label}</span>
                   )}
                   <Handle
                     type="source"
@@ -1380,18 +1526,19 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
                     id={output.id}
                     className="!border-0"
                     style={{
-                      width: '14px',
-                      height: '14px',
+                      width: '16px',
+                      height: '16px',
                       background: 'transparent',
-                      right: '2px',
+                      right: '-4px',
                     }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 14 14" className="pointer-events-none">
+                    <svg width="16" height="16" viewBox="0 0 16 16" className="pointer-events-none" style={{ filter: connected ? 'drop-shadow(0 0 3px rgba(255,255,255,0.5))' : 'none' }}>
                       <polygon 
-                        points="0,0 14,7 0,14" 
-                        fill={connected ? 'white' : 'none'}
-                        stroke="white" 
-                        strokeWidth="2"
+                        points="1,1 15,8 1,15" 
+                        fill={connected ? '#ffffff' : '#2a2a2a'}
+                        stroke="#ffffff" 
+                        strokeWidth="1.5"
+                        strokeLinejoin="round"
                       />
                     </svg>
                   </Handle>
@@ -1402,187 +1549,352 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
         </div>
       )}
 
-      {/* Data Ports - Side by side layout like Unreal */}
-      {(dataInputs.length > 0 || dataOutputs.length > 0) && (
-        <div className="py-2 px-3">
-          {/* Special layout for vector-make: output first, then inputs with inline editors */}
-          {node.type === 'vector-make' ? (
-            <>
-              {/* Output row first */}
-              {dataOutputs.map((output) => {
-                const outputConnected = isPortConnected(output.id, false);
-                return (
-                  <div key={output.id} className="flex justify-end items-center py-1.5 min-h-[28px]">
-                    <div className="flex items-center relative whitespace-nowrap">
-                      {output.dataType && (
-                        <span 
-                          className="mr-2 text-[10px] px-1.5 py-0.5 rounded"
-                          style={{ 
-                            color: getPortColor(output.type, output.dataType),
-                            backgroundColor: `${getPortColor(output.type, output.dataType)}15`,
-                          }}
-                        >
-                          {getTypeLabel(output.dataType)}
-                        </span>
-                      )}
-                      <span className="mr-5 text-xs text-gray-300">{output.label}</span>
-                      <Handle
-                        type="source"
-                        position={Position.Right}
-                        id={output.id}
-                        style={{
-                          width: '10px',
-                          height: '10px',
-                          backgroundColor: outputConnected ? getPortColor(output.type, output.dataType) : 'transparent',
-                          border: `2px solid ${getPortColor(output.type, output.dataType)}`,
-                          borderRadius: '50%',
-                          boxShadow: outputConnected ? `0 0 4px ${getPortColor(output.type, output.dataType)}60` : 'none',
-                          right: '2px',
-                        }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-              {/* Separator */}
-              <div className="border-t border-white/10 my-2" />
-              {/* Input rows with inline editors */}
-              {dataInputs.map((input) => {
-                const inputConnected = isPortConnected(input.id, true);
-                const inputDataKey = input.label.toLowerCase();
-                return (
-                  <div key={input.id} className="flex items-center py-1.5 min-h-[28px]">
+      {/* Callback Event Section - event exec + data outputs */}
+      {isCallbackNode && (eventExecOutputs.length > 0 || dataOutputs.length > 0 || dataInputs.length > 0) && (
+        <div style={{ padding: '8px 8px 10px 8px' }}>
+          {/* Event exec output(s) first, then data outputs below */}
+          {eventExecOutputs.map((output) => {
+            const connected = isPortConnected(output.id, false);
+            return (
+              <div key={output.id} className="flex items-center justify-end relative h-5 mb-2">
+                <span className="mr-6 text-[11px] text-gray-300 font-medium">On Event</span>
+                <Handle
+                  type="source"
+                  position={Position.Right}
+                  id={output.id}
+                  className="!border-0"
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    background: 'transparent',
+                    right: '-4px',
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" className="pointer-events-none" style={{ filter: connected ? 'drop-shadow(0 0 3px rgba(255,255,255,0.5))' : 'none' }}>
+                    <polygon 
+                      points="1,1 15,8 1,15" 
+                      fill={connected ? '#ffffff' : '#2a2a2a'}
+                      stroke="#ffffff" 
+                      strokeWidth="1.5"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </Handle>
+              </div>
+            );
+          })}
+          
+          {/* Data ports - side by side layout */}
+          {Array.from({ length: Math.max(dataInputs.length, dataOutputs.length) }).map((_, rowIndex) => {
+            const input = dataInputs[rowIndex];
+            const output = dataOutputs[rowIndex];
+            const inputConnected = input ? isPortConnected(input.id, true) : false;
+            const outputConnected = output ? isPortConnected(output.id, false) : false;
+            const inputPinColor = input ? getPortColor(input.type, input.dataType) : '#888';
+            const outputPinColor = output ? getPortColor(output.type, output.dataType) : '#888';
+            
+            return (
+              <div key={rowIndex} className="flex justify-between items-center py-1.5 min-h-[26px]">
+                {/* Left side - Input */}
+                <div className="flex items-center flex-1">
+                  {input && (
                     <div className="flex items-center relative whitespace-nowrap">
                       <Handle
                         type="target"
                         position={Position.Left}
                         id={input.id}
+                        className="!border-0"
                         style={{
-                          width: '10px',
-                          height: '10px',
-                          backgroundColor: inputConnected ? getPortColor(input.type, input.dataType) : 'transparent',
-                          border: `2px solid ${getPortColor(input.type, input.dataType)}`,
-                          borderRadius: '50%',
-                          boxShadow: inputConnected ? `0 0 4px ${getPortColor(input.type, input.dataType)}60` : 'none',
-                          left: '2px',
+                          width: '12px',
+                          height: '12px',
+                          background: 'transparent',
+                          left: '-4px',
                         }}
-                      />
-                      <span className="ml-5 text-xs text-gray-300">{input.label}</span>
-                      {/* Show inline input when not connected */}
-                      {!inputConnected && (
-                        <input
-                          type="number"
-                          step="0.1"
-                          value={typeof node.data[inputDataKey] === 'number' ? node.data[inputDataKey] : 0}
-                          onChange={(e) => onUpdate({ data: { ...node.data, [inputDataKey]: parseFloat(e.target.value) || 0 } })}
-                          onMouseDown={(e) => e.stopPropagation()}
-                          style={{ fontVariantNumeric: 'tabular-nums' }}
-                          className="ml-2 w-16 px-1.5 py-0.5 bg-black/40 text-[11px] text-center text-gray-100 rounded outline-none transition-all duration-200 hover:bg-black/50 focus:bg-black/60 border border-white/10 focus:border-[#26C6DA]"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 12 12" className="pointer-events-none" style={{ filter: inputConnected ? `drop-shadow(0 0 4px ${inputPinColor})` : 'none' }}>
+                          <circle 
+                            cx="6" cy="6" r="5"
+                            fill={inputConnected ? inputPinColor : '#1a1a1a'}
+                            stroke={inputPinColor}
+                            strokeWidth="1.5"
+                          />
+                        </svg>
+                      </Handle>
+                      <span className="ml-6 text-[11px] text-gray-300 font-medium">{input.label}</span>
+                      {input.dataType && input.dataType !== 'any' && (
+                        <span 
+                          className="ml-1.5 text-[9px] px-1 py-0.5 rounded font-medium"
+                          style={{ 
+                            color: inputPinColor,
+                            backgroundColor: `${inputPinColor}18`,
+                          }}
+                        >
+                          {getTypeLabel(input.dataType)}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Right side - Output */}
+                <div className="flex items-center justify-end flex-1">
+                  {output && (
+                    <div className="flex items-center relative whitespace-nowrap">
+                      {output.dataType && output.dataType !== 'any' && (
+                        <span 
+                          className="mr-1.5 text-[9px] px-1 py-0.5 rounded font-medium"
+                          style={{ 
+                            color: outputPinColor,
+                            backgroundColor: `${outputPinColor}18`,
+                          }}
+                        >
+                          {getTypeLabel(output.dataType)}
+                        </span>
+                      )}
+                      <span className="mr-6 text-[11px] text-gray-300 font-medium">{output.label}</span>
+                      <Handle
+                        type="source"
+                        position={Position.Right}
+                        id={output.id}
+                        className="!border-0"
+                        style={{
+                          width: '12px',
+                          height: '12px',
+                          background: 'transparent',
+                          right: '-4px',
+                        }}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 12 12" className="pointer-events-none" style={{ filter: outputConnected ? `drop-shadow(0 0 4px ${outputPinColor})` : 'none' }}>
+                          <circle 
+                            cx="6" cy="6" r="5"
+                            fill={outputConnected ? outputPinColor : '#1a1a1a'}
+                            stroke={outputPinColor}
+                            strokeWidth="1.5"
+                          />
+                        </svg>
+                      </Handle>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Vector Make - special layout with separate sections */}
+      {!isCallbackNode && node.type === 'vector-make' && (
+        <>
+          {/* Output section */}
+          <div 
+            style={{ 
+              padding: '8px 8px 8px 8px',
+              borderBottom: '1px solid rgba(255,255,255,0.06)',
+              background: 'rgba(0,0,0,0.15)',
+            }}
+          >
+            {dataOutputs.map((output) => {
+              const outputConnected = isPortConnected(output.id, false);
+              const pinColor = getPortColor(output.type, output.dataType);
+              return (
+                <div key={output.id} className="flex justify-end items-center py-1 min-h-[24px]">
+                  <div className="flex items-center relative whitespace-nowrap">
+                    {output.dataType && output.dataType !== 'any' && (
+                      <span 
+                        className="mr-1.5 text-[9px] px-1 py-0.5 rounded font-medium"
+                        style={{ 
+                          color: pinColor,
+                          backgroundColor: `${pinColor}18`,
+                        }}
+                      >
+                        {getTypeLabel(output.dataType)}
+                      </span>
+                    )}
+                    <span className="mr-6 text-[11px] text-gray-300 font-medium">{output.label}</span>
+                    <Handle
+                      type="source"
+                      position={Position.Right}
+                      id={output.id}
+                      className="!border-0"
+                      style={{
+                        width: '12px',
+                        height: '12px',
+                        background: 'transparent',
+                        right: '-4px',
+                      }}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 12 12" className="pointer-events-none" style={{ filter: outputConnected ? `drop-shadow(0 0 4px ${pinColor})` : 'none' }}>
+                        <circle 
+                          cx="6" cy="6" r="5"
+                          fill={outputConnected ? pinColor : '#1a1a1a'}
+                          stroke={pinColor}
+                          strokeWidth="1.5"
                         />
-                      )}
-                      {inputConnected && input.dataType && (
-                        <span 
-                          className="ml-2 text-[10px] px-1.5 py-0.5 rounded"
-                          style={{ 
-                            color: getPortColor(input.type, input.dataType),
-                            backgroundColor: `${getPortColor(input.type, input.dataType)}15`,
-                          }}
-                        >
-                          {getTypeLabel(input.dataType)}
-                        </span>
-                      )}
-                    </div>
+                      </svg>
+                    </Handle>
                   </div>
-                );
-              })}
-            </>
-          ) : node.type === 'vector-break' ? (
-            <>
-              {/* Input row first */}
-              {dataInputs.map((input) => {
-                const inputConnected = isPortConnected(input.id, true);
-                return (
-                  <div key={input.id} className="flex items-center py-1.5 min-h-[28px]">
-                    <div className="flex items-center relative whitespace-nowrap">
-                      <Handle
-                        type="target"
-                        position={Position.Left}
-                        id={input.id}
-                        style={{
-                          width: '10px',
-                          height: '10px',
-                          backgroundColor: inputConnected ? getPortColor(input.type, input.dataType) : 'transparent',
-                          border: `2px solid ${getPortColor(input.type, input.dataType)}`,
-                          borderRadius: '50%',
-                          boxShadow: inputConnected ? `0 0 4px ${getPortColor(input.type, input.dataType)}60` : 'none',
-                          left: '2px',
-                        }}
+                </div>
+              );
+            })}
+          </div>
+          {/* Input section with inline editors */}
+          <div style={{ padding: '8px 8px 10px 8px' }}>
+            {dataInputs.map((input) => {
+              const inputConnected = isPortConnected(input.id, true);
+              const inputDataKey = input.label.toLowerCase();
+              const pinColor = getPortColor(input.type, input.dataType);
+              return (
+                <div key={input.id} className="flex items-center py-1 min-h-[24px]">
+                  <div className="flex items-center relative whitespace-nowrap">
+                    <Handle
+                      type="target"
+                      position={Position.Left}
+                      id={input.id}
+                      className="!border-0"
+                      style={{
+                        width: '12px',
+                        height: '12px',
+                        background: 'transparent',
+                        left: '-4px',
+                      }}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 12 12" className="pointer-events-none" style={{ filter: inputConnected ? `drop-shadow(0 0 4px ${pinColor})` : 'none' }}>
+                        <circle 
+                          cx="6" cy="6" r="5"
+                          fill={inputConnected ? pinColor : '#1a1a1a'}
+                          stroke={pinColor}
+                          strokeWidth="1.5"
+                        />
+                      </svg>
+                    </Handle>
+                    <span className="ml-6 text-[11px] text-gray-300 font-medium">{input.label}</span>
+                    {/* Show inline input when not connected */}
+                    {!inputConnected && (
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={typeof node.data[inputDataKey] === 'number' ? node.data[inputDataKey] : 0}
+                        onChange={(e) => onUpdate({ data: { ...node.data, [inputDataKey]: parseFloat(e.target.value) || 0 } })}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        style={{ fontVariantNumeric: 'tabular-nums' }}
+                        className="ml-2 w-14 px-1.5 py-0.5 bg-black/50 text-[10px] text-center text-gray-100 rounded outline-none transition-all duration-200 hover:bg-black/60 focus:bg-black/70 border border-white/10 focus:border-white/30"
                       />
-                      <span className="ml-5 text-xs text-gray-300">{input.label}</span>
-                      {input.dataType && (
-                        <span 
-                          className="ml-2 text-[10px] px-1.5 py-0.5 rounded"
-                          style={{ 
-                            color: getPortColor(input.type, input.dataType),
-                            backgroundColor: `${getPortColor(input.type, input.dataType)}15`,
-                          }}
-                        >
-                          {getTypeLabel(input.dataType)}
-                        </span>
-                      )}
-                    </div>
+                    )}
                   </div>
-                );
-              })}
-              {/* Separator */}
-              <div className="border-t border-white/10 my-2" />
-              {/* Output rows */}
-              {dataOutputs.map((output) => {
-                const outputConnected = isPortConnected(output.id, false);
-                return (
-                  <div key={output.id} className="flex justify-end items-center py-1.5 min-h-[28px]">
-                    <div className="flex items-center relative whitespace-nowrap">
-                      {output.dataType && (
-                        <span 
-                          className="mr-2 text-[10px] px-1.5 py-0.5 rounded"
-                          style={{ 
-                            color: getPortColor(output.type, output.dataType),
-                            backgroundColor: `${getPortColor(output.type, output.dataType)}15`,
-                          }}
-                        >
-                          {getTypeLabel(output.dataType)}
-                        </span>
-                      )}
-                      <span className="mr-5 text-xs text-gray-300">{output.label}</span>
-                      <Handle
-                        type="source"
-                        position={Position.Right}
-                        id={output.id}
-                        style={{
-                          width: '10px',
-                          height: '10px',
-                          backgroundColor: outputConnected ? getPortColor(output.type, output.dataType) : 'transparent',
-                          border: `2px solid ${getPortColor(output.type, output.dataType)}`,
-                          borderRadius: '50%',
-                          boxShadow: outputConnected ? `0 0 4px ${getPortColor(output.type, output.dataType)}60` : 'none',
-                          right: '2px',
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {/* Vector Break - special layout with separate sections */}
+      {!isCallbackNode && node.type === 'vector-break' && (
+        <>
+          {/* Input section */}
+          <div 
+            style={{ 
+              padding: '8px 8px 8px 8px',
+              borderBottom: '1px solid rgba(255,255,255,0.06)',
+              background: 'rgba(0,0,0,0.15)',
+            }}
+          >
+            {dataInputs.map((input) => {
+              const inputConnected = isPortConnected(input.id, true);
+              const pinColor = getPortColor(input.type, input.dataType);
+              return (
+                <div key={input.id} className="flex items-center py-1 min-h-[24px]">
+                  <div className="flex items-center relative whitespace-nowrap">
+                    <Handle
+                      type="target"
+                      position={Position.Left}
+                      id={input.id}
+                      className="!border-0"
+                      style={{
+                        width: '12px',
+                        height: '12px',
+                        background: 'transparent',
+                        left: '-4px',
+                      }}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 12 12" className="pointer-events-none" style={{ filter: inputConnected ? `drop-shadow(0 0 4px ${pinColor})` : 'none' }}>
+                        <circle 
+                          cx="6" cy="6" r="5"
+                          fill={inputConnected ? pinColor : '#1a1a1a'}
+                          stroke={pinColor}
+                          strokeWidth="1.5"
+                        />
+                      </svg>
+                    </Handle>
+                    <span className="ml-6 text-[11px] text-gray-300 font-medium">{input.label}</span>
+                    {input.dataType && input.dataType !== 'any' && (
+                      <span 
+                        className="ml-1.5 text-[9px] px-1 py-0.5 rounded font-medium"
+                        style={{ 
+                          color: pinColor,
+                          backgroundColor: `${pinColor}18`,
                         }}
-                      />
-                    </div>
+                      >
+                        {getTypeLabel(input.dataType)}
+                      </span>
+                    )}
                   </div>
-                );
-              })}
-            </>
-          ) : (
-            /* Default layout: Render rows with inputs on left, outputs on right */
-            Array.from({ length: Math.max(dataInputs.length, dataOutputs.length) }).map((_, rowIndex) => {
+                </div>
+              );
+            })}
+          </div>
+          {/* Output section */}
+          <div style={{ padding: '8px 8px 10px 8px' }}>
+            {dataOutputs.map((output) => {
+              const outputConnected = isPortConnected(output.id, false);
+              const pinColor = getPortColor(output.type, output.dataType);
+              return (
+                <div key={output.id} className="flex justify-end items-center py-1 min-h-[24px]">
+                  <div className="flex items-center relative whitespace-nowrap">
+                    <span className="mr-6 text-[11px] text-gray-300 font-medium">{output.label}</span>
+                    <Handle
+                      type="source"
+                      position={Position.Right}
+                      id={output.id}
+                      className="!border-0"
+                      style={{
+                        width: '12px',
+                        height: '12px',
+                        background: 'transparent',
+                        right: '-4px',
+                      }}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 12 12" className="pointer-events-none" style={{ filter: outputConnected ? `drop-shadow(0 0 4px ${pinColor})` : 'none' }}>
+                        <circle 
+                          cx="6" cy="6" r="5"
+                          fill={outputConnected ? pinColor : '#1a1a1a'}
+                          stroke={pinColor}
+                          strokeWidth="1.5"
+                        />
+                      </svg>
+                    </Handle>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {/* Data Ports - Unreal Blueprint style side by side layout (for non-callback nodes, excluding vector nodes) */}
+      {!isCallbackNode && node.type !== 'vector-make' && node.type !== 'vector-break' && (dataInputs.length > 0 || dataOutputs.length > 0) && (
+        <div style={{ padding: '8px 8px 10px 8px' }}>
+          {/* Default layout: Render rows with inputs on left, outputs on right - Unreal style */}
+          {(Array.from({ length: Math.max(dataInputs.length, dataOutputs.length) }).map((_, rowIndex) => {
               const input = dataInputs[rowIndex];
               const output = dataOutputs[rowIndex];
               const inputConnected = input ? isPortConnected(input.id, true) : false;
               const outputConnected = output ? isPortConnected(output.id, false) : false;
+              const inputPinColor = input ? getPortColor(input.type, input.dataType) : '#888';
+              const outputPinColor = output ? getPortColor(output.type, output.dataType) : '#888';
               
               return (
-                <div key={rowIndex} className="flex justify-between items-center py-1.5 min-h-[28px]">
+                <div key={rowIndex} className="flex justify-between items-center py-1.5 min-h-[26px]">
                   {/* Left side - Input */}
                   <div className="flex items-center flex-1">
                     {input && (
@@ -1591,23 +1903,30 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
                           type="target"
                           position={Position.Left}
                           id={input.id}
+                          className="!border-0"
                           style={{
-                            width: '10px',
-                            height: '10px',
-                            backgroundColor: inputConnected ? getPortColor(input.type, input.dataType) : 'transparent',
-                            border: `2px solid ${getPortColor(input.type, input.dataType)}`,
-                            borderRadius: '50%',
-                            boxShadow: inputConnected ? `0 0 4px ${getPortColor(input.type, input.dataType)}60` : 'none',
-                            left: '2px',
+                            width: '12px',
+                            height: '12px',
+                            background: 'transparent',
+                            left: '-4px',
                           }}
-                        />
-                        <span className="ml-5 text-xs text-gray-300">{input.label}</span>
-                        {input.dataType && (
+                        >
+                          <svg width="12" height="12" viewBox="0 0 12 12" className="pointer-events-none" style={{ filter: inputConnected ? `drop-shadow(0 0 4px ${inputPinColor})` : 'none' }}>
+                            <circle 
+                              cx="6" cy="6" r="5"
+                              fill={inputConnected ? inputPinColor : '#1a1a1a'}
+                              stroke={inputPinColor}
+                              strokeWidth="1.5"
+                            />
+                          </svg>
+                        </Handle>
+                        <span className="ml-6 text-[11px] text-gray-300 font-medium">{input.label}</span>
+                        {input.dataType && input.dataType !== 'any' && (
                           <span 
-                            className="ml-2 text-[10px] px-1.5 py-0.5 rounded"
+                            className="ml-1.5 text-[9px] px-1 py-0.5 rounded font-medium"
                             style={{ 
-                              color: getPortColor(input.type, input.dataType),
-                              backgroundColor: `${getPortColor(input.type, input.dataType)}15`,
+                              color: inputPinColor,
+                              backgroundColor: `${inputPinColor}18`,
                             }}
                           >
                             {getTypeLabel(input.dataType)}
@@ -1621,32 +1940,39 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
                   <div className="flex items-center justify-end flex-1">
                     {output && (
                       <div className="flex items-center relative whitespace-nowrap">
-                        {output.dataType && (
+                        {output.dataType && output.dataType !== 'any' && (
                           <span 
-                            className="mr-2 text-[10px] px-1.5 py-0.5 rounded"
+                            className="mr-1.5 text-[9px] px-1 py-0.5 rounded font-medium"
                             style={{ 
-                              color: getPortColor(output.type, output.dataType),
-                              backgroundColor: `${getPortColor(output.type, output.dataType)}15`,
+                              color: outputPinColor,
+                              backgroundColor: `${outputPinColor}18`,
                             }}
                           >
                             {getTypeLabel(output.dataType)}
                           </span>
                         )}
-                        <span className="mr-5 text-xs text-gray-300">{output.label}</span>
+                        <span className="mr-6 text-[11px] text-gray-300 font-medium">{output.label}</span>
                         <Handle
                           type="source"
                           position={Position.Right}
                           id={output.id}
+                          className="!border-0"
                           style={{
-                            width: '10px',
-                            height: '10px',
-                            backgroundColor: outputConnected ? getPortColor(output.type, output.dataType) : 'transparent',
-                            border: `2px solid ${getPortColor(output.type, output.dataType)}`,
-                            borderRadius: '50%',
-                            boxShadow: outputConnected ? `0 0 4px ${getPortColor(output.type, output.dataType)}60` : 'none',
-                            right: '2px',
+                            width: '12px',
+                            height: '12px',
+                            background: 'transparent',
+                            right: '-4px',
                           }}
-                        />
+                        >
+                          <svg width="12" height="12" viewBox="0 0 12 12" className="pointer-events-none" style={{ filter: outputConnected ? `drop-shadow(0 0 4px ${outputPinColor})` : 'none' }}>
+                            <circle 
+                              cx="6" cy="6" r="5"
+                              fill={outputConnected ? outputPinColor : '#1a1a1a'}
+                              stroke={outputPinColor}
+                              strokeWidth="1.5"
+                            />
+                          </svg>
+                        </Handle>
                       </div>
                     )}
                   </div>
@@ -1657,9 +1983,15 @@ const ScriptNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeD
         </div>
       )}
 
-      {/* Node Data Section - inline editors */}
+      {/* Node Data Section - Unreal style inline editors */}
       {hasEditableData && (
-        <div className='px-3 py-3 border-t border-white/10'>
+        <div 
+          style={{ 
+            padding: '10px 12px',
+            borderTop: '1px solid rgba(255,255,255,0.06)',
+            background: 'rgba(0,0,0,0.1)',
+          }}
+        >
           {renderInlineEditor()}
         </div>
       )}
@@ -1774,52 +2106,133 @@ const CommentNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNode
 CommentNodeComponent.displayName = 'CommentNodeComponent';
 
 // ============================================================================
-// Reroute Node Component (Material Design)
+// Reroute Node Component - Clean pill-shaped design
 // ============================================================================
 
 const RerouteNodeComponent = memo(({ data, selected }: NodeProps<Node<ScriptNodeData>>) => {
   const { scriptNode: node, accentColor, nodeOpacity } = data;
   const isExec = node.data.isExec === true;
   const dataType = node.inputs[0]?.dataType;
-  const color = getPortColor(isExec ? 'exec' : 'data', dataType);
+  const color = isExec ? '#ffffff' : getPortColor('data', dataType);
+  
+  // Use store selector for stable edge connection check - avoids re-renders on unrelated edge changes
+  const { isInputConnected, isOutputConnected } = useStore(
+    useCallback((state) => ({
+      isInputConnected: state.edges.some(e => e.target === node.id),
+      isOutputConnected: state.edges.some(e => e.source === node.id),
+    }), [node.id]),
+    (a, b) => a.isInputConnected === b.isInputConnected && a.isOutputConnected === b.isOutputConnected
+  );
+  const isConnected = isInputConnected || isOutputConnected;
 
   return (
     <div
-      className="w-8 h-8 rounded-full flex items-center justify-center"
+      className="flex items-center"
       style={{
-        backgroundColor: '#212121',
         opacity: nodeOpacity / 100,
-        boxShadow: selected
-          ? `0 4px 8px rgba(0,0,0,.3), 0 0 0 2px ${accentColor}`
-          : '0 2px 4px rgba(0,0,0,.2), 0 1px 2px rgba(0,0,0,.1)',
-        transition: 'box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
-      {/* Center dot */}
+      {/* Main reroute body - pill shaped */}
       <div 
-        className="w-3 h-3 rounded-full"
-        style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}60` }}
-      />
-      <Handle
-        type="target"
-        position={Position.Left}
-        id={node.inputs[0]?.id || 'input_0'}
-        className="!w-2.5 !h-2.5 !border-0 !-left-1"
-        style={{
-          backgroundColor: color,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+        style={{ 
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0px',
+          padding: '4px 8px',
+          backgroundColor: '#252525',
+          borderRadius: '12px',
+          border: selected ? `2px solid ${accentColor}` : '1px solid #3a3a3a',
+          boxShadow: selected 
+            ? `0 0 12px ${accentColor}40, 0 4px 12px rgba(0,0,0,0.4)` 
+            : '0 2px 8px rgba(0,0,0,0.4)',
+          transition: 'all 0.15s ease-out',
+          cursor: 'grab',
         }}
-      />
-      <Handle
-        type="source"
-        position={Position.Right}
-        id={node.outputs[0]?.id || 'output_0'}
-        className="!w-2.5 !h-2.5 !border-0 !-right-1"
-        style={{
-          backgroundColor: color,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-        }}
-      />
+      >
+        {/* Input pin */}
+        <div className="relative flex items-center justify-center" style={{ width: '12px', height: '12px' }}>
+          <Handle
+            type="target"
+            position={Position.Left}
+            id={node.inputs[0]?.id || 'input_0'}
+            className="!border-0"
+            style={{
+              width: '12px',
+              height: '12px',
+              background: 'transparent',
+              left: '-4px',
+            }}
+          >
+            {isExec ? (
+              <svg width="12" height="12" viewBox="0 0 12 12" className="pointer-events-none">
+                <polygon 
+                  points="1,1 11,6 1,11" 
+                  fill={isInputConnected ? '#ffffff' : '#2a2a2a'}
+                  stroke="#ffffff" 
+                  strokeWidth="1.5"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            ) : (
+              <svg width="12" height="12" viewBox="0 0 12 12" className="pointer-events-none" style={{ filter: isInputConnected ? `drop-shadow(0 0 4px ${color})` : 'none' }}>
+                <circle 
+                  cx="6" cy="6" r="5"
+                  fill={isInputConnected ? color : '#1a1a1a'}
+                  stroke={color}
+                  strokeWidth="1.5"
+                />
+              </svg>
+            )}
+          </Handle>
+        </div>
+
+        {/* Center line connector */}
+        <div 
+          style={{ 
+            width: '16px',
+            height: '2px',
+            backgroundColor: isConnected ? color : '#444',
+            borderRadius: '1px',
+          }}
+        />
+
+        {/* Output pin */}
+        <div className="relative flex items-center justify-center" style={{ width: '12px', height: '12px' }}>
+          <Handle
+            type="source"
+            position={Position.Right}
+            id={node.outputs[0]?.id || 'output_0'}
+            className="!border-0"
+            style={{
+              width: '12px',
+              height: '12px',
+              background: 'transparent',
+              right: '-4px',
+            }}
+          >
+            {isExec ? (
+              <svg width="12" height="12" viewBox="0 0 12 12" className="pointer-events-none">
+                <polygon 
+                  points="1,1 11,6 1,11" 
+                  fill={isOutputConnected ? '#ffffff' : '#2a2a2a'}
+                  stroke="#ffffff" 
+                  strokeWidth="1.5"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            ) : (
+              <svg width="12" height="12" viewBox="0 0 12 12" className="pointer-events-none" style={{ filter: isOutputConnected ? `drop-shadow(0 0 4px ${color})` : 'none' }}>
+                <circle 
+                  cx="6" cy="6" r="5"
+                  fill={isOutputConnected ? color : '#1a1a1a'}
+                  stroke={color}
+                  strokeWidth="1.5"
+                />
+              </svg>
+            )}
+          </Handle>
+        </div>
+      </div>
     </div>
   );
 });
@@ -1909,64 +2322,26 @@ const ScriptEdge = memo(({
     }
   }, [connectionStyle, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition]);
 
-  // Animation-specific styles
-  const getAnimationStyles = (): React.CSSProperties => {
+  // Animation class based on connection animation type - using classes prevents animation restart
+  const getAnimationClass = (): string => {
     switch (connectionAnimation) {
-      case 'flow':
-        // Flow uses animated circles on path, not dash styling
-        return {};
-      case 'pulse':
-        return {
-          animation: 'pulseAnimation 1.5s ease-in-out infinite',
-        };
-      case 'dash':
-        return {
-          strokeDasharray: '8 4',
-          animation: 'dashAnimation 0.5s linear infinite',
-        };
-      case 'glow':
-        return {
-          filter: `drop-shadow(0 0 3px ${strokeColor}) drop-shadow(0 0 6px ${strokeColor})`,
-          animation: 'glowAnimation 2s ease-in-out infinite',
-        };
+      case 'pulse': return 'edge-animation-pulse';
+      case 'dash': return 'edge-animation-dash';
+      case 'glow': return 'edge-animation-glow';
+      case 'flow': // Flow uses animated circles, not edge styling
       case 'none':
       default:
-        return {};
+        return '';
     }
   };
 
-  // Calculate path length for flow animation
-  const pathLength = useMemo(() => {
-    if (connectionAnimation !== 'flow') return 0;
-    // Estimate path length
-    const dx = targetX - sourceX;
-    const dy = targetY - sourceY;
-    return Math.sqrt(dx * dx + dy * dy) * 1.5; // Rough estimate for curves
-  }, [connectionAnimation, sourceX, sourceY, targetX, targetY]);
+  // Glow filter for glow animation
+  const glowFilter = connectionAnimation === 'glow' 
+    ? `drop-shadow(0 0 3px ${strokeColor}) drop-shadow(0 0 6px ${strokeColor})`
+    : undefined;
 
   return (
     <>
-      {/* CSS for animations */}
-      <style>
-        {`
-          @keyframes pulseAnimation {
-            0%, 100% { opacity: 0.5; stroke-width: 2; }
-            50% { opacity: 1; stroke-width: 3.5; }
-          }
-          @keyframes dashAnimation {
-            from { stroke-dashoffset: 12; }
-            to { stroke-dashoffset: 0; }
-          }
-          @keyframes glowAnimation {
-            0%, 100% { filter: drop-shadow(0 0 2px ${strokeColor}) drop-shadow(0 0 4px ${strokeColor}40); }
-            50% { filter: drop-shadow(0 0 4px ${strokeColor}) drop-shadow(0 0 8px ${strokeColor}); }
-          }
-          @keyframes flowDotAnimation {
-            0% { offset-distance: 0%; }
-            100% { offset-distance: 100%; }
-          }
-        `}
-      </style>
       {/* Invisible wider path for easier clicking */}
       <path
         d={edgePath}
@@ -1979,25 +2354,25 @@ const ScriptEdge = memo(({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       />
-      {/* Hover highlight effect */}
+      {/* Hover highlight effect - Unreal style glow */}
       {isHovered && !selected && (
         <path
           d={edgePath}
           stroke={strokeColor}
-          strokeWidth={8}
+          strokeWidth={10}
           fill="none"
-          style={{ opacity: 0.15, pointerEvents: 'none' }}
+          style={{ opacity: 0.12, pointerEvents: 'none' }}
         />
       )}
-      {/* Visible edge */}
+      {/* Visible edge - Unreal Blueprint style thicker wire */}
       <BaseEdge
         id={id}
         path={edgePath}
+        className={getAnimationClass()}
         style={{
           stroke: strokeColor,
-          strokeWidth: selected ? 3.5 : isHovered ? 3 : 2.5,
-          filter: isHovered && !selected ? `drop-shadow(0 0 4px ${strokeColor}60)` : undefined,
-          ...getAnimationStyles(),
+          strokeWidth: selected ? 4 : isHovered ? 3.5 : 3,
+          filter: glowFilter || ((isHovered || selected) ? `drop-shadow(0 0 6px ${strokeColor}80)` : `drop-shadow(0 0 2px ${strokeColor}40)`),
           ...style,
         }}
       />
@@ -2009,10 +2384,9 @@ const ScriptEdge = memo(({
               key={i}
               r="3"
               fill={strokeColor}
+              className={`flow-dot flow-dot-${i}`}
               style={{
                 offsetPath: `path("${edgePath}")`,
-                animation: `flowDotAnimation 1.5s linear infinite`,
-                animationDelay: `${i * 0.5}s`,
               }}
             />
           ))}

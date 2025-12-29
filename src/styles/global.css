@@ -5,6 +5,51 @@ html, body, #root {
   height: 100%;
 }
 
+/* ============================================================================
+   Edge Animation Keyframes - Global definitions to prevent re-injection
+   ============================================================================ */
+@keyframes pulseAnimation {
+  0%, 100% { opacity: 0.5; stroke-width: 2; }
+  50% { opacity: 1; stroke-width: 3.5; }
+}
+
+@keyframes dashAnimation {
+  from { stroke-dashoffset: 12; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes glowAnimation {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+@keyframes flowDotAnimation {
+  0% { offset-distance: 0%; }
+  100% { offset-distance: 100%; }
+}
+
+/* Edge animation classes - using classes prevents animation restart on re-render */
+.edge-animation-pulse {
+  animation: pulseAnimation 1.5s ease-in-out infinite;
+}
+
+.edge-animation-dash {
+  stroke-dasharray: 8 4;
+  animation: dashAnimation 0.5s linear infinite;
+}
+
+.edge-animation-glow {
+  animation: glowAnimation 2s ease-in-out infinite;
+}
+
+.flow-dot {
+  animation: flowDotAnimation 1.5s linear infinite;
+}
+
+.flow-dot-0 { animation-delay: 0s; }
+.flow-dot-1 { animation-delay: 0.5s; }
+.flow-dot-2 { animation-delay: 1s; }
+
 /* Hide number input spinners */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
