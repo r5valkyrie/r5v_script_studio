@@ -7,6 +7,7 @@ import type { ProjectData, ModSettings, ScriptFile, WeaponFile, UIFile, Localiza
 import { DEFAULT_MOD_SETTINGS } from '../types/project';
 import { generateCode } from './code-generator';
 import { generateCodeMetadata, embedProjectInCode, serializeLocalizationFile } from './project-manager';
+import { electronAPI, isTauri } from './tauri-api';
 
 export interface CompileResult {
   success: boolean;
@@ -221,26 +222,26 @@ export async function compileProject(
     const uiDir = `${resourceDir}/ui`;
     const menusDir = `${uiDir}/menus`;
     
-    // Check if electron API is available
-    if (!window.electronAPI) {
+    // Check if Tauri API is available
+    if (!isTauri()) {
       return { 
         success: false, 
-        error: 'Electron API not available. Compile is only supported in the desktop app.' 
+        error: 'Tauri API not available. Compile is only supported in the desktop app.' 
       };
     }
     
     // Delete existing mod folder if it exists
-    await window.electronAPI.deleteDirectory(modDir);
+    await electronAPI.deleteDirectory(modDir);
     
     // Create directory structure
-    await window.electronAPI.createDirectory(modDir);
-    await window.electronAPI.createDirectory(scriptsDir);
-    await window.electronAPI.createDirectory(vscriptsDir);
+    await electronAPI.createDirectory(modDir);
+    await electronAPI.createDirectory(scriptsDir);
+    await electronAPI.createDirectory(vscriptsDir);
     
     // Create weapons directory if we have weapon files
     const weaponFiles = project.weaponFiles || [];
     if (weaponFiles.length > 0) {
-      await window.electronAPI.createDirectory(weaponsDir);
+      await electronAPI.createDirectory(weaponsDir);
     }
     
     // Create UI directories if we have UI files
@@ -249,10 +250,10 @@ export async function compileProject(
     const hasMenuFiles = uiFiles.some(f => f.fileType === 'menu');
     
     if (uiFiles.length > 0) {
-      await window.electronAPI.createDirectory(resourceDir);
-      await window.electronAPI.createDirectory(uiDir);
+      await electronAPI.createDirectory(resourceDir);
+      await electronAPI.createDirectory(uiDir);
       if (hasMenuFiles) {
-        await window.electronAPI.createDirectory(menusDir);
+        await electronAPI.createDirectory(menusDir);
       }
     }
     
@@ -262,13 +263,13 @@ export async function compileProject(
     
     if (localizationFiles.length > 0) {
       // Ensure resource directory exists (may not exist if no UI files)
-      await window.electronAPI.createDirectory(resourceDir);
-      await window.electronAPI.createDirectory(localizationDir);
+      await electronAPI.createDirectory(resourceDir);
+      await electronAPI.createDirectory(localizationDir);
     }
     
     // Create mod.vdf (pass localization files for auto-including paths)
     const vdfContent = generateModVdf(modSettings, localizationFiles);
-    const vdfResult = await window.electronAPI.writeFile(`${modDir}/mod.vdf`, vdfContent);
+    const vdfResult = await electronAPI.writeFile(`${modDir}/mod.vdf`, vdfContent);
     if (!vdfResult.success) {
       return { success: false, error: `Failed to write mod.vdf: ${vdfResult.error}` };
     }
@@ -296,11 +297,11 @@ export async function compileProject(
       // Create parent directories if needed
       const parentDir = filePath.substring(0, filePath.lastIndexOf('/'));
       if (parentDir !== vscriptsDir) {
-        await window.electronAPI.createDirectory(parentDir);
+        await electronAPI.createDirectory(parentDir);
       }
       
       // Write script file
-      const writeResult = await window.electronAPI.writeFile(filePath, finalCode);
+      const writeResult = await electronAPI.writeFile(filePath, finalCode);
       if (!writeResult.success) {
         return { success: false, error: `Failed to write ${fileName}: ${writeResult.error}` };
       }
@@ -309,7 +310,7 @@ export async function compileProject(
     
     // Create scripts.rson
     const rsonContent = generateScriptsRson(project.scriptFiles);
-    const rsonResult = await window.electronAPI.writeFile(`${vscriptsDir}/scripts.rson`, rsonContent);
+    const rsonResult = await electronAPI.writeFile(`${vscriptsDir}/scripts.rson`, rsonContent);
     if (!rsonResult.success) {
       return { success: false, error: `Failed to write scripts.rson: ${rsonResult.error}` };
     }
@@ -328,11 +329,11 @@ export async function compileProject(
       // Create parent directories if needed
       const parentDir = filePath.substring(0, filePath.lastIndexOf('/'));
       if (parentDir !== weaponsDir) {
-        await window.electronAPI.createDirectory(parentDir);
+        await electronAPI.createDirectory(parentDir);
       }
       
       // Write weapon file
-      const writeResult = await window.electronAPI.writeFile(filePath, weaponFile.content);
+      const writeResult = await electronAPI.writeFile(filePath, weaponFile.content);
       if (!writeResult.success) {
         return { success: false, error: `Failed to write ${fileName}: ${writeResult.error}` };
       }
@@ -357,11 +358,11 @@ export async function compileProject(
       // Create parent directories if needed
       const parentDir = filePath.substring(0, filePath.lastIndexOf('/'));
       if (parentDir !== targetDir) {
-        await window.electronAPI.createDirectory(parentDir);
+        await electronAPI.createDirectory(parentDir);
       }
       
       // Write UI file
-      const writeResult = await window.electronAPI.writeFile(filePath, uiFile.content);
+      const writeResult = await electronAPI.writeFile(filePath, uiFile.content);
       if (!writeResult.success) {
         return { success: false, error: `Failed to write ${fileName}: ${writeResult.error}` };
       }
@@ -383,11 +384,11 @@ export async function compileProject(
       // Create parent directories if needed
       const parentDir = filePath.substring(0, filePath.lastIndexOf('/'));
       if (parentDir !== localizationDir) {
-        await window.electronAPI.createDirectory(parentDir);
+        await electronAPI.createDirectory(parentDir);
       }
       
       // Write localization file
-      const writeResult = await window.electronAPI.writeFile(filePath, content);
+      const writeResult = await electronAPI.writeFile(filePath, content);
       if (!writeResult.success) {
         return { success: false, error: `Failed to write ${fileName}: ${writeResult.error}` };
       }
@@ -411,10 +412,10 @@ export async function compileProject(
  * Opens a directory picker for selecting output folder
  */
 export async function selectOutputDirectory(): Promise<string | null> {
-  if (!window.electronAPI) {
-    console.error('Electron API not available');
+  if (!isTauri()) {
+    console.error('Tauri API not available');
     return null;
   }
   
-  return await window.electronAPI.selectDirectory();
+  return await electronAPI.selectDirectory();
 }

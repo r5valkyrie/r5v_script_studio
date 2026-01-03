@@ -1,6 +1,9 @@
 # build output
 dist/
-electron/
+
+# Tauri
+tauri/target/
+
 # generated types
 .astro/
 .claude/

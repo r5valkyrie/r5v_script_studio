@@ -182,7 +182,10 @@ export default function WelcomeScreen({
 
             {/* Open Project */}
             <button
-              onClick={onOpenProject}
+              onClick={() => {
+                console.log('[WelcomeScreen] Open Project button clicked');
+                onOpenProject();
+              }}
               className="group relative bg-[#1e1e1e] hover:bg-[#252525] border border-white/5 hover:border-white/10 rounded-lg p-5 text-left transition-all duration-200"
             >
               <div className="flex items-center gap-4">
@@ -212,7 +215,10 @@ export default function WelcomeScreen({
                 {recentProjects.slice(0, 5).map((project, index) => (
                   <button
                     key={index}
-                    onClick={() => onOpenRecent(project.path)}
+                    onClick={() => {
+                      console.log('[WelcomeScreen] Recent project clicked:', project.path);
+                      onOpenRecent(project.path);
+                    }}
                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/5 last:border-b-0 group"
                   >
                     <div 

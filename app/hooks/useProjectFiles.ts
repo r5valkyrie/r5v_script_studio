@@ -12,6 +12,7 @@ import {
   createLocalizationFile
 } from '../utils/project-manager';
 import { saveProjectFile, openProjectFile } from '../utils/file-system';
+import { electron, isTauri } from '../utils/tauri-api';
 
 export interface UseProjectFilesReturn {
   // State
@@ -172,8 +173,8 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
         data.localizationFiles
       );
       
-      if (window.electron) {
-        await window.electron.writeProjectFile(filePath, jsonContent);
+      if (isTauri()) {
+        await electron.writeProjectFile(filePath, jsonContent);
       }
       
       return true;
@@ -219,8 +220,8 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
         filePath = result.filePath;
         if (!filePath) return false;
       } else {
-        if (window.electron) {
-          await window.electron.writeProjectFile(filePath, jsonContent);
+        if (isTauri()) {
+          await electron.writeProjectFile(filePath, jsonContent);
         }
       }
       
@@ -274,7 +275,9 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
 
   // Load project
   const loadProject = useCallback(async (): Promise<boolean> => {
+    console.log('[loadProject] Starting...');
     try {
+      console.log('[loadProject] Calling openProjectFile...');
       const result = await openProjectFile({
         title: 'Open Project',
         filters: [
@@ -283,23 +286,31 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
         ],
       });
       
-      if (!result) return false;
+      console.log('[loadProject] openProjectFile result:', result);
       
+      if (!result) {
+        console.log('[loadProject] No result, user cancelled');
+        return false;
+      }
+      
+      console.log('[loadProject] Deserializing project...');
       const loaded = deserializeProject(result.content);
       
       if (!validateProject(loaded)) {
         throw new Error('Invalid project file format');
       }
       
+      console.log('[loadProject] Setting project data...');
       setProjectData(loaded);
       setCurrentFilePath(result.filePath);
       setHasUnsavedChanges(false);
       setModifiedFileIds(new Set());
       addToRecentProjects(result.filePath, loaded.metadata.name || 'Untitled');
       
+      console.log('[loadProject] Done!');
       return true;
     } catch (error) {
-      console.error('Failed to load project:', error);
+      console.error('[loadProject] Failed to load project:', error);
       alert(`Failed to load project: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return false;
     }
@@ -307,32 +318,40 @@ export function useProjectFiles(options: UseProjectFilesOptions = {}): UseProjec
 
   // Load project from specific path
   const loadProjectFromPath = useCallback(async (path: string): Promise<boolean> => {
+    console.log('[loadProjectFromPath] Starting with path:', path);
     try {
-      if (!window.electron) {
-        alert('File system access is only available in Electron');
+      if (!isTauri()) {
+        console.log('[loadProjectFromPath] Tauri not available');
+        alert('File system access is only available in Tauri');
         return false;
       }
 
-      const result = await window.electron.readProjectFile(path);
+      console.log('[loadProjectFromPath] Reading project file...');
+      const result = await electron.readProjectFile(path);
+      console.log('[loadProjectFromPath] Read result:', result);
+      
       if (!result.success || !result.content) {
         throw new Error(result.error || 'Failed to read project file');
       }
       
+      console.log('[loadProjectFromPath] Deserializing project...');
       const loaded = deserializeProject(result.content);
       
       if (!validateProject(loaded)) {
         throw new Error('Invalid project file format');
       }
       
+      console.log('[loadProjectFromPath] Setting project data...');
       setProjectData(loaded);
       setCurrentFilePath(path);
       setHasUnsavedChanges(false);
       setModifiedFileIds(new Set());
       addToRecentProjects(path, loaded.metadata.name || 'Untitled');
       
+      console.log('[loadProjectFromPath] Done!');
       return true;
     } catch (error) {
-      console.error('Failed to load project:', error);
+      console.error('[loadProjectFromPath] Failed to load project:', error);
       alert(`Failed to load project: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return false;
     }

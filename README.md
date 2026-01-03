@@ -72,7 +72,9 @@
 
 ### From Source
 
-Prerequisites: [Node.js](https://nodejs.org/) (v18+) and npm
+Prerequisites: 
+- [Node.js](https://nodejs.org/) (v18+) and npm
+- [Rust](https://rustup.rs/) (for Tauri backend)
 
 ```bash
 # Clone the repository
@@ -87,6 +89,15 @@ npm run dev
 
 # Build for production
 npm run build
+```
+
+### Linux Dependencies
+
+On Linux, you may need to install additional dependencies for Tauri:
+
+```bash
+# Ubuntu/Debian
+sudo apt install libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 ```
 
 ## Usage
@@ -163,35 +174,35 @@ npm run dev
 # Build web assets only
 npm run build:web
 
-# Build full Electron app
+# Build full Tauri app
 npm run build
 ```
 
 ### Tech Stack
 
-- **Framework**: [Astro](https://astro.build/) + [React](https://react.dev/)
-- **Desktop**: [Electron](https://www.electronjs.org/)
+- **Framework**: [Vite](https://vitejs.dev/) + [React](https://react.dev/)
+- **Desktop**: [Tauri](https://tauri.app/) (Rust-based, lightweight alternative to Electron)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/) + [DaisyUI](https://daisyui.com/)
 - **Icons**: [Lucide React](https://lucide.dev/)
-- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Language**: [TypeScript](https://www.typescriptlang.org/) (frontend) + [Rust](https://www.rust-lang.org/) (backend)
 
 ### Project Structure
 
 ```
-r5v_script_studio/
-├── electron/          # Electron main process (bundled from js/)
-├── js/                # Electron source files
-│   ├── main.js        # Main process
-│   └── preload.cjs    # Preload script
-├── src/
+r5v_mod_studio/
+├── app/               # Frontend React application
 │   ├── components/    # React components
 │   │   └── visual-scripting/  # Editor components
 │   ├── data/          # Node definitions (200+ nodes)
 │   ├── hooks/         # React hooks (project management)
 │   ├── types/         # TypeScript types
-│   └── utils/         # Utility functions (code gen, compiler)
+│   └── utils/         # Utility functions (code gen, compiler, Tauri API)
+├── tauri/             # Tauri backend (Rust)
+│   ├── src/           # Rust source code
+│   ├── capabilities/  # Tauri permission capabilities
+│   └── icons/         # Application icons
 ├── public/            # Static assets
-└── scripts/           # Build scripts
+└── dist/              # Built web assets (generated)
 ```
 
 ## Contributing
