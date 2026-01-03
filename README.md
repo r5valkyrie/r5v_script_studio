@@ -165,23 +165,10 @@ All keybindings are customizable in **Settings → Keybindings**
 | Toggle Code Panel | `Ctrl+Shift+C` |
 | Toggle Sidebar | `Ctrl+\` |
 
-## Development
-
-```bash
-# Run development server with hot reload
-npm run dev
-
-# Build web assets only
-npm run build:web
-
-# Build full Tauri app
-npm run build
-```
-
 ### Tech Stack
 
 - **Framework**: [Vite](https://vitejs.dev/) + [React](https://react.dev/)
-- **Desktop**: [Tauri](https://tauri.app/) (Rust-based, lightweight alternative to Electron)
+- **Desktop**: [Tauri](https://tauri.app/)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/) + [DaisyUI](https://daisyui.com/)
 - **Icons**: [Lucide React](https://lucide.dev/)
 - **Language**: [TypeScript](https://www.typescriptlang.org/) (frontend) + [Rust](https://www.rust-lang.org/) (backend)
