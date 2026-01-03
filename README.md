@@ -1,7 +1,7 @@
 # R5V Studio
 
 <p align="center">
-  <img src="public/favicon.svg" alt="R5V Studio width="120" height="120">
+  <img src="public/favicon.svg" alt="R5V Studio" width="120" height="120">
 </p>
 
 <p align="center">
