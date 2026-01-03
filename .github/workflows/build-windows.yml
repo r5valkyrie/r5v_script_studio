@@ -37,7 +37,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tauriScript: npm run
-          args: -- -c tauri/tauri.conf.json
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
